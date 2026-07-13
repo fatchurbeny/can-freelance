@@ -45,7 +45,7 @@ export default function WorkloadWidget({ data, brandName }: WorkloadWidgetProps)
   const avgPages = Math.round(totalPages / count);
 
   return (
-    <div className="glass dark:bg-[#111827] rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow relative flex flex-col h-full max-h-[268px]">
+    <div className="glass dark:bg-[#111827] rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow relative flex flex-col h-[268px]">
       {/* Title & Badge */}
       <div className="flex items-center justify-between pb-4">
         <div>
