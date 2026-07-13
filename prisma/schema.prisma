@@ -1,0 +1,114 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  name         String?
+  role         String   @default("manager")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@map("users")
+}
+
+model Designer {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  notionKey   String   @unique @map("notion_key")
+  displayName String   @map("display_name")
+  avatarColor String?  @map("avatar_color")
+  isActive    Boolean  @default(true) @map("is_active")
+
+  tasks       Task[]
+
+  @@map("designers")
+}
+
+model Doctype {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  notionKey        String   @unique @map("notion_key")
+  displayName      String   @map("display_name")
+  isTopSpecialist  Boolean  @default(false) @map("is_top_specialist")
+  sortOrder        Int      @default(0) @map("sort_order")
+  poolRate         Float    @default(1.0) @map("pool_rate")
+  pages            Float?
+  tasks            Task[]
+
+  @@map("doctypes")
+}
+
+model Account {
+  id           String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  notionKey    String        @unique @map("notion_key")
+  displayName  String        @map("display_name")
+  color        String?
+  taskAccounts TaskAccount[]
+
+  @@map("accounts")
+}
+
+model DesignStatus {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  notionKey           String   @unique @map("notion_key")
+  displayName         String   @map("display_name")
+  statusGroup         String?  @map("status_group")
+  countsAsSubmitted   Boolean  @default(true) @map("counts_as_submitted")
+  countsAsApproved    Boolean  @default(false) @map("counts_as_approved")
+  countsAsProfileOnly Boolean  @default(false) @map("counts_as_profile_only")
+  tasks               Task[]
+
+  @@map("design_statuses")
+}
+
+model Task {
+  id             String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  notionPageId   String        @unique @map("notion_page_id")
+  notionUrl      String?       @map("notion_url")
+  name           String?
+  designerId     String?       @map("designer_id") @db.Uuid
+  designer       Designer?     @relation(fields: [designerId], references: [id])
+  doctypeId      String?       @map("doctype_id") @db.Uuid
+  doctype        Doctype?      @relation(fields: [doctypeId], references: [id])
+  designStatusId String?       @map("design_status_id") @db.Uuid
+  designStatus   DesignStatus? @relation(fields: [designStatusId], references: [id])
+  pages          Decimal?      @db.Decimal
+  qtySubmit      Decimal?      @map("qty_submit") @db.Decimal
+  license        String?       // 'Free' | 'Pro'
+  languages      String[]      @db.Text
+  dateApproved   DateTime?     @map("date_approved") @db.Date
+  taskMonth      String?       @map("task_month")
+  payrollMonth   String?       @map("payroll_month")
+  priority       String?
+  createdTime    DateTime      @map("created_time") @db.Timestamptz
+  syncedAt       DateTime      @default(now()) @map("synced_at") @db.Timestamptz
+  taskAccounts   TaskAccount[]
+
+  @@map("tasks")
+}
+
+model TaskAccount {
+  taskId    String  @map("task_id") @db.Uuid
+  accountId String  @map("account_id") @db.Uuid
+  task      Task    @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  account   Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, accountId])
+  @@map("task_accounts")
+}
+
+model SyncLog {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  startedAt    DateTime  @default(now()) @map("started_at") @db.Timestamptz
+  finishedAt   DateTime? @map("finished_at") @db.Timestamptz
+  status       String    // 'running' | 'success' | 'failed'
+  recordsSynced Int?      @map("records_synced")
+  errorMessage String?   @map("error_message")
+
+  @@map("sync_logs")
+}
