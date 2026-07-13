@@ -53,7 +53,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   const latestSyncLog = await getLatestSyncStatus();
 
   return (
-    <div className="flex min-h-screen bg-[#F5F0EB] dark:bg-[#0a0b0e] text-gray-900 dark:text-gray-100 transition-colors">
+    <div className="flex flex-col md:flex-row min-h-screen bg-[#F5F0EB] dark:bg-[#0a0b0e] text-gray-900 dark:text-gray-100 transition-colors">
       {/* Sidebar navigation */}
       <Sidebar currentSyncLog={latestSyncLog} />
 

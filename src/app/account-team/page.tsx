@@ -65,7 +65,7 @@ export default async function AccountTeamPage() {
   const totalMembers = designers.length + accounts.length;
 
   return (
-    <div className="flex min-h-screen bg-[#F5F0EB] dark:bg-[#0a0b0e] text-gray-900 dark:text-gray-100 transition-colors">
+    <div className="flex flex-col md:flex-row min-h-screen bg-[#F5F0EB] dark:bg-[#0a0b0e] text-gray-900 dark:text-gray-100 transition-colors">
       <Sidebar currentSyncLog={latestSyncLog} />
 
       <main className="flex-1 p-6 md:p-8 space-y-8 overflow-x-hidden">
