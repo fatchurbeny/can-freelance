@@ -1,6 +1,8 @@
 import { PrismaClient } from '@prisma/client';
 import { getDoctypes } from '@/lib/queries';
 import { getLatestSyncStatus } from '@/app/actions/sync';
+
+export const dynamic = 'force-dynamic';
 import Sidebar from '@/components/Sidebar';
 import ThemeToggle from '@/components/ThemeToggle';
 import { Plus, Gavel, Calendar, Edit3, Banknote } from 'lucide-react';

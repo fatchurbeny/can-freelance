@@ -1,5 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { getLatestSyncStatus } from '@/app/actions/sync';
+
+export const dynamic = 'force-dynamic';
 import Sidebar from '@/components/Sidebar';
 import ThemeToggle from '@/components/ThemeToggle';
 import { Plus, Gavel, Trophy, CircleDot } from 'lucide-react';
