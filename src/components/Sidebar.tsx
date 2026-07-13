@@ -11,7 +11,8 @@ import {
   FileText, 
   BarChart3,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Settings
 } from 'lucide-react';
 import SyncButton from './SyncButton';
 
@@ -30,6 +31,7 @@ export default function Sidebar({ currentSyncLog }: SidebarProps) {
     { name: 'Rate Card', icon: CreditCard, href: '/rate-card', active: pathname === '/rate-card' },
     { name: 'Billing Statement', icon: FileText, href: '/billing-statement', active: pathname === '/billing-statement' },
     { name: 'Analytics & Reports', icon: BarChart3, href: '#', active: false },
+    { name: 'Notion Config', icon: Settings, href: '/notion-config', active: pathname === '/notion-config' },
   ];
 
   return (

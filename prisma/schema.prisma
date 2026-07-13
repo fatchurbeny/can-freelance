@@ -112,3 +112,14 @@ model SyncLog {
 
   @@map("sync_logs")
 }
+
+model NotionConfig {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  encryptedApiKey     String   @map("encrypted_api_key")
+  encryptedDatabaseId String   @map("encrypted_database_id")
+  iv                  String   // Initialization vector
+  updatedAt           DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("notion_configs")
+}
+
