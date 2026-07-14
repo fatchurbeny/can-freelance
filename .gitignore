@@ -48,3 +48,6 @@ next-env.d.ts
 /trigger-sync.js
 /read-sync-logs.js
 
+
+.env
+generated/prisma
