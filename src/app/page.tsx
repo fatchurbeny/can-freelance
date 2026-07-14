@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { PrismaClient } from '@prisma/client';
+import prisma from '@/lib/prisma';
 import { 
   getAvailablePeriods, 
   getDashboardData 
@@ -17,8 +17,6 @@ import { LisensiGauge, BahasaGauge } from '@/components/GaugesWidget';
 import WorkloadWidget from '@/components/WorkloadWidget';
 import ApprovedProfileOnlyWidget from '@/components/ApprovedProfileOnlyWidget';
 import LeaderboardWidget from '@/components/LeaderboardWidget';
-
-const prisma = new PrismaClient();
 
 interface PageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;

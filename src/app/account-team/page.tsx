@@ -1,12 +1,10 @@
-import { PrismaClient } from '@prisma/client';
+import prisma from '@/lib/prisma';
 import { getLatestSyncStatus } from '@/app/actions/sync';
 
 export const dynamic = 'force-dynamic';
 import Sidebar from '@/components/Sidebar';
 import ThemeToggle from '@/components/ThemeToggle';
 import { Plus, Gavel, Trophy, CircleDot } from 'lucide-react';
-
-const prisma = new PrismaClient();
 
 function getInitials(name: string) {
   return name.substring(0, 2).toUpperCase();

@@ -2,9 +2,7 @@
 
 import { syncNotionData } from '@/lib/sync-notion';
 import { revalidatePath } from 'next/cache';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from '@/lib/prisma';
 
 export async function triggerSyncAction() {
   try {

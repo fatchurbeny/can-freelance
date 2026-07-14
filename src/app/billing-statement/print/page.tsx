@@ -1,8 +1,6 @@
-import { PrismaClient } from '@prisma/client';
+import prisma from '@/lib/prisma';
 import AutoPrint from '@/components/AutoPrint';
 import React from 'react';
-
-const prisma = new PrismaClient();
 
 function formatCurrency(amount: number) {
   return `IDR ${amount.toLocaleString('id-ID')}`;

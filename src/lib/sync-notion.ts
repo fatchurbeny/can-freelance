@@ -1,8 +1,6 @@
-import { PrismaClient } from '@prisma/client';
+import prisma from '@/lib/prisma';
 import { Client } from '@notionhq/client';
 import { decrypt } from '@/lib/encryption';
-
-const prisma = new PrismaClient();
 
 export async function syncNotionData() {
   const startedAt = new Date();

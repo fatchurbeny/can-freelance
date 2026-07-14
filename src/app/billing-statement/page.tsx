@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { PrismaClient } from '@prisma/client';
+import prisma from '@/lib/prisma';
 import { getLatestSyncStatus } from '@/app/actions/sync';
 import Sidebar from '@/components/Sidebar';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -19,8 +19,6 @@ import {
 } from 'lucide-react';
 import React from 'react';
 import MonthFilter from './MonthFilter';
-
-const prisma = new PrismaClient();
 
 function formatCurrency(amount: number) {
   return `IDR ${amount.toLocaleString('id-ID')}`;

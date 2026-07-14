@@ -537,9 +537,9 @@ JOIN doctypes dt ON dt.id = t.doctype_id
 WHERE t.designer_id = :designer_id
   AND dt.is_top_specialist = false
   AND t.created_time BETWEEN :period_start AND :period_end
-GROUP BY dt.display_name
-HAVING COUNT(*) > 0
-ORDER BY qty DESC;
+  GROUP BY dt.display_name
+  HAVING COUNT(*) > 0
+  ORDER BY qty DESC;
 
 -- "🏆 [Name]" badge — top performer by task_total, tie broken alphabetically
 -- (assumption pending confirmation — see §5)

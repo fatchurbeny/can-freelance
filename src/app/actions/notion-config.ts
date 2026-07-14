@@ -1,11 +1,9 @@
 'use server';
 
-import { PrismaClient } from '@prisma/client';
+import prisma from '@/lib/prisma';
 import { Client } from '@notionhq/client';
 import { encrypt, decrypt } from '@/lib/encryption';
 import { revalidatePath } from 'next/cache';
-
-const prisma = new PrismaClient();
 
 const API_KEY_MASK = '••••••••••••••••';
 const DATABASE_ID_MASK = '••••••••••••••••';
@@ -134,17 +132,24 @@ export async function testNotionConnectionAction(apiKey: string, databaseId: str
     // Retrieve metadata
     let activeDataSourceId = finalDatabaseId;
     let dbMetadata: any;
+    let properties: any = {};
     try {
       dbMetadata = await notion.databases.retrieve({ database_id: finalDatabaseId });
       if (dbMetadata.data_sources?.[0]?.id) {
         activeDataSourceId = dbMetadata.data_sources[0].id;
-        // Optionally query details using active datasource if it is a sync db
+        try {
+          const dsMetadata = await notion.dataSources.retrieve({ data_source_id: activeDataSourceId });
+          properties = dsMetadata.properties || {};
+        } catch (dsErr: any) {
+          console.warn(`Could not retrieve data source metadata: ${dsErr.message}`);
+          properties = dbMetadata.properties || {};
+        }
+      } else {
+        properties = dbMetadata.properties || {};
       }
     } catch (err: any) {
       throw new Error(`Failed to retrieve Notion database: ${err.message}`);
     }
-
-    const properties = dbMetadata.properties || {};
     const dbTitle = dbMetadata.title?.map((t: any) => t.plain_text).join('') || 'Untitled Notion Database';
     
     // Schema definitions
