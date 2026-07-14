@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import prisma from '@/lib/prisma';
 import { getDoctypes } from '@/lib/queries';
 import { getLatestSyncStatus } from '@/app/actions/sync';
 
