@@ -167,6 +167,7 @@ export default function NotionConfigPage() {
       const res = await saveSchedulingConfigAction(autoSync, syncInterval);
       if (res.success) {
         setScheduleFeedback({ success: true, message: 'Scheduled sync settings saved successfully!' });
+        window.dispatchEvent(new Event('notion-config-updated'));
       } else {
         setScheduleFeedback({ success: false, message: res.error || 'Failed to save scheduling settings.' });
       }

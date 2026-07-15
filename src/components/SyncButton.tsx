@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react';
+import { RefreshCw, CheckCircle2, Timer } from 'lucide-react';
 import { triggerSyncAction } from '@/app/actions/sync';
+import { getNotionConfigAction } from '@/app/actions/notion-config';
+import { getLatestSyncStatus } from '@/app/actions/sync';
 import toast, { Toaster } from 'react-hot-toast';
 
 interface SyncButtonProps {
@@ -17,17 +19,142 @@ interface SyncButtonProps {
   isCollapsed?: boolean;
 }
 
+function formatCountdown(ms: number): string {
+  const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+  if (h > 0) return `${h}h ${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s`;
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
 export default function SyncButton({ initialSyncLog, isCollapsed = false }: SyncButtonProps) {
   const [mounted, setMounted] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncLog, setSyncLog] = useState(initialSyncLog);
   const [modalState, setModalState] = useState<'idle' | 'syncing' | 'success'>('idle');
 
+  // Auto-sync state
+  const [autoSync, setAutoSync] = useState(false);
+  const [countdownMs, setCountdownMs] = useState<number | null>(null);
+  const isCronRunningRef = useRef(false);
+
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  // Fetch cron status and update countdown
+  const refetchCronStatus = useCallback(async () => {
+    try {
+      const res = await fetch('/api/sync/cron');
+      const data = await res.json();
+      if (typeof data.nextSyncInMs === 'number') {
+        setCountdownMs(data.nextSyncInMs);
+      } else if (data.status === 'success' || (data.status === 'skipped' && !data.nextSyncInMs)) {
+        setCountdownMs(0);
+      }
+      // Update sidebar sync log if sync was triggered
+      if (data.status === 'success' && data.recordsSynced !== undefined) {
+        setSyncLog({
+          startedAt: new Date(),
+          finishedAt: new Date(),
+          status: 'success',
+          recordsSynced: data.recordsSynced,
+          errorMessage: null,
+        });
+      }
+    } catch (err) {
+      console.error('Failed to fetch cron status:', err);
+    }
+  }, []);
+
+  // Load config on mount and when updated
+  useEffect(() => {
+    async function init() {
+      try {
+        const config = await getNotionConfigAction();
+        const isAuto = config.autoSync ?? false;
+        setAutoSync(isAuto);
+        if (isAuto) {
+          await refetchCronStatus();
+        } else {
+          setCountdownMs(null);
+        }
+      } catch (err) {
+        console.error('Failed to init SyncButton:', err);
+      }
+    }
+
+    init();
+
+    window.addEventListener('notion-config-updated', init);
+    return () => window.removeEventListener('notion-config-updated', init);
+  }, [refetchCronStatus]);
+
+  // Tick every second when autoSync is active
+  useEffect(() => {
+    if (!autoSync) return;
+    const interval = setInterval(() => {
+      setCountdownMs(prev => {
+        if (prev === null) return null;
+        return Math.max(0, prev - 1000);
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [autoSync]);
+
+  // Trigger cron when countdown reaches 0
+  useEffect(() => {
+    if (!autoSync || countdownMs !== 0 || isCronRunningRef.current) return;
+
+    isCronRunningRef.current = true;
+    setIsSyncing(true);
+
+    fetch('/api/sync/cron')
+      .then(res => res.json())
+      .then(async data => {
+        if (data.status === 'success') {
+          toast.success(`Auto sync: ${data.recordsSynced ?? 0} records synced!`, {
+            style: {
+              background: '#0B0F19',
+              color: '#4ade80',
+              border: '1px solid #166534',
+            },
+            iconTheme: { primary: '#4ade80', secondary: '#0B0F19' },
+          });
+        }
+        // Always fetch the true DB sync log after cron fires
+        const latest = await getLatestSyncStatus();
+        if (latest) setSyncLog(latest);
+        return refetchCronStatus();
+      })
+      .catch(err => {
+        console.error('Cron auto-trigger failed:', err);
+        setCountdownMs(15 * 60 * 1000);
+      })
+      .finally(() => {
+        setIsSyncing(false);
+        isCronRunningRef.current = false;
+      });
+  }, [autoSync, countdownMs, refetchCronStatus]);
+
+  // Poll sync log every 30s while autoSync is on (keeps sidebar fresh)
+  useEffect(() => {
+    if (!autoSync) return;
+    const interval = setInterval(async () => {
+      try {
+        const latest = await getLatestSyncStatus();
+        if (latest) setSyncLog(latest);
+      } catch (err) {
+        console.error('Failed to poll sync log:', err);
+      }
+    }, 30_000);
+    return () => clearInterval(interval);
+  }, [autoSync]);
+
+  // Manual sync (only when autoSync is off)
   const handleSync = async () => {
+    if (autoSync || isSyncing) return;
     setIsSyncing(true);
     setModalState('syncing');
     try {
@@ -47,10 +174,7 @@ export default function SyncButton({ initialSyncLog, isCollapsed = false }: Sync
             color: '#4ade80',
             border: '1px solid #166534',
           },
-          iconTheme: {
-            primary: '#4ade80',
-            secondary: '#0B0F19',
-          }
+          iconTheme: { primary: '#4ade80', secondary: '#0B0F19' },
         });
       } else {
         setSyncLog({
@@ -62,11 +186,7 @@ export default function SyncButton({ initialSyncLog, isCollapsed = false }: Sync
         });
         setModalState('idle');
         toast.error(`Sync failed: ${res.errorMessage || 'Unknown error'}`, {
-          style: {
-            background: '#0B0F19',
-            color: '#f87171',
-            border: '1px solid #991b1b',
-          }
+          style: { background: '#0B0F19', color: '#f87171', border: '1px solid #991b1b' },
         });
       }
     } catch (err: any) {
@@ -79,33 +199,19 @@ export default function SyncButton({ initialSyncLog, isCollapsed = false }: Sync
       });
       setModalState('idle');
       toast.error(`Sync failed: ${err.message || String(err)}`, {
-        style: {
-          background: '#0B0F19',
-          color: '#f87171',
-          border: '1px solid #991b1b',
-        }
+        style: { background: '#0B0F19', color: '#f87171', border: '1px solid #991b1b' },
       });
     } finally {
       setIsSyncing(false);
     }
   };
 
-  const formatLastSync = () => {
-    if (!syncLog) return 'Belum Pernah Sync';
-    const date = syncLog.finishedAt ? new Date(syncLog.finishedAt) : new Date(syncLog.startedAt);
-    const timeStr = date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    
-    if (syncLog.status === 'success') {
-      return `Success (${syncLog.recordsSynced} data) pkl ${timeStr}`;
-    }
-    return `Gagal pkl ${timeStr}`;
-  };
-
   return (
     <>
       <Toaster position="bottom-center" />
-      
-      {mounted && modalState !== 'idle' && createPortal(
+
+      {/* Manual sync modal (only shown when autoSync is off) */}
+      {mounted && !autoSync && modalState !== 'idle' && createPortal(
         <div className="fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm">
           <div className="bg-[#111827] border border-gray-800 rounded-2xl p-7 w-full max-w-xl shadow-2xl relative">
             <div className="flex items-center gap-4 mb-5">
@@ -159,15 +265,38 @@ export default function SyncButton({ initialSyncLog, isCollapsed = false }: Sync
       )}
 
       <div className="mt-auto pt-6 border-t border-[#E8E0D8] dark:border-gray-800 space-y-4">
-        {/* Notion Sync Button */}
-        <button
-          onClick={handleSync}
-          disabled={isSyncing}
-          className={`flex items-center justify-center px-4 py-3 rounded-xl border border-indigo-600/30 dark:border-indigo-500/20 bg-indigo-50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-950/30 transition-all font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer group shadow-sm hover:shadow ${isCollapsed ? 'w-12 h-12 p-0' : 'w-full gap-2.5'}`}
-        >
-          <RefreshCw className={`w-4 h-4 text-indigo-600 dark:text-indigo-400 ${isSyncing ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
-          {!isCollapsed && <span>{isSyncing ? 'Syncing...' : 'Notion Sync'}</span>}
-        </button>
+
+        {/* ── Auto Sync ON: countdown button ── */}
+        {autoSync ? (
+          <div
+            className={`flex items-center justify-center px-4 py-3 rounded-xl border transition-all font-medium text-sm select-none ${
+              isSyncing
+                ? 'border-amber-500/40 bg-amber-950/20 text-amber-400 animate-pulse'
+                : 'border-red-500/40 bg-red-950/20 dark:bg-red-950/10 text-red-500 dark:text-red-400'
+            } ${isCollapsed ? 'w-12 h-12 p-0' : 'w-full gap-2.5'}`}
+          >
+            <Timer className={`w-4 h-4 shrink-0 ${isSyncing ? 'animate-spin' : ''}`} />
+            {!isCollapsed && (
+              <span className="font-mono tracking-wider text-sm">
+                {isSyncing
+                  ? 'Syncing...'
+                  : countdownMs === null
+                  ? 'Loading...'
+                  : formatCountdown(countdownMs)}
+              </span>
+            )}
+          </div>
+        ) : (
+          /* ── Auto Sync OFF: normal manual button ── */
+          <button
+            onClick={handleSync}
+            disabled={isSyncing}
+            className={`flex items-center justify-center px-4 py-3 rounded-xl border border-indigo-600/30 dark:border-indigo-500/20 bg-indigo-50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-950/30 transition-all font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer group shadow-sm hover:shadow ${isCollapsed ? 'w-12 h-12 p-0' : 'w-full gap-2.5'}`}
+          >
+            <RefreshCw className={`w-4 h-4 text-indigo-600 dark:text-indigo-400 ${isSyncing ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
+            {!isCollapsed && <span>{isSyncing ? 'Syncing...' : 'Notion Sync'}</span>}
+          </button>
+        )}
 
         {/* Sync and Postgres Status */}
         {isCollapsed ? (
