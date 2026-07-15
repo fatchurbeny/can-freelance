@@ -212,9 +212,9 @@ export default function NotionConfigPage() {
             <p className="text-sm text-gray-500 dark:text-gray-400">Loading configurations...</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start">
             
-            {/* Setup Form (Col 1 & 2) */}
+            {/* Left Column (Col 1 & 2) */}
             <div className="xl:col-span-2 space-y-6">
               <div className="bg-white dark:bg-[#111827] rounded-2xl border border-[#E8E0D8] dark:border-gray-800 p-6 shadow-sm space-y-6">
                 <div>
@@ -456,12 +456,8 @@ export default function NotionConfigPage() {
                       </div>
                     </div>
                   )}
-                </div>
-              )}
-            </div>
-
             {/* Scheduled Sync Settings Card */}
-            <div className="xl:col-span-2">
+            <div>
               <div className="bg-white dark:bg-[#111827] rounded-2xl border border-[#E8E0D8] dark:border-gray-800 p-6 shadow-sm space-y-5">
                 <div className="flex items-start justify-between gap-4">
                   <div>
@@ -560,6 +556,8 @@ export default function NotionConfigPage() {
                 </div>
               </div>
             </div>
+
+            {/* Right Column (Col 3) */}
             <div className="space-y-6">
               <div className="bg-white dark:bg-[#111827] rounded-2xl border border-[#E8E0D8] dark:border-gray-800 p-6 shadow-sm space-y-6">
                 <div>
