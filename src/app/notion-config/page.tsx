@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { 
   getNotionConfigAction, 
   saveNotionConfigAction, 
-  testNotionConnectionAction 
+  testNotionConnectionAction,
+  saveSchedulingConfigAction,
 } from '@/app/actions/notion-config';
 import { getLatestSyncStatus } from '@/app/actions/sync';
 import Sidebar from '@/components/Sidebar';
@@ -23,8 +24,20 @@ import {
   Server,
   RefreshCw,
   Compass,
-  AlertCircle
+  AlertCircle,
+  Clock,
+  Timer,
+  Zap,
 } from 'lucide-react';
+
+const SYNC_INTERVAL_OPTIONS = [
+  { value: '15_mins',  label: 'Every 15 minutes' },
+  { value: '30_mins',  label: 'Every 30 minutes' },
+  { value: '1_hour',   label: 'Every 1 hour' },
+  { value: '6_hours',  label: 'Every 6 hours' },
+  { value: '12_hours', label: 'Every 12 hours' },
+  { value: '24_hours', label: 'Every 24 hours' },
+];
 
 export default function NotionConfigPage() {
   const [apiKey, setApiKey] = useState('');
@@ -35,6 +48,12 @@ export default function NotionConfigPage() {
   const [loading, setLoading] = useState(true);
   const [isTesting, setIsTesting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSavingSchedule, setIsSavingSchedule] = useState(false);
+
+  // Scheduling state
+  const [autoSync, setAutoSync] = useState(false);
+  const [syncInterval, setSyncInterval] = useState('15_mins');
+  const [scheduleFeedback, setScheduleFeedback] = useState<{ success: boolean; message: string } | null>(null);
   
   const [testResult, setTestResult] = useState<{
     success: boolean;
@@ -68,6 +87,9 @@ export default function NotionConfigPage() {
           setApiKey(config.apiKey);
           setDatabaseId(config.databaseId);
         }
+        // Load scheduling settings regardless of credentials
+        setAutoSync(config.autoSync ?? false);
+        setSyncInterval(config.syncInterval ?? '15_mins');
         
         const syncStatus = await getLatestSyncStatus();
         setLatestSyncLog(syncStatus);
@@ -135,6 +157,23 @@ export default function NotionConfigPage() {
       });
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleSaveScheduling = async () => {
+    setIsSavingSchedule(true);
+    setScheduleFeedback(null);
+    try {
+      const res = await saveSchedulingConfigAction(autoSync, syncInterval);
+      if (res.success) {
+        setScheduleFeedback({ success: true, message: 'Scheduled sync settings saved successfully!' });
+      } else {
+        setScheduleFeedback({ success: false, message: res.error || 'Failed to save scheduling settings.' });
+      }
+    } catch (err: any) {
+      setScheduleFeedback({ success: false, message: err.message || 'An unexpected error occurred.' });
+    } finally {
+      setIsSavingSchedule(false);
     }
   };
 
@@ -421,7 +460,106 @@ export default function NotionConfigPage() {
               )}
             </div>
 
-            {/* Instruction Guide (Col 3) */}
+            {/* Scheduled Sync Settings Card */}
+            <div className="xl:col-span-2">
+              <div className="bg-white dark:bg-[#111827] rounded-2xl border border-[#E8E0D8] dark:border-gray-800 p-6 shadow-sm space-y-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                      <Timer className="w-5 h-5 text-indigo-600" />
+                      Scheduled Sync Settings
+                    </h2>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                      Configure automatic periodic syncs from Notion. The <code className="font-mono text-indigo-600 dark:text-indigo-400">/api/sync/cron</code> endpoint must be called externally (e.g. Vercel Cron, GitHub Actions, or a system cron).
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid sm:grid-cols-2 gap-5">
+                  {/* Auto-Sync Toggle */}
+                  <div className="flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAF9F6] dark:bg-[#07090e] gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${autoSync ? 'bg-indigo-100 dark:bg-indigo-950/40' : 'bg-gray-100 dark:bg-gray-800'}`}>
+                        <Zap className={`w-5 h-5 ${autoSync ? 'text-indigo-600' : 'text-gray-400'}`} />
+                      </div>
+                      <div>
+                        <div className="font-semibold text-sm text-gray-900 dark:text-white">Auto Sync</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          {autoSync ? 'Enabled — cron endpoint active' : 'Disabled — manual only'}
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      id="auto-sync-toggle"
+                      type="button"
+                      onClick={() => setAutoSync(!autoSync)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 ${
+                        autoSync ? 'bg-indigo-600' : 'bg-gray-200 dark:bg-gray-700'
+                      }`}
+                      aria-checked={autoSync}
+                      role="switch"
+                      aria-label="Toggle auto sync"
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform ${
+                          autoSync ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  {/* Interval Picker */}
+                  <div className="flex flex-col gap-2">
+                    <label htmlFor="sync-interval-select" className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5" />
+                      Sync Interval
+                    </label>
+                    <select
+                      id="sync-interval-select"
+                      value={syncInterval}
+                      onChange={(e) => setSyncInterval(e.target.value)}
+                      disabled={!autoSync}
+                      className="py-3 px-4 w-full border border-gray-300 dark:border-gray-700 bg-[#FAF9F6] dark:bg-[#07090e] rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-600 focus:border-transparent text-sm disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
+                    >
+                      {SYNC_INTERVAL_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
+                    {!autoSync && (
+                      <p className="text-[11px] text-gray-400 dark:text-gray-500">Enable Auto Sync to activate interval selection.</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Scheduling Feedback */}
+                {scheduleFeedback && (
+                  <div className={`p-4 rounded-xl border flex gap-3 text-sm ${
+                    scheduleFeedback.success 
+                      ? 'bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-300 border-green-100 dark:border-green-900/30' 
+                      : 'bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-300 border-red-100 dark:border-red-900/30'
+                  }`}>
+                    {scheduleFeedback.success ? <CheckCircle2 className="w-5 h-5 shrink-0" /> : <XCircle className="w-5 h-5 shrink-0" />}
+                    <span>{scheduleFeedback.message}</span>
+                  </div>
+                )}
+
+                <div className="flex justify-end pt-2 border-t border-gray-100 dark:border-gray-800">
+                  <button
+                    id="save-schedule-btn"
+                    type="button"
+                    onClick={handleSaveScheduling}
+                    disabled={isSavingSchedule}
+                    className="inline-flex items-center justify-center gap-2 px-5 py-3 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-indigo-600/10"
+                  >
+                    {isSavingSchedule ? (
+                      <><RefreshCw className="w-4 h-4 animate-spin" />Saving...</>
+                    ) : (
+                      <><Save className="w-4 h-4" />Save Schedule</>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
             <div className="space-y-6">
               <div className="bg-white dark:bg-[#111827] rounded-2xl border border-[#E8E0D8] dark:border-gray-800 p-6 shadow-sm space-y-6">
                 <div>

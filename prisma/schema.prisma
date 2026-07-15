@@ -118,6 +118,8 @@ model NotionConfig {
   encryptedApiKey     String   @map("encrypted_api_key")
   encryptedDatabaseId String   @map("encrypted_database_id")
   iv                  String   // Initialization vector
+  autoSync            Boolean  @default(false) @map("auto_sync")
+  syncInterval        String   @default("15_mins") @map("sync_interval") // '15_mins' | '30_mins' | '1_hour' | '6_hours' | '12_hours' | '24_hours'
   updatedAt           DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
   @@map("notion_configs")

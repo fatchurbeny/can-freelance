@@ -24,6 +24,8 @@ export async function getNotionConfigAction() {
         exists: false,
         apiKey: '',
         databaseId: '',
+        autoSync: false,
+        syncInterval: '15_mins',
       };
     }
     
@@ -37,6 +39,8 @@ export async function getNotionConfigAction() {
       databaseId: DATABASE_ID_MASK, // Send mask to browser
       maskedApiKey: maskText(apiKey, 6, 4),
       maskedDatabaseId: maskText(databaseId, 4, 4),
+      autoSync: config.autoSync,
+      syncInterval: config.syncInterval,
     };
   } catch (error) {
     console.error('Error fetching Notion config:', error);
@@ -44,12 +48,19 @@ export async function getNotionConfigAction() {
       exists: false,
       apiKey: '',
       databaseId: '',
+      autoSync: false,
+      syncInterval: '15_mins',
       error: 'Failed to retrieve configuration',
     };
   }
 }
 
-export async function saveNotionConfigAction(apiKey: string, databaseId: string) {
+export async function saveNotionConfigAction(
+  apiKey: string,
+  databaseId: string,
+  autoSync?: boolean,
+  syncInterval?: string,
+) {
   try {
     if (!apiKey || !databaseId) {
       throw new Error('API Key and Database ID are required');
@@ -76,6 +87,11 @@ export async function saveNotionConfigAction(apiKey: string, databaseId: string)
     const { iv, encryptedData: encApiKey } = encrypt(finalApiKey);
     const { encryptedData: encDatabaseId } = encrypt(finalDatabaseId);
 
+    const schedulingData = {
+      autoSync: autoSync ?? existingConfig?.autoSync ?? false,
+      syncInterval: syncInterval ?? existingConfig?.syncInterval ?? '15_mins',
+    };
+
     if (existingConfig) {
       await prisma.notionConfig.update({
         where: { id: existingConfig.id },
@@ -83,6 +99,7 @@ export async function saveNotionConfigAction(apiKey: string, databaseId: string)
           encryptedApiKey: encApiKey,
           encryptedDatabaseId: encDatabaseId,
           iv,
+          ...schedulingData,
         },
       });
     } else {
@@ -91,6 +108,7 @@ export async function saveNotionConfigAction(apiKey: string, databaseId: string)
           encryptedApiKey: encApiKey,
           encryptedDatabaseId: encDatabaseId,
           iv,
+          ...schedulingData,
         },
       });
     }
@@ -217,5 +235,25 @@ export async function testNotionConnectionAction(apiKey: string, databaseId: str
       success: false,
       error: error.message || 'Failed to connect to Notion',
     };
+  }
+}
+
+export async function saveSchedulingConfigAction(autoSync: boolean, syncInterval: string) {
+  try {
+    const existingConfig = await prisma.notionConfig.findFirst();
+    if (!existingConfig) {
+      return { success: false, error: 'Notion configuration not found. Please save API credentials first.' };
+    }
+
+    await prisma.notionConfig.update({
+      where: { id: existingConfig.id },
+      data: { autoSync, syncInterval },
+    });
+
+    revalidatePath('/notion-config');
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error saving scheduling config:', error);
+    return { success: false, error: error.message || 'Failed to save scheduling configuration' };
   }
 }
