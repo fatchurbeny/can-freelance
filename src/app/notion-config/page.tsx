@@ -456,6 +456,9 @@ export default function NotionConfigPage() {
                       </div>
                     </div>
                   )}
+                </div>
+              )}
+
             {/* Scheduled Sync Settings Card */}
             <div>
               <div className="bg-white dark:bg-[#111827] rounded-2xl border border-[#E8E0D8] dark:border-gray-800 p-6 shadow-sm space-y-5">
@@ -556,6 +559,7 @@ export default function NotionConfigPage() {
                 </div>
               </div>
             </div>
+          </div>
 
             {/* Right Column (Col 3) */}
             <div className="space-y-6">
