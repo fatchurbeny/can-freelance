@@ -7,6 +7,7 @@ import {
   addNotionDatabaseAction,
   testNotionConnectionAction,
   saveSchedulingConfigAction,
+  deleteNotionConfigAction,
 } from '@/app/actions/notion-config';
 import { getLatestSyncStatus } from '@/app/actions/sync';
 import Sidebar from '@/components/Sidebar';
@@ -34,6 +35,8 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 
+import { useRouter } from 'next/navigation';
+
 const SYNC_INTERVAL_OPTIONS = [
   { value: '15_mins',  label: 'Every 15 minutes' },
   { value: '30_mins',  label: 'Every 30 minutes' },
@@ -44,6 +47,8 @@ const SYNC_INTERVAL_OPTIONS = [
 ];
 
 export default function NotionConfigPage() {
+  const router = useRouter();
+
   const [configExists, setConfigExists] = useState(false);
   const [workspaceName, setWorkspaceName] = useState('');
   const [maskedApiKey, setMaskedApiKey] = useState('');
@@ -53,29 +58,19 @@ export default function NotionConfigPage() {
 
   // Modals state
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
-  const [showDbModal, setShowDbModal] = useState(false);
 
   // API Key Form
   const [inputWorkspaceName, setInputWorkspaceName] = useState('');
   const [inputApiKey, setInputApiKey] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
   const [isSavingApiKey, setIsSavingApiKey] = useState(false);
+  const [isSavingSchedule, setIsSavingSchedule] = useState(false);
+  const [scheduleFeedback, setScheduleFeedback] = useState<{ success: boolean; message: string } | null>(null);
   const [apiFeedback, setApiFeedback] = useState<{ success: boolean; message: string } | null>(null);
-
-  // DB Form
-  const [inputDbName, setInputDbName] = useState('');
-  const [inputDbId, setInputDbId] = useState('');
-  const [showDbId, setShowDbId] = useState(false);
-  const [isTestingDb, setIsTestingDb] = useState(false);
-  const [isSavingDb, setIsSavingDb] = useState(false);
-  const [dbTestResult, setDbTestResult] = useState<any>(null);
-  const [dbFeedback, setDbFeedback] = useState<{ success: boolean; message: string } | null>(null);
 
   // Scheduling state
   const [autoSync, setAutoSync] = useState(false);
   const [syncInterval, setSyncInterval] = useState('24_hours');
-  const [isSavingSchedule, setIsSavingSchedule] = useState(false);
-  const [scheduleFeedback, setScheduleFeedback] = useState<{ success: boolean; message: string } | null>(null);
   
   const [latestSyncLog, setLatestSyncLog] = useState<any>(null);
 
@@ -118,8 +113,8 @@ export default function NotionConfigPage() {
         setShowApiKeyModal(false);
         setInputApiKey('');
         setInputWorkspaceName('');
-        // Automatically prompt for database ID next
-        setShowDbModal(true);
+        // Automatically redirect to databases page
+        router.push('/notion-config/databases');
       } else {
         setApiFeedback({ success: false, message: res.error || 'Failed to save API Key.' });
       }
@@ -127,52 +122,6 @@ export default function NotionConfigPage() {
       setApiFeedback({ success: false, message: err.message || 'An unexpected error occurred.' });
     } finally {
       setIsSavingApiKey(false);
-    }
-  };
-
-  const handleTestDatabase = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inputDbId.trim()) return;
-
-    setIsTestingDb(true);
-    setDbTestResult(null);
-    setDbFeedback(null);
-    
-    try {
-      const res = await testNotionConnectionAction(inputDbId);
-      setDbTestResult(res);
-      if (res.success && res.dbTitle) {
-        if (!inputDbName) setInputDbName(res.dbTitle);
-      }
-    } catch (err: any) {
-      setDbTestResult({ success: false, error: err.message || 'An unexpected error occurred.' });
-    } finally {
-      setIsTestingDb(false);
-    }
-  };
-
-  const handleSaveDatabase = async () => {
-    if (!inputDbName.trim() || !inputDbId.trim()) return;
-    if (dbTestResult && !dbTestResult.success) return;
-
-    setIsSavingDb(true);
-    setDbFeedback(null);
-
-    try {
-      const res = await addNotionDatabaseAction(inputDbName, inputDbId);
-      if (res.success) {
-        await loadData();
-        setShowDbModal(false);
-        setInputDbName('');
-        setInputDbId('');
-        setDbTestResult(null);
-      } else {
-        setDbFeedback({ success: false, message: res.error || 'Failed to add database.' });
-      }
-    } catch (err: any) {
-      setDbFeedback({ success: false, message: err.message || 'An unexpected error occurred.' });
-    } finally {
-      setIsSavingDb(false);
     }
   };
 
@@ -258,23 +207,34 @@ export default function NotionConfigPage() {
                   </div>
                   
                   <div className="flex items-center gap-4">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-green-500 bg-[#162a1f] border border-green-900/50 rounded-full">
-                      <span className={`w-2 h-2 rounded-full ${configExists ? 'bg-green-500' : 'bg-gray-500'}`}></span>
-                      {databases.length > 0 ? `${databases.length} Database` : (configExists ? '0 Database' : 'No Connection')}
-                    </div>
-                    
                     <button
                       type="button"
                       onClick={() => {
+                        if (configExists) router.push('/notion-config/databases');
+                      }}
+                      className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full transition-colors ${
+                        configExists 
+                          ? 'text-green-500 bg-[#162a1f] border border-green-900/50 hover:bg-[#1f3a2b] cursor-pointer' 
+                          : 'text-gray-500 bg-gray-800/50 border border-gray-800 cursor-default'
+                      }`}
+                    >
+                      <span className={`w-2 h-2 rounded-full ${configExists ? 'bg-green-500' : 'bg-gray-500'}`}></span>
+                      {databases.length > 0 ? `${databases.length} Database` : (configExists ? '0 Database' : 'No Connection')}
+                    </button>
+                    
+                    <button
+                      type="button"
+                      onClick={async () => {
                         if (!configExists) {
                           setShowApiKeyModal(true);
                         } else {
-                          // Allow them to add another database if they click the toggle when it's on?
-                          // Or prompt disconnect? The user said "remove the button Add Database with toggle switch"
-                          // For now, let's just open the DB modal so they can still add databases,
-                          // or do nothing if they actually wanted it to disconnect.
-                          if (window.confirm("Do you want to add another database?")) {
-                            setShowDbModal(true);
+                          if (window.confirm("Are you sure you want to disconnect? This will remove your API Key and all connected databases.")) {
+                            const res = await deleteNotionConfigAction();
+                            if (res.success) {
+                              await loadData();
+                            } else {
+                              alert(res.error || "Failed to disconnect.");
+                            }
                           }
                         }
                       }}
@@ -417,124 +377,7 @@ export default function NotionConfigPage() {
         </div>
       )}
 
-      {/* Add Database Modal Overlay */}
-      {showDbModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="bg-[#111827] border border-gray-800 w-full max-w-2xl rounded-2xl shadow-2xl p-6 sm:p-8 space-y-6 my-8">
-            <h2 className="text-xl font-bold text-white mb-2">Connect New Database</h2>
-            
-            <form onSubmit={handleTestDatabase} className="space-y-5">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-300">Notion Database ID</label>
-                <div className="flex gap-3">
-                  <div className="relative flex-1">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-500">
-                      <Database className="w-4 h-4" />
-                    </div>
-                    <input
-                      type={showDbId ? 'text' : 'password'}
-                      value={inputDbId}
-                      onChange={(e) => {
-                        setInputDbId(e.target.value);
-                        setDbTestResult(null);
-                      }}
-                      placeholder="Enter 32-character Notion Database ID"
-                      className="w-full bg-[#0B0E14] border border-gray-800 rounded-xl pl-10 pr-10 py-3 text-sm text-white font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowDbId(!showDbId)}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-300"
-                    >
-                      {showDbId ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={isTestingDb || !inputDbId}
-                    className="inline-flex items-center justify-center gap-2 px-5 py-3 text-sm font-semibold text-indigo-400 bg-indigo-900/30 hover:bg-indigo-900/50 border border-indigo-900/50 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isTestingDb ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Activity className="w-4 h-4" />}
-                    Test
-                  </button>
-                </div>
-              </div>
-            </form>
-
-            {dbTestResult && (
-              <div className="space-y-4 pt-4 border-t border-gray-800">
-                {dbTestResult.success ? (
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-3 p-3 bg-green-950/20 border border-green-900/30 rounded-xl">
-                      <CheckCircle2 className="w-5 h-5 text-green-500" />
-                      <div>
-                        <div className="font-semibold text-green-400 text-sm">Database Connected Successfully!</div>
-                        <div className="text-xs text-green-500/70">{dbTestResult.dbTitle}</div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-300">Save As (Name)</label>
-                      <input
-                        type="text"
-                        value={inputDbName}
-                        onChange={(e) => setInputDbName(e.target.value)}
-                        placeholder="E.g. Main Tasks"
-                        className="w-full bg-[#0B0E14] border border-gray-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                      />
-                    </div>
-
-                    {!dbTestResult.isSchemaCompatible && (
-                      <div className="p-3 bg-red-950/20 border border-red-900/30 rounded-xl text-xs text-red-400 flex gap-2">
-                        <AlertTriangle className="w-4 h-4 shrink-0" />
-                        <div>Warning: Schema compatibility issues detected. Some columns may not sync correctly.</div>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="p-4 bg-red-950/20 border border-red-900/30 rounded-xl text-sm text-red-400 flex gap-2">
-                    <XCircle className="w-5 h-5 shrink-0 mt-0.5" />
-                    <div>{dbTestResult.error}</div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {dbFeedback && (
-              <div className="p-3 rounded-xl bg-red-900/20 border border-red-900/50 text-red-400 text-sm flex gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                <span>{dbFeedback.message}</span>
-              </div>
-            )}
-
-            <div className="flex justify-end gap-3 pt-4 border-t border-gray-800">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowDbModal(false);
-                  setDbTestResult(null);
-                  setInputDbName('');
-                  setInputDbId('');
-                }}
-                className="px-5 py-2.5 text-sm font-medium text-gray-400 hover:text-white transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleSaveDatabase}
-                disabled={isSavingDb || !dbTestResult?.success || !inputDbName}
-                className="inline-flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-semibold text-white bg-green-600 hover:bg-green-500 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSavingDb ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                Add Database
-              </button>
-            </div>
-
-          </div>
-        </div>
-      )}
+      {/* Add Database Modal has been moved to /notion-config/databases */}
     </div>
   );
 }

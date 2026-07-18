@@ -265,3 +265,34 @@ export async function saveSchedulingConfigAction(autoSync: boolean, syncInterval
   }
 }
 
+export async function deleteNotionConfigAction() {
+  try {
+    const existingConfig = await prisma.notionConfig.findFirst();
+    if (!existingConfig) return { success: true }; // Nothing to delete
+
+    await prisma.notionConfig.delete({
+      where: { id: existingConfig.id },
+    });
+
+    revalidatePath('/notion-config');
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error deleting Notion config:', error);
+    return { success: false, error: error.message || 'Failed to delete configuration' };
+  }
+}
+
+export async function deleteNotionDatabaseAction(dbId: string) {
+  try {
+    await prisma.notionDatabase.delete({
+      where: { id: dbId },
+    });
+    revalidatePath('/notion-config');
+    revalidatePath('/notion-config/databases');
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error deleting Notion database:', error);
+    return { success: false, error: error.message || 'Failed to delete database' };
+  }
+}
+
