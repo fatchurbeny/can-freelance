@@ -272,164 +272,171 @@ export default function DatabasesPage() {
       </main>
 
       {showDbModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="bg-[#111827] border border-gray-800 w-full max-w-2xl rounded-2xl shadow-2xl p-6 sm:p-8 space-y-6 my-8">
-            <h2 className="text-xl font-bold text-white mb-2">Add Database</h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 sm:p-6">
+          <div className="bg-[#111827] border border-gray-800 w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col max-h-[95vh] relative">
             
-            <form onSubmit={handleTestDatabase} className="space-y-5">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-300">Name</label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={inputDbName}
-                    onChange={(e) => setInputDbName(e.target.value)}
-                    placeholder="Database Name"
-                    className="w-full bg-[#0B0E14] border border-gray-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  />
-                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 pointer-events-none">
-                    <Eye className="w-4 h-4" />
+            {/* Header */}
+            <div className="flex items-center justify-between p-5 sm:p-6 border-b border-gray-800 shrink-0">
+              <h2 className="text-xl font-bold text-white">Add Database</h2>
+              <button 
+                onClick={() => {
+                  setShowDbModal(false);
+                  setDbTestResult(null);
+                  setInputDbName('');
+                  setInputDbId('');
+                }} 
+                className="text-gray-500 hover:text-white transition-colors"
+              >
+                <XCircle className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Scrollable Content */}
+            <div className="p-5 sm:p-6 overflow-y-auto space-y-6">
+              
+              <form onSubmit={handleTestDatabase} className="space-y-5">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-300">Name</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={inputDbName}
+                      onChange={(e) => setInputDbName(e.target.value)}
+                      placeholder="Database Name"
+                      className="w-full bg-[#0B0E14] border border-gray-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    />
+                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 pointer-events-none">
+                      <Eye className="w-4 h-4" />
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-300">Database ID</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-500">
-                    <Key className="w-4 h-4" />
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-300">Database ID</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-500">
+                      <Key className="w-4 h-4" />
+                    </div>
+                    <input
+                      type={showDbId ? 'text' : 'password'}
+                      value={inputDbId}
+                      onChange={(e) => {
+                        setInputDbId(e.target.value);
+                        setDbTestResult(null);
+                      }}
+                      placeholder="Enter 32-character Notion Database ID"
+                      className="w-full bg-[#0B0E14] border border-gray-800 rounded-xl pl-10 pr-10 py-3 text-sm text-white font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowDbId(!showDbId)}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-300"
+                    >
+                      {showDbId ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
                   </div>
-                  <input
-                    type={showDbId ? 'text' : 'password'}
-                    value={inputDbId}
-                    onChange={(e) => {
-                      setInputDbId(e.target.value);
-                      setDbTestResult(null);
-                    }}
-                    placeholder="Enter 32-character Notion Database ID"
-                    className="w-full bg-[#0B0E14] border border-gray-800 rounded-xl pl-10 pr-10 py-3 text-sm text-white font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowDbId(!showDbId)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-300"
-                  >
-                    {showDbId ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
                 </div>
-              </div>
 
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
-                <div className="flex gap-4 text-[10px] text-green-500/70 font-mono">
-                  <span>#Read-Content</span>
-                  <span>#Update-Content</span>
-                  <span>#Insert-Content</span>
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-4 border-t border-gray-800/50">
+                  <div className="flex flex-wrap gap-4 text-[10px] text-green-500/70 font-mono">
+                    <span>#Read-Content</span>
+                    <span>#Update-Content</span>
+                    <span>#Insert-Content</span>
+                  </div>
+                  
+                  <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                    <button
+                      type="submit"
+                      disabled={isTestingDb || !inputDbId}
+                      className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold text-green-500 bg-[#162a1f] hover:bg-[#1f3a2b] border border-green-900/50 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isTestingDb ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Activity className="w-4 h-4" />}
+                      Test Connection
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSaveDatabase}
+                      disabled={isSavingDb || !dbTestResult?.success || !inputDbName}
+                      className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-indigo-500 hover:bg-indigo-400 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isSavingDb ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                      Save Connection
+                    </button>
+                  </div>
                 </div>
-                
-                <div className="flex items-center gap-3 w-full sm:w-auto">
-                  <button
-                    type="submit"
-                    disabled={isTestingDb || !inputDbId}
-                    className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold text-green-500 bg-[#162a1f] hover:bg-[#1f3a2b] border border-green-900/50 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isTestingDb ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Activity className="w-4 h-4" />}
-                    Test Connection
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleSaveDatabase}
-                    disabled={isSavingDb || !dbTestResult?.success || !inputDbName}
-                    className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-indigo-500 hover:bg-indigo-400 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isSavingDb ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    Save Database Connection
-                  </button>
-                </div>
-              </div>
-            </form>
+              </form>
 
-            {dbTestResult && (
-              <div className="space-y-4 pt-6 border-t border-gray-800">
-                {dbTestResult.success ? (
-                  <div className="space-y-4">
-                    
-                    <div className="flex items-center justify-between p-4 bg-gray-900/40 border border-gray-800 rounded-xl">
-                      <div className="flex items-center gap-3">
-                        <CheckCircle2 className="w-5 h-5 text-green-500" />
-                        <div>
-                          <div className="font-semibold text-white text-sm">Database Found & Connected</div>
-                          <div className="text-xs text-green-500 mt-0.5">{dbTestResult.dbTitle}</div>
+              {dbTestResult && (
+                <div className="space-y-4 pt-6 border-t border-gray-800 mt-6">
+                  {dbTestResult.success ? (
+                    <div className="space-y-4">
+                      
+                      <div className="flex items-center justify-between p-4 bg-gray-900/40 border border-gray-800 rounded-xl">
+                        <div className="flex items-center gap-3">
+                          <CheckCircle2 className="w-5 h-5 text-green-500" />
+                          <div>
+                            <div className="font-semibold text-white text-sm">Database Found & Connected</div>
+                            <div className="text-xs text-green-500 mt-0.5">{dbTestResult.dbTitle}</div>
+                          </div>
+                        </div>
+                        <div className="px-3 py-1.5 rounded bg-gray-800/50 text-[10px] text-gray-400 font-mono border border-gray-700/50 flex items-center gap-2">
+                          <Activity className="w-3 h-3" /> ID : {dbTestResult.maskedDatabaseId}
                         </div>
                       </div>
-                      <div className="px-3 py-1.5 rounded bg-gray-800/50 text-[10px] text-gray-400 font-mono border border-gray-700/50 flex items-center gap-2">
-                        <Activity className="w-3 h-3" /> ID : {dbTestResult.maskedDatabaseId}
+
+                      <div className="p-3 bg-[#162a1f] border border-green-900/50 rounded-xl text-xs text-green-500 flex gap-2">
+                        <CheckCircle2 className="w-4 h-4 shrink-0" />
+                        <div>Structured Match: All Required Columns Are Present And Typed Correctly. The Database Is Fully Ready To Sync Data!</div>
                       </div>
-                    </div>
 
-                    <div className="p-3 bg-[#162a1f] border border-green-900/50 rounded-xl text-xs text-green-500 flex gap-2">
-                      <CheckCircle2 className="w-4 h-4 shrink-0" />
-                      <div>Structured Match: All Required Columns Are Present And Typed Correctly. The Database Is Fully Ready To Sync Data!</div>
-                    </div>
-
-                    <div className="pt-2">
-                      <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-3">Notion Column Schema Mapping</h4>
-                      <div className="space-y-2">
-                        {dbTestResult.schemaComparison.map((field: any, idx: number) => (
-                          <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-gray-900/30 border border-gray-800/50">
-                            <div className="flex items-center gap-3">
-                              <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold tracking-widest ${field.isRequired ? 'bg-indigo-900/40 text-indigo-400' : 'bg-gray-800 text-gray-400'}`}>
-                                {field.isRequired ? 'REQUIRED' : 'OPTIONAL'}
-                              </span>
-                              <div>
-                                <div className="text-sm font-semibold text-gray-200">{field.key}</div>
-                                <div className="text-[10px] text-gray-500 mt-0.5">{field.label}</div>
+                      <div className="pt-2">
+                        <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-3">Notion Column Schema Mapping</h4>
+                        <div className="space-y-2">
+                          {dbTestResult.schemaComparison.map((field: any, idx: number) => (
+                            <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-gray-900/30 border border-gray-800/50">
+                              <div className="flex items-center gap-3">
+                                <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold tracking-widest ${field.isRequired ? 'bg-indigo-900/40 text-indigo-400' : 'bg-gray-800 text-gray-400'}`}>
+                                  {field.isRequired ? 'REQUIRED' : 'OPTIONAL'}
+                                </span>
+                                <div>
+                                  <div className="text-sm font-semibold text-gray-200">{field.key}</div>
+                                  <div className="text-[10px] text-gray-500 mt-0.5">{field.label}</div>
+                                </div>
+                              </div>
+                              
+                              <div className="flex items-center gap-4 text-[10px]">
+                                <span className="text-gray-500 font-mono">Expected: {field.expectedType}</span>
+                                <span className={`px-2 py-1 rounded-full border ${getStatusColor(field.status, field.isRequired)} flex items-center gap-1`}>
+                                  {field.status === 'match' && <CheckCircle2 className="w-3 h-3" />}
+                                  {field.status === 'mismatch' && <AlertTriangle className="w-3 h-3" />}
+                                  {field.status === 'missing' && <AlertTriangle className="w-3 h-3" />}
+                                  {field.status === 'match' ? `Matched (${field.actualType})` : field.status === 'mismatch' ? `Type Mismatch (${field.actualType})` : 'Missing'}
+                                </span>
                               </div>
                             </div>
-                            
-                            <div className="flex items-center gap-4 text-[10px]">
-                              <span className="text-gray-500 font-mono">Expected: {field.expectedType}</span>
-                              <span className={`px-2 py-1 rounded-full border ${getStatusColor(field.status, field.isRequired)} flex items-center gap-1`}>
-                                {field.status === 'match' && <CheckCircle2 className="w-3 h-3" />}
-                                {field.status === 'mismatch' && <AlertTriangle className="w-3 h-3" />}
-                                {field.status === 'missing' && <AlertTriangle className="w-3 h-3" />}
-                                {field.status === 'match' ? `Matched (${field.actualType})` : field.status === 'mismatch' ? `Type Mismatch (${field.actualType})` : 'Missing'}
-                              </span>
-                            </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
+
                     </div>
+                  ) : (
+                    <div className="p-4 bg-red-950/20 border border-red-900/30 rounded-xl text-sm text-red-400 flex gap-2">
+                      <XCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                      <div>{dbTestResult.error}</div>
+                    </div>
+                  )}
+                </div>
+              )}
 
-                  </div>
-                ) : (
-                  <div className="p-4 bg-red-950/20 border border-red-900/30 rounded-xl text-sm text-red-400 flex gap-2">
-                    <XCircle className="w-5 h-5 shrink-0 mt-0.5" />
-                    <div>{dbTestResult.error}</div>
-                  </div>
-                )}
-              </div>
-            )}
+              {dbFeedback && (
+                <div className="p-3 rounded-xl bg-red-900/20 border border-red-900/50 text-red-400 text-sm flex gap-2 mt-4">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <span>{dbFeedback.message}</span>
+                </div>
+              )}
 
-            {dbFeedback && (
-              <div className="p-3 rounded-xl bg-red-900/20 border border-red-900/50 text-red-400 text-sm flex gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                <span>{dbFeedback.message}</span>
-              </div>
-            )}
-
-            <button
-              onClick={() => {
-                setShowDbModal(false);
-                setDbTestResult(null);
-                setInputDbName('');
-                setInputDbId('');
-              }}
-              className="absolute top-4 right-4 text-gray-500 hover:text-white"
-            >
-              <XCircle className="w-6 h-6" />
-            </button>
-
+            </div>
           </div>
         </div>
       )}
