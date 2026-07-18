@@ -15,78 +15,89 @@ export async function syncNotionData() {
 
   try {
     let activeApiKey = process.env.NOTION_API_KEY || null;
-    let activeDatabaseId = process.env.NOTION_DATABASE_ID || null;
+    let databasesToSync: string[] = [];
+    
+    if (process.env.NOTION_DATABASE_ID) {
+      databasesToSync.push(process.env.NOTION_DATABASE_ID);
+    }
 
     // Load credentials from database first
-    const dbConfig = await prisma.notionConfig.findFirst();
+    const dbConfig = await prisma.notionConfig.findFirst({
+      include: { databases: true }
+    });
     if (dbConfig) {
       try {
         const decryptedApiKey = decrypt(dbConfig.encryptedApiKey, dbConfig.iv);
-        const decryptedDatabaseId = decrypt(dbConfig.encryptedDatabaseId, dbConfig.iv);
         if (decryptedApiKey) activeApiKey = decryptedApiKey;
-        if (decryptedDatabaseId) activeDatabaseId = decryptedDatabaseId;
+        
+        const dbIds = dbConfig.databases.map(db => decrypt(db.encryptedDatabaseId, db.iv)).filter(Boolean) as string[];
+        if (dbIds.length > 0) {
+          databasesToSync = dbIds;
+        }
       } catch (err) {
         console.error('Failed to decrypt database-stored Notion config:', err);
       }
     }
 
-    if (activeApiKey && activeDatabaseId) {
+    if (activeApiKey && databasesToSync.length > 0) {
       const notionClient = new Client({ auth: activeApiKey });
-      const databaseId = activeDatabaseId;
 
-    console.log('Starting live Notion sync...');
-    let cursor: string | undefined = undefined;
-    let recordsSynced = 0;
-    let hasMore = true;
+      let recordsSynced = 0;
 
-    // Ensure reference metadata exists (designers, doctypes, accounts, statuses)
-    const designers = await prisma.designer.findMany();
-    const doctypes = await prisma.doctype.findMany();
-    const accounts = await prisma.account.findMany();
-    const statuses = await prisma.designStatus.findMany();
+      // Ensure reference metadata exists (designers, doctypes, accounts, statuses)
+      const designers = await prisma.designer.findMany();
+      const doctypes = await prisma.doctype.findMany();
+      const accounts = await prisma.account.findMany();
+      const statuses = await prisma.designStatus.findMany();
 
-    console.log('Clearing old mock tasks from database...');
-    // Clear relations first
-    await prisma.taskAccount.deleteMany({
-      where: {
-        task: {
+      console.log('Clearing old mock tasks from database...');
+      // Clear relations first
+      await prisma.taskAccount.deleteMany({
+        where: {
+          task: {
+            OR: [
+              { notionPageId: { startsWith: 'notion_page_' } },
+              { notionPageId: { startsWith: 'sync_mock_page_' } },
+            ]
+          }
+        }
+      });
+      // Clear tasks
+      await prisma.task.deleteMany({
+        where: {
           OR: [
             { notionPageId: { startsWith: 'notion_page_' } },
             { notionPageId: { startsWith: 'sync_mock_page_' } },
           ]
         }
-      }
-    });
-    // Clear tasks
-    await prisma.task.deleteMany({
-      where: {
-        OR: [
-          { notionPageId: { startsWith: 'notion_page_' } },
-          { notionPageId: { startsWith: 'sync_mock_page_' } },
-        ]
-      }
-    });
-
-    let activeDataSourceId = databaseId;
-    try {
-      console.log('Resolving actual data source ID from Notion database metadata...');
-      const dbMetadata: any = await notionClient.databases.retrieve({ database_id: databaseId });
-      if (dbMetadata.data_sources?.[0]?.id) {
-        activeDataSourceId = dbMetadata.data_sources[0].id;
-        console.log(`Resolved data source ID: ${activeDataSourceId}`);
-      }
-    } catch (err: any) {
-      console.warn(`Could not retrieve database metadata, falling back to direct ID: ${err.message}`);
-    }
-
-    while (hasMore) {
-      const response: any = await (notionClient as any).dataSources.query({
-        data_source_id: activeDataSourceId,
-        start_cursor: cursor,
-        page_size: 100,
       });
 
-      for (const page of response.results as any[]) {
+      for (const databaseId of databasesToSync) {
+        console.log(`Starting live Notion sync for database: ${databaseId}...`);
+        
+        let cursor: string | undefined = undefined;
+        let hasMore = true;
+        let activeDataSourceId = databaseId;
+        
+        try {
+          console.log('Resolving actual data source ID from Notion database metadata...');
+          const dbMetadata: any = await notionClient.databases.retrieve({ database_id: databaseId });
+          if (dbMetadata.data_sources?.[0]?.id) {
+            activeDataSourceId = dbMetadata.data_sources[0].id;
+            console.log(`Resolved data source ID: ${activeDataSourceId}`);
+          }
+        } catch (err: any) {
+          console.warn(`Could not retrieve database metadata, falling back to direct ID: ${err.message}`);
+        }
+
+        while (hasMore) {
+          const response: any = await (notionClient as any).dataSources.query({
+            data_source_id: activeDataSourceId,
+            start_cursor: cursor,
+            page_size: 100,
+          });
+
+          for (const page of response.results as any[]) {
           const properties = page.properties;
           const notionPageId = page.id;
           const notionUrl = page.url;
@@ -335,6 +346,7 @@ export async function syncNotionData() {
         hasMore = response.has_more;
         cursor = response.next_cursor || undefined;
       }
+    } // <-- Added closing brace for "for (const databaseId of databasesToSync) {"
 
       // Update sync log success
       await prisma.syncLog.update({

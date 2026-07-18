@@ -113,14 +113,27 @@ model SyncLog {
   @@map("sync_logs")
 }
 
+model NotionDatabase {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                String   @default("Database")
+  encryptedDatabaseId String   @map("encrypted_database_id")
+  iv                  String
+  configId            String   @map("config_id") @db.Uuid
+  config              NotionConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@map("notion_databases")
+}
+
 model NotionConfig {
   id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceName       String   @default("Notion Workspace") @map("workspace_name")
   encryptedApiKey     String   @map("encrypted_api_key")
-  encryptedDatabaseId String   @map("encrypted_database_id")
   iv                  String   // Initialization vector
   autoSync            Boolean  @default(false) @map("auto_sync")
   syncInterval        String   @default("15_mins") @map("sync_interval") // '15_mins' | '30_mins' | '1_hour' | '6_hours' | '12_hours' | '24_hours'
   updatedAt           DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  
+  databases           NotionDatabase[]
 
   @@map("notion_configs")
 }

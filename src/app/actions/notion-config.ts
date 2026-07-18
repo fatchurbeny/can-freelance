@@ -6,7 +6,6 @@ import { encrypt, decrypt } from '@/lib/encryption';
 import { revalidatePath } from 'next/cache';
 
 const API_KEY_MASK = '••••••••••••••••';
-const DATABASE_ID_MASK = '••••••••••••••••';
 
 function maskText(text: string, visibleStart = 4, visibleEnd = 4): string {
   if (!text) return '';
@@ -18,97 +17,87 @@ function maskText(text: string, visibleStart = 4, visibleEnd = 4): string {
 
 export async function getNotionConfigAction() {
   try {
-    const config = await prisma.notionConfig.findFirst();
+    const config = await prisma.notionConfig.findFirst({
+      include: { databases: true }
+    });
     if (!config) {
       return {
         exists: false,
+        workspaceName: '',
         apiKey: '',
-        databaseId: '',
         autoSync: false,
         syncInterval: '15_mins',
+        databases: [],
       };
     }
     
-    // Decrypt the credentials to verify they can be decrypted
     const apiKey = decrypt(config.encryptedApiKey, config.iv);
-    const databaseId = decrypt(config.encryptedDatabaseId, config.iv);
+
+    const databases = config.databases.map(db => {
+      const dbId = decrypt(db.encryptedDatabaseId, db.iv);
+      return {
+        id: db.id,
+        name: db.name,
+        maskedDatabaseId: maskText(dbId, 4, 4),
+      };
+    });
 
     return {
       exists: true,
-      apiKey: API_KEY_MASK, // Send mask to browser
-      databaseId: DATABASE_ID_MASK, // Send mask to browser
+      workspaceName: config.workspaceName,
+      apiKey: API_KEY_MASK,
       maskedApiKey: maskText(apiKey, 6, 4),
-      maskedDatabaseId: maskText(databaseId, 4, 4),
       autoSync: config.autoSync,
       syncInterval: config.syncInterval,
+      databases,
     };
   } catch (error) {
     console.error('Error fetching Notion config:', error);
     return {
       exists: false,
+      workspaceName: '',
       apiKey: '',
-      databaseId: '',
       autoSync: false,
       syncInterval: '15_mins',
+      databases: [],
       error: 'Failed to retrieve configuration',
     };
   }
 }
 
-export async function saveNotionConfigAction(
-  apiKey: string,
-  databaseId: string,
-  autoSync?: boolean,
-  syncInterval?: string,
-) {
+export async function saveNotionWorkspaceAction(workspaceName: string, apiKey: string) {
   try {
-    if (!apiKey || !databaseId) {
-      throw new Error('API Key and Database ID are required');
+    if (!workspaceName || !apiKey) {
+      throw new Error('Workspace Name and API Key are required');
     }
 
     const existingConfig = await prisma.notionConfig.findFirst();
     let finalApiKey = apiKey;
-    let finalDatabaseId = databaseId;
 
-    // If the input is the mask placeholder, retrieve the existing value
     if (existingConfig) {
       const decryptedApiKey = decrypt(existingConfig.encryptedApiKey, existingConfig.iv);
-      const decryptedDatabaseId = decrypt(existingConfig.encryptedDatabaseId, existingConfig.iv);
-
       if (apiKey === API_KEY_MASK || apiKey === maskText(decryptedApiKey, 6, 4)) {
         finalApiKey = decryptedApiKey;
       }
-      if (databaseId === DATABASE_ID_MASK || databaseId === maskText(decryptedDatabaseId, 4, 4)) {
-        finalDatabaseId = decryptedDatabaseId;
-      }
     }
 
-    // Encrypt new values
     const { iv, encryptedData: encApiKey } = encrypt(finalApiKey);
-    const { encryptedData: encDatabaseId } = encrypt(finalDatabaseId);
-
-    const schedulingData = {
-      autoSync: autoSync ?? existingConfig?.autoSync ?? false,
-      syncInterval: syncInterval ?? existingConfig?.syncInterval ?? '15_mins',
-    };
 
     if (existingConfig) {
       await prisma.notionConfig.update({
         where: { id: existingConfig.id },
         data: {
+          workspaceName,
           encryptedApiKey: encApiKey,
-          encryptedDatabaseId: encDatabaseId,
           iv,
-          ...schedulingData,
         },
       });
     } else {
       await prisma.notionConfig.create({
         data: {
+          workspaceName,
           encryptedApiKey: encApiKey,
-          encryptedDatabaseId: encDatabaseId,
           iv,
-          ...schedulingData,
         },
       });
     }
@@ -117,37 +106,57 @@ export async function saveNotionConfigAction(
     revalidatePath('/notion-config');
     return { success: true };
   } catch (error: any) {
-    console.error('Error saving Notion config:', error);
-    return { success: false, error: error.message || 'Failed to save configuration' };
+    console.error('Error saving Notion workspace config:', error);
+    return { success: false, error: error.message || 'Failed to save workspace configuration' };
   }
 }
 
-export async function testNotionConnectionAction(apiKey: string, databaseId: string) {
+export async function addNotionDatabaseAction(name: string, databaseId: string) {
   try {
-    if (!apiKey || !databaseId) {
-      throw new Error('API Key and Database ID are required');
+    if (!name || !databaseId) {
+      throw new Error('Database Name and ID are required');
     }
 
-    let finalApiKey = apiKey;
-    let finalDatabaseId = databaseId;
+    const config = await prisma.notionConfig.findFirst();
+    if (!config) {
+      throw new Error('Please configure Notion API Key first.');
+    }
+
+    const { iv, encryptedData: encDatabaseId } = encrypt(databaseId);
+
+    await prisma.notionDatabase.create({
+      data: {
+        name,
+        encryptedDatabaseId: encDatabaseId,
+        iv,
+        configId: config.id,
+      },
+    });
+
+    revalidatePath('/notion-config');
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error adding Notion database:', error);
+    return { success: false, error: error.message || 'Failed to add database' };
+  }
+}
+
+export async function testNotionConnectionAction(databaseId: string) {
+  try {
+    if (!databaseId) {
+      throw new Error('Database ID is required');
+    }
 
     const existingConfig = await prisma.notionConfig.findFirst();
-    if (existingConfig) {
-      const decryptedApiKey = decrypt(existingConfig.encryptedApiKey, existingConfig.iv);
-      const decryptedDatabaseId = decrypt(existingConfig.encryptedDatabaseId, existingConfig.iv);
-
-      if (apiKey === API_KEY_MASK || apiKey === maskText(decryptedApiKey, 6, 4)) {
-        finalApiKey = decryptedApiKey;
-      }
-      if (databaseId === DATABASE_ID_MASK || databaseId === maskText(decryptedDatabaseId, 4, 4)) {
-        finalDatabaseId = decryptedDatabaseId;
-      }
+    if (!existingConfig) {
+       throw new Error('Please configure Notion API Key first before testing database connection.');
     }
+    
+    const finalApiKey = decrypt(existingConfig.encryptedApiKey, existingConfig.iv);
+    const finalDatabaseId = databaseId;
 
-    // Connect to Notion
     const notion = new Client({ auth: finalApiKey });
     
-    // Retrieve metadata
     let activeDataSourceId = finalDatabaseId;
     let dbMetadata: any;
     let properties: any = {};
@@ -170,7 +179,6 @@ export async function testNotionConnectionAction(apiKey: string, databaseId: str
     }
     const dbTitle = dbMetadata.title?.map((t: any) => t.plain_text).join('') || 'Untitled Notion Database';
     
-    // Schema definitions
     const schemaSpecs = [
       { key: 'Name', label: 'Task Name', types: ['title'], isRequired: true },
       { key: 'Designer', label: 'Designer Name', types: ['select'], isRequired: true },
@@ -190,7 +198,6 @@ export async function testNotionConnectionAction(apiKey: string, databaseId: str
     ];
 
     const schemaComparison = schemaSpecs.map((spec) => {
-      // Find actual property matching key or aliases case-sensitively
       let actualPropName = properties[spec.key] ? spec.key : null;
       if (!actualPropName && spec.aliases) {
         for (const alias of spec.aliases) {
@@ -257,3 +264,4 @@ export async function saveSchedulingConfigAction(autoSync: boolean, syncInterval
     return { success: false, error: error.message || 'Failed to save scheduling configuration' };
   }
 }
+
