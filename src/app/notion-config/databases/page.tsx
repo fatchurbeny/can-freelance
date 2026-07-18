@@ -340,9 +340,9 @@ export default function DatabasesPage() {
 
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-4 border-t border-gray-800/50">
                   <div className="flex flex-wrap gap-4 text-[10px] text-green-500/70 font-mono">
-                    <span>#Read-Content</span>
-                    <span>#Update-Content</span>
-                    <span>#Insert-Content</span>
+                    {dbTestResult?.capabilities?.map((cap: string) => (
+                      <span key={cap}>#{cap}</span>
+                    ))}
                   </div>
                   
                   <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">

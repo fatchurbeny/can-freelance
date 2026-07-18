@@ -229,18 +229,41 @@ export async function testNotionConnectionAction(databaseId: string) {
 
     const isSchemaCompatible = !schemaComparison.some(s => s.isRequired && s.status !== 'match');
 
+    // Test for Insert and Update capabilities
+    const capabilities = ['Read-Content'];
+    try {
+      const testPage = await notion.pages.create({
+        parent: { database_id: finalDatabaseId },
+        properties: {}
+      });
+      capabilities.push('Insert-Content');
+      // Archive the test page to test update and clean up
+      await notion.pages.update({
+        page_id: testPage.id,
+        archived: true
+      });
+      capabilities.push('Update-Content');
+    } catch (err: any) {
+      // 400 Validation Error means we HAVE insert capability but we didn't provide required properties
+      if (err.status === 400) {
+        capabilities.push('Insert-Content');
+        capabilities.push('Update-Content');
+      }
+    }
+
     return {
       success: true,
       dbTitle,
-      maskedDatabaseId: maskText(finalDatabaseId, 4, 4),
       schemaComparison,
       isSchemaCompatible,
+      maskedDatabaseId: finalDatabaseId.substring(0, 4) + '...'.padEnd(16, '*') + finalDatabaseId.slice(-4),
+      capabilities
     };
   } catch (error: any) {
     console.error('Error testing Notion connection:', error);
     return {
       success: false,
-      error: error.message || 'Failed to connect to Notion',
+      error: error.message || 'Failed to test connection',
     };
   }
 }
