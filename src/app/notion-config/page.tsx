@@ -258,30 +258,35 @@ export default function NotionConfigPage() {
                   </div>
                   
                   <div className="flex items-center gap-4">
-                    {databases.length > 0 ? (
-                      <div className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-400 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full">
-                        <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                        Connected
-                      </div>
-                    ) : (
-                      <div className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full">
-                        <span className="w-1.5 h-1.5 rounded-full bg-gray-500"></span>
-                        No Connection
-                      </div>
-                    )}
+                    <div className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-green-500 bg-[#162a1f] border border-green-900/50 rounded-full">
+                      <span className={`w-2 h-2 rounded-full ${configExists ? 'bg-green-500' : 'bg-gray-500'}`}></span>
+                      {databases.length > 0 ? `${databases.length} Database` : (configExists ? '0 Database' : 'No Connection')}
+                    </div>
                     
                     <button
+                      type="button"
                       onClick={() => {
                         if (!configExists) {
                           setShowApiKeyModal(true);
                         } else {
-                          setShowDbModal(true);
+                          // Allow them to add another database if they click the toggle when it's on?
+                          // Or prompt disconnect? The user said "remove the button Add Database with toggle switch"
+                          // For now, let's just open the DB modal so they can still add databases,
+                          // or do nothing if they actually wanted it to disconnect.
+                          if (window.confirm("Do you want to add another database?")) {
+                            setShowDbModal(true);
+                          }
                         }
                       }}
-                      className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-all shadow-md shadow-indigo-600/10 shrink-0"
+                      className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none ${
+                        configExists ? 'bg-[#22c55e]' : 'bg-gray-600'
+                      }`}
                     >
-                      <Plus className="w-4 h-4" />
-                      {configExists ? 'Add Database' : 'Add Connection'}
+                      <span 
+                        className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
+                          configExists ? 'translate-x-7' : 'translate-x-1'
+                        }`} 
+                      />
                     </button>
                   </div>
                 </div>
