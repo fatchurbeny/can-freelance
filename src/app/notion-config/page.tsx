@@ -188,7 +188,12 @@ export default function NotionConfigPage() {
               <div className="xl:col-span-2 space-y-6">
                 
                 {/* Notion Connector Card */}
-                <div className="bg-white dark:bg-[#111827] rounded-2xl border border-[#E8E0D8] dark:border-gray-800 p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div 
+                  onClick={() => {
+                    if (configExists) router.push('/notion-config/databases');
+                  }}
+                  className={`bg-white dark:bg-[#111827] rounded-2xl border border-[#E8E0D8] dark:border-gray-800 p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors ${configExists ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-[#1f2937]' : ''}`}
+                >
                   <div className="flex items-center gap-4">
                     <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center shadow-sm shrink-0 border border-gray-200 dark:border-gray-800">
                       <svg viewBox="0 0 100 100" className="w-8 h-8 text-black">
@@ -209,7 +214,8 @@ export default function NotionConfigPage() {
                   <div className="flex items-center gap-4">
                     <button
                       type="button"
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation();
                         if (configExists) router.push('/notion-config/databases');
                       }}
                       className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full transition-colors ${
@@ -224,7 +230,8 @@ export default function NotionConfigPage() {
                     
                     <button
                       type="button"
-                      onClick={async () => {
+                      onClick={async (e) => {
+                        e.stopPropagation();
                         if (!configExists) {
                           setShowApiKeyModal(true);
                         } else {
