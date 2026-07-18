@@ -118,6 +118,8 @@ export default function NotionConfigPage() {
         setShowApiKeyModal(false);
         setInputApiKey('');
         setInputWorkspaceName('');
+        // Automatically prompt for database ID next
+        setShowDbModal(true);
       } else {
         setApiFeedback({ success: false, message: res.error || 'Failed to save API Key.' });
       }
@@ -279,7 +281,7 @@ export default function NotionConfigPage() {
                       className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-all shadow-md shadow-indigo-600/10 shrink-0"
                     >
                       <Plus className="w-4 h-4" />
-                      Add Connection
+                      {configExists ? 'Add Database' : 'Add Connection'}
                     </button>
                   </div>
                 </div>
