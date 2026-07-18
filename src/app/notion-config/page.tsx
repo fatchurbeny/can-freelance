@@ -228,200 +228,65 @@ export default function NotionConfigPage() {
           </div>
         ) : (
           <div className="space-y-6">
-            {/* Back Button Placeholder */}
-            <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 cursor-pointer hover:text-gray-700 dark:hover:text-gray-200 transition-colors w-max">
-              <ArrowLeft className="w-4 h-4" />
-              <span>Back To Notion Config</span>
-            </div>
-
-            {/* Top Workspace Bar */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 bg-white dark:bg-white rounded-2xl flex items-center justify-center shadow-sm shrink-0 border border-gray-200 dark:border-gray-800">
-                  <svg viewBox="0 0 100 100" className="w-10 h-10 text-black">
-                    <path fill="currentColor" d="M19.9 23.3V78l41.6-9.6V20.1L19.9 23.3zm29.1 41.5l-15.3 3.6V42.3L49 38.6v26.2zm0-28.7l-15.3 3.6v-2.3l15.3-3.6v2.3zm19.8 15.6l-15.3 3.6V26.2l15.3-3.6v29.1zm0-31.4l-15.3 3.6v-2.3l15.3-3.6v2.3z"/>
-                    <path fill="currentColor" d="M80.1 23.3v54.7L38.5 87.6V78H23.5v9.6L6.1 83.3V20l38.5-8.8 35.5 8.2v3.9zM23.5 28.5V74l39.5-9.1V26.2l-39.5 2.3z"/>
-                  </svg>
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Notion</h2>
-                  <div className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-                    <span className={`w-1.5 h-1.5 rounded-full ${databases.length > 0 ? 'bg-green-500' : 'bg-gray-400'}`}></span>
-                    {databases.length > 0 ? `${databases.length} Database Connected` : 'No Database Connected'}
-                  </div>
-                </div>
-              </div>
-
-              {!configExists ? (
-                <button
-                  onClick={() => setShowApiKeyModal(true)}
-                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-all shadow-md shadow-indigo-600/10"
-                >
-                  <Plus className="w-4 h-4" />
-                  Notion API Key
-                </button>
-              ) : (
-                <div className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-900/50 rounded-xl">
-                  <CheckCircle2 className="w-4 h-4" />
-                  API Key : {maskedApiKey}
-                </div>
-              )}
-            </div>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Notion Connector</h2>
 
             {/* Layout Grid */}
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start mt-6">
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start">
               
-              {/* Left Column (Databases & Scheduling) */}
+              {/* Left Column (Connector) */}
               <div className="xl:col-span-2 space-y-6">
                 
-                {/* Database Connection Card */}
-                <div className="bg-white dark:bg-[#111827] rounded-2xl border border-[#E8E0D8] dark:border-gray-800 p-6 shadow-sm space-y-6">
-                  <div>
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                      Database Connection
-                    </h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      Credentials Are Encrypted Symmetrically Using AES-256-CBC Before Database Storage.
-                    </p>
+                {/* Notion Connector Card */}
+                <div className="bg-white dark:bg-[#111827] rounded-2xl border border-[#E8E0D8] dark:border-gray-800 p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center shadow-sm shrink-0 border border-gray-200 dark:border-gray-800">
+                      <svg viewBox="0 0 100 100" className="w-8 h-8 text-black">
+                        <path fill="currentColor" d="M19.9 23.3V78l41.6-9.6V20.1L19.9 23.3zm29.1 41.5l-15.3 3.6V42.3L49 38.6v26.2zm0-28.7l-15.3 3.6v-2.3l15.3-3.6v2.3zm19.8 15.6l-15.3 3.6V26.2l15.3-3.6v29.1zm0-31.4l-15.3 3.6v-2.3l15.3-3.6v2.3z"/>
+                        <path fill="currentColor" d="M80.1 23.3v54.7L38.5 87.6V78H23.5v9.6L6.1 83.3V20l38.5-8.8 35.5 8.2v3.9zM23.5 28.5V74l39.5-9.1V26.2l-39.5 2.3z"/>
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                        {configExists && workspaceName ? workspaceName : 'Notion Workspace'}
+                      </h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                        {databases.length > 0 ? databases.map(db => db.name).join(', ') : 'No databases connected'}
+                      </p>
+                    </div>
                   </div>
                   
-                  <div className="border-t border-gray-100 dark:border-gray-800 pt-6">
-                    {databases.length === 0 ? (
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-3">
-                          <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-800" disabled />
-                          <span className="text-sm text-gray-500 dark:text-gray-400">Select All</span>
-                        </div>
-                        <button
-                          disabled={!configExists}
-                          onClick={() => setShowDbModal(true)}
-                          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 disabled:bg-gray-400 dark:disabled:bg-gray-800 rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-md shadow-indigo-600/10"
-                        >
-                          <Plus className="w-4 h-4" />
-                          Add Database
-                        </button>
+                  <div className="flex items-center gap-4">
+                    {databases.length > 0 ? (
+                      <div className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-400 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full">
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                        Connected
                       </div>
                     ) : (
-                      <div className="space-y-4">
-                        {databases.map((db, idx) => (
-                          <div key={idx} className="flex items-center justify-between p-4 bg-[#FAF9F6] dark:bg-[#07090e] border border-gray-200 dark:border-gray-800 rounded-xl">
-                            <div className="flex flex-col">
-                              <span className="font-semibold text-gray-900 dark:text-white">{db.name}</span>
-                              <span className="text-xs font-mono text-gray-500 dark:text-gray-400 mt-1">ID: {db.maskedDatabaseId}</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/20 px-3 py-1.5 rounded-full text-xs font-medium border border-green-200 dark:border-green-900/30">
-                              <CheckCircle2 className="w-3.5 h-3.5" />
-                              Connected
-                            </div>
-                          </div>
-                        ))}
-                        <button
-                          onClick={() => setShowDbModal(true)}
-                          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded-xl transition-all border border-indigo-200 dark:border-indigo-900/50"
-                        >
-                          <Plus className="w-4 h-4" />
-                          Add Another Database
-                        </button>
+                      <div className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full">
+                        <span className="w-1.5 h-1.5 rounded-full bg-gray-500"></span>
+                        No Connection
                       </div>
                     )}
+                    
+                    <button
+                      onClick={() => {
+                        if (!configExists) {
+                          setShowApiKeyModal(true);
+                        } else {
+                          setShowDbModal(true);
+                        }
+                      }}
+                      className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-all shadow-md shadow-indigo-600/10 shrink-0"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add Connection
+                    </button>
                   </div>
                 </div>
 
-                {/* Scheduled Sync Settings Card */}
-                {configExists && (
-                  <div className="bg-white dark:bg-[#111827] rounded-2xl border border-[#E8E0D8] dark:border-gray-800 p-6 shadow-sm space-y-6">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex gap-3">
-                         <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/30 flex items-center justify-center shrink-0">
-                          <Timer className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                         </div>
-                        <div>
-                          <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-                            Scheduled Sync Settings
-                          </h2>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            Configure automatic periodic syncs from Notion. The <code className="font-mono">/api/sync/cron</code> endpoint must be called externally.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid sm:grid-cols-2 gap-6 pt-2">
-                      {/* Auto-Sync Toggle */}
-                      <div className="flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-[#FAF9F6] dark:bg-[#07090e] gap-4">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${autoSync ? 'bg-indigo-600' : 'bg-gray-200 dark:bg-gray-800'}`}>
-                            <Zap className={`w-4 h-4 ${autoSync ? 'text-white' : 'text-gray-500'}`} />
-                          </div>
-                          <div>
-                            <div className="font-semibold text-sm text-gray-900 dark:text-white">Auto Sync</div>
-                            <div className="text-[10px] text-gray-500 dark:text-gray-400">
-                              {autoSync ? 'Enabled - Cron Endpoint Active' : 'Disabled'}
-                            </div>
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setAutoSync(!autoSync)}
-                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 ${
-                            autoSync ? 'bg-green-500' : 'bg-gray-200 dark:bg-gray-700'
-                          }`}
-                        >
-                          <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${autoSync ? 'translate-x-6' : 'translate-x-1'}`} />
-                        </button>
-                      </div>
-
-                      {/* Interval Picker */}
-                      <div className="flex flex-col justify-center">
-                        <label htmlFor="sync-interval-select" className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5 mb-2">
-                          <Compass className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-                          Sync Interval
-                        </label>
-                        <select
-                          id="sync-interval-select"
-                          value={syncInterval}
-                          onChange={(e) => setSyncInterval(e.target.value)}
-                          disabled={!autoSync}
-                          className="py-2.5 px-4 w-full border border-gray-300 dark:border-gray-800 bg-[#FAF9F6] dark:bg-[#07090e] rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-600 focus:border-transparent text-sm disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
-                        >
-                          {SYNC_INTERVAL_OPTIONS.map((opt) => (
-                            <option key={opt.value} value={opt.value}>{opt.label}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-
-                    {/* Scheduling Feedback */}
-                    {scheduleFeedback && (
-                      <div className={`p-4 rounded-xl border flex items-center gap-3 text-sm font-medium ${
-                        scheduleFeedback.success 
-                          ? 'bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-900/30' 
-                          : 'bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-400 border-red-200 dark:border-red-900/30'
-                      }`}>
-                        {scheduleFeedback.success ? <CheckCircle2 className="w-5 h-5 shrink-0" /> : <XCircle className="w-5 h-5 shrink-0" />}
-                        <span>{scheduleFeedback.message}</span>
-                      </div>
-                    )}
-
-                    <div className="flex justify-end pt-4 border-t border-gray-100 dark:border-gray-800">
-                      <button
-                        type="button"
-                        onClick={handleSaveScheduling}
-                        disabled={isSavingSchedule}
-                        className="inline-flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-indigo-600/10"
-                      >
-                        {isSavingSchedule ? (
-                          <><RefreshCw className="w-4 h-4 animate-spin" />Saving...</>
-                        ) : (
-                          <><Save className="w-4 h-4" />Save Schedule</>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                )}
               </div>
 
-              {/* Right Column (Instructions & Logs) */}
+              {/* Right Column (Instructions) */}
               <div className="space-y-6">
                 <div className="bg-[#1a1c23] dark:bg-[#111827] text-gray-300 rounded-2xl border border-gray-800 p-6 shadow-sm space-y-6">
                   <div>
@@ -466,53 +331,6 @@ export default function NotionConfigPage() {
                     </div>
                   </div>
                 </div>
-
-                {/* Sync Logs Widget */}
-                {latestSyncLog && (
-                  <div className="bg-[#1a1c23] dark:bg-[#111827] text-gray-300 rounded-2xl border border-gray-800 p-6 shadow-sm space-y-4">
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-gray-400">Sync Metode</span>
-                        <span className="inline-flex items-center px-3 py-1 rounded-full border border-indigo-500/30 text-xs font-semibold text-indigo-400">
-                          {autoSync ? 'AUTO SYNC' : 'MANUAL'}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-gray-400">Sync Interval</span>
-                        <span className="text-white font-medium">
-                          {SYNC_INTERVAL_OPTIONS.find(o => o.value === syncInterval)?.label || 'None'}
-                        </span>
-                      </div>
-                      <div className="border-b border-gray-800/60 pt-2 mb-2"></div>
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-gray-400">Status</span>
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full border text-xs font-semibold uppercase ${
-                          latestSyncLog.status === 'success' 
-                            ? 'border-green-500/30 text-green-400' 
-                            : 'border-red-500/30 text-red-400'
-                        }`}>
-                          {latestSyncLog.status}
-                        </span>
-                      </div>
-
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-gray-400">Synced At</span>
-                        <span className="text-white font-medium">
-                          {new Date(latestSyncLog.finishedAt || latestSyncLog.startedAt).toLocaleString('id-ID')}
-                        </span>
-                      </div>
-
-                      {latestSyncLog.recordsSynced !== null && (
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="text-gray-400">Records Synced</span>
-                          <span className="text-white font-bold">
-                            {latestSyncLog.recordsSynced}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
               </div>
 
             </div>
