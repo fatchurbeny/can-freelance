@@ -262,44 +262,44 @@ export default function NotionConfigPage() {
 
               {/* Right Column (Instructions) */}
               <div className="space-y-6">
-                <div className="bg-[#1a1c23] dark:bg-[#111827] text-gray-300 rounded-2xl border border-gray-800 p-6 shadow-sm space-y-6">
+                <div className="bg-white dark:bg-[#111827] text-gray-700 dark:text-gray-300 rounded-2xl border border-[#E8E0D8] dark:border-gray-800 p-6 shadow-sm space-y-6">
                   <div>
-                    <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                      <Compass className="w-5 h-5 text-indigo-400" />
+                    <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                      <Compass className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                       How To Setup
                     </h2>
                   </div>
 
                   <div className="space-y-5 text-sm">
                     <div className="space-y-2">
-                      <h3 className="font-bold text-white flex items-center gap-2 text-sm">
-                        <span className="w-5 h-5 rounded bg-indigo-900/50 text-indigo-400 flex items-center justify-center font-mono text-[10px]">1</span>
+                      <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2 text-sm">
+                        <span className="w-5 h-5 rounded bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-mono text-[10px]">1</span>
                         Create Integration
                       </h3>
-                      <p className="pl-7 text-xs leading-relaxed text-gray-400">
-                        Go To <span className="text-indigo-400">Notion.So/Integrations</span>, Create An Internal Integration, And Copy The **Internal Integration Token** (Starts With `secret_`)
+                      <p className="pl-7 text-xs leading-relaxed text-gray-600 dark:text-gray-400">
+                        Go To <span className="text-indigo-600 dark:text-indigo-400">Notion.So/Integrations</span>, Create An Internal Integration, And Copy The **Internal Integration Token** (Starts With `secret_`)
                       </p>
                     </div>
 
                     <div className="space-y-2">
-                      <h3 className="font-bold text-white flex items-center gap-2 text-sm">
-                        <span className="w-5 h-5 rounded bg-indigo-900/50 text-indigo-400 flex items-center justify-center font-mono text-[10px]">2</span>
+                      <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2 text-sm">
+                        <span className="w-5 h-5 rounded bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-mono text-[10px]">2</span>
                         Find Database ID
                       </h3>
-                      <p className="pl-7 text-xs leading-relaxed text-gray-400">
+                      <p className="pl-7 text-xs leading-relaxed text-gray-600 dark:text-gray-400">
                         Open Your Task Database Page In Notion. Copy Its URL. The Database ID Is The 32-Character String In The Path After The Workspace Name:
-                        <code className="block mt-2 p-3 bg-black/40 border border-gray-800/60 rounded-xl font-mono text-[10px] break-all text-indigo-300">
-                          notion.so/workspace/<span className="font-bold text-red-400">2f40e19aa1358026a0e1d9caab5cdbb7</span>?v=...
+                        <code className="block mt-2 p-3 bg-gray-50 dark:bg-black/40 border border-[#E8E0D8] dark:border-gray-800/60 rounded-xl font-mono text-[10px] break-all text-indigo-600 dark:text-indigo-300">
+                          notion.so/workspace/<span className="font-bold text-red-500 dark:text-red-400">2f40e19aa1358026a0e1d9caab5cdbb7</span>?v=...
                         </code>
                       </p>
                     </div>
 
                     <div className="space-y-2">
-                      <h3 className="font-bold text-white flex items-center gap-2 text-sm">
-                        <span className="w-5 h-5 rounded bg-indigo-900/50 text-indigo-400 flex items-center justify-center font-mono text-[10px]">3</span>
+                      <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2 text-sm">
+                        <span className="w-5 h-5 rounded bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-mono text-[10px]">3</span>
                         Grant Connections
                       </h3>
-                      <p className="pl-7 text-xs leading-relaxed text-gray-400">
+                      <p className="pl-7 text-xs leading-relaxed text-gray-600 dark:text-gray-400">
                         Inside Notion, Click The Three Dots `...` At The Top Right Of Your Database. Click **Add Connections** And Search For The Name Of The Integration You Created In Step 1.
                       </p>
                     </div>
