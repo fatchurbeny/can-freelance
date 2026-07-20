@@ -86,6 +86,12 @@ model Task {
   payrollMonth   String?       @map("payroll_month")
   priority       String?
   createdTime    DateTime      @map("created_time") @db.Timestamptz
+  lastEditedTime DateTime      @default(now()) @map("last_edited_time") @db.Timestamptz
+  dateStarted    DateTime?     @map("date_started") @db.Date
+  dateCompleted  DateTime?     @map("date_completed") @db.Date
+  datePO         DateTime?     @map("date_po") @db.Date
+  dateReject     DateTime?     @map("date_reject") @db.Date
+  poolScore      Decimal?      @map("pool_score") @db.Decimal
   syncedAt       DateTime      @default(now()) @map("synced_at") @db.Timestamptz
   taskAccounts   TaskAccount[]
 

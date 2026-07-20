@@ -32,10 +32,11 @@ export default function RootLayout({
               (function() {
                 try {
                   const stored = localStorage.getItem('theme');
-                  const supportDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                  if (stored === 'dark' || (!stored && supportDark)) {
+                  const hour = new Date().getHours();
+                  const isNight = hour < 6 || hour >= 18;
+                  if (stored === 'dark' || (!stored && isNight)) {
                     document.documentElement.classList.add('dark');
-                  } else {
+                  } else if (stored === 'light' || (!stored && !isNight)) {
                     document.documentElement.classList.remove('dark');
                   }
                 } catch (e) {}

@@ -44,6 +44,13 @@ export async function syncNotionData() {
 
       let recordsSynced = 0;
 
+      // Find the last successful sync time to implement incremental updates
+      const lastSync = await prisma.syncLog.findFirst({
+        where: { status: 'success' },
+        orderBy: { finishedAt: 'desc' },
+      });
+      const lastSyncTime = lastSync?.finishedAt?.toISOString();
+
       // Ensure reference metadata exists (designers, doctypes, accounts, statuses)
       const designers = await prisma.designer.findMany();
       const doctypes = await prisma.doctype.findMany();
@@ -91,11 +98,22 @@ export async function syncNotionData() {
         }
 
         while (hasMore) {
-          const response: any = await (notionClient as any).dataSources.query({
+          const queryPayload: any = {
             data_source_id: activeDataSourceId,
             start_cursor: cursor,
             page_size: 100,
-          });
+          };
+          
+          if (lastSyncTime) {
+            queryPayload.filter = {
+              timestamp: 'last_edited_time',
+              last_edited_time: {
+                on_or_after: lastSyncTime
+              }
+            };
+          }
+
+          const response: any = await (notionClient as any).dataSources.query(queryPayload);
 
           for (const page of response.results as any[]) {
           const properties = page.properties;
@@ -258,42 +276,48 @@ export async function syncNotionData() {
             createdTime = new Date(customCreatedVal);
           }
 
+          const lastEditedTime = new Date(page.last_edited_time || new Date());
+          const dateStartedVal = properties['Date Started']?.date?.start;
+          const dateStarted = dateStartedVal ? new Date(dateStartedVal) : null;
+          const dateCompletedVal = properties['Date Completd']?.date?.start || properties['Date Completed']?.date?.start;
+          const dateCompleted = dateCompletedVal ? new Date(dateCompletedVal) : null;
+          const datePOVal = properties['Date PO']?.date?.start;
+          const datePO = datePOVal ? new Date(datePOVal) : null;
+          const dateRejectVal = properties['Date Reject']?.date?.start;
+          const dateReject = dateRejectVal ? new Date(dateRejectVal) : null;
+          const poolScore = properties['Pool Score']?.number || null;
+
+          const taskData = {
+              name,
+              designerId,
+              doctypeId,
+              designStatusId,
+              pages,
+              qtySubmit,
+              license,
+              languages,
+              dateApproved,
+              taskMonth,
+              payrollMonth,
+              priority,
+              createdTime,
+              lastEditedTime,
+              dateStarted,
+              dateCompleted,
+              datePO,
+              dateReject,
+              poolScore,
+              syncedAt: new Date(),
+          };
+
           // Upsert Task
           const task = await prisma.task.upsert({
             where: { notionPageId },
-            update: {
-              name,
-              designerId,
-              doctypeId,
-              designStatusId,
-              pages,
-              qtySubmit,
-              license,
-              languages,
-              dateApproved,
-              taskMonth,
-              payrollMonth,
-              priority,
-              createdTime,
-              syncedAt: new Date(),
-            },
+            update: taskData,
             create: {
               notionPageId,
               notionUrl,
-              name,
-              designerId,
-              doctypeId,
-              designStatusId,
-              pages,
-              qtySubmit,
-              license,
-              languages,
-              dateApproved,
-              taskMonth,
-              payrollMonth,
-              priority,
-              createdTime,
-              syncedAt: new Date(),
+              ...taskData
             },
           });
 

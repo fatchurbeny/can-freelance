@@ -73,3 +73,10 @@ When modifying, replacing, or rewriting Next.js component files (especially usin
 - If a component relies on React hooks (`useState`, `useEffect`, `useRef`), event listeners (`onClick`), or browser APIs, it MUST have the `"use client"` directive at the top.
 - Failure to preserve this directive will cause React Server Component (RSC) build errors and crash the application.
 <!-- END:nextjs-preserve-directives-rule -->
+
+<!-- BEGIN:manual-git-push-rule -->
+# Manual Git Push & Deployment
+
+Do NOT automatically commit and push changes to git after completing a task. Pushing to git triggers automatic deployments on Vercel in this project. 
+Only stage, commit, and push changes to git when the user explicitly instructs you to do so (e.g., "push to git", "commit this").
+<!-- END:manual-git-push-rule -->

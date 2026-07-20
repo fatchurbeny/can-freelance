@@ -195,18 +195,18 @@ export default function DatabasesPage() {
               </div>
             </div>
 
-            <div className="bg-[#1a1c23] dark:bg-[#111827] rounded-2xl border border-gray-800 p-6 shadow-sm space-y-6">
+            <div className="bg-white dark:bg-[#111827] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm space-y-6">
               
               <div>
-                <h3 className="text-xl font-bold text-white mb-1">Database Connection</h3>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">Database Connection</h3>
                 <p className="text-xs text-gray-500">Credentials Are Encrypted Symmetrically Using AES-256-CBC Before Database Storage.</p>
               </div>
 
-              <div className="border-t border-gray-800 pt-6 space-y-6">
+              <div className="border-t border-gray-200 dark:border-gray-800 pt-6 space-y-6">
                 
                 {databases.length > 0 ? (
-                  <div className="flex items-center gap-3 text-sm text-gray-400 mb-4 px-2">
-                    <input type="checkbox" className="w-4 h-4 rounded border-gray-700 bg-gray-900" />
+                  <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400 mb-4 px-2">
+                    <input type="checkbox" className="w-4 h-4 rounded border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900" />
                     <span>Select All</span>
                   </div>
                 ) : null}
@@ -214,16 +214,16 @@ export default function DatabasesPage() {
                 {databases.length > 0 ? (
                   <div className="space-y-4">
                     {databases.map((db, idx) => (
-                      <div key={db.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border border-gray-800 bg-gray-900/30 hover:bg-gray-800/30 transition-colors">
+                      <div key={db.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30 hover:bg-gray-100 dark:hover:bg-gray-800/30 transition-colors">
                         
                         <div className="flex items-start gap-4">
-                          <input type="checkbox" className="w-4 h-4 rounded border-gray-700 bg-gray-900 mt-1" />
+                          <input type="checkbox" className="w-4 h-4 rounded border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 mt-1" />
                           <Key className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
                           
                           <div>
-                            <div className="font-semibold text-white mb-2">{db.name}</div>
+                            <div className="font-semibold text-gray-900 dark:text-white mb-2">{db.name}</div>
                             <div className="flex flex-wrap items-center gap-3">
-                              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-green-950 border border-green-900 text-[10px] text-green-400">
+                              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-900 text-[10px] text-green-600 dark:text-green-400">
                                 <span className="w-1 h-1 rounded-full bg-green-500"></span> Active
                               </span>
                               <span className="text-[10px] text-gray-500">#Read-Content</span>
@@ -234,7 +234,7 @@ export default function DatabasesPage() {
                         </div>
 
                         <div className="flex items-center gap-6 text-sm ml-8 sm:ml-0">
-                          <button className="flex items-center gap-1.5 text-gray-400 hover:text-white transition-colors">
+                          <button className="flex items-center gap-1.5 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors">
                             <Edit2 className="w-4 h-4" /> Edit
                           </button>
                           <button onClick={() => handleDeleteDatabase(db.id)} className="flex items-center gap-1.5 text-red-500/70 hover:text-red-500 transition-colors">
@@ -271,11 +271,11 @@ export default function DatabasesPage() {
 
       {showDbModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 sm:p-6">
-          <div className="bg-[#111827] border border-gray-800 w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col max-h-[95vh] relative">
+          <div className="bg-white dark:bg-[#111827] border border-gray-200 dark:border-gray-800 w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col max-h-[95vh] relative">
             
             {/* Header */}
-            <div className="flex items-center justify-between p-5 sm:p-6 border-b border-gray-800 shrink-0">
-              <h2 className="text-xl font-bold text-white">Add Database</h2>
+            <div className="flex items-center justify-between p-5 sm:p-6 border-b border-gray-200 dark:border-gray-800 shrink-0">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Add Database</h2>
               <button 
                 onClick={() => {
                   setShowDbModal(false);
@@ -283,7 +283,7 @@ export default function DatabasesPage() {
                   setInputDbName('');
                   setInputDbId('');
                 }} 
-                className="text-gray-500 hover:text-white transition-colors"
+                className="text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors"
               >
                 <XCircle className="w-6 h-6" />
               </button>
@@ -294,25 +294,25 @@ export default function DatabasesPage() {
               
               <form onSubmit={handleTestDatabase} className="space-y-5">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-300">Name</label>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Name</label>
                   <div className="relative">
                     <input
                       type="text"
                       value={inputDbName}
                       onChange={(e) => setInputDbName(e.target.value)}
                       placeholder="Database Name"
-                      className="w-full bg-[#0B0E14] border border-gray-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      className="w-full bg-gray-50 dark:bg-[#0B0E14] border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                     />
-                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 pointer-events-none">
+                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 dark:text-gray-500 pointer-events-none">
                       <Eye className="w-4 h-4" />
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-300">Database ID</label>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Database ID</label>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-500">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 dark:text-gray-500">
                       <Key className="w-4 h-4" />
                     </div>
                     <input
@@ -323,20 +323,20 @@ export default function DatabasesPage() {
                         setDbTestResult(null);
                       }}
                       placeholder="Enter 32-character Notion Database ID"
-                      className="w-full bg-[#0B0E14] border border-gray-800 rounded-xl pl-10 pr-10 py-3 text-sm text-white font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      className="w-full bg-gray-50 dark:bg-[#0B0E14] border border-gray-200 dark:border-gray-800 rounded-xl pl-10 pr-10 py-3 text-sm text-gray-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                       required
                     />
                     <button
                       type="button"
                       onClick={() => setShowDbId(!showDbId)}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-300"
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
                     >
                       {showDbId ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
                 </div>
 
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-4 border-t border-gray-800/50">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-4 border-t border-gray-200 dark:border-gray-800/50">
                   <div className="flex flex-wrap gap-4 text-[10px] text-green-500/70 font-mono">
                     {dbTestResult?.capabilities?.map((cap: string) => (
                       <span key={cap}>#{cap}</span>
@@ -347,7 +347,7 @@ export default function DatabasesPage() {
                     <button
                       type="submit"
                       disabled={isTestingDb || !inputDbId}
-                      className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold text-green-500 bg-[#162a1f] hover:bg-[#1f3a2b] border border-green-900/50 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                      className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold text-green-600 dark:text-green-500 bg-green-50 dark:bg-[#162a1f] hover:bg-green-100 dark:hover:bg-[#1f3a2b] border border-green-200 dark:border-green-900/50 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                     >
                       {isTestingDb ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Activity className="w-4 h-4" />}
                       Test Connection
@@ -366,24 +366,24 @@ export default function DatabasesPage() {
               </form>
 
               {dbTestResult && (
-                <div className="space-y-4 pt-6 border-t border-gray-800 mt-6">
+                <div className="space-y-4 pt-6 border-t border-gray-200 dark:border-gray-800 mt-6">
                   {dbTestResult.success ? (
                     <div className="space-y-4">
                       
-                      <div className="flex items-center justify-between p-4 bg-gray-900/40 border border-gray-800 rounded-xl">
+                      <div className="flex items-center justify-between p-4 bg-gray-50/50 dark:bg-gray-900/40 border border-gray-200 dark:border-gray-800 rounded-xl">
                         <div className="flex items-center gap-3">
                           <CheckCircle2 className="w-5 h-5 text-green-500" />
                           <div>
-                            <div className="font-semibold text-white text-sm">Database Found & Connected</div>
-                            <div className="text-xs text-green-500 mt-0.5">{dbTestResult.dbTitle}</div>
+                            <div className="font-semibold text-gray-900 dark:text-white text-sm">Database Found & Connected</div>
+                            <div className="text-xs text-green-600 dark:text-green-500 mt-0.5">{dbTestResult.dbTitle}</div>
                           </div>
                         </div>
-                        <div className="px-3 py-1.5 rounded bg-gray-800/50 text-[10px] text-gray-400 font-mono border border-gray-700/50 flex items-center gap-2">
+                        <div className="px-3 py-1.5 rounded bg-gray-100 dark:bg-gray-800/50 text-[10px] text-gray-500 dark:text-gray-400 font-mono border border-gray-200 dark:border-gray-700/50 flex items-center gap-2">
                           <Activity className="w-3 h-3" /> ID : {dbTestResult.maskedDatabaseId}
                         </div>
                       </div>
 
-                      <div className="p-3 bg-[#162a1f] border border-green-900/50 rounded-xl text-xs text-green-500 flex gap-2">
+                      <div className="p-3 bg-green-50 dark:bg-[#162a1f] border border-green-200 dark:border-green-900/50 rounded-xl text-xs text-green-700 dark:text-green-500 flex gap-2">
                         <CheckCircle2 className="w-4 h-4 shrink-0" />
                         <div>Structured Match: All Required Columns Are Present And Typed Correctly. The Database Is Fully Ready To Sync Data!</div>
                       </div>
@@ -392,13 +392,13 @@ export default function DatabasesPage() {
                         <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-3">Notion Column Schema Mapping</h4>
                         <div className="space-y-2">
                           {dbTestResult.schemaComparison.map((field: any, idx: number) => (
-                            <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-gray-900/30 border border-gray-800/50">
+                            <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-900/30 border border-gray-200 dark:border-gray-800/50">
                               <div className="flex items-center gap-3">
-                                <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold tracking-widest ${field.isRequired ? 'bg-indigo-900/40 text-indigo-400' : 'bg-gray-800 text-gray-400'}`}>
+                                <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold tracking-widest ${field.isRequired ? 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'}`}>
                                   {field.isRequired ? 'REQUIRED' : 'OPTIONAL'}
                                 </span>
                                 <div>
-                                  <div className="text-sm font-semibold text-gray-200">{field.key}</div>
+                                  <div className="text-sm font-semibold text-gray-900 dark:text-gray-200">{field.key}</div>
                                   <div className="text-[10px] text-gray-500 mt-0.5">{field.label}</div>
                                 </div>
                               </div>
@@ -419,7 +419,7 @@ export default function DatabasesPage() {
 
                     </div>
                   ) : (
-                    <div className="p-4 bg-red-950/20 border border-red-900/30 rounded-xl text-sm text-red-400 flex gap-2">
+                    <div className="p-4 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 rounded-xl text-sm text-red-600 dark:text-red-400 flex gap-2">
                       <XCircle className="w-5 h-5 shrink-0 mt-0.5" />
                       <div>{dbTestResult.error}</div>
                     </div>
@@ -428,7 +428,7 @@ export default function DatabasesPage() {
               )}
 
               {dbFeedback && (
-                <div className="p-3 rounded-xl bg-red-900/20 border border-red-900/50 text-red-400 text-sm flex gap-2 mt-4">
+                <div className="p-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 text-sm flex gap-2 mt-4">
                   <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                   <span>{dbFeedback.message}</span>
                 </div>
