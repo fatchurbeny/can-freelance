@@ -34,6 +34,7 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import Image from 'next/image';
+import { NotionLogo } from '@/logo/NotionLogo';
 
 import { useRouter } from 'next/navigation';
 
@@ -196,10 +197,7 @@ export default function NotionConfigPage() {
                 >
                   <div className="flex items-center gap-4">
                     <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center shadow-sm shrink-0 border border-gray-200 dark:border-gray-800">
-                      <svg viewBox="0 0 100 100" className="w-8 h-8 text-black">
-                        <path fill="currentColor" d="M19.9 23.3V78l41.6-9.6V20.1L19.9 23.3zm29.1 41.5l-15.3 3.6V42.3L49 38.6v26.2zm0-28.7l-15.3 3.6v-2.3l15.3-3.6v2.3zm19.8 15.6l-15.3 3.6V26.2l15.3-3.6v29.1zm0-31.4l-15.3 3.6v-2.3l15.3-3.6v2.3z"/>
-                        <path fill="currentColor" d="M80.1 23.3v54.7L38.5 87.6V78H23.5v9.6L6.1 83.3V20l38.5-8.8 35.5 8.2v3.9zM23.5 28.5V74l39.5-9.1V26.2l-39.5 2.3z"/>
-                      </svg>
+                      <NotionLogo />
                     </div>
                     <div>
                       <h3 className="text-lg font-bold text-gray-900 dark:text-white">
