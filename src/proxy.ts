@@ -2,14 +2,17 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function proxy(req: NextRequest) {
-  const expectedUser = process.env.BASIC_AUTH_USER
-    || (process.env.NODE_ENV === 'development' ? 'impro' : undefined);
-  const expectedPassword = process.env.BASIC_AUTH_PASSWORD
-    || (process.env.NODE_ENV === 'development' ? 'PlaygroundData2026' : undefined);
-  const basicAuth = req.headers.get('authorization');
+  const expectedUser = process.env.BASIC_AUTH_USER;
+  const expectedPassword = process.env.BASIC_AUTH_PASSWORD;
+
+  // --- START: DEBUG LOGGING ---
+  console.log('--- Auth Middleware Debug ---');
+  console.log('Expected User:', expectedUser ? 'CONFIGURED' : 'UNDEFINED');
+  console.log('Expected Password:', expectedPassword ? 'CONFIGURED' : 'UNDEFINED');
+  // --- END: DEBUG LOGGING ---
 
   if (!expectedUser || !expectedPassword) {
-    console.error('BASIC_AUTH_USER and BASIC_AUTH_PASSWORD must be configured.');
+    console.error('CRITICAL: BASIC_AUTH_USER and BASIC_AUTH_PASSWORD must be configured.');
     return authRequiredResponse();
   }
 
@@ -33,7 +36,10 @@ export function proxy(req: NextRequest) {
       const pwd = separator === -1 ? '' : decoded.slice(separator + 1);
 
       if (user === expectedUser && pwd === expectedPassword) {
+        console.log('Auth success');
         return NextResponse.next();
+      } else {
+        console.log('Auth failed: user/pass mismatch');
       }
     } catch (error) {
       // Handle atob errors (invalid base64) or other parsing errors
