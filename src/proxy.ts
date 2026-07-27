@@ -9,7 +9,10 @@ export function proxy(req: NextRequest) {
   console.log('--- Auth Middleware Debug ---');
   console.log('Expected User:', expectedUser ? 'CONFIGURED' : 'UNDEFINED');
   console.log('Expected Password:', expectedPassword ? 'CONFIGURED' : 'UNDEFINED');
+  console.log('Expected Password:', expectedPassword ? 'CONFIGURED' : 'UNDEFINED');
   // --- END: DEBUG LOGGING ---
+
+  const basicAuth = req.headers.get('authorization');
 
   if (!expectedUser || !expectedPassword) {
     console.error('CRITICAL: BASIC_AUTH_USER and BASIC_AUTH_PASSWORD must be configured.');
