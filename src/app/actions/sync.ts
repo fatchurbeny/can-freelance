@@ -6,7 +6,7 @@ import prisma from '@/lib/prisma';
 
 export async function triggerSyncAction() {
   try {
-    const result = await syncNotionData();
+    const result = await syncNotionData('incremental');
     revalidatePath('/');
     return result;
   } catch (error: any) {

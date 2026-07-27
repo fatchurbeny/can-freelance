@@ -1,10 +1,10 @@
-datasource db {
-  provider = "postgresql"
-}
-
 generator client {
   provider = "prisma-client-js"
   output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
 }
 
 model User {
@@ -13,32 +13,33 @@ model User {
   passwordHash String   @map("password_hash")
   name         String?
   role         String   @default("manager")
-  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   @@map("users")
 }
 
 model Designer {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  notionKey   String   @unique @map("notion_key")
-  displayName String   @map("display_name")
-  avatarColor String?  @map("avatar_color")
-  isActive    Boolean  @default(true) @map("is_active")
-
+  id          String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  notionKey   String  @unique @map("notion_key")
+  displayName String  @map("display_name")
+  avatarColor String? @map("avatar_color")
+  status      String  @default("Active")
   tasks       Task[]
+  payrollStatuses PayrollStatus[]
 
   @@map("designers")
 }
 
 model Doctype {
-  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  notionKey        String   @unique @map("notion_key")
-  displayName      String   @map("display_name")
-  isTopSpecialist  Boolean  @default(false) @map("is_top_specialist")
-  sortOrder        Int      @default(0) @map("sort_order")
-  poolRate         Float    @default(1.0) @map("pool_rate")
-  pages            Float?
-  tasks            Task[]
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  notionKey       String   @unique @map("notion_key")
+  displayName     String   @map("display_name")
+  isTopSpecialist Boolean  @default(false) @map("is_top_specialist")
+  sortOrder       Int      @default(0) @map("sort_order")
+  poolRate        Float    @default(1.0) @map("pool_rate")
+  pages           Float?
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  tasks           Task[]
 
   @@map("doctypes")
 }
@@ -54,13 +55,13 @@ model Account {
 }
 
 model DesignStatus {
-  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  notionKey           String   @unique @map("notion_key")
-  displayName         String   @map("display_name")
-  statusGroup         String?  @map("status_group")
-  countsAsSubmitted   Boolean  @default(true) @map("counts_as_submitted")
-  countsAsApproved    Boolean  @default(false) @map("counts_as_approved")
-  countsAsProfileOnly Boolean  @default(false) @map("counts_as_profile_only")
+  id                  String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  notionKey           String  @unique @map("notion_key")
+  displayName         String  @map("display_name")
+  statusGroup         String? @map("status_group")
+  countsAsSubmitted   Boolean @default(true) @map("counts_as_submitted")
+  countsAsApproved    Boolean @default(false) @map("counts_as_approved")
+  countsAsProfileOnly Boolean @default(false) @map("counts_as_profile_only")
   tasks               Task[]
 
   @@map("design_statuses")
@@ -72,75 +73,110 @@ model Task {
   notionUrl      String?       @map("notion_url")
   name           String?
   designerId     String?       @map("designer_id") @db.Uuid
-  designer       Designer?     @relation(fields: [designerId], references: [id])
   doctypeId      String?       @map("doctype_id") @db.Uuid
-  doctype        Doctype?      @relation(fields: [doctypeId], references: [id])
   designStatusId String?       @map("design_status_id") @db.Uuid
-  designStatus   DesignStatus? @relation(fields: [designStatusId], references: [id])
   pages          Decimal?      @db.Decimal
   qtySubmit      Decimal?      @map("qty_submit") @db.Decimal
-  license        String?       // 'Free' | 'Pro'
-  languages      String[]      @db.Text
+  license        String?
+  languages      String[]
   dateApproved   DateTime?     @map("date_approved") @db.Date
   taskMonth      String?       @map("task_month")
   payrollMonth   String?       @map("payroll_month")
   priority       String?
-  createdTime    DateTime      @map("created_time") @db.Timestamptz
-  lastEditedTime DateTime      @default(now()) @map("last_edited_time") @db.Timestamptz
-  dateStarted    DateTime?     @map("date_started") @db.Date
+  createdTime    DateTime      @map("created_time") @db.Timestamptz(6)
+  syncedAt       DateTime      @default(now()) @map("synced_at") @db.Timestamptz(6)
   dateCompleted  DateTime?     @map("date_completed") @db.Date
   datePO         DateTime?     @map("date_po") @db.Date
   dateReject     DateTime?     @map("date_reject") @db.Date
+  dateStarted    DateTime?     @map("date_started") @db.Date
+  lastEditedTime DateTime      @default(now()) @map("last_edited_time") @db.Timestamptz(6)
   poolScore      Decimal?      @map("pool_score") @db.Decimal
-  syncedAt       DateTime      @default(now()) @map("synced_at") @db.Timestamptz
   taskAccounts   TaskAccount[]
+  canvaLinks     TaskCanvaLink[]
+  comments       TaskComment[]
+  designStatus   DesignStatus? @relation(fields: [designStatusId], references: [id])
+  designer       Designer?     @relation(fields: [designerId], references: [id])
+  doctype        Doctype?      @relation(fields: [doctypeId], references: [id])
 
   @@map("tasks")
+}
+
+model TaskCanvaLink {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  taskId    String   @map("task_id") @db.Uuid
+  url       String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@map("task_canva_links")
+}
+
+model TaskComment {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  taskId    String   @map("task_id") @db.Uuid
+  content   String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@map("task_comments")
 }
 
 model TaskAccount {
   taskId    String  @map("task_id") @db.Uuid
   accountId String  @map("account_id") @db.Uuid
-  task      Task    @relation(fields: [taskId], references: [id], onDelete: Cascade)
   account   Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  task      Task    @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
   @@id([taskId, accountId])
   @@map("task_accounts")
 }
 
+model PayrollStatus {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  designerId   String   @map("designer_id") @db.Uuid
+  payrollMonth String   @map("payroll_month")
+  isPaid       Boolean  @default(false) @map("is_paid")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  designer     Designer @relation(fields: [designerId], references: [id], onDelete: Cascade)
+
+  @@unique([designerId, payrollMonth])
+  @@map("payroll_statuses")
+}
+
 model SyncLog {
-  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  startedAt    DateTime  @default(now()) @map("started_at") @db.Timestamptz
-  finishedAt   DateTime? @map("finished_at") @db.Timestamptz
-  status       String    // 'running' | 'success' | 'failed'
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  startedAt     DateTime  @default(now()) @map("started_at") @db.Timestamptz(6)
+  finishedAt    DateTime? @map("finished_at") @db.Timestamptz(6)
+  status        String
+  mode          String    @default("incremental")
   recordsSynced Int?      @map("records_synced")
-  errorMessage String?   @map("error_message")
+  errorMessage  String?   @map("error_message")
 
   @@map("sync_logs")
 }
 
 model NotionDatabase {
-  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name                String   @default("Database")
-  encryptedDatabaseId String   @map("encrypted_database_id")
+  id                  String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                String       @default("Database")
+  encryptedDatabaseId String       @map("encrypted_database_id")
   iv                  String
-  configId            String   @map("config_id") @db.Uuid
+  configId            String       @map("config_id") @db.Uuid
   config              NotionConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
 
   @@map("notion_databases")
 }
 
 model NotionConfig {
-  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  workspaceName       String   @default("Notion Workspace") @map("workspace_name")
-  encryptedApiKey     String   @map("encrypted_api_key")
-  iv                  String   // Initialization vector
-  autoSync            Boolean  @default(false) @map("auto_sync")
-  syncInterval        String   @default("15_mins") @map("sync_interval") // '15_mins' | '30_mins' | '1_hour' | '6_hours' | '12_hours' | '24_hours'
-  updatedAt           DateTime @updatedAt @map("updated_at") @db.Timestamptz
-  
-  databases           NotionDatabase[]
+  id               String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceName    String         @map("workspace_name")
+  encryptedApiKey  String         @map("encrypted_api_key")
+  iv               String
+  autoSync         Boolean        @default(false) @map("auto_sync")
+  syncInterval     String         @default("15_mins") @map("sync_interval")
+  contractRate     Int            @default(15000) @map("contract_rate")
+  updatedAt        DateTime       @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  databases        NotionDatabase[]
 
   @@map("notion_configs")
 }
-

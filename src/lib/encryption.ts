@@ -2,8 +2,13 @@ import crypto from 'crypto';
 
 const ALGORITHM = 'aes-256-cbc';
 
-// Use ENCRYPTION_SECRET or fall back to a default value (with warning)
-const ENCRYPTION_SECRET = process.env.ENCRYPTION_SECRET || 'default-secret-notion-canva-dashboard-key-32b';
+// Local fallback preserves existing development data; deployed environments require a secret.
+const ENCRYPTION_SECRET = process.env.ENCRYPTION_SECRET
+  || (process.env.NODE_ENV === 'development' ? 'default-secret-notion-canva-dashboard-key-32b' : '');
+
+if (!ENCRYPTION_SECRET) {
+  throw new Error('ENCRYPTION_SECRET must be configured outside development.');
+}
 
 // Ensure the encryption key is exactly 32 bytes by hashing the secret
 const KEY = crypto.createHash('sha256').update(ENCRYPTION_SECRET).digest();

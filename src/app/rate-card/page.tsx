@@ -1,134 +1,69 @@
-import prisma from '@/lib/prisma';
 import { getDoctypes } from '@/lib/queries';
 import { getLatestSyncStatus } from '@/app/actions/sync';
-
-export const dynamic = 'force-dynamic';
+import { getContractRateAction } from '@/app/actions/notion-config';
 import Sidebar from '@/components/Sidebar';
 import ThemeToggle from '@/components/ThemeToggle';
-import { Plus, Gavel, Calendar, Edit3, Banknote } from 'lucide-react';
+import { Gavel, Calendar } from 'lucide-react';
+import DoctypeTable from '@/components/DoctypeTable';
+import ContractRateEditor from '@/components/ContractRateEditor';
+
+export const dynamic = 'force-dynamic';
 
 export default async function RateCardPage() {
   const doctypes = await getDoctypes();
   const latestSyncLog = await getLatestSyncStatus();
+  const contractRateRes = await getContractRateAction();
+  const contractRate = contractRateRes.success ? contractRateRes.contractRate : 15000;
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen bg-[#F5F0EB] dark:bg-[#0a0b0e] text-gray-900 dark:text-gray-100 transition-colors">
+    <div className="flex min-h-screen flex-col bg-[#F5F0EB] text-gray-900 transition-colors dark:bg-[#0a0b0e] dark:text-gray-100 md:flex-row">
       <Sidebar currentSyncLog={latestSyncLog} />
 
-      <main className="flex-1 p-6 md:p-8 space-y-8 overflow-x-hidden">
-        
-        {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-[#E8E0D8] dark:border-gray-800">
+      <main className="flex-1 space-y-8 overflow-x-hidden p-6 md:p-8">
+        <div className="flex flex-col items-start justify-between gap-4 border-b border-[#E8E0D8] pb-4 dark:border-gray-800 md:flex-row md:items-center">
           <div>
-            <h1 className="text-2xl font-bold font-display text-gray-900 dark:text-white">
+            <h1 className="font-display text-2xl font-bold text-gray-900 dark:text-white">
               Rate Card Configurations
             </h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              Atur tarif bayaran dasar per halaman (QTY) desainer berdasarkan format output doctype.
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              Atur doctype, pool rate, pages, dan ketentuan kontrak freelance.
             </p>
           </div>
           <div className="flex items-center gap-3">
             <ThemeToggle />
-            <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-medium shadow-sm">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 font-medium text-white shadow-sm">
               IS
             </div>
           </div>
         </div>
 
-        {/* Contract Rules Banner */}
-        <div className="glass dark:bg-[#111827] border border-[#E8E0D8] dark:border-gray-800 p-4 rounded-xl shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="glass flex flex-col gap-4 rounded-xl border border-[#E8E0D8] p-4 shadow-sm dark:border-gray-800 dark:bg-[#111827] md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-4">
-            <div className="bg-indigo-600 text-white p-2.5 rounded-lg shrink-0">
-              <Gavel className="w-5 h-5" />
+            <div className="shrink-0 rounded-lg bg-indigo-600 p-2.5 text-white">
+              <Gavel className="h-5 w-5" />
             </div>
             <div>
               <h2 className="font-semibold text-gray-900 dark:text-white">
                 Ketentuan & aturan kontrak freelance
               </h2>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+              <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
                 kontrak dimulai sejak 26 januari 2026
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-6">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-              <Calendar className="w-4 h-4 text-indigo-500" />
-              <span>Kalender : <strong className="font-semibold text-gray-900 dark:text-white">25 hari kerja/bulan</strong></span>
+              <Calendar className="h-4 w-4 text-indigo-500" />
+              <span>
+                Kalender : <strong className="font-semibold text-gray-900 dark:text-white">25 hari kerja/bulan</strong>
+              </span>
             </div>
-            <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-              <Banknote className="w-4 h-4 text-indigo-500" />
-              <span>rate/poll : <strong className="font-bold text-gray-900 dark:text-white">iDR 15.000</strong></span>
-            </div>
+            <ContractRateEditor initialRate={contractRate ?? 15000} />
           </div>
         </div>
 
-        {/* Table Section */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold font-display text-gray-900 dark:text-white">
-              Doctype Price and pool Configurations
-            </h2>
-            <button disabled className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors opacity-50 cursor-not-allowed">
-              <Plus className="w-4 h-4" />
-              Add Rate Card
-            </button>
-          </div>
-
-          <div className="glass dark:bg-[#111827] rounded-xl border border-[#E8E0D8] dark:border-gray-800 overflow-hidden shadow-sm">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse min-w-[800px]">
-                <thead className="bg-gray-50 dark:bg-gray-800/50 text-sm font-medium text-gray-500 dark:text-gray-400">
-                  <tr>
-                    <th className="px-4 py-3 whitespace-nowrap">Doctype</th>
-                    <th className="px-4 py-3 text-center whitespace-nowrap">Rate/Pages</th>
-                    <th className="px-4 py-3 text-center whitespace-nowrap">Pool Rate</th>
-                    <th className="px-4 py-3 text-center whitespace-nowrap">Pages</th>
-                    <th className="px-4 py-3 text-center whitespace-nowrap">Last Update</th>
-                    <th className="px-4 py-3 text-center whitespace-nowrap">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#E8E0D8] dark:divide-gray-800">
-                  {doctypes.map((doctype) => (
-                    <tr 
-                      key={doctype.id} 
-                      className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors text-sm"
-                    >
-                      <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">
-                        {doctype.notionKey}
-                      </td>
-                      <td className="px-4 py-3 text-center text-indigo-600 dark:text-indigo-400 font-medium">
-                        IDR 15.000
-                      </td>
-                      <td className="px-4 py-3 text-center text-green-600 dark:text-green-400 font-medium">
-                        {doctype.poolRate}
-                      </td>
-                      <td className="px-4 py-3 text-center text-gray-500 dark:text-gray-400">
-                        {doctype.pages ?? 1}
-                      </td>
-                      <td className="px-4 py-3 text-center text-gray-500 dark:text-gray-400">
-                        Last Update
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <button disabled className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-indigo-600 bg-indigo-50 dark:bg-indigo-500/10 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20 rounded-md transition-colors opacity-50 cursor-not-allowed">
-                          <Edit3 className="w-3.5 h-3.5" />
-                          Edit Rate
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                  {doctypes.length === 0 && (
-                    <tr>
-                      <td colSpan={7} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
-                        Belum ada doctype yang tersedia. Silakan sync dengan Notion terlebih dahulu.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
+        <DoctypeTable doctypes={doctypes} contractRate={contractRate ?? 15000} />
       </main>
     </div>
   );

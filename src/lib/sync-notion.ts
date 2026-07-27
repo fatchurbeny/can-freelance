@@ -2,7 +2,11 @@ import prisma from '@/lib/prisma';
 import { Client } from '@notionhq/client';
 import { decrypt } from '@/lib/encryption';
 
-export async function syncNotionData() {
+export type NotionSyncMode = 'incremental' | 'full';
+
+const INCREMENTAL_OVERLAP_MS = 2 * 60 * 1000;
+
+export async function syncNotionData(mode: NotionSyncMode = 'incremental') {
   const startedAt = new Date();
   
   // Create running sync log
@@ -44,12 +48,17 @@ export async function syncNotionData() {
 
       let recordsSynced = 0;
 
-      // Find the last successful sync time to implement incremental updates
-      const lastSync = await prisma.syncLog.findFirst({
-        where: { status: 'success' },
-        orderBy: { finishedAt: 'desc' },
-      });
-      const lastSyncTime = lastSync?.finishedAt?.toISOString();
+      // Start-time cutoff prevents edits made during a prior run from being skipped.
+      // Two-minute overlap also protects timestamp boundaries; upserts make repeats safe.
+      const lastSync = mode === 'incremental'
+        ? await prisma.syncLog.findFirst({
+            where: { status: 'success' },
+            orderBy: { startedAt: 'desc' },
+          })
+        : null;
+      const lastSyncTime = lastSync
+        ? new Date(lastSync.startedAt.getTime() - INCREMENTAL_OVERLAP_MS).toISOString()
+        : undefined;
 
       // Ensure reference metadata exists (designers, doctypes, accounts, statuses)
       const designers = await prisma.designer.findMany();
@@ -78,6 +87,8 @@ export async function syncNotionData() {
           ]
         }
       });
+
+      const allSyncedNotionIds: string[] = [];
 
       for (const databaseId of databasesToSync) {
         console.log(`Starting live Notion sync for database: ${databaseId}...`);
@@ -108,8 +119,8 @@ export async function syncNotionData() {
             queryPayload.filter = {
               timestamp: 'last_edited_time',
               last_edited_time: {
-                on_or_after: lastSyncTime
-              }
+                on_or_after: lastSyncTime,
+              },
             };
           }
 
@@ -151,29 +162,17 @@ export async function syncNotionData() {
                   notionKey: designerName,
                   displayName: designerName,
                   avatarColor: randomColor,
-                  isActive: isDesignerActive,
+                  status: 'Active',
                 }
               });
               designers.push(newD);
               foundDesigner = newD;
-            } else if (designerStatusProp && foundDesigner.isActive !== isDesignerActive) {
-              const updatedD = await prisma.designer.update({
-                where: { id: foundDesigner.id },
-                data: { isActive: isDesignerActive }
-              });
-              const idx = designers.findIndex(d => d.id === foundDesigner!.id);
-              if (idx !== -1) designers[idx] = updatedD;
-              foundDesigner = updatedD;
             }
             designerId = foundDesigner.id;
           }
 
           // Parse Doctype (lookup by name/notionKey, create if missing)
           const doctypeName = properties.Doctype?.select?.name;
-          const poolRateProp = properties['Pool Rate'] || properties['Pool rate'] || properties['pool rate'];
-          const poolRate = poolRateProp?.number;
-          const pagesProp = properties['Pages'] || properties['pages'];
-          const pagesVal = pagesProp?.number;
 
           let doctypeId = null;
           if (doctypeName) {
@@ -189,31 +188,19 @@ export async function syncNotionData() {
                   displayName: doctypeName,
                   isTopSpecialist: false,
                   sortOrder: doctypes.length + 1,
-                  poolRate: typeof poolRate === 'number' ? poolRate : 1.0,
-                  pages: typeof pagesVal === 'number' ? pagesVal : 1.0,
+                  poolRate: 1.0,
+                  pages: 1.0,
                 }
               });
               doctypes.push(newDt);
               foundDoctype = newDt;
-            } else if ((typeof poolRate === 'number' && foundDoctype.poolRate !== poolRate) || (typeof pagesVal === 'number' && foundDoctype.pages !== pagesVal)) {
-              // Update existing doctype if pool rate or pages differ and is provided in Notion
-              const updateData: any = {};
-              if (typeof poolRate === 'number' && foundDoctype.poolRate !== poolRate) updateData.poolRate = poolRate;
-              if (typeof pagesVal === 'number' && foundDoctype.pages !== pagesVal) updateData.pages = pagesVal;
-              
-              const updatedDt = await prisma.doctype.update({
-                where: { id: foundDoctype.id },
-                data: updateData
-              });
-              const idx = doctypes.findIndex(d => d.id === foundDoctype!.id);
-              if (idx !== -1) doctypes[idx] = updatedDt;
-              foundDoctype = updatedDt;
             }
             doctypeId = foundDoctype!.id;
           }
 
           // Parse Design Status (lookup by name/notionKey, create if missing)
-          const statusName = properties['Design Status']?.status?.name || properties['Design Status']?.select?.name;
+          const statusProp = properties['Design Status'];
+          const statusName = statusProp?.status?.name || statusProp?.select?.name;
           let designStatusId = null;
           if (statusName) {
             let foundStatus = statuses.find(
@@ -321,6 +308,112 @@ export async function syncNotionData() {
             },
           });
 
+          // Extract Canva links from properties and page body blocks
+          try {
+            const canvaUrls: string[] = [];
+            // Check properties for Canva Link or Template Link
+            const canvaProp = properties['Template Link'] || properties['Canva Link'] || properties.Canva || properties.URL;
+            if (canvaProp) {
+              if (canvaProp.type === 'files') {
+                for (const file of canvaProp.files) {
+                  const url = file.external?.url || file.file?.url || file.name;
+                  if (url && url.includes('canva.link')) {
+                    const match = url.match(/https?:\/\/(?:www\.)?canva\.link\/[^\s]+/i);
+                    if (match) canvaUrls.push(match[0]);
+                  } else if (file.name && file.name.includes('canva.link')) {
+                    const match = file.name.match(/https?:\/\/(?:www\.)?canva\.link\/[^\s]+/i);
+                    if (match) canvaUrls.push(match[0]);
+                  }
+                }
+              } else if (canvaProp.url && canvaProp.url.includes('canva.link')) {
+                canvaUrls.push(canvaProp.url);
+              } else if (canvaProp.type === 'rich_text') {
+                 for (const rt of canvaProp.rich_text) {
+                    const url = rt.href || rt.text?.link?.url || rt.plain_text;
+                    if (url && url.includes('canva.link')) {
+                      const match = url.match(/https?:\/\/(?:www\.)?canva\.link\/[^\s]+/i);
+                      if (match) canvaUrls.push(match[0]);
+                    }
+                 }
+              }
+            }
+
+            // Only fetch blocks if we didn't find links in the properties (saves API calls and time)
+            if (canvaUrls.length === 0) {
+              async function fetchAllBlocks(blockId: string, depth = 0): Promise<any[]> {
+                if (depth > 3) return []; // Limit depth to avoid infinite loops and rate limits
+                try {
+                  const response: any = await (notionClient as any).blocks.children.list({
+                    block_id: blockId,
+                    page_size: 100,
+                  });
+                  let blocks = response.results || [];
+                  const childPromises = blocks
+                    .filter((b: any) => b.has_children)
+                    .map((b: any) => fetchAllBlocks(b.id, depth + 1));
+                  const childrenArrays = await Promise.all(childPromises);
+                  for (const children of childrenArrays) {
+                    blocks = blocks.concat(children);
+                  }
+                  return blocks;
+                } catch (e) {
+                  console.warn(`Could not fetch children for block ${blockId}`);
+                  return [];
+                }
+              }
+
+              const allBlocks = await fetchAllBlocks(notionPageId);
+
+              for (const block of allBlocks) {
+                const textContainers = [
+                block.paragraph?.rich_text,
+                block.bulleted_list_item?.rich_text,
+                block.numbered_list_item?.rich_text,
+                block.to_do?.rich_text,
+                block.toggle?.rich_text,
+                block.quote?.rich_text,
+                block.callout?.rich_text
+              ];
+              for (const rts of textContainers) {
+                if (rts) {
+                  for (const rt of rts) {
+                    const url = rt.href || rt.text?.link?.url || rt.plain_text;
+                    if (url && url.includes('canva.link')) {
+                      const match = url.match(/https?:\/\/(?:www\.)?canva\.link\/[^\s]+/i);
+                      if (match) {
+                        canvaUrls.push(match[0]);
+                      }
+                    }
+                  }
+                }
+              }
+
+              // Extract from bookmarks and embeds
+              const blockUrls = [block.bookmark?.url, block.embed?.url, block.link_preview?.url];
+              for (const bUrl of blockUrls) {
+                if (bUrl && bUrl.includes('canva.link')) {
+                  const match = bUrl.match(/https?:\/\/(?:www\.)?canva\.link\/[^\s]+/i);
+                  if (match) {
+                    canvaUrls.push(match[0]);
+                  }
+                }
+              }
+            }
+            } // END if (canvaUrls.length === 0)
+
+            const uniqueCanvaUrls = Array.from(new Set(canvaUrls));
+            await prisma.taskCanvaLink.deleteMany({ where: { taskId: task.id } });
+            if (uniqueCanvaUrls.length > 0) {
+              await prisma.taskCanvaLink.createMany({
+                data: uniqueCanvaUrls.map(url => ({ taskId: task.id, url })),
+              });
+            }
+          } catch (blockErr: any) {
+            console.warn(`Could not fetch blocks for page ${notionPageId}: ${blockErr.message}`);
+          }
+
+          // Parse and link Accounts
+
           // Parse and link Accounts (Brands) - supports both multi-select and select
           let notionAccounts: { name: string }[] = [];
           const brandProp = properties.Brand || properties.Account;
@@ -336,6 +429,8 @@ export async function syncNotionData() {
           await prisma.taskAccount.deleteMany({
             where: { taskId: task.id },
           });
+
+          // Parse and link Accounts
 
           // Insert new ones
           for (const na of notionAccounts) {
@@ -365,12 +460,24 @@ export async function syncNotionData() {
           }
 
           recordsSynced++;
+          allSyncedNotionIds.push(notionPageId);
         }
 
         hasMore = response.has_more;
         cursor = response.next_cursor || undefined;
       }
-    } // <-- Added closing brace for "for (const databaseId of databasesToSync) {"
+    }
+
+      // Incremental results are incomplete by design. Only a full result set can
+      // safely identify pages deleted from Notion.
+      if (mode === 'full') {
+        await prisma.task.deleteMany({
+          where: {
+            notionPageId: { notIn: allSyncedNotionIds },
+            notionUrl: { startsWith: 'https://notion.so/' }, // Only delete live tasks, keep mocks if any
+          },
+        });
+      }
 
       // Update sync log success
       await prisma.syncLog.update({
@@ -390,7 +497,7 @@ export async function syncNotionData() {
       // Simulate sync lag
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
-      const designers = await prisma.designer.findMany({ where: { isActive: true } });
+      const designers = await prisma.designer.findMany({ where: { status: 'Active' } });
       const doctypes = await prisma.doctype.findMany();
       const accounts = await prisma.account.findMany();
       const statuses = await prisma.designStatus.findMany();
@@ -422,11 +529,9 @@ export async function syncNotionData() {
         const qtySubmit = Math.floor(Math.random() * 5) + 1;
         const license = Math.random() < 0.8 ? 'Pro' : 'Free';
         const languages = Math.random() < 0.7 ? ['IND'] : (Math.random() < 0.6 ? ['ENG'] : ['IND', 'ENG']);
-        
         const dateApproved = status.countsAsApproved || status.countsAsProfileOnly
           ? new Date(nowTime.getTime() - Math.random() * 24 * 60 * 60 * 1000)
           : null;
-        
         const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
         const taskMonth = `${monthNames[nowTime.getMonth()]}-${nowTime.getFullYear()}`;
         // Simulate manual assignment of payroll month (sometimes current month, sometimes next month)
@@ -470,6 +575,16 @@ export async function syncNotionData() {
             },
           });
         }
+        // Mock Canva links (70% chance to have one)
+        if (Math.random() > 0.3) {
+          await prisma.taskCanvaLink.create({
+            data: {
+              taskId: task.id,
+              url: `https://www.canva.com/design/DAFAKE${Math.random().toString(36).substring(2, 10).toUpperCase()}/view`
+            }
+          });
+        }
+
         mockCreatedCount++;
       }
 

@@ -14,7 +14,8 @@ import {
   ChevronRight,
   Settings,
   Menu,
-  X
+  X,
+  Database
 } from 'lucide-react';
 import SyncButton from './SyncButton';
 
@@ -29,7 +30,7 @@ export default function Sidebar({ currentSyncLog }: SidebarProps) {
 
   const menuItems = [
     { name: 'Dashboard', icon: LayoutDashboard, href: '/', active: pathname === '/' },
-    { name: 'Production', icon: Files, href: '#', active: false },
+    { name: 'Production', icon: Files, href: '/production', active: pathname === '/production' },
     { name: 'Account & Team', icon: Users, href: '/account-team', active: pathname === '/account-team' },
     { name: 'Rate Card', icon: CreditCard, href: '/rate-card', active: pathname === '/rate-card' },
     { name: 'Billing Statement', icon: FileText, href: '/billing-statement', active: pathname === '/billing-statement' },

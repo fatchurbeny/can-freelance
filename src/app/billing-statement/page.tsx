@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import prisma from '@/lib/prisma';
 import { getLatestSyncStatus } from '@/app/actions/sync';
+import { getContractRateAction } from '@/app/actions/notion-config';
 import Sidebar from '@/components/Sidebar';
 import ThemeToggle from '@/components/ThemeToggle';
 import { 
@@ -19,6 +20,9 @@ import {
 } from 'lucide-react';
 import React from 'react';
 import MonthFilter from './MonthFilter';
+import PayrollStatusToggle from '@/components/PayrollStatusToggle';
+import { getPayrollStatusMap } from '@/app/actions/payroll-status';
+import ApprovalPayrollTable from '@/components/ApprovalPayrollTable';
 
 function formatCurrency(amount: number) {
   return `IDR ${amount.toLocaleString('id-ID')}`;
@@ -99,10 +103,12 @@ function StatIndicator({ current, prev }: { current: number, prev: number }) {
 }
 
 export default async function BillingStatementPage(props: {
-  searchParams: Promise<{ paymentMonth?: string }>;
+  searchParams: Promise<{ paymentMonth?: string; tab?: string }>;
 }) {
   const searchParams = await props.searchParams;
   const latestSyncLog = await getLatestSyncStatus();
+  const contractRateRes = await getContractRateAction();
+  const contractRate = contractRateRes.success ? contractRateRes.contractRate : 15000;
 
   // Find available months
   const tasksWithMonths = await prisma.task.findMany({
@@ -116,6 +122,7 @@ export default async function BillingStatementPage(props: {
     .sort((a, b) => getMonthValue(b) - getMonthValue(a));
   
   const selectedMonth = searchParams.paymentMonth || availableMonths[0] || 'Unknown';
+  const activeTab = searchParams.tab || 'summary';
 
   // Fetch all designers with their approved tasks for the selected month
   const designersData = await prisma.designer.findMany({
@@ -140,7 +147,6 @@ export default async function BillingStatementPage(props: {
   let totalTasks = 0;
   let totalTemplates = 0;
   let totalPages = 0;
-  let designerPaidCount = 0;
   
   const uniqueDoctypes = new Set<string>();
 
@@ -154,7 +160,7 @@ export default async function BillingStatementPage(props: {
       const qty = Number(t.qtySubmit || 0);
       const pages = Number(t.pages || 0);
       const poolRate = Number(t.doctype?.poolRate || 0);
-      const payment = qty * pages * poolRate * 15000;
+      const payment = d.status === 'Resign' ? 0 : qty * pages * poolRate * contractRate!;
       
       designerPayroll += payment;
       designerTemplates += qty;
@@ -175,8 +181,6 @@ export default async function BillingStatementPage(props: {
     totalTasks += designerTasksCount;
     totalTemplates += designerTemplates;
     totalPages += designerPages;
-
-    if (designerPayroll > 0) designerPaidCount++;
 
     return {
       ...d,
@@ -216,7 +220,7 @@ export default async function BillingStatementPage(props: {
       const qty = Number(t.qtySubmit || 0);
       const pages = Number(t.pages || 0);
       const poolRate = Number(t.doctype?.poolRate || 0);
-      const payment = qty * pages * poolRate * 15000;
+      const payment = d.status === 'Resign' ? 0 : qty * pages * poolRate * contractRate!;
       
       designerPayroll += payment;
       prevTotalTemplates += qty;
@@ -232,17 +236,32 @@ export default async function BillingStatementPage(props: {
   
   const prevDesignLeader = prevDesigners.length > 0 && prevDesigners[0].totalPayroll > 0 ? prevDesigners[0].displayName : 'None';
 
-  // Fetch upcoming unpaid tasks (approved but no payroll month)
-  const upcomingTasksData = await prisma.task.findMany({
-    where: {
-      payrollMonth: null,
-      designStatus: {
-        countsAsApproved: true,
+  const upcomingTasksData = JSON.parse(JSON.stringify(
+    await prisma.task.findMany({
+      where: {
+        payrollMonth: null,
+        designStatus: {
+          countsAsApproved: true,
+        }
+      },
+      include: {
+        doctype: true,
+        designer: true,
+        taskAccounts: {
+          include: { account: true }
+        }
       }
-    },
-    include: { doctype: true }
-  });
+    })
+  )) as Array<any>;
 
+  const payrollStatusMap = selectedMonth !== 'Unknown'
+    ? await getPayrollStatusMap(designers.map((designer) => designer.id), selectedMonth)
+    : new Map<string, boolean>();
+
+  const activeAssignedDesigners = designers.filter((designer) => designer.status === 'Active' && designer.totalTasks > 0);
+  const activeAssignedDesignerIds = new Set(activeAssignedDesigners.map((designer) => designer.id));
+  const paidDesignerCount = Array.from(payrollStatusMap.entries()).filter(([designerId, isPaid]) => isPaid && activeAssignedDesignerIds.has(designerId)).length;
+  const unpaidDesignerCount = activeAssignedDesigners.length - paidDesignerCount;
   let upcomingPayout = 0;
   let upcomingTemplates = 0;
   let upcomingPages = 0;
@@ -253,7 +272,7 @@ export default async function BillingStatementPage(props: {
     const qty = Number(t.qtySubmit || 0);
     const pages = Number(t.pages || 0);
     const poolRate = Number(t.doctype?.poolRate || 0);
-    const payment = qty * pages * poolRate * 15000;
+    const payment = qty * pages * poolRate * contractRate!;
     
     upcomingPayout += payment;
     upcomingTemplates += qty;
@@ -261,6 +280,12 @@ export default async function BillingStatementPage(props: {
     if (t.doctypeId) upcomingDoctypes.add(t.doctypeId);
     if (t.designerId) upcomingDesigners.add(t.designerId);
   });
+
+  const now = new Date();
+  const currentMonthStr = `${INDONESIAN_MONTHS[now.getMonth()]}-${now.getFullYear()}`;
+  const nextMonthDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const nextMonthStr = `${INDONESIAN_MONTHS[nextMonthDate.getMonth()]}-${nextMonthDate.getFullYear()}`;
+  const approvalMonthOptions = Array.from(new Set([...availableMonths, currentMonthStr, nextMonthStr]));
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-[#F5F0EB] dark:bg-[#0a0b0e] text-gray-900 dark:text-gray-100 transition-colors">
@@ -285,7 +310,42 @@ export default async function BillingStatementPage(props: {
           </div>
         </div>
 
-        {/* Contract Banner */}
+        {/* Tab Navigation */}
+        <div className="flex flex-wrap gap-2.5 items-center pb-4">
+          <Link
+            href={`?paymentMonth=${selectedMonth}&tab=summary`}
+            className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all border ${
+              activeTab === 'summary'
+                ? 'bg-indigo-600 dark:bg-indigo-500 text-white border-indigo-600 dark:border-indigo-500 shadow-sm shadow-indigo-600/10'
+                : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 border-[#E8E0D8] dark:border-gray-800 hover:border-[#615FFF] dark:hover:border-[#615FFF] hover:text-[#615FFF] dark:hover:text-[#615FFF] hover:ring-1 hover:ring-[#615FFF] shadow-sm'
+            }`}
+          >
+            Summary
+          </Link>
+          <Link
+            href={`?paymentMonth=${selectedMonth}&tab=approval-payroll`}
+            className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all border ${
+              activeTab === 'approval-payroll'
+                ? 'bg-indigo-600 dark:bg-indigo-500 text-white border-indigo-600 dark:border-indigo-500 shadow-sm shadow-indigo-600/10'
+                : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 border-[#E8E0D8] dark:border-gray-800 hover:border-[#615FFF] dark:hover:border-[#615FFF] hover:text-[#615FFF] dark:hover:text-[#615FFF] hover:ring-1 hover:ring-[#615FFF] shadow-sm'
+            }`}
+          >
+            Approval Payroll
+            {upcomingTasksData.length > 0 && (
+              <span className={`ml-2 inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5 rounded-full text-[11px] font-bold ${
+                activeTab === 'approval-payroll'
+                  ? 'bg-white/30 dark:bg-white/20 text-white'
+                  : 'bg-indigo-600/15 dark:bg-indigo-500/25 text-indigo-600 dark:text-indigo-400'
+              }`}>
+                {upcomingTasksData.length}
+              </span>
+            )}
+          </Link>
+        </div>
+
+        {activeTab === 'summary' ? (
+          <>
+            {/* Contract Banner */}
         <div className="glass dark:bg-[#111827] border border-[#E8E0D8] dark:border-gray-800 p-4 rounded-xl shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4 w-full">
           <div className="flex items-center gap-4">
             <div className="bg-indigo-600 text-white p-2.5 rounded-lg shrink-0">
@@ -307,59 +367,58 @@ export default async function BillingStatementPage(props: {
             </div>
             <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
               <span className="w-3 h-3 rounded-full border-[3px] border-indigo-500" />
-              <span>rate/poll : <strong className="font-bold text-gray-900 dark:text-white">iDR 15.000</strong></span>
+              <span>rate/poll : <strong className="font-bold text-gray-900 dark:text-white">IDR {contractRate!.toLocaleString('id-ID')}</strong></span>
             </div>
           </div>
         </div>
 
         {/* Stats Grid */}
         <div className="flex flex-col xl:flex-row gap-6">
-          
           {/* Main Stat Card (Total Payout & Upcoming) */}
           <div className="flex flex-col gap-6 w-full xl:w-[380px] shrink-0">
             <div className="glass dark:bg-[#111827] border border-[#E8E0D8] dark:border-gray-800 rounded-xl p-5 flex flex-col justify-between h-[140px] shadow-sm">
               <div className="flex justify-between items-center w-full">
-              <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                Total Unpaid Payment
-              </span>
-              <div className="bg-orange-100 dark:bg-orange-500/20 p-1.5 rounded-md">
-                <FileText className="w-4 h-4 text-orange-500" />
+                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  Total Unpaid This Month
+                </span>
+                <div className="bg-orange-100 dark:bg-orange-500/20 p-1.5 rounded-md">
+                  <FileText className="w-4 h-4 text-orange-500" />
+                </div>
+              </div>
+              <div>
+                <div className="flex justify-between items-center">
+                  <span className="text-3xl font-bold text-gray-900 dark:text-white">{formatCurrency(totalMonthlyPayout)}</span>
+                  <StatIndicator current={totalMonthlyPayout} prev={prevTotalMonthlyPayout} />
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Bulan Lalu : {formatCurrency(prevTotalMonthlyPayout)}</p>
               </div>
             </div>
-            <div>
-              <div className="flex justify-between items-center">
-                <span className="text-3xl font-bold text-gray-900 dark:text-white">{formatCurrency(totalMonthlyPayout)}</span>
-                <StatIndicator current={totalMonthlyPayout} prev={prevTotalMonthlyPayout} />
-              </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Bulan Lalu : {formatCurrency(prevTotalMonthlyPayout)}</p>
-            </div>
-          </div>
 
-          <div className="glass dark:bg-[#111827] border border-[#E8E0D8] dark:border-gray-800 rounded-xl p-5 flex flex-col justify-between h-[140px] shadow-sm">
-            <div className="flex justify-between items-center w-full mb-4">
-              <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                Potential Task Paid
-              </span>
-              <div className="bg-orange-100 dark:bg-orange-500/20 p-1.5 rounded-md">
-                <FileText className="w-4 h-4 text-orange-500" />
+            <div className="glass dark:bg-[#111827] border border-[#E8E0D8] dark:border-gray-800 rounded-xl p-5 flex flex-col justify-between h-[140px] shadow-sm">
+              <div className="flex justify-between items-center w-full mb-4">
+                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  Approved, No Payroll Month
+                </span>
+                <div className="bg-orange-100 dark:bg-orange-500/20 p-1.5 rounded-md">
+                  <FileText className="w-4 h-4 text-orange-500" />
+                </div>
               </div>
-            </div>
-            <div>
-              <span className="text-3xl font-bold text-gray-900 dark:text-white">{formatCurrency(upcomingPayout)}</span>
-              <div className="flex items-center gap-1.5 mt-1 text-[11px] text-gray-500 dark:text-gray-400 font-medium whitespace-nowrap overflow-x-auto hide-scrollbar">
-                <span>{upcomingTasksData.length} Task</span>
-                <span className="text-gray-300 dark:text-gray-700">|</span>
-                <span>{upcomingTemplates} Template</span>
-                <span className="text-gray-300 dark:text-gray-700">|</span>
-                <span>{upcomingPages} Pages</span>
-                <span className="text-gray-300 dark:text-gray-700">|</span>
-                <span>{upcomingDoctypes.size} Doctype</span>
-                <span className="text-gray-300 dark:text-gray-700">|</span>
-                <span>{upcomingDesigners.size} Designer</span>
+              <div>
+                <span className="text-3xl font-bold text-gray-900 dark:text-white">{formatCurrency(upcomingPayout)}</span>
+                <div className="flex items-center gap-1.5 mt-1 text-[11px] text-gray-500 dark:text-gray-400 font-medium whitespace-nowrap overflow-x-auto hide-scrollbar">
+                  <span>{upcomingTasksData.length} Task</span>
+                  <span className="text-gray-300 dark:text-gray-700">|</span>
+                  <span>{upcomingTemplates} Template</span>
+                  <span className="text-gray-300 dark:text-gray-700">|</span>
+                  <span>{upcomingPages} Pages</span>
+                  <span className="text-gray-300 dark:text-gray-700">|</span>
+                  <span>{upcomingDoctypes.size} Doctype</span>
+                  <span className="text-gray-300 dark:text-gray-700">|</span>
+                  <span>{upcomingDesigners.size} Designer</span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
           {/* Grid of smaller stats */}
           <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -446,27 +505,44 @@ export default async function BillingStatementPage(props: {
               </div>
             </div>
 
-            {/* Designer Paid */}
-            <div className="glass dark:bg-[#111827] border border-[#E8E0D8] dark:border-gray-800 rounded-xl p-5 flex flex-col justify-between h-[140px] shadow-sm">
-              <div className="flex justify-between items-center">
+
+            {/* Designer Status */}
+            <div className="glass dark:bg-[#111827] border border-[#E8E0D8] dark:border-gray-800 rounded-xl p-5 flex flex-col justify-between h-[140px] shadow-sm overflow-hidden">
+              <div className="flex items-center justify-between gap-3">
                 <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                  Designer Unpaid
+                  Designer Status
                 </span>
-                <div className="bg-green-100 dark:bg-green-500/20 p-1.5 rounded-md">
-                  <Users className="w-4 h-4 text-green-500" />
+                <div className="bg-indigo-100 dark:bg-indigo-500/20 p-1.5 rounded-md">
+                  <Users className="w-4 h-4 text-indigo-500" />
                 </div>
               </div>
-              <div>
-                <div className="flex justify-between items-center">
-                  <span className="text-3xl font-bold text-gray-900 dark:text-white">{designerPaidCount}</span>
-                  <StatIndicator current={designerPaidCount} prev={prevDesigners.filter(d => d.totalPayroll > 0).length} />
+
+              <div className="flex items-end justify-between gap-3 flex-1 min-h-0">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-semibold text-sm mb-1">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                    Paid
+                  </div>
+                  <div className="text-3xl font-bold text-gray-900 dark:text-white leading-none">
+                    {paidDesignerCount}
+                  </div>
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Designer Belum Terbayar
-                </p>
+
+                <div className="shrink-0 self-stretch flex items-center px-1 text-gray-300 dark:text-gray-600 font-semibold select-none">
+                  |
+                </div>
+
+                <div className="flex-1 min-w-0 text-right">
+                  <div className="flex items-center justify-end gap-2 text-rose-600 dark:text-rose-400 font-semibold text-sm mb-1">
+                    <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
+                    Unpaid
+                  </div>
+                  <div className="text-3xl font-bold text-gray-900 dark:text-white leading-none">
+                    {unpaidDesignerCount}
+                  </div>
+                </div>
               </div>
             </div>
-
           </div>
         </div>
 
@@ -491,7 +567,7 @@ export default async function BillingStatementPage(props: {
 
           <div className="space-y-4">
             {designers.filter(d => d.totalTasks > 0).map((designer) => (
-              <details key={designer.id} className={`group glass dark:bg-[#111827] border border-[#E8E0D8] dark:border-gray-800 rounded-xl overflow-hidden shadow-sm marker:content-[''] ${!designer.isActive ? 'opacity-60 grayscale-[50%]' : ''}`}>
+              <details key={designer.id} className={`group glass dark:bg-[#111827] border border-[#E8E0D8] dark:border-gray-800 rounded-xl overflow-hidden shadow-sm marker:content-[''] ${designer.status !== 'Active' ? 'opacity-60 grayscale-[50%]' : ''}`}>
                 <summary className="flex flex-col lg:flex-row items-start lg:items-center justify-between p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors list-none gap-4">
                   
                   <div className="flex items-center gap-3 w-[220px] shrink-0">
@@ -500,11 +576,15 @@ export default async function BillingStatementPage(props: {
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className={`font-semibold text-sm ${!designer.isActive ? 'text-gray-400 line-through' : 'text-gray-900 dark:text-white'}`}>
+                        <h3 className={`font-semibold text-sm ${designer.status === 'Resign' ? 'text-gray-400 line-through' : 'text-gray-900 dark:text-white'}`}>
                           {designer.displayName}
                         </h3>
-                        {!designer.isActive && (
-                          <span className="px-1.5 py-0.5 text-[9px] font-bold tracking-wider text-red-600 bg-red-100 rounded-md uppercase">Resigned</span>
+                        {designer.status !== 'Active' && (
+                          <span className={`px-1.5 py-0.5 text-[9px] font-bold tracking-wider rounded-md uppercase ${
+                            designer.status === 'Resign' ? 'text-red-600 bg-red-100 dark:bg-red-500/20' : 'text-amber-600 bg-amber-100 dark:bg-amber-500/20'
+                          }`}>
+                            {designer.status}
+                          </span>
                         )}
                       </div>
                       <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Designer</p>
@@ -531,6 +611,11 @@ export default async function BillingStatementPage(props: {
                   </div>
 
                   <div className="flex items-center gap-4 w-full lg:w-auto justify-end">
+                    <PayrollStatusToggle
+                      designerId={designer.id}
+                      payrollMonth={selectedMonth}
+                      isPaid={payrollStatusMap.get(designer.id) ?? false}
+                    />
                     <Link 
                       href={`/billing-statement/print?designerId=${designer.id}&paymentMonth=${selectedMonth}`}
                       target="_blank"
@@ -583,7 +668,7 @@ export default async function BillingStatementPage(props: {
                               {task.poolRate}
                             </td>
                             <td className="py-3 px-2 text-right text-gray-600 dark:text-gray-400">
-                              {formatCurrency(15000)}
+                              {formatCurrency(contractRate!)}
                             </td>
                             <td className="py-3 px-2 text-right text-green-600 dark:text-green-500 font-semibold">
                               {formatCurrency(task.payment)}
@@ -611,6 +696,10 @@ export default async function BillingStatementPage(props: {
             )}
           </div>
         </div>
+          </>
+        ) : (
+          <ApprovalPayrollTable tasks={upcomingTasksData as any} allMonthOptions={approvalMonthOptions} />
+        )}
       </main>
     </div>
   );

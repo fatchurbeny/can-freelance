@@ -3,10 +3,12 @@ import prisma from '../src/lib/prisma';
 async function main() {
   const user = await prisma.user.upsert({
     where: { email: 'test@example.com' },
-    update: {},
+    update: {
+      passwordHash: '$2b$10$EpjX0VO2yz5A5g5JZmG9xeG7aC1lA7Ue2uF3p1.mOQ1x/Q5l/61Ky', // 'password'
+    },
     create: {
       email: 'test@example.com',
-      passwordHash: 'dummy_hash',
+      passwordHash: '$2b$10$EpjX0VO2yz5A5g5JZmG9xeG7aC1lA7Ue2uF3p1.mOQ1x/Q5l/61Ky', // 'password'
       name: 'Test User',
       role: 'admin'
     },
@@ -18,7 +20,7 @@ async function main() {
     create: {
       notionKey: 'dummy_designer',
       displayName: 'Test Designer',
-      isActive: true
+      status: 'Active'
     },
   });
 

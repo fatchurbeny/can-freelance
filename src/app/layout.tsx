@@ -24,22 +24,27 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${inter.variable} ${outfit.variable}`} suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`${inter.variable} ${outfit.variable}`}
+      suppressHydrationWarning
+    >
       <head>
         <script
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
                 try {
-                  const stored = localStorage.getItem('theme');
-                  const hour = new Date().getHours();
-                  const isNight = hour < 6 || hour >= 18;
-                  if (stored === 'dark' || (!stored && isNight)) {
+                  var stored = localStorage.getItem('theme');
+                  if (!stored) {
+                    var hour = new Date().getHours();
+                    if (hour >= 19 || hour < 7) {
+                      document.documentElement.classList.add('dark');
+                    }
+                  } else if (stored === 'dark') {
                     document.documentElement.classList.add('dark');
-                  } else if (stored === 'light' || (!stored && !isNight)) {
-                    document.documentElement.classList.remove('dark');
                   }
-                } catch (e) {}
+                } catch(e) {}
               })();
             `,
           }}

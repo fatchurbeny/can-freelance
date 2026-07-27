@@ -1,9 +1,11 @@
 import prisma from '@/lib/prisma';
 import { getLatestSyncStatus } from '@/app/actions/sync';
+import { getContractRateAction } from '@/app/actions/notion-config';
 
 export const dynamic = 'force-dynamic';
 import Sidebar from '@/components/Sidebar';
 import ThemeToggle from '@/components/ThemeToggle';
+import DesignerStatusSelect from '@/components/DesignerStatusSelect';
 import { Plus, Gavel, Trophy, CircleDot } from 'lucide-react';
 
 function getInitials(name: string) {
@@ -23,6 +25,8 @@ function getBrandColor(name: string) {
 
 export default async function AccountTeamPage() {
   const latestSyncLog = await getLatestSyncStatus();
+  const contractRateRes = await getContractRateAction();
+  const contractRate = contractRateRes.success ? contractRateRes.contractRate : 15000;
 
   const designersData = await prisma.designer.findMany({
     include: {
@@ -36,11 +40,10 @@ export default async function AccountTeamPage() {
     const approved = d.tasks.filter(t => t.designStatus?.countsAsApproved).length;
     const templates = d.tasks.reduce((acc, t) => acc + Number(t.qtySubmit || 0), 0);
     const pages = d.tasks.reduce((acc, t) => acc + (Number(t.qtySubmit || 0) * Number(t.pages || 0)), 0);
-    const isInactive = d.displayName.toLowerCase() === 'shela';
-    return { ...d, approved, templates, pages, isInactive };
+    return { ...d, approved, templates, pages };
   }).sort((a, b) => {
-    if (a.isInactive && !b.isInactive) return 1;
-    if (!a.isInactive && b.isInactive) return -1;
+    if (a.status !== 'Active' && b.status === 'Active') return 1;
+    if (a.status === 'Active' && b.status !== 'Active') return -1;
     return b.approved - a.approved;
   });
 
@@ -108,7 +111,7 @@ export default async function AccountTeamPage() {
             </div>
             <div className="flex items-center gap-2 text-[13px] text-gray-500 dark:text-gray-400 capitalize">
               <CircleDot className="w-3.5 h-3.5 text-gray-400" />
-              <span>rate/poll : <strong className="font-bold text-gray-900 dark:text-white">iDR 15.000</strong></span>
+              <span>rate/poll : <strong className="font-bold text-gray-900 dark:text-white">IDR {contractRate!.toLocaleString('id-ID')}</strong></span>
             </div>
           </div>
         </div>
@@ -127,8 +130,8 @@ export default async function AccountTeamPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           
           {/* Designers Column */}
-          <div className="border border-[#E8E0D8] dark:border-[#262936] rounded-xl overflow-hidden shadow-sm flex flex-col">
-            <div className="bg-white dark:bg-[#12141a] p-4 border-b border-[#E8E0D8] dark:border-[#262936]">
+          <div className="border border-[#E8E0D8] dark:border-[#262936] rounded-xl shadow-sm flex flex-col">
+            <div className="bg-white dark:bg-[#12141a] p-4 border-b border-[#E8E0D8] dark:border-[#262936] rounded-t-xl">
               <div className="flex items-center justify-between">
                 <h3 className="text-gray-900 dark:text-white font-semibold capitalize text-base">Designer ({designers.length})</h3>
                 {designers.length > 0 && (
@@ -143,22 +146,20 @@ export default async function AccountTeamPage() {
             
             <div className="p-4 space-y-4 bg-white dark:bg-transparent flex-1">
               {designers.map((d, i) => (
-                <div key={d.id} className={`flex items-center justify-between pb-4 ${i !== designers.length - 1 ? 'border-b border-[#E8E0D8] dark:border-[#262936]' : ''} ${d.isInactive ? 'opacity-50 grayscale' : ''}`}>
+                <div key={d.id} className={`flex items-center justify-between pb-4 ${i !== designers.length - 1 ? 'border-b border-[#E8E0D8] dark:border-[#262936]' : ''}`}>
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full border border-[#E8E0D8] dark:border-[#262936] flex items-center justify-center font-semibold text-gray-900 dark:text-white bg-gray-50 dark:bg-transparent text-sm">
+                    <div className={`w-9 h-9 rounded-full border border-[#E8E0D8] dark:border-[#262936] flex items-center justify-center font-semibold text-gray-900 dark:text-white bg-gray-50 dark:bg-transparent text-sm ${d.status !== 'Active' ? 'opacity-60 grayscale' : ''}`}>
                       {getInitials(d.displayName)}
                     </div>
                     <div className="flex flex-col">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-gray-900 dark:text-white capitalize">{d.displayName}</span>
-                        <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase ${d.isInactive ? 'bg-gray-100 text-gray-500' : 'bg-green-100 dark:bg-green-500/10 text-green-600'}`}>
-                          {d.isInactive ? 'Inactive' : 'Active'}
-                        </span>
+                        <span className={`text-sm font-semibold text-gray-900 dark:text-white capitalize ${d.status !== 'Active' ? 'opacity-60 grayscale' : ''}`}>{d.displayName}</span>
                       </div>
-                      <span className="text-[10px] text-gray-500 font-medium">Designer - {d.displayName.toLowerCase().replace(/\s+/g, '')}@improstd.com</span>
+                      <span className={`text-[10px] text-gray-500 font-medium ${d.status !== 'Active' ? 'opacity-60 grayscale' : ''}`}>Designer - {d.displayName.toLowerCase().replace(/\s+/g, '')}@improstd.com</span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2.5 text-center">
+                  <div className={`flex items-center gap-2.5 text-center ${d.status !== 'Active' ? 'opacity-60 grayscale' : ''}`}>
+                    <DesignerStatusSelect designerId={d.id} initialStatus={d.status} />
                     <div className="border border-[#E8E0D8] dark:border-[#262936] rounded-lg px-2 py-1.5 flex flex-col items-center min-w-[66px]">
                       <span className="text-sm font-semibold text-indigo-600 dark:text-[#615fff]">{d.approved}</span>
                       <span className="text-[10px] text-gray-500 font-medium">Approved Task</span>
@@ -178,8 +179,8 @@ export default async function AccountTeamPage() {
           </div>
 
           {/* Canva Accounts Column */}
-          <div className="border border-[#E8E0D8] dark:border-[#262936] rounded-xl overflow-hidden shadow-sm flex flex-col">
-            <div className="bg-white dark:bg-[#12141a] p-4 border-b border-[#E8E0D8] dark:border-[#262936]">
+          <div className="border border-[#E8E0D8] dark:border-[#262936] rounded-xl shadow-sm flex flex-col">
+            <div className="bg-white dark:bg-[#12141a] p-4 border-b border-[#E8E0D8] dark:border-[#262936] rounded-t-xl">
               <div className="flex items-center justify-between">
                 <h3 className="text-gray-900 dark:text-white font-semibold capitalize text-base">Canva Account ({accounts.length})</h3>
                 {accounts.length > 0 && (

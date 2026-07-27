@@ -195,7 +195,7 @@ export default function DatabasesPage() {
               </div>
             </div>
 
-            <div className="bg-white dark:bg-[#111827] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm space-y-6">
+            <div className="w-full bg-white dark:bg-[#111827] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm space-y-6">
               
               <div>
                 <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">Database Connection</h3>

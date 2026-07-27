@@ -19,11 +19,11 @@ const indNamesInv: { [key: string]: number } = {
 };
 
 export async function getAvailablePeriods() {
-  const rawPeriods = await prisma.$queryRaw<{ task_month: string }[]>`
+  const rawPeriods = await prisma.$queryRaw<{ task_month: string }[]>(Prisma.sql`
     SELECT DISTINCT task_month
     FROM tasks
     WHERE task_month IS NOT NULL AND task_month != ''
-  `;
+  `);
 
   const formatted = rawPeriods.map((p) => {
     const parts = p.task_month.split('-');
@@ -110,26 +110,30 @@ export async function getDashboardData(filters: DashboardFilters) {
     ? Prisma.sql`AND EXISTS (SELECT 1 FROM task_accounts ta WHERE ta.task_id = t.id AND ta.account_id = ${accId}::uuid)`
     : Prisma.empty;
 
-  const periodsFilter = Prisma.sql`AND t.task_month IN (${Prisma.join(indPeriods)})`;
-  const priorPeriodsFilter = Prisma.sql`AND t.task_month IN (${Prisma.join(priorIndPeriods)})`;
+  const periodsFilter = indPeriods.length > 0
+    ? Prisma.sql`AND t.task_month IN (${Prisma.join(indPeriods)})`
+    : Prisma.empty;
+  const priorPeriodsFilter = priorIndPeriods.length > 0
+    ? Prisma.sql`AND t.task_month IN (${Prisma.join(priorIndPeriods)})`
+    : Prisma.empty;
 
   // -------------------------------------------------------------
   // KPI 1: Total Task
   // -------------------------------------------------------------
-  const kpiCurrentTasks = await prisma.$queryRaw<[{ total_task: bigint }]>`
+  const kpiCurrentTasks = await prisma.$queryRaw<[{ total_task: bigint }]>(Prisma.sql`
     SELECT COUNT(DISTINCT t.id) AS total_task
     FROM tasks t
     WHERE 1=1
     ${periodsFilter}
     ${accFilter}
-  `;
-  const kpiPriorTasks = await prisma.$queryRaw<[{ total_task: bigint }]>`
+  `);
+  const kpiPriorTasks = await prisma.$queryRaw<[{ total_task: bigint }]>(Prisma.sql`
     SELECT COUNT(DISTINCT t.id) AS total_task
     FROM tasks t
     WHERE 1=1
     ${priorPeriodsFilter}
     ${accFilter}
-  `;
+  `);
 
   const totalTasks = Number(kpiCurrentTasks[0]?.total_task || 0);
   const priorTasks = Number(kpiPriorTasks[0]?.total_task || 0);
@@ -138,20 +142,20 @@ export async function getDashboardData(filters: DashboardFilters) {
   // -------------------------------------------------------------
   // KPI 2: Total Template
   // -------------------------------------------------------------
-  const kpiCurrentTemplates = await prisma.$queryRaw<[{ total_template: number | null }]>`
+  const kpiCurrentTemplates = await prisma.$queryRaw<[{ total_template: number | null }]>(Prisma.sql`
     SELECT COALESCE(SUM(t.qty_submit), 0) AS total_template
     FROM tasks t
     WHERE 1=1
     ${periodsFilter}
     ${accFilter}
-  `;
-  const kpiPriorTemplates = await prisma.$queryRaw<[{ total_template: number | null }]>`
+  `);
+  const kpiPriorTemplates = await prisma.$queryRaw<[{ total_template: number | null }]>(Prisma.sql`
     SELECT COALESCE(SUM(t.qty_submit), 0) AS total_template
     FROM tasks t
     WHERE 1=1
     ${priorPeriodsFilter}
     ${accFilter}
-  `;
+  `);
 
   const totalTemplates = Number(kpiCurrentTemplates[0]?.total_template || 0);
   const priorTemplates = Number(kpiPriorTemplates[0]?.total_template || 0);
@@ -160,20 +164,22 @@ export async function getDashboardData(filters: DashboardFilters) {
   // -------------------------------------------------------------
   // KPI 2.5: Total Pages
   // -------------------------------------------------------------
-  const kpiCurrentPages = await prisma.$queryRaw<[{ total_pages: number | null }]>`
+  const kpiCurrentPages = await prisma.$queryRaw<[{ total_pages: number | null }]>(Prisma.sql`
     SELECT COALESCE(SUM(t.qty_submit * t.pages), 0) AS total_pages
     FROM tasks t
     WHERE 1=1
     ${periodsFilter}
     ${accFilter}
-  `;
-  const kpiPriorPages = await prisma.$queryRaw<[{ total_pages: number | null }]>`
+  `);
+
+  const kpiPriorPages = await prisma.$queryRaw<[{ total_pages: number | null }]>(Prisma.sql`
     SELECT COALESCE(SUM(t.qty_submit * t.pages), 0) AS total_pages
     FROM tasks t
     WHERE 1=1
     ${priorPeriodsFilter}
     ${accFilter}
-  `;
+  `);
+
 
   const totalPages = Number(kpiCurrentPages[0]?.total_pages || 0);
   const priorPages = Number(kpiPriorPages[0]?.total_pages || 0);
@@ -182,7 +188,7 @@ export async function getDashboardData(filters: DashboardFilters) {
   // -------------------------------------------------------------
   // KPI 3: Approval Rate
   // -------------------------------------------------------------
-  const kpiCurrentApproval = await prisma.$queryRaw<[{ approved_qty: number | null; submitted_qty: number | null }]>`
+  const kpiCurrentApproval = await prisma.$queryRaw<[{ approved_qty: number | null; submitted_qty: number | null }]>(Prisma.sql`
     SELECT
       COALESCE(SUM(t.qty_submit) FILTER (WHERE ds.counts_as_approved), 0) AS approved_qty,
       COALESCE(SUM(t.qty_submit) FILTER (WHERE ds.counts_as_submitted), 0) AS submitted_qty
@@ -191,8 +197,9 @@ export async function getDashboardData(filters: DashboardFilters) {
     WHERE 1=1
     ${periodsFilter}
     ${accFilter}
-  `;
-  const kpiPriorApproval = await prisma.$queryRaw<[{ approved_qty: number | null; submitted_qty: number | null }]>`
+  `);
+
+  const kpiPriorApproval = await prisma.$queryRaw<[{ approved_qty: number | null; submitted_qty: number | null }]>(Prisma.sql`
     SELECT
       COALESCE(SUM(t.qty_submit) FILTER (WHERE ds.counts_as_approved), 0) AS approved_qty,
       COALESCE(SUM(t.qty_submit) FILTER (WHERE ds.counts_as_submitted), 0) AS submitted_qty
@@ -201,7 +208,8 @@ export async function getDashboardData(filters: DashboardFilters) {
     WHERE 1=1
     ${priorPeriodsFilter}
     ${accFilter}
-  `;
+  `);
+
 
   const approvedQty = Number(kpiCurrentApproval[0]?.approved_qty || 0);
   const submittedQty = Number(kpiCurrentApproval[0]?.submitted_qty || 0);
@@ -215,7 +223,7 @@ export async function getDashboardData(filters: DashboardFilters) {
   // -------------------------------------------------------------
   // KPI 4: Approved-Profile Only Rate
   // -------------------------------------------------------------
-  const kpiCurrentProfile = await prisma.$queryRaw<[{ profile_qty: number | null; submitted_qty: number | null }]>`
+  const kpiCurrentProfile = await prisma.$queryRaw<[{ profile_qty: number | null; submitted_qty: number | null }]>(Prisma.sql`
     SELECT
       COALESCE(SUM(t.qty_submit) FILTER (WHERE ds.counts_as_profile_only), 0) AS profile_qty,
       COALESCE(SUM(t.qty_submit) FILTER (WHERE ds.counts_as_submitted), 0) AS submitted_qty
@@ -224,8 +232,9 @@ export async function getDashboardData(filters: DashboardFilters) {
     WHERE 1=1
     ${periodsFilter}
     ${accFilter}
-  `;
-  const kpiPriorProfile = await prisma.$queryRaw<[{ profile_qty: number | null; submitted_qty: number | null }]>`
+  `);
+
+  const kpiPriorProfile = await prisma.$queryRaw<[{ profile_qty: number | null; submitted_qty: number | null }]>(Prisma.sql`
     SELECT
       COALESCE(SUM(t.qty_submit) FILTER (WHERE ds.counts_as_profile_only), 0) AS profile_qty,
       COALESCE(SUM(t.qty_submit) FILTER (WHERE ds.counts_as_submitted), 0) AS submitted_qty
@@ -234,7 +243,8 @@ export async function getDashboardData(filters: DashboardFilters) {
     WHERE 1=1
     ${priorPeriodsFilter}
     ${accFilter}
-  `;
+  `);
+
 
   const profileQty = Number(kpiCurrentProfile[0]?.profile_qty || 0);
   const profileSubmittedQty = Number(kpiCurrentProfile[0]?.submitted_qty || 0);
@@ -248,19 +258,20 @@ export async function getDashboardData(filters: DashboardFilters) {
   // -------------------------------------------------------------
   // KPI 5: Total Doctype
   // -------------------------------------------------------------
-  const kpiDoctypes = await prisma.$queryRaw<[{ total_doctype: bigint }]>`
+  const kpiDoctypes = await prisma.$queryRaw<[{ total_doctype: bigint }]>(Prisma.sql`
     SELECT COUNT(DISTINCT t.doctype_id) AS total_doctype
     FROM tasks t
     WHERE 1=1
     ${periodsFilter}
     ${accFilter}
-  `;
+  `);
+
   const totalDoctypes = Number(kpiDoctypes[0]?.total_doctype || 0);
 
   // -------------------------------------------------------------
   // Widget 6: Tren Volume Task
   // -------------------------------------------------------------
-  const trenVolume = await prisma.$queryRaw<{ month: string; brand: string; task_count: bigint; template_count: number; page_count: number }[]>`
+  const trenVolume = await prisma.$queryRaw<{ month: string; brand: string; task_count: bigint; template_count: number; page_count: number }[]>(Prisma.sql`
     SELECT
       t.task_month AS month,
       a.display_name AS brand,
@@ -275,10 +286,11 @@ export async function getDashboardData(filters: DashboardFilters) {
     ${accId ? Prisma.sql`AND ta.account_id = ${accId}::uuid` : Prisma.empty}
     GROUP BY 1, 2
     ORDER BY 1, 2
-  `;
+  `);
+
 
   // Hover Tooltips for Tren Volume Task: all doctypes by brand and month
-  const topDoctypesByMonthBrand = await prisma.$queryRaw<{ task_month: string; brand: string; doctype: string; task_count: bigint; row_num: bigint }[]>`
+  const topDoctypesByMonthBrand = await prisma.$queryRaw<{ task_month: string; brand: string; doctype: string; task_count: bigint; row_num: bigint }[]>(Prisma.sql`
     WITH ranked AS (
       SELECT
         t.task_month,
@@ -298,12 +310,13 @@ export async function getDashboardData(filters: DashboardFilters) {
     SELECT task_month, brand, doctype, task_count, row_num
     FROM ranked
     ORDER BY task_month, brand, task_count DESC
-  `;
+  `);
+
 
   // -------------------------------------------------------------
   // Widget 7: Distribusi Template
   // -------------------------------------------------------------
-  const distribusiTemplate = await prisma.$queryRaw<{ brand: string; templates: number }[]>`
+  const distribusiTemplate = await prisma.$queryRaw<{ brand: string; templates: number }[]>(Prisma.sql`
     SELECT a.display_name AS brand, COALESCE(SUM(t.qty_submit), 0)::float AS templates
     FROM tasks t
     JOIN task_accounts ta ON ta.task_id = t.id
@@ -312,10 +325,11 @@ export async function getDashboardData(filters: DashboardFilters) {
     ${periodsFilter}
     GROUP BY a.display_name
     ORDER BY templates DESC
-  `;
+  `);
+
 
   // Hover tooltips for Distribusi Template: all doctypes per brand
-  const topDoctypesByBrand = await prisma.$queryRaw<{ brand: string; doctype: string; task_count: bigint; template_count: number; page_count: number; row_num: bigint }[]>`
+  const topDoctypesByBrand = await prisma.$queryRaw<{ brand: string; doctype: string; task_count: bigint; template_count: number; page_count: number; row_num: bigint }[]>(Prisma.sql`
     WITH ranked AS (
       SELECT
         a.display_name AS brand,
@@ -335,12 +349,13 @@ export async function getDashboardData(filters: DashboardFilters) {
     SELECT brand, doctype, task_count, template_count, page_count, row_num
     FROM ranked
     ORDER BY brand, task_count DESC
-  `;
+  `);
+
 
   // -------------------------------------------------------------
   // Widget 8: Task Pipeline
   // -------------------------------------------------------------
-  const taskPipeline = await prisma.$queryRaw<{ stage: string; task_count: bigint; template_count: number; page_count: number }[]>`
+  const taskPipeline = await prisma.$queryRaw<{ stage: string; task_count: bigint; template_count: number; page_count: number }[]>(Prisma.sql`
     SELECT 
       ds.display_name AS stage, 
       COUNT(t.id) AS task_count,
@@ -353,9 +368,10 @@ export async function getDashboardData(filters: DashboardFilters) {
     ${accFilter}
     GROUP BY ds.display_name, ds.status_group
     ORDER BY MIN(ds.status_group)
-  `;
+  `);
 
-  const inQueueTasks = await prisma.$queryRaw<[{ in_queue: bigint }]>`
+
+  const inQueueTasks = await prisma.$queryRaw<[{ in_queue: bigint }]>(Prisma.sql`
     SELECT COUNT(*) AS in_queue
     FROM tasks t
     JOIN design_statuses ds ON ds.id = t.design_status_id
@@ -363,9 +379,10 @@ export async function getDashboardData(filters: DashboardFilters) {
       AND NOT ds.counts_as_profile_only
       ${periodsFilter}
       ${accFilter}
-  `;
+  `);
 
-  const inQueueTemplates = await prisma.$queryRaw<[{ in_queue_templates: number | null }]>`
+
+  const inQueueTemplates = await prisma.$queryRaw<[{ in_queue_templates: number | null }]>(Prisma.sql`
     SELECT COALESCE(SUM(t.qty_submit), 0) AS in_queue_templates
     FROM tasks t
     JOIN design_statuses ds ON ds.id = t.design_status_id
@@ -373,7 +390,8 @@ export async function getDashboardData(filters: DashboardFilters) {
       AND NOT ds.counts_as_profile_only
       ${periodsFilter}
       ${accFilter}
-  `;
+  `);
+
 
   const totalInQueueTasks = Number(inQueueTasks[0]?.in_queue || 0);
   const totalInQueueTemplates = Number(inQueueTemplates[0]?.in_queue_templates || 0);
@@ -381,7 +399,7 @@ export async function getDashboardData(filters: DashboardFilters) {
   // -------------------------------------------------------------
   // Widget 9: Kategori Doctype
   // -------------------------------------------------------------
-  const kategoriDoctype = await prisma.$queryRaw<{ doctype: string; task_count: bigint; template_count: number; page_count: number }[]>`
+  const kategoriDoctype = await prisma.$queryRaw<{ doctype: string; task_count: bigint; template_count: number; page_count: number }[]>(Prisma.sql`
     SELECT 
       d.display_name AS doctype, 
       COUNT(t.id) AS task_count,
@@ -394,36 +412,39 @@ export async function getDashboardData(filters: DashboardFilters) {
     ${accFilter}
     GROUP BY d.display_name
     ORDER BY task_count DESC
-  `;
+  `);
+
 
   // -------------------------------------------------------------
   // Widget 10: Lisensi Template
   // -------------------------------------------------------------
-  const lisensiTemplate = await prisma.$queryRaw<{ license: string; templates: number }[]>`
+  const lisensiTemplate = await prisma.$queryRaw<{ license: string; templates: number }[]>(Prisma.sql`
     SELECT COALESCE(t.license, 'Free') AS license, COALESCE(SUM(t.qty_submit), 0)::float AS templates
     FROM tasks t
     WHERE 1=1
     ${periodsFilter}
     ${accFilter}
     GROUP BY t.license
-  `;
+  `);
+
 
   // -------------------------------------------------------------
   // Widget 11: Bahasa Template
   // -------------------------------------------------------------
-  const bahasaTemplate = await prisma.$queryRaw<{ language: string; templates: number }[]>`
+  const bahasaTemplate = await prisma.$queryRaw<{ language: string; templates: number }[]>(Prisma.sql`
     SELECT unnest(t.languages) AS language, COALESCE(SUM(t.qty_submit), 0)::float AS templates
     FROM tasks t
     WHERE 1=1
     ${periodsFilter}
     ${accFilter}
     GROUP BY 1
-  `;
+  `);
+
 
   // -------------------------------------------------------------
   // Widget 12: Aproved-Profile Only (table)
   // -------------------------------------------------------------
-  const approvedProfileOnlyTable = await prisma.$queryRaw<{ doctype: string; license: string; language: string; account: string; qty: number }[]>`
+  const approvedProfileOnlyTable = await prisma.$queryRaw<{ doctype: string; license: string; language: string; account: string; qty: number }[]>(Prisma.sql`
     SELECT
       d.display_name AS doctype,
       t.license,
@@ -440,9 +461,10 @@ export async function getDashboardData(filters: DashboardFilters) {
       ${accFilter}
     GROUP BY d.display_name, t.license, t.languages
     ORDER BY qty DESC
-  `;
+  `);
 
-  const workloadPerDesigner = await prisma.$queryRaw<{ designer: string; task_count: bigint; template_count: number; page_count: number }[]>`
+
+  const workloadPerDesigner = await prisma.$queryRaw<{ designer: string; task_count: bigint; template_count: number; page_count: number }[]>(Prisma.sql`
     SELECT
       ds.display_name AS designer,
       COUNT(t.id) AS task_count,
@@ -455,7 +477,8 @@ export async function getDashboardData(filters: DashboardFilters) {
     ${accFilter}
     GROUP BY ds.display_name
     ORDER BY task_count DESC
-  `;
+  `);
+
 
   // -------------------------------------------------------------
   // Widget 14: Designer Leaderboard (Dynamic Columns & Aggregation)
@@ -467,7 +490,7 @@ export async function getDashboardData(filters: DashboardFilters) {
     doctype: string;
     total_tasks: bigint;
     approved_tasks: bigint;
-  }[]>`
+  }[]>(Prisma.sql`
     SELECT
       des.id::text AS designer_id,
       des.display_name AS designer,
@@ -482,7 +505,8 @@ export async function getDashboardData(filters: DashboardFilters) {
     ${periodsFilter}
     ${accFilter}
     GROUP BY des.id, des.display_name, dt.display_name
-  `;
+  `);
+
 
   // Determine top 3 doctypes overall in the current selection
   const doctypeTotals: { [key: string]: number } = {};
@@ -698,6 +722,15 @@ function formatDistribusi(distribusi: any[], topDoctypes: any[]) {
 
 export async function getDoctypes() {
   return await prisma.doctype.findMany({
-    orderBy: { pages: 'desc' }
+    orderBy: [
+      { updatedAt: 'desc' },
+      { pages: 'desc' },
+      { sortOrder: 'asc' },
+    ]
   });
+}
+
+export async function getContractRateSetting() {
+  const config = await prisma.notionConfig.findFirst({ select: { contractRate: true } });
+  return config?.contractRate ?? 15000;
 }

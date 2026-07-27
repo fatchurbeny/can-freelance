@@ -12,10 +12,22 @@ const INTERVAL_MS: Record<string, number> = {
   '24_hours': 24 * 60 * 60 * 1000,
 };
 
-// Validates the optional CRON_SECRET bearer token / query param
+const JAKARTA_OFFSET_MS = 7 * 60 * 60 * 1000;
+
+function startOfJakartaDay(now = new Date()): Date {
+  const jakartaTime = new Date(now.getTime() + JAKARTA_OFFSET_MS);
+  return new Date(Date.UTC(
+    jakartaTime.getUTCFullYear(),
+    jakartaTime.getUTCMonth(),
+    jakartaTime.getUTCDate(),
+  ) - JAKARTA_OFFSET_MS);
+}
+
+// Validates the optional CRON_SECRET bearer token / query param.
+// Local development may omit it; deployed environments fail closed.
 function isAuthorized(request: Request): boolean {
   const secret = process.env.CRON_SECRET;
-  if (!secret) return true; // No secret configured — open (fine for local dev)
+  if (!secret) return process.env.NODE_ENV === 'development';
 
   const authHeader = request.headers.get('authorization');
   if (authHeader === `Bearer ${secret}`) return true;
@@ -88,11 +100,21 @@ export async function GET(request: Request) {
       });
     }
 
-    // 4. Trigger sync
-    const result = await syncNotionData();
+    // 4. First eligible automatic run each Jakarta day performs full reconciliation.
+    const fullSyncToday = await prisma.syncLog.findFirst({
+      where: {
+        status: 'success',
+        mode: 'full',
+        startedAt: { gte: startOfJakartaDay() },
+      },
+      select: { id: true },
+    });
+    const mode = fullSyncToday ? 'incremental' : 'full';
+    const result = await syncNotionData(mode);
 
     return NextResponse.json({
       status: result.status,
+      mode,
       recordsSynced: result.status === 'success' ? (result as any).recordsSynced : undefined,
       error: result.status === 'failed' ? (result as any).errorMessage : undefined,
       triggeredAt: new Date().toISOString(),

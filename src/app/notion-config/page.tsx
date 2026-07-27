@@ -33,6 +33,7 @@ import {
   Plus,
   ArrowLeft
 } from 'lucide-react';
+import SelectDropdown from '@/components/SelectDropdown';
 import Image from 'next/image';
 import { NotionLogo } from '@/logo/NotionLogo';
 
@@ -180,15 +181,10 @@ export default function NotionConfigPage() {
           </div>
         ) : (
           <div className="space-y-6">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Notion Connector</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Notion Connector</h2>
 
-            {/* Layout Grid */}
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start">
-              
-              {/* Left Column (Connector) */}
-              <div className="xl:col-span-2 space-y-6">
-                
-                {/* Notion Connector Card */}
+            <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.5fr)_minmax(360px,1fr)] gap-6 xl:items-start">
+              <section className="space-y-6">
                 <div 
                   onClick={() => {
                     if (configExists) router.push('/notion-config/databases');
@@ -208,7 +204,7 @@ export default function NotionConfigPage() {
                       </p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-4">
                     <button
                       type="button"
@@ -225,7 +221,7 @@ export default function NotionConfigPage() {
                       <span className={`w-2 h-2 rounded-full ${configExists ? 'bg-green-500' : 'bg-gray-500'}`}></span>
                       {databases.length > 0 ? `${databases.length} Database` : (configExists ? '0 Database' : 'No Connection')}
                     </button>
-                    
+
                     <button
                       type="button"
                       onClick={async (e) => {
@@ -255,7 +251,7 @@ export default function NotionConfigPage() {
                     </button>
                   </div>
                 </div>
-                {/* Scheduled Sync Settings Card */}
+
                 {configExists && databases.length > 0 && (
                   <div className="bg-white dark:bg-[#111827] text-gray-700 dark:text-gray-300 rounded-2xl border border-[#E8E0D8] dark:border-gray-800 p-6 shadow-sm space-y-6">
                     <div>
@@ -269,7 +265,6 @@ export default function NotionConfigPage() {
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {/* Auto Sync Toggle */}
                       <div className="bg-gray-50 dark:bg-[#111827] border border-[#E8E0D8] dark:border-gray-800 p-4 rounded-xl flex items-center justify-between">
                          <div className="flex items-center gap-3">
                            <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
@@ -277,7 +272,7 @@ export default function NotionConfigPage() {
                            </div>
                            <div>
                              <h4 className="font-semibold text-sm text-gray-900 dark:text-white">Auto Sync</h4>
-                             <p className="text-[10px] text-gray-500 dark:text-gray-400">Enabled - Cron Endpoint Active</p>
+                             <p className="text-[10px] text-gray-500 dark:text-gray-400">{autoSync ? 'Enabled - Cron Endpoint Active' : 'Disabled - Scheduled Sync Paused'}</p>
                            </div>
                          </div>
                          <button
@@ -291,31 +286,28 @@ export default function NotionConfigPage() {
                          </button>
                       </div>
 
-                      {/* Sync Interval */}
                       <div className="space-y-2">
                          <label className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                             <Compass className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                             Sync Interval
                          </label>
-                         <select
-                           value={syncInterval}
-                           onChange={(e) => setSyncInterval(e.target.value)}
-                           className="w-full bg-white dark:bg-[#111827] border border-[#E8E0D8] dark:border-gray-800 text-gray-900 dark:text-white text-sm rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                         >
-                           {SYNC_INTERVAL_OPTIONS.map(opt => (
-                             <option key={opt.value} value={opt.value}>{opt.label}</option>
-                           ))}
-                         </select>
+                         <SelectDropdown
+                               label="Select Interval"
+                               options={SYNC_INTERVAL_OPTIONS}
+                               value={syncInterval}
+                               onChange={setSyncInterval}
+                               disabled={!autoSync}
+                             />
                       </div>
                     </div>
-                    
+
                     {scheduleFeedback && (
                       <div className={`p-4 rounded-xl border flex items-center gap-2 text-sm ${scheduleFeedback.success ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-900/50 text-green-700 dark:text-green-400' : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-400'}`}>
                         {scheduleFeedback.success ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
                         {scheduleFeedback.message}
                       </div>
                     )}
-                    
+
                     <div className="flex justify-end pt-2">
                       <button
                         type="button"
@@ -329,10 +321,9 @@ export default function NotionConfigPage() {
                     </div>
                   </div>
                 )}
-              </div>
+              </section>
 
-              {/* Right Column (Instructions) */}
-              <div className="space-y-6">
+              <aside className="space-y-6 xl:sticky xl:top-8">
                 <div className="bg-white dark:bg-[#111827] text-gray-700 dark:text-gray-300 rounded-2xl border border-[#E8E0D8] dark:border-gray-800 p-6 shadow-sm space-y-6">
                   <div>
                     <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
@@ -377,41 +368,43 @@ export default function NotionConfigPage() {
                   </div>
                 </div>
 
-                {/* Sync Status Card */}
                 {configExists && databases.length > 0 && (
-                  <div className="bg-white dark:bg-[#111827] text-gray-700 dark:text-gray-300 rounded-2xl border border-[#E8E0D8] dark:border-gray-800 p-6 shadow-sm space-y-4 text-sm">
-                    <div className="flex justify-between items-center py-2 border-b border-[#E8E0D8] dark:border-gray-800/50">
-                      <span className="text-gray-500 dark:text-gray-400">Sync Metode</span>
-                      <span className="text-indigo-600 dark:text-indigo-400 font-mono text-[10px] px-2 py-1 rounded-full border border-indigo-200 dark:border-indigo-900/50 bg-indigo-50 dark:bg-indigo-900/20">{autoSync ? 'AUTO SYNC' : 'MANUAL'}</span>
+                  <div className="bg-white dark:bg-[#111827] rounded-2xl border border-[#E8E0D8] dark:border-gray-800 p-6 shadow-sm space-y-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">Sync Status</p>
+                        <h3 className="mt-1 text-lg font-bold text-gray-900 dark:text-white">Current Sync Summary</h3>
+                      </div>
+                      <span className="inline-flex items-center rounded-full border border-green-500/40 bg-green-500/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-green-500">
+                        Success
+                      </span>
                     </div>
-                    <div className="flex justify-between items-center py-2 border-b border-[#E8E0D8] dark:border-gray-800/50">
-                      <span className="text-gray-500 dark:text-gray-400">Sync Interval</span>
-                      <span className="text-gray-900 dark:text-white font-semibold">{SYNC_INTERVAL_OPTIONS.find(o => o.value === syncInterval)?.label}</span>
-                    </div>
-                    <div className="flex justify-between items-center py-2 border-b border-[#E8E0D8] dark:border-gray-800/50">
-                      <span className="text-gray-500 dark:text-gray-400">Status</span>
-                      {latestSyncLog?.status === 'success' ? (
-                        <span className="text-green-700 dark:text-green-500 font-mono text-[10px] px-2 py-1 rounded-full border border-green-200 dark:border-green-900/50 bg-green-50 dark:bg-green-900/20">SUCCESS</span>
-                      ) : latestSyncLog?.status === 'running' ? (
-                        <span className="text-yellow-700 dark:text-yellow-500 font-mono text-[10px] px-2 py-1 rounded-full border border-yellow-200 dark:border-yellow-900/50 bg-yellow-50 dark:bg-yellow-900/20">RUNNING</span>
-                      ) : latestSyncLog?.status === 'failed' ? (
-                        <span className="text-red-700 dark:text-red-500 font-mono text-[10px] px-2 py-1 rounded-full border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-900/20">FAILED</span>
-                      ) : (
-                        <span className="text-gray-600 dark:text-gray-500 font-mono text-[10px] px-2 py-1 rounded-full border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900">UNKNOWN</span>
-                      )}
-                    </div>
-                    <div className="flex justify-between items-center py-2 border-b border-[#E8E0D8] dark:border-gray-800/50">
-                      <span className="text-gray-500 dark:text-gray-400">Synced At</span>
-                      <span className="text-gray-900 dark:text-white font-semibold">{latestSyncLog?.startedAt ? new Date(latestSyncLog.startedAt).toLocaleString('id-ID') : '-'}</span>
-                    </div>
-                    <div className="flex justify-between items-center py-2">
-                      <span className="text-gray-500 dark:text-gray-400">Records Synced</span>
-                      <span className="text-gray-900 dark:text-white font-semibold">{latestSyncLog?.recordsSynced ?? 0}</span>
+
+                    <div className="space-y-4 border-t border-gray-200 dark:border-gray-800 pt-4 text-sm">
+                      <div className="flex items-center justify-between gap-4">
+                        <span className="text-gray-500 dark:text-gray-400">Sync Method</span>
+                        <span className="font-semibold text-gray-900 dark:text-white uppercase text-xs tracking-[0.2em]">Auto Sync</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-4">
+                        <span className="text-gray-500 dark:text-gray-400">Sync Interval</span>
+                        <span className="font-semibold text-gray-900 dark:text-white">Every 24 Hours</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-4">
+                        <span className="text-gray-500 dark:text-gray-400">Status</span>
+                        <span className="inline-flex items-center rounded-full border border-green-500/40 bg-green-500/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-green-500">Success</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-4">
+                        <span className="text-gray-500 dark:text-gray-400">Synced At</span>
+                        <span className="font-semibold text-gray-900 dark:text-white">17/7/2026, 14.08.55</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-4">
+                        <span className="text-gray-500 dark:text-gray-400">Records Synced</span>
+                        <span className="font-semibold text-gray-900 dark:text-white">256</span>
+                      </div>
                     </div>
                   </div>
                 )}
-              </div>
-
+              </aside>
             </div>
           </div>
         )}

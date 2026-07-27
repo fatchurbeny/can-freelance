@@ -6,10 +6,25 @@ import { Sun, Moon } from 'lucide-react';
 export default function ThemeToggle() {
   const [isDark, setIsDark] = useState(false);
 
+  const applyTimeTheme = () => {
+    if (localStorage.getItem('theme')) return;
+    const hour = new Date().getHours();
+    const shouldBeDark = hour >= 19 || hour < 7;
+    if (shouldBeDark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    setIsDark(shouldBeDark);
+  };
+
   useEffect(() => {
-    // Check initial state
     const isDarkClass = document.documentElement.classList.contains('dark');
     setIsDark(isDarkClass);
+
+    // Check every minute to auto-switch at hour boundary
+    const interval = setInterval(applyTimeTheme, 60_000);
+    return () => clearInterval(interval);
   }, []);
 
   const toggleTheme = () => {

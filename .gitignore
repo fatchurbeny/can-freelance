@@ -24,30 +24,34 @@
 .DS_Store
 *.pem
 
-# debug
+# debug and local diagnostics
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+/scratch/
+/check_mock.ts
+/debug_*.ts
+/delete_*.sql
+/get_status_counts.ts
+/sync_trigger.ts
 
-# env files (can opt-in for committing if needed)
+# environment files and Vercel project link
 .env*
+/.vercel/
 
-# vercel
-.vercel
+# generated output
+/generated/prisma/
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
 
-# local claude settings
+# local assistant settings
 /.claude/
 
 # local test and helper scripts
 /test-*.js
 /trigger-sync.js
 /read-sync-logs.js
-
-
-.env
-generated/prisma

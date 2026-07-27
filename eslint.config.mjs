@@ -16,6 +16,8 @@ const eslintConfig = defineConfig([
     "test-*.js",
     "trigger-sync.js",
     "read-sync-logs.js",
+    "scratch/**",
+    "generated/**",
     ".claude/**",
     ".agents/**",
     "prisma/seed.js",
