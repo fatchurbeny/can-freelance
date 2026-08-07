@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import QACard from './QACard';
-import CommentModal from './CommentModal';
 
 interface QATask {
   id: string;
@@ -15,48 +14,86 @@ interface QATask {
   canvaLinks: { id: string; url: string }[];
   comments?: { id: string; content: string; createdAt: string }[];
   qtySubmit: string | number | null;
+  pages: string | number | null;
+  languages?: string[];
+  license?: string | null;
 }
 
 interface Props {
   tasks: QATask[];
   emptyMessage: string;
-  showActions?: boolean;
-  compact?: boolean;
-  transparentBg?: boolean;
+  /** Column's target DesignStatus.notionKey for drops. */
+  targetStatus: string;
+  onDropTask: (taskId: string, targetNotionKey: string) => Promise<boolean>;
+  draggingTaskId: string | null;
+  onDragStateChange: (taskId: string | null) => void;
+  onOpenTask: (task: QATask) => void;
 }
 
-export default function QAKanbanBoard({ tasks, emptyMessage, showActions = false, compact = false, transparentBg = false }: Props) {
-  const [commentTarget, setCommentTarget] = useState<{ taskId: string; taskName: string } | null>(null);
+/** Columns can hold hundreds of tasks, so only render a slice until asked otherwise. */
+const PAGE_SIZE = 50;
+
+export default function QAKanbanBoard({
+  tasks,
+  emptyMessage,
+  targetStatus,
+  onDropTask,
+  draggingTaskId,
+  onDragStateChange,
+  onOpenTask,
+}: Props) {
+  const [showAll, setShowAll] = useState(false);
+  const [over, setOver] = useState(false);
+
+  const visibleTasks = showAll ? tasks : tasks.slice(0, PAGE_SIZE);
+  const hiddenCount = tasks.length - visibleTasks.length;
 
   return (
     <>
-      <div className="space-y-4">
+      <div
+        onDragOver={(e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+        }}
+        onDragEnter={() => setOver(true)}
+        onDragLeave={(e) => {
+          if (!e.currentTarget.contains(e.relatedTarget as Node)) setOver(false);
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          setOver(false);
+          const taskId = e.dataTransfer.getData('text/plain');
+          if (taskId) void onDropTask(taskId, targetStatus);
+        }}
+        className={`flex flex-col gap-1.5 rounded-md transition-colors ${
+          over ? 'bg-[#615FFF]/5 ring-1 ring-inset ring-[#615FFF]/60' : ''
+        }`}
+      >
         {tasks.length === 0 ? (
-          <div className="rounded-2xl border-2 border-dashed border-gray-200 bg-white p-8 text-center dark:border-gray-700 dark:bg-[#111827]">
-            <h3 className="text-base font-semibold text-gray-700 dark:text-gray-300">All Clear</h3>
-            <p className="mt-1 text-sm text-gray-400 dark:text-gray-500">{emptyMessage}</p>
-          </div>
+          <p className="px-2 py-3 text-[12px] text-gray-400 dark:text-white/30">{emptyMessage}</p>
         ) : (
-          tasks.map((task) => (
-            <QACard
-              key={task.id}
-              task={task}
-              showActions={showActions}
-              compact={compact}
-              transparentBg={transparentBg}
-              onAddComment={() => setCommentTarget({ taskId: task.id, taskName: task.name || 'Untitled' })}
-            />
-          ))
+          <>
+            {visibleTasks.map((task) => (
+              <QACard
+                key={task.id}
+                task={task}
+                dimmed={draggingTaskId !== null && draggingTaskId !== task.id}
+                onDragStateChange={onDragStateChange}
+                onOpen={onOpenTask}
+              />
+            ))}
+            {hiddenCount > 0 && (
+              <button
+                type="button"
+                onClick={() => setShowAll(true)}
+                className="rounded px-2 py-1.5 text-left text-[12px] text-gray-500 transition-colors hover:bg-black/[0.04] dark:text-white/40 dark:hover:bg-white/5"
+              >
+                Show all {tasks.length}
+              </button>
+            )}
+          </>
         )}
       </div>
-
-      {commentTarget && (
-        <CommentModal
-          taskId={commentTarget.taskId}
-          taskName={commentTarget.taskName}
-          onClose={() => setCommentTarget(null)}
-        />
-      )}
     </>
   );
 }

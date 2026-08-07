@@ -1,10 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { ExternalLink, MessageSquare, ArrowRight, CheckCircle, ChevronDown, ChevronUp } from 'lucide-react';
-import { updateTaskStatusAction } from '@/app/actions/qa';
+import { MessageSquare, FileText } from 'lucide-react';
 
-interface QATask {
+export interface QATask {
   id: string;
   name: string | null;
   notionUrl: string | null;
@@ -13,190 +12,115 @@ interface QATask {
   designStatus: { id: string; notionKey: string; displayName: string } | null;
   taskAccounts: { account: { id: string; displayName: string; color: string | null } }[];
   canvaLinks: { id: string; url: string }[];
+  comments?: { id: string; content: string; createdAt: string }[];
   qtySubmit: string | number | null;
+  pages: string | number | null;
+  languages?: string[];
+  license?: string | null;
+  priority?: string | null;
+  taskMonth?: string | null;
+}
+
+/** A CTA rendered in the detail sheet. `target` is an exact DesignStatus.notionKey. */
+export interface CardAction {
+  label: string;
+  target: string;
+  doneLabel: string;
 }
 
 interface Props {
   task: QATask;
-  onAddComment: () => void;
-  showActions?: boolean;
-  compact?: boolean;
-  transparentBg?: boolean;
+  onOpen: (task: QATask) => void;
+  /** True when another card is being dragged (dim non-dragged cards). */
+  dimmed?: boolean;
+  /** Reports drag start/end upward for board-level dimming. */
+  onDragStateChange?: (taskId: string | null) => void;
 }
 
-export default function QACard({ task, onAddComment, showActions = false, compact = false, transparentBg = false }: Props) {
-  const [moving, setMoving] = useState(false);
-  const [moved, setMoved] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
+/** Notion-ish property pill. Colors come from the DB, so tint them rather than fill. */
+function Pill({ label, color }: { label: string; color?: string | null }) {
+  const tint = color || '#6b7280';
+  return (
+    <span
+      className="rounded-[3px] px-1.5 py-0.5 text-[11px] font-medium leading-none"
+      style={{ backgroundColor: `${tint}33`, color: tint }}
+    >
+      {label}
+    </span>
+  );
+}
 
-  const initials = task.designer?.displayName
-    ?.split(' ')
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2) || '??';
+export default function QACard({ task, onOpen, dimmed = false, onDragStateChange }: Props) {
+  const [dragging, setDragging] = useState(false);
 
-  const handleMoveToReview = async () => {
-    setMoving(true);
-    const result = await updateTaskStatusAction(task.id, 'In Review');
-    if (result.success) {
-      setMoved(true);
-    } else {
-      setMoving(false);
-      alert(result.error || 'Failed to update status');
-    }
+  const handleDragStart = (e: React.DragEvent) => {
+    setDragging(true);
+    onDragStateChange?.(task.id);
+    e.dataTransfer.setData('text/plain', task.id);
+    e.dataTransfer.effectAllowed = 'move';
   };
 
-  if (moved) {
-    return (
-      <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/30 rounded-2xl p-6 flex items-center gap-3 text-emerald-700 dark:text-emerald-400 transition-all duration-300">
-        <CheckCircle className="w-5 h-5" />
-        <span className="text-sm font-medium">Moved to In Review</span>
-      </div>
-    );
-  }
+  const handleDragEnd = () => {
+    setDragging(false);
+    onDragStateChange?.(null);
+  };
+
+  const commentCount = task.comments?.length ?? 0;
 
   return (
-    <div 
-      className={`cursor-pointer group rounded-2xl border transition-all duration-200 ${
-        transparentBg
-          ? 'border-[#DAD9D6] shadow-none hover:bg-white dark:hover:bg-white'
-          : 'border-gray-100 bg-white shadow-sm hover:shadow-md dark:border-gray-800 dark:bg-[#111827]'
-      } ${
-        compact && !isExpanded
-          ? 'px-4 py-2.5'
-          : 'p-6'
-      }`}
-      onClick={() => setIsExpanded(!isExpanded)}
+    <div
+      draggable
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      onClick={(e) => {
+        if (dragging) return;
+        onOpen(task);
+      }}
+      className={`group cursor-pointer rounded-md border border-black/10 bg-white px-2.5 py-2 transition-colors hover:bg-black/[0.02] dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/[0.07] ${
+        dragging ? 'cursor-grabbing opacity-50' : 'cursor-grab active:cursor-grabbing'
+      } ${dimmed && !dragging ? 'opacity-40' : ''}`}
     >
-      <div className="space-y-4">
-        {/* Header: Task Name */}
-        <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0 flex-1">
-          <h3 className="font-semibold text-gray-900 dark:text-white text-base leading-snug group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-            {task.name || 'Untitled Task'}
-          </h3>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          {/* Status badge */}
-          <span className={`rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${
-            task.designStatus?.notionKey === 'QA'
-              ? 'border-amber-200 bg-amber-50 text-amber-600 dark:border-amber-900/30 dark:bg-amber-950/30 dark:text-amber-400'
-              : task.designStatus?.notionKey === 'In Progress'
-                ? 'border-indigo-200 bg-indigo-50 text-indigo-600 dark:border-indigo-900/30 dark:bg-indigo-950/30 dark:text-indigo-400'
-                : 'border-gray-200 bg-gray-50 text-gray-600 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-400'
-          }`}>
-            {task.designStatus?.displayName || task.designStatus?.notionKey || 'Unknown'}
-          </span>
-          {/* Chevron */}
-            <button 
-              className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 transition-colors"
-            >
-              {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-            </button>
-        </div>
+      {/* Title */}
+      <div className="flex items-start gap-1.5">
+        <FileText className="mt-0.5 size-3.5 shrink-0 text-gray-400 dark:text-white/40" />
+        <h3 className="min-w-0 flex-1 text-[13px] leading-[18px] text-gray-900 dark:text-white/90">
+          {task.name || 'Untitled Task'}
+        </h3>
       </div>
 
-      </div>
+      {/* Properties */}
+      <div className="mt-1.5 flex flex-wrap items-center gap-1">
+        <span className="px-0.5 text-[11px] leading-none text-gray-500 dark:text-white/50">
+          {Number(task.qtySubmit || 0)}
+        </span>
 
-      {/* Detail row */}
-      {isExpanded && (
-        <div className="flex flex-wrap items-center gap-3 mt-4">
-          {/* Designer Avatar */}
-          <div className="flex items-center gap-2">
-            <div
-              className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0"
-              style={{ backgroundColor: task.designer?.avatarColor || '#6366F1' }}
-            >
-              {initials}
-            </div>
-            <span className="text-sm text-gray-600 dark:text-gray-400">
-              {task.designer?.displayName || 'Unknown'}
-            </span>
-          </div>
+        {task.designer && <Pill label={task.designer.displayName} color={task.designer.avatarColor} />}
 
-          <span className="text-gray-300 dark:text-gray-600">·</span>
-
-          {/* Doctype */}
-          {task.doctype && (
-            <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/30">
-              {task.doctype.displayName}
-            </span>
-          )}
-
-          {/* Brand badges */}
-          {task.taskAccounts.map((ta) => (
-            <span
-              key={ta.account.id}
-              className="text-xs font-medium px-2.5 py-1 rounded-full"
-              style={{
-                backgroundColor: (ta.account.color || '#6366F1') + '18',
-                color: ta.account.color || '#6366F1',
-                borderColor: (ta.account.color || '#6366F1') + '30',
-              }}
-            >
-              {ta.account.displayName}
-            </span>
-          ))}
-
-          {/* QTY Submit pill */}
-          <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-gray-50 dark:bg-gray-800/50 text-gray-900 dark:text-gray-100 flex items-center justify-center min-w-[24px]">
-            {Number(task.qtySubmit || 0)} Templates
+        {task.pages != null && (
+          <span className="px-0.5 text-[11px] leading-none text-gray-500 dark:text-white/50">
+            {Number(task.pages)}
           </span>
-        </div>
-      )}
+        )}
 
-      {/* Canva Links and Actions (Collapsible) */}
-      {isExpanded && (
-        <div 
-          className="space-y-4 pt-4 mt-4 border-t border-gray-100 dark:border-gray-800 cursor-default"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Canva Links */}
-          {task.canvaLinks.length > 0 && (
-            <div className="flex flex-col gap-3">
-                {task.canvaLinks.map((link, index) => {
-                  return (
-                    <div key={link.id} className="flex items-center gap-2 group">
-                      <ExternalLink className="w-4 h-4 text-gray-400 group-hover:text-indigo-500 transition-colors shrink-0" />
-                      <span className="text-sm font-medium text-gray-800 dark:text-gray-200 whitespace-nowrap">
-                        Template-{index + 1}
-                      </span>
-                      <a
-                        href={link.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-indigo-500 hover:text-indigo-600 dark:text-indigo-400 dark:hover:text-indigo-300 truncate hover:underline ml-1"
-                      >
-                        {link.url}
-                      </a>
-                    </div>
-                  );
-                })}
-              </div>
-          )}
+        {task.taskAccounts.map((ta) => (
+          <Pill key={ta.account.id} label={ta.account.displayName} color={ta.account.color} />
+        ))}
 
-          {showActions && (
-            <div className="flex items-center gap-2 pt-1">
-              <button
-                onClick={handleMoveToReview}
-                disabled={moving}
-                className="inline-flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors disabled:opacity-50"
-              >
-                <ArrowRight className="w-3.5 h-3.5" />
-                {moving ? 'Moving...' : 'Move to In Review'}
-              </button>
-              <button
-                onClick={onAddComment}
-                className="inline-flex items-center gap-1.5 text-xs font-medium px-4 py-2 rounded-xl bg-gray-50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-              >
-                <MessageSquare className="w-3.5 h-3.5" />
-                Add Comment
-              </button>
-            </div>
-          )}
-        </div>
-      )}
+        {task.languages?.map((language) => (
+          <Pill key={language} label={language} color="#7c3aed" />
+        ))}
+
+        {task.doctype && <Pill label={task.doctype.displayName} color="#ec4899" />}
+
+        {task.license && <Pill label={task.license} color="#22c55e" />}
+
+        {commentCount > 0 && (
+          <span className="ml-0.5 inline-flex items-center gap-1 text-[11px] leading-none text-gray-400 dark:text-white/40">
+            <MessageSquare className="size-3" />
+            {commentCount}
+          </span>
+        )}
+      </div>
     </div>
   );
 }

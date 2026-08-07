@@ -4,7 +4,6 @@ import { getContractRateAction } from '@/app/actions/notion-config';
 
 export const dynamic = 'force-dynamic';
 import Sidebar from '@/components/Sidebar';
-import ThemeToggle from '@/components/ThemeToggle';
 import DesignerStatusSelect from '@/components/DesignerStatusSelect';
 import { Plus, Gavel, Trophy, CircleDot } from 'lucide-react';
 
@@ -79,12 +78,6 @@ export default async function AccountTeamPage() {
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
               Kelola profil desainer internal dan integrasi akun Canva Marketplace Impro Studio.
             </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <ThemeToggle />
-            <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-medium shadow-sm">
-              IS
-            </div>
           </div>
         </div>
 

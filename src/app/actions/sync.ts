@@ -8,6 +8,7 @@ export async function triggerSyncAction() {
   try {
     const result = await syncNotionData('incremental');
     revalidatePath('/');
+    revalidatePath('/production');
     return result;
   } catch (error: any) {
     return { status: 'failed', errorMessage: error.message || String(error) };

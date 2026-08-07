@@ -92,6 +92,18 @@ Only stage, commit, and push changes to git when the user explicitly instructs y
 # Prisma Decimal Serialization
 
 Prisma `Decimal` fields (`poolScore`, `pages`, `qtySubmit`) are NOT plain JS objects. When fetching data that will be passed to a Client Component, serialize with `JSON.parse(JSON.stringify(...))` to convert `Decimal` instances to plain numbers.
+
+`DateTime` fields (`createdTime`, `lastEditedTime`, `createdAt`) survive that same serialization as **ISO strings**, not `Date` objects. Type them as `string | number | null` in Client Component props and coerce before comparing:
+
+```ts
+// BAD - subtracts two strings, yields NaN, and sort() silently no-ops
+return (a.lastEditedTime || 0) - (b.lastEditedTime || 0);
+
+// GOOD
+const time = (v?: string | number | null) =>
+  v == null ? 0 : typeof v === 'number' ? v : new Date(v).getTime();
+return time(b.lastEditedTime) - time(a.lastEditedTime);
+```
 <!-- END:prisma-decimal-serialization -->
 
 <!-- BEGIN:table-layout-best-practices -->
@@ -109,6 +121,10 @@ When modifying or creating full-width tables (`w-full`) in this project:
 When adjusting dropdowns, keep hover, selected, and disabled states aligned with the app's current light and dark design tokens. Match panel background, text contrast, border strength, and selected highlight to nearby existing controls instead of inventing a new palette.
 
 **Dimensional Symmetry**: When a table header contains a batch-action dropdown and the body contains per-row dropdowns, they MUST have the exact same fixed width (e.g., `w-[130px]`) and internal alignment (`justify-between` or `justify-center`) to ensure vertical visual symmetry.
+
+**Copy, Don't Approximate**: When adding a new control (button, pill, dropdown, panel) next to existing ones, COPY the exact Tailwind class strings from the nearest sibling control — shape metrics (`rounded-*`, `px-*`, `py-*`, `text-[..]`), border color, text color, hover state, and active/accent highlight. Do not invent a near-miss variant (e.g., `rounded-[6px]` vs `rounded-full`, custom hex vs the app's `#615FFF` accent). Only deviate when the user explicitly requests it.
+
+**Verify Icon Exports**: Before using a `lucide-react` icon, confirm it exists in the installed version (e.g., grep `node_modules/lucide-react` or check exports) — icon names from training data may not exist in older versions (e.g., `CalendarMonth` is absent in v1.23; use `Calendar`). Run `npx tsc --noEmit` after any icon or JSX change.
 <!-- END:ui-dropdown-style-consistency -->
 
 <!-- BEGIN:designer-status-handling -->
@@ -147,3 +163,36 @@ To keep production stable while developing new features:
 
 Vercel only auto-deploys from `main`. All development happens on branches.
 <!-- END:git-branching-workflow -->
+
+<!-- BEGIN:full-file-rewrite-truncation -->
+# Full-File Rewrites
+
+`replace_file_content` cannot delete a trailing range. Anchoring a whole-file rewrite on the first few lines appends the new body and leaves the old one below it - a file with two `export default`s that fails to build.
+
+- Prefer rewriting in place with targeted, non-contiguous chunks.
+- If a file already has a duplicated tail, do NOT try to select it as `TargetContent`. Find the real end and truncate:
+  `head -n <line> file.tsx > tmp && mv tmp file.tsx`
+- Run `npx tsc --noEmit` immediately after; a duplicated tail always trips it.
+<!-- END:full-file-rewrite-truncation -->
+
+<!-- BEGIN:sidebar-mini-rail-default -->
+# Sidebar Default State
+
+The sidebar uses a mini icon rail as its DEFAULT state on desktop (Figma "sidebar-menu/hide"):
+- **Default**: collapsed to a ~72px icon-only rail, ALWAYS visible on desktop (`md:` breakpoint). It stays in the flex row flow — never unmount, never `-translate-x-full` on desktop.
+- **Expanded**: user clicks the brand/collapse button to widen to full labels (`w-64`).
+- "Hide" means collapse to icons, NOT removing the sidebar.
+- Mobile keeps drawer behavior (`w-64`, overlay backdrop, hamburger in top bar).
+- Never gate the `<aside>` render on `isMobileOpen` for desktop; use `md:translate-x-0` with mobile-only translate.
+<!-- END:sidebar-mini-rail-default -->
+
+<!-- BEGIN:dynamic-period-labels -->
+# Dynamic Period Labels
+
+When a UI string references a time period (e.g., "this month", "last week", "today"), it MUST reflect the active filter state instead of being hardcoded. In the Production board, the month filter (`filters.taskMonths`) drives these labels:
+- Single month: `Doctype created <MonthName-YYYY>` (e.g., `Doctype created Agustus-2026`).
+- Multiple months: `Doctype created in N months` (match the toolbar's `N Bulan` convention; keep the label's base language).
+- No selection: fall back to the generic base label (`Doctype created`).
+
+Do not ship a static period string anywhere a period filter exists.
+<!-- END:dynamic-period-labels -->

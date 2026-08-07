@@ -14,17 +14,30 @@ async function main() {
     },
   });
 
-  const designer = await prisma.designer.upsert({
-    where: { notionKey: 'dummy_designer' },
+  const doctype = await prisma.doctype.upsert({
+    where: { notionKey: 'dummy_doctype' },
     update: {},
     create: {
-      notionKey: 'dummy_designer',
-      displayName: 'Test Designer',
-      status: 'Active'
+      notionKey: 'dummy_doctype',
+      displayName: 'Test Doctype',
+      pages: 1,
     },
   });
 
-  console.log('Seed successful:', { user, designer });
+  const status = await prisma.designStatus.upsert({
+    where: { notionKey: 'Aproved' },
+    update: {},
+    create: {
+      notionKey: 'Aproved',
+      displayName: 'Aproved',
+      statusGroup: 'complete',
+      countsAsSubmitted: true,
+      countsAsApproved: true,
+      countsAsProfileOnly: false,
+    },
+  });
+
+  console.log('Seed successful:', { user, doctype, status });
 }
 
 main()

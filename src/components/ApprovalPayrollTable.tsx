@@ -13,6 +13,7 @@ interface TaskItem {
   name: string | null;
   qtySubmit: string | null;
   pages: string | null;
+  lastEditedTime: string;
   designer: { id: string; displayName: string } | null;
   doctype: { id: string; displayName: string } | null;
   taskAccounts: Array<{
@@ -25,6 +26,84 @@ interface Props {
   allMonthOptions: string[];
 }
 
+interface FilterSelectProps {
+  id: string;
+  value: string;
+  placeholder: string;
+  options: Array<[string, string]>;
+  onChange: (value: string) => void;
+}
+
+function FilterSelect({ id, value, placeholder, options, onChange }: FilterSelectProps) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const close = (event: MouseEvent) => {
+      if (!containerRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, []);
+
+  const selectedLabel = options.find(([optionValue]) => optionValue === value)?.[1];
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        id={id}
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => setOpen((current) => !current)}
+        className={`h-9 w-[145px] flex items-center justify-between gap-2 rounded-xl border bg-white dark:bg-gray-900 px-3 text-xs font-semibold shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500/20 ${
+          open
+            ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+            : 'border-[#E8E0D8] dark:border-gray-800 text-gray-700 dark:text-gray-200 hover:bg-[#F5F0EB] dark:hover:bg-gray-800'
+        }`}
+      >
+        <span className="truncate">{selectedLabel || placeholder}</span>
+        <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div
+          role="listbox"
+          aria-labelledby={id}
+          className="absolute left-0 top-full z-50 mt-2 w-[190px] max-h-64 overflow-y-auto rounded-2xl border border-[#E8E0D8] dark:border-gray-800 bg-white dark:bg-gray-950 p-1.5 shadow-xl"
+        >
+          <button
+            type="button"
+            role="option"
+            aria-selected={!value}
+            onClick={() => { onChange(''); setOpen(false); }}
+            className="w-full flex items-center justify-between rounded-xl px-3 py-2 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 hover:bg-[#F5F0EB] dark:hover:bg-gray-800 transition-colors"
+          >
+            {placeholder}
+            {!value && <Check className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />}
+          </button>
+          {options.map(([optionValue, label]) => (
+            <button
+              key={optionValue}
+              type="button"
+              role="option"
+              aria-selected={value === optionValue}
+              onClick={() => { onChange(optionValue); setOpen(false); }}
+              className={`w-full flex items-center justify-between gap-3 rounded-xl px-3 py-2 text-left text-xs font-semibold transition-colors ${
+                value === optionValue
+                  ? 'bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300'
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-[#F5F0EB] dark:hover:bg-gray-800'
+              }`}
+            >
+              <span className="truncate">{label}</span>
+              {value === optionValue && <Check className="h-3.5 w-3.5 shrink-0 text-indigo-600 dark:text-indigo-400" />}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ApprovalPayrollTable({ tasks, allMonthOptions }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -34,6 +113,10 @@ export default function ApprovalPayrollTable({ tasks, allMonthOptions }: Props) 
   const [batchOpen, setBatchOpen] = useState(false);
   const [rowDropdown, setRowDropdown] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState('last-edited');
+  const [doctypeFilter, setDoctypeFilter] = useState('');
+  const [brandFilter, setBrandFilter] = useState('');
+  const [designerFilter, setDesignerFilter] = useState('');
   const batchRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -92,16 +175,32 @@ export default function ApprovalPayrollTable({ tasks, allMonthOptions }: Props) 
     });
   };
 
-  const filteredTasks = tasks.filter((task) => {
-    const q = searchQuery.toLowerCase();
-    if (!q) return true;
-    return (
-      (task.name?.toLowerCase() || '').includes(q) ||
-      (task.designer?.displayName?.toLowerCase() || '').includes(q) ||
-      (task.doctype?.displayName?.toLowerCase() || '').includes(q) ||
-      (task.taskAccounts[0]?.account?.displayName?.toLowerCase() || '').includes(q)
-    );
-  });
+  const optionNames = (values: Array<string | undefined>) =>
+    Array.from(new Set(values.filter((value): value is string => Boolean(value)))).sort((a, b) => a.localeCompare(b));
+  const doctypeOptions = optionNames(tasks.map((task) => task.doctype?.displayName));
+  const brandOptions = optionNames(tasks.map((task) => task.taskAccounts[0]?.account?.displayName));
+  const designerOptions = optionNames(tasks.map((task) => task.designer?.displayName));
+
+  const filteredTasks = tasks
+    .filter((task) => {
+      const q = searchQuery.toLowerCase();
+      const brand = task.taskAccounts[0]?.account?.displayName || '';
+      return (
+        (!q ||
+          (task.name?.toLowerCase() || '').includes(q) ||
+          (task.designer?.displayName?.toLowerCase() || '').includes(q) ||
+          (task.doctype?.displayName?.toLowerCase() || '').includes(q) ||
+          brand.toLowerCase().includes(q)) &&
+        (!doctypeFilter || task.doctype?.displayName === doctypeFilter) &&
+        (!brandFilter || brand === brandFilter) &&
+        (!designerFilter || task.designer?.displayName === designerFilter)
+      );
+    })
+    .sort((a, b) => {
+      if (sortBy === 'az') return (a.name || '').localeCompare(b.name || '');
+      if (sortBy === 'za') return (b.name || '').localeCompare(a.name || '');
+      return new Date(b.lastEditedTime).getTime() - new Date(a.lastEditedTime).getTime();
+    });
 
   return (
     <div className="glass dark:bg-[#111827] border border-[#E8E0D8] dark:border-gray-800 rounded-xl overflow-hidden shadow-sm">
@@ -112,17 +211,33 @@ export default function ApprovalPayrollTable({ tasks, allMonthOptions }: Props) 
             {/* Batch Actions Row */}
             <tr className="border-b border-[#E8E0D8] dark:border-gray-800">
               <th colSpan={8} className="p-4 font-normal">
-                <div className="flex items-center gap-3">
-                  <div className="relative flex-1 max-w-[280px]">
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="relative flex-1 min-w-[240px] max-w-[340px]">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500 pointer-events-none" />
                     <input
-                      type="text"
+                      id="approval-payroll-search"
+                      type="search"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Search by task name, designer, doctype, or brand..."
+                      placeholder="Search tasks..."
                       className="w-full pl-9 pr-4 py-2 rounded-xl border border-[#E8E0D8] dark:border-gray-800 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-colors font-sans"
                     />
                   </div>
+                  {[
+                    { id: 'approval-sort', placeholder: 'Sort by', value: sortBy, set: setSortBy, options: [['last-edited', 'Last edited'], ['az', 'A–Z'], ['za', 'Z–A']] as Array<[string, string]> },
+                    { id: 'doctype-filter', placeholder: 'All doctypes', value: doctypeFilter, set: setDoctypeFilter, options: doctypeOptions.map((item) => [item, item] as [string, string]) },
+                    { id: 'brand-filter', placeholder: 'All brands', value: brandFilter, set: setBrandFilter, options: brandOptions.map((item) => [item, item] as [string, string]) },
+                    { id: 'designer-filter', placeholder: 'All designers', value: designerFilter, set: setDesignerFilter, options: designerOptions.map((item) => [item, item] as [string, string]) },
+                  ].map((control) => (
+                    <FilterSelect
+                      key={control.id}
+                      id={control.id}
+                      value={control.value}
+                      placeholder={control.placeholder}
+                      options={control.options}
+                      onChange={control.set}
+                    />
+                  ))}
                   <span className="text-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap font-sans">
                     {selectedIds.size} of {filteredTasks.length} selected
                   </span>

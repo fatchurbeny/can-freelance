@@ -2,7 +2,6 @@
 
 import { Suspense } from 'react';
 import PeriodPicker from './PeriodPicker';
-import ThemeToggle from './ThemeToggle';
 
 interface HeaderProps {
   periods: string[];
@@ -26,14 +25,6 @@ export default function Header({ periods, currentPeriod }: HeaderProps) {
         <Suspense fallback={<div className="w-[120px] h-[44px] bg-gray-200 dark:bg-gray-800 rounded-xl animate-pulse" />}>
           <PeriodPicker periods={periods} currentPeriod={currentPeriod} />
         </Suspense>
-
-        {/* Theme Toggle */}
-        <ThemeToggle />
-
-        {/* User Badge */}
-        <div className="w-10 h-10 rounded-xl bg-indigo-600/10 dark:bg-indigo-500/10 border border-indigo-600/20 dark:border-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-sm select-none shadow-sm" title="Manager Account">
-          IS
-        </div>
       </div>
     </header>
   );

@@ -3,7 +3,6 @@ import prisma from '@/lib/prisma';
 import { getLatestSyncStatus } from '@/app/actions/sync';
 import { getContractRateAction } from '@/app/actions/notion-config';
 import Sidebar from '@/components/Sidebar';
-import ThemeToggle from '@/components/ThemeToggle';
 import { 
   Gavel, 
   Archive, 
@@ -301,12 +300,6 @@ export default async function BillingStatementPage(props: {
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
               Akumulasi rekapitulasi total gaji desainer per bulan berdasarkan QTY desain ter-approve.
             </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <ThemeToggle />
-            <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-medium shadow-sm">
-              IS
-            </div>
           </div>
         </div>
 

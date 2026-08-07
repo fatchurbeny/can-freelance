@@ -2,7 +2,6 @@ import { getDoctypes } from '@/lib/queries';
 import { getLatestSyncStatus } from '@/app/actions/sync';
 import { getContractRateAction } from '@/app/actions/notion-config';
 import Sidebar from '@/components/Sidebar';
-import ThemeToggle from '@/components/ThemeToggle';
 import { Gavel, Calendar } from 'lucide-react';
 import DoctypeTable from '@/components/DoctypeTable';
 import ContractRateEditor from '@/components/ContractRateEditor';
@@ -28,12 +27,6 @@ export default async function RateCardPage() {
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
               Atur doctype, pool rate, pages, dan ketentuan kontrak freelance.
             </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <ThemeToggle />
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 font-medium text-white shadow-sm">
-              IS
-            </div>
           </div>
         </div>
 

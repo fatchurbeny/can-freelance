@@ -18,6 +18,7 @@ import {
   Database
 } from 'lucide-react';
 import SyncButton from './SyncButton';
+import ThemeToggle from './ThemeToggle';
 
 interface SidebarProps {
   currentSyncLog: any;
@@ -25,7 +26,7 @@ interface SidebarProps {
 
 export default function Sidebar({ currentSyncLog }: SidebarProps) {
   const pathname = usePathname();
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   const menuItems = [
@@ -66,14 +67,14 @@ export default function Sidebar({ currentSyncLog }: SidebarProps) {
         />
       )}
 
-      {/* Sidebar Drawer */}
+      {/* Sidebar Drawer — mini icon rail on desktop; drawer on mobile */}
       <aside className={`
         fixed md:sticky inset-y-0 left-0 z-50 h-screen bg-white dark:bg-[#111827] 
         border-r border-[#E8E0D8] dark:border-gray-800 py-6 flex flex-col 
         justify-between transition-all duration-300
         ${isCollapsed ? 'md:w-[72px] md:px-3' : 'md:w-64 md:px-6'} 
         w-64 px-6
-        ${isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+        ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0
       `}>
         {/* Collapse Button for Desktop */}
         <button 
@@ -188,8 +189,11 @@ export default function Sidebar({ currentSyncLog }: SidebarProps) {
           </div>
         </div>
 
-        {/* Sync Button & Status Info */}
-        <SyncButton initialSyncLog={currentSyncLog} isCollapsed={isCollapsed} />
+        {/* Bottom Actions: Theme Toggle + Sync Button & Status Info */}
+        <div className="space-y-3">
+          <ThemeToggle isCollapsed={isCollapsed} />
+          <SyncButton initialSyncLog={currentSyncLog} isCollapsed={isCollapsed} />
+        </div>
       </aside>
     </>
   );
