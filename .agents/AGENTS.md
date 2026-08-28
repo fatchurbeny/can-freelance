@@ -196,3 +196,11 @@ When a UI string references a time period (e.g., "this month", "last week", "tod
 
 Do not ship a static period string anywhere a period filter exists.
 <!-- END:dynamic-period-labels -->
+
+<!-- BEGIN:dashboard-card-layout-learning -->
+# Dashboard Card Layout Changes
+
+When the user asks to move, align, swap, or remove dashboard cards, make the smallest possible layout change. Preserve untouched rows, keep sibling cards aligned within the same grid row, and do not introduce extra cards or hidden placeholders unless explicitly requested.
+
+If a component file becomes corrupted during a UI edit, restore it by rewriting the full file cleanly, then verify with `npx tsc --noEmit` before continuing.
+<!-- END:dashboard-card-layout-learning -->

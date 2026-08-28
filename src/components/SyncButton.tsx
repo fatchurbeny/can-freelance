@@ -269,15 +269,15 @@ export default function SyncButton({ initialSyncLog, isCollapsed = false }: Sync
         {/* ── Auto Sync ON: countdown button ── */}
         {autoSync ? (
           <div
-            className={`flex items-center justify-center px-4 py-3 rounded-xl border transition-all font-medium text-sm select-none ${
+            className={`flex items-center justify-center px-3.5 py-2.5 rounded-xl border transition-all font-medium text-[13px] select-none ${
               isSyncing
                 ? 'border-amber-500/40 bg-amber-950/20 text-amber-400 animate-pulse'
                 : 'border-red-500/40 bg-red-950/20 dark:bg-red-950/10 text-red-500 dark:text-red-400'
-            } ${isCollapsed ? 'w-12 h-12 p-0' : 'w-full gap-2.5'}`}
+            } ${isCollapsed ? 'w-10 h-10 p-0' : 'w-full gap-2'}`}
           >
             <Timer className={`w-4 h-4 shrink-0 ${isSyncing ? 'animate-spin' : ''}`} />
             {!isCollapsed && (
-              <span className="font-mono tracking-wider text-sm">
+              <span className="font-mono tracking-wider text-[13px]">
                 {isSyncing
                   ? 'Syncing...'
                   : countdownMs === null
@@ -291,7 +291,7 @@ export default function SyncButton({ initialSyncLog, isCollapsed = false }: Sync
           <button
             onClick={handleSync}
             disabled={isSyncing}
-            className={`flex items-center justify-center px-4 py-3 rounded-xl border border-indigo-600/30 dark:border-indigo-500/20 bg-indigo-50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-950/30 transition-all font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer group shadow-sm hover:shadow ${isCollapsed ? 'w-12 h-12 p-0' : 'w-full gap-2.5'}`}
+            className={`flex items-center justify-center px-3.5 py-2.5 rounded-xl border border-indigo-600/30 dark:border-indigo-500/20 bg-indigo-50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-950/30 transition-all font-medium text-[13px] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer group shadow-sm hover:shadow ${isCollapsed ? 'w-10 h-10 p-0' : 'w-full gap-2'}`}
           >
             <RefreshCw className={`w-4 h-4 text-indigo-600 dark:text-indigo-400 ${isSyncing ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
             {!isCollapsed && <span>{isSyncing ? 'Syncing...' : 'Notion Sync'}</span>}
@@ -304,7 +304,7 @@ export default function SyncButton({ initialSyncLog, isCollapsed = false }: Sync
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
           </div>
         ) : (
-          <div className="space-y-4 text-[13px]">
+          <div className="space-y-3 text-xs">
             <div className="flex items-center gap-4">
               <span className="text-gray-500 dark:text-gray-400">Status</span>
               <span className="text-emerald-500 font-medium flex items-center gap-2">
@@ -314,7 +314,7 @@ export default function SyncButton({ initialSyncLog, isCollapsed = false }: Sync
             </div>
             <div className="flex flex-col gap-2">
               <span className="text-gray-500 dark:text-gray-400">Terakhir Sync :</span>
-              <ul className="text-gray-900 dark:text-white font-medium list-disc list-outside ml-4 space-y-1 text-sm">
+              <ul className="text-gray-900 dark:text-white font-medium list-disc list-outside ml-4 space-y-1 text-xs">
                 <li>
                   {syncLog?.status === 'success' ? `Success - ${syncLog.recordsSynced} Data` : (syncLog ? 'Failed' : 'Belum Pernah Sync')}
                 </li>

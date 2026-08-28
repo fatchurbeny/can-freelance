@@ -2,16 +2,12 @@ import crypto from 'crypto';
 
 const ALGORITHM = 'aes-256-cbc';
 
-// Local fallback preserves existing development data; deployed environments require a secret.
-const ENCRYPTION_SECRET = process.env.ENCRYPTION_SECRET
-  || (process.env.NODE_ENV === 'development' ? 'default-secret-notion-canva-dashboard-key-32b' : '');
+const DEFAULT_SECRET = 'default-secret-notion-canva-dashboard-key-32b';
 
-if (!ENCRYPTION_SECRET) {
-  throw new Error('ENCRYPTION_SECRET must be configured outside development.');
+function getKey(): Buffer {
+  const secret = process.env.ENCRYPTION_SECRET || DEFAULT_SECRET;
+  return crypto.createHash('sha256').update(secret).digest();
 }
-
-// Ensure the encryption key is exactly 32 bytes by hashing the secret
-const KEY = crypto.createHash('sha256').update(ENCRYPTION_SECRET).digest();
 
 /**
  * Encrypts a string value using AES-256-CBC.
@@ -21,7 +17,7 @@ export function encrypt(text: string): { iv: string; encryptedData: string } {
   if (!text) return { iv: '', encryptedData: '' };
   
   const iv = crypto.randomBytes(16);
-  const cipher = crypto.createCipheriv(ALGORITHM, KEY, iv);
+  const cipher = crypto.createCipheriv(ALGORITHM, getKey(), iv);
   
   let encrypted = cipher.update(text, 'utf8', 'hex');
   encrypted += cipher.final('hex');
@@ -39,7 +35,7 @@ export function decrypt(encryptedData: string, ivHex: string): string {
   if (!encryptedData || !ivHex) return '';
   
   const iv = Buffer.from(ivHex, 'hex');
-  const decipher = crypto.createDecipheriv(ALGORITHM, KEY, iv);
+  const decipher = crypto.createDecipheriv(ALGORITHM, getKey(), iv);
   
   let decrypted = decipher.update(encryptedData, 'hex', 'utf8');
   decrypted += decipher.final('utf8');
