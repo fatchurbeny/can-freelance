@@ -48,7 +48,7 @@ export default function Sidebar({ currentSyncLog }: SidebarProps) {
             onClick={() => setIsMobileOpen(true)}
             className="p-1.5 rounded-lg text-gray-500 hover:text-indigo-600 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
           >
-            <Menu className="w-6 h-6" />
+            <Menu className="w-5 h-5" />
           </button>
           <div className="font-display font-bold text-base text-gray-900 dark:text-white">
             CAN-Freelance
@@ -84,40 +84,48 @@ export default function Sidebar({ currentSyncLog }: SidebarProps) {
           {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
         </button>
         
-        <div className="space-y-8">
+      <div className="space-y-6">
           {/* Brand Header */}
           <div className="flex items-center justify-between">
-            <div className={`flex items-center ${isCollapsed ? 'md:justify-center' : 'gap-3'}`}>
-              <div className="w-10 h-10 shrink-0 rounded-xl bg-indigo-600 dark:bg-indigo-500 flex items-center justify-center text-white font-bold text-lg shadow-md shadow-indigo-600/20 cursor-pointer" onClick={() => setIsCollapsed(!isCollapsed)}>
+            <div className={`flex items-center ${isCollapsed ? 'md:justify-center' : 'gap-2.5'} w-full`}>
+              <div className="w-8 h-8 shrink-0 rounded-lg bg-indigo-600 dark:bg-indigo-500 flex items-center justify-center text-white font-bold text-sm shadow-md shadow-indigo-600/20 cursor-pointer" onClick={() => setIsCollapsed(!isCollapsed)}>
                 CF
               </div>
               {(!isCollapsed || isMobileOpen) && (
                 <div className="overflow-hidden">
-                  <h1 className="font-display font-bold text-base leading-none text-gray-900 dark:text-white whitespace-nowrap">
+                  <h1 className="font-display font-bold text-sm leading-none text-gray-900 dark:text-white whitespace-nowrap">
                     CAN-Freelance
                   </h1>
-                  <p className="text-[10px] text-gray-400 dark:text-gray-500 font-medium whitespace-nowrap">
+                  <p className="text-[9px] text-gray-400 dark:text-gray-500 font-medium whitespace-nowrap">
                     Report and Payroll
                   </p>
                 </div>
               )}
             </div>
-            
+
             {/* Mobile Close Button */}
-            <button 
+            <button
               onClick={() => setIsMobileOpen(false)}
               className="md:hidden p-1.5 rounded-lg text-gray-500 hover:text-indigo-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
           </div>
 
           {/* Menu Items */}
-          <div className="space-y-6 flex-1 pb-4">
-            <nav className="space-y-1.5">
+          <div className="space-y-5 flex-1 pb-4">
+            <nav className="space-y-1">
               {menuItems.map((item, idx) => {
                 const Icon = item.icon;
                 const isSeparator = item.name === 'Production';
+
+                const itemCls = `${isCollapsed ? 'md:justify-center p-2.5' : 'gap-2.5 px-3.5 py-2.5'}`;
+                const label = (!isCollapsed || isMobileOpen) ? <span className="whitespace-nowrap">{item.name}</span> : null;
+                const tooltip = isCollapsed && !isMobileOpen ? (
+                  <div className="absolute left-full ml-3 px-3 py-1.5 bg-white dark:bg-[#1f2937] text-gray-700 dark:text-gray-200 text-xs font-medium rounded-lg opacity-0 invisible group-hover/item:opacity-100 group-hover/item:visible transition-all whitespace-nowrap z-[100] shadow-xl border border-gray-100 dark:border-gray-800 pointer-events-none flex items-center">
+                    {item.name}
+                  </div>
+                ) : null;
 
                 let content;
                 if (item.active) {
@@ -125,29 +133,21 @@ export default function Sidebar({ currentSyncLog }: SidebarProps) {
                     <Link
                       href={item.href}
                       onClick={() => setIsMobileOpen(false)}
-                      className={`relative flex items-center ${isCollapsed ? 'md:justify-center p-3' : 'gap-3 px-4 py-3'} rounded-xl bg-indigo-50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 font-semibold text-sm transition-all border border-indigo-100 dark:border-indigo-900/30 group/item`}
+                      className={`relative flex items-center ${itemCls} rounded-lg bg-indigo-50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 font-semibold text-[13px] transition-all border border-indigo-100 dark:border-indigo-900/30 group/item`}
                     >
-                      <Icon className="w-5 h-5 shrink-0 text-indigo-600 dark:text-indigo-400" />
-                      {(!isCollapsed || isMobileOpen) && <span className="whitespace-nowrap">{item.name}</span>}
-                      {isCollapsed && !isMobileOpen && (
-                        <div className="absolute left-full ml-4 px-4 py-2.5 bg-white dark:bg-[#1f2937] text-gray-700 dark:text-gray-200 text-sm font-medium rounded-xl opacity-0 invisible group-hover/item:opacity-100 group-hover/item:visible transition-all whitespace-nowrap z-[100] shadow-xl border border-gray-100 dark:border-gray-800 pointer-events-none flex items-center">
-                          {item.name}
-                        </div>
-                      )}
+                      <Icon className="w-4 h-4 shrink-0 text-indigo-600 dark:text-indigo-400" />
+                      {label}
+                      {tooltip}
                     </Link>
                   );
                 } else if (item.href === '#') {
                   content = (
                     <div
-                      className={`relative flex items-center ${isCollapsed ? 'md:justify-center p-3' : 'gap-3 px-4 py-3'} rounded-xl text-gray-400 dark:text-gray-500 font-medium text-sm transition-all opacity-60 cursor-not-allowed group/item`}
+                      className={`relative flex items-center ${itemCls} rounded-lg text-gray-400 dark:text-gray-500 font-medium text-[13px] transition-all opacity-60 cursor-not-allowed group/item`}
                     >
-                      <Icon className="w-5 h-5 shrink-0 text-gray-400 dark:text-gray-500 group-hover/item:text-gray-500 dark:group-hover/item:text-gray-400 transition-colors" />
-                      {(!isCollapsed || isMobileOpen) && <span className="whitespace-nowrap">{item.name}</span>}
-                      {isCollapsed && !isMobileOpen && (
-                        <div className="absolute left-full ml-4 px-4 py-2.5 bg-white dark:bg-[#1f2937] text-gray-700 dark:text-gray-200 text-sm font-medium rounded-xl opacity-0 invisible group-hover/item:opacity-100 group-hover/item:visible transition-all whitespace-nowrap z-[100] shadow-xl border border-gray-100 dark:border-gray-800 pointer-events-none flex items-center">
-                          {item.name}
-                        </div>
-                      )}
+                      <Icon className="w-4 h-4 shrink-0 text-gray-400 dark:text-gray-500 group-hover/item:text-gray-500 dark:group-hover/item:text-gray-400 transition-colors" />
+                      {label}
+                      {tooltip}
                     </div>
                   );
                 } else {
@@ -155,15 +155,11 @@ export default function Sidebar({ currentSyncLog }: SidebarProps) {
                     <Link
                       href={item.href}
                       onClick={() => setIsMobileOpen(false)}
-                      className={`relative flex items-center ${isCollapsed ? 'md:justify-center p-3' : 'gap-3 px-4 py-3'} rounded-xl text-gray-500 hover:text-indigo-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:text-indigo-400 dark:hover:bg-gray-800/50 font-medium text-sm transition-all group/item`}
+                      className={`relative flex items-center ${itemCls} rounded-lg text-gray-500 hover:text-indigo-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:text-indigo-400 dark:hover:bg-gray-800/50 font-medium text-[13px] transition-all group/item`}
                     >
-                      <Icon className="w-5 h-5 shrink-0 text-gray-400 group-hover/item:text-indigo-600 dark:text-gray-500 dark:group-hover/item:text-indigo-400 transition-colors" />
-                      {(!isCollapsed || isMobileOpen) && <span className="whitespace-nowrap">{item.name}</span>}
-                      {isCollapsed && !isMobileOpen && (
-                        <div className="absolute left-full ml-4 px-4 py-2.5 bg-white dark:bg-[#1f2937] text-gray-700 dark:text-gray-200 text-sm font-medium rounded-xl opacity-0 invisible group-hover/item:opacity-100 group-hover/item:visible transition-all whitespace-nowrap z-[100] shadow-xl border border-gray-100 dark:border-gray-800 pointer-events-none flex items-center">
-                          {item.name}
-                        </div>
-                      )}
+                      <Icon className="w-4 h-4 shrink-0 text-gray-400 group-hover/item:text-indigo-600 dark:text-gray-500 dark:group-hover/item:text-indigo-400 transition-colors" />
+                      {label}
+                      {tooltip}
                     </Link>
                   );
                 }
@@ -171,11 +167,11 @@ export default function Sidebar({ currentSyncLog }: SidebarProps) {
                 return (
                   <div key={idx}>
                     {isSeparator && (
-                      <div className="pt-4 pb-2 px-1 flex justify-center">
+                      <div className="pt-4 pb-1.5 px-1 flex justify-center">
                         {isCollapsed && !isMobileOpen ? (
                           <span className="text-gray-300 dark:text-gray-700 font-bold">---</span>
                         ) : (
-                          <span className="text-[10px] font-bold tracking-wider text-gray-400 dark:text-gray-600 uppercase w-full">
+                          <span className="text-[9px] font-bold tracking-wider text-gray-400 dark:text-gray-600 uppercase w-full">
                             BISNIS SAYA
                           </span>
                         )}

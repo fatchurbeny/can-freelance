@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "NODE_ENV=development next dev -H 127.0.0.1 -p 3002",
+    "dev": "NODE_ENV=development next dev --webpack -H 127.0.0.1 -p 3002",
     "build": "prisma generate && NODE_ENV=production next build",
     "start": "NODE_ENV=production next start",
     "lint": "eslint"

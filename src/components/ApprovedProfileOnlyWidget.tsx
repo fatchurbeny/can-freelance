@@ -17,7 +17,7 @@ export default function ApprovedProfileOnlyWidget({ data, brandName }: ApprovedP
   const totalQty = data.reduce((sum, item) => sum + item.qty, 0);
 
   return (
-    <div className="glass dark:bg-[#111827] rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full max-h-[268px]">
+    <div className="glass dark:bg-[#111827] rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full self-start overflow-visible">
       {/* Title & Badge */}
       <div className="flex items-center justify-between pb-4">
         <div>

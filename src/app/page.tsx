@@ -110,38 +110,32 @@ export default async function DashboardPage({ searchParams }: PageProps) {
             />
           </div>
 
-          {/* Row 3: Lisensi Gauge (1/4), Bahasa Gauge (1/4), & Approved-Profile Only (1/2) */}
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            <div className="lg:col-span-1">
-              <LisensiGauge 
-                data={dashboardData.widgets.lisensiTemplate} 
-                brandName={activeBrand} 
-              />
-            </div>
-            <div className="lg:col-span-1">
-              <BahasaGauge 
-                data={dashboardData.widgets.bahasaTemplate} 
-                brandName={activeBrand} 
-              />
-            </div>
-            <div className="lg:col-span-2">
-              <ApprovedProfileOnlyWidget 
-                data={dashboardData.widgets.approvedProfileOnlyTable} 
-                brandName={activeBrand} 
-              />
-            </div>
+          {/* Row 3: Lisensi Gauge (1/3), Bahasa Gauge (1/3), & Beban Kerja per Designer (1/3) */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+            <LisensiGauge 
+              data={dashboardData.widgets.lisensiTemplate} 
+              brandName={activeBrand} 
+            />
+            <BahasaGauge 
+              data={dashboardData.widgets.bahasaTemplate} 
+              brandName={activeBrand} 
+            />
+            <WorkloadWidget 
+              data={dashboardData.widgets.workloadPerDesigner} 
+              brandName={activeBrand} 
+            />
           </div>
 
-          {/* Row 4: Designer Leaderboard (1/2) & Workload (1/2) */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Row 4: Designer Leaderboard (1/2) & Aproved-Profile Only (1/2) */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
             <LeaderboardWidget 
               data={dashboardData.widgets.leaderboard} 
               columns={dashboardData.widgets.leaderboardCols}
               topPerformer={dashboardData.widgets.topPerformer} 
               brandName={activeBrand} 
             />
-            <WorkloadWidget 
-              data={dashboardData.widgets.workloadPerDesigner} 
+            <ApprovedProfileOnlyWidget 
+              data={dashboardData.widgets.approvedProfileOnlyTable} 
               brandName={activeBrand} 
             />
           </div>

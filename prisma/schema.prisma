@@ -19,13 +19,13 @@ model User {
 }
 
 model Designer {
-  id          String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  notionKey   String  @unique @map("notion_key")
-  displayName String  @map("display_name")
-  avatarColor String? @map("avatar_color")
-  status      String  @default("Active")
-  tasks       Task[]
+  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  notionKey       String          @unique @map("notion_key")
+  displayName     String          @map("display_name")
+  avatarColor     String?         @map("avatar_color")
+  status          String          @default("Active")
   payrollStatuses PayrollStatus[]
+  tasks           Task[]
 
   @@map("designers")
 }
@@ -68,35 +68,35 @@ model DesignStatus {
 }
 
 model Task {
-  id             String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  notionPageId   String        @unique @map("notion_page_id")
-  notionUrl      String?       @map("notion_url")
+  id             String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  notionPageId   String          @unique @map("notion_page_id")
+  notionUrl      String?         @map("notion_url")
   name           String?
-  designerId     String?       @map("designer_id") @db.Uuid
-  doctypeId      String?       @map("doctype_id") @db.Uuid
-  designStatusId String?       @map("design_status_id") @db.Uuid
-  pages          Decimal?      @db.Decimal
-  qtySubmit      Decimal?      @map("qty_submit") @db.Decimal
+  designerId     String?         @map("designer_id") @db.Uuid
+  doctypeId      String?         @map("doctype_id") @db.Uuid
+  designStatusId String?         @map("design_status_id") @db.Uuid
+  pages          Decimal?        @db.Decimal
+  qtySubmit      Decimal?        @map("qty_submit") @db.Decimal
   license        String?
   languages      String[]
-  dateApproved   DateTime?     @map("date_approved") @db.Date
-  taskMonth      String?       @map("task_month")
-  payrollMonth   String?       @map("payroll_month")
+  dateApproved   DateTime?       @map("date_approved") @db.Date
+  taskMonth      String?         @map("task_month")
+  payrollMonth   String?         @map("payroll_month")
   priority       String?
-  createdTime    DateTime      @map("created_time") @db.Timestamptz(6)
-  syncedAt       DateTime      @default(now()) @map("synced_at") @db.Timestamptz(6)
-  dateCompleted  DateTime?     @map("date_completed") @db.Date
-  datePO         DateTime?     @map("date_po") @db.Date
-  dateReject     DateTime?     @map("date_reject") @db.Date
-  dateStarted    DateTime?     @map("date_started") @db.Date
-  lastEditedTime DateTime      @default(now()) @map("last_edited_time") @db.Timestamptz(6)
-  poolScore      Decimal?      @map("pool_score") @db.Decimal
+  createdTime    DateTime        @map("created_time") @db.Timestamptz(6)
+  syncedAt       DateTime        @default(now()) @map("synced_at") @db.Timestamptz(6)
+  dateCompleted  DateTime?       @map("date_completed") @db.Date
+  datePO         DateTime?       @map("date_po") @db.Date
+  dateReject     DateTime?       @map("date_reject") @db.Date
+  dateStarted    DateTime?       @map("date_started") @db.Date
+  lastEditedTime DateTime        @default(now()) @map("last_edited_time") @db.Timestamptz(6)
+  poolScore      Decimal?        @map("pool_score") @db.Decimal
   taskAccounts   TaskAccount[]
   canvaLinks     TaskCanvaLink[]
   comments       TaskComment[]
-  designStatus   DesignStatus? @relation(fields: [designStatusId], references: [id])
-  designer       Designer?     @relation(fields: [designerId], references: [id])
-  doctype        Doctype?      @relation(fields: [doctypeId], references: [id])
+  designStatus   DesignStatus?   @relation(fields: [designStatusId], references: [id])
+  designer       Designer?       @relation(fields: [designerId], references: [id])
+  doctype        Doctype?        @relation(fields: [doctypeId], references: [id])
 
   @@map("tasks")
 }
@@ -132,7 +132,7 @@ model TaskAccount {
 }
 
 model PayrollStatus {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   designerId   String   @map("designer_id") @db.Uuid
   payrollMonth String   @map("payroll_month")
   isPaid       Boolean  @default(false) @map("is_paid")
@@ -149,9 +149,9 @@ model SyncLog {
   startedAt     DateTime  @default(now()) @map("started_at") @db.Timestamptz(6)
   finishedAt    DateTime? @map("finished_at") @db.Timestamptz(6)
   status        String
-  mode          String    @default("incremental")
   recordsSynced Int?      @map("records_synced")
   errorMessage  String?   @map("error_message")
+  mode          String    @default("incremental")
 
   @@map("sync_logs")
 }
@@ -168,15 +168,15 @@ model NotionDatabase {
 }
 
 model NotionConfig {
-  id               String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  workspaceName    String         @map("workspace_name")
-  encryptedApiKey  String         @map("encrypted_api_key")
-  iv               String
-  autoSync         Boolean        @default(false) @map("auto_sync")
-  syncInterval     String         @default("15_mins") @map("sync_interval")
-  contractRate     Int            @default(15000) @map("contract_rate")
-  updatedAt        DateTime       @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  databases        NotionDatabase[]
+  id              String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  encryptedApiKey String           @map("encrypted_api_key")
+  iv              String
+  updatedAt       DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  autoSync        Boolean          @default(false) @map("auto_sync")
+  syncInterval    String           @default("15_mins") @map("sync_interval")
+  workspaceName   String           @map("workspace_name")
+  contractRate    Int              @default(15000) @map("contract_rate")
+  databases       NotionDatabase[]
 
   @@map("notion_configs")
 }

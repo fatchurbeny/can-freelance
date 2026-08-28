@@ -48,7 +48,7 @@ export default function ThemeToggle({ isCollapsed = false }: ThemeToggleProps) {
         className="w-full flex items-center justify-center p-2.5 rounded-xl border border-[#E8E0D8] dark:border-gray-800 bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-[#F5F0EB] dark:hover:bg-gray-800 transition-colors shadow-sm cursor-pointer"
         aria-label="Toggle Theme"
       >
-        {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+        {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
       </button>
     );
   }
@@ -62,13 +62,13 @@ export default function ThemeToggle({ isCollapsed = false }: ThemeToggleProps) {
         key={mode}
         onClick={() => setTheme(mode)}
         aria-pressed={active}
-        className={`flex-1 flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors cursor-pointer ${
+        className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors cursor-pointer ${
           active
             ? 'bg-indigo-600 dark:bg-indigo-500 text-white shadow-sm'
             : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
         }`}
       >
-        <Icon className="w-4 h-4" />
+        <Icon className="w-3.5 h-3.5" />
         <span className="whitespace-nowrap">{mode === 'dark' ? 'Dark' : 'Light'}</span>
       </button>
     );
