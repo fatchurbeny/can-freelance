@@ -203,15 +203,20 @@ export async function syncNotionData(mode: NotionSyncMode = 'incremental') {
           const statusName = statusProp?.status?.name || statusProp?.select?.name;
           let designStatusId = null;
           if (statusName) {
+            const lowerName = statusName.toLowerCase();
+            const isQaVariant = lowerName === 'qa' || lowerName.includes('q&a') || lowerName.includes('in qa') || lowerName.includes('quality assurance');
+
             let foundStatus = statuses.find(
-              (s) => s.notionKey.toLowerCase() === statusName.toLowerCase() ||
-                     s.displayName.toLowerCase() === statusName.toLowerCase()
+              (s) => s.notionKey.toLowerCase() === lowerName ||
+                     s.displayName.toLowerCase() === lowerName ||
+                     (isQaVariant && (s.notionKey.toLowerCase().includes('qa') || s.displayName.toLowerCase().includes('qa')))
             );
+
             if (!foundStatus) {
-              const isApproved = statusName.toLowerCase().includes('aprov') && !statusName.toLowerCase().includes('profile');
-              const isProfileOnly = statusName.toLowerCase().includes('profile');
-              const isSubmitted = !statusName.toLowerCase().includes('draft');
-              const group = isApproved || isProfileOnly ? 'complete' : (statusName.toLowerCase().includes('review') || statusName.toLowerCase().includes('progress') ? 'in_progress' : 'to_do');
+              const isApproved = lowerName.includes('aprov') && !lowerName.includes('profile');
+              const isProfileOnly = lowerName.includes('profile');
+              const isSubmitted = !lowerName.includes('draft');
+              const group = isApproved || isProfileOnly ? 'complete' : (lowerName.includes('review') || lowerName.includes('progress') || isQaVariant ? 'in_progress' : 'to_do');
               const newS = await prisma.designStatus.create({
                 data: {
                   notionKey: statusName,
