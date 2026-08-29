@@ -73,7 +73,7 @@ const COLUMNS: ColumnConfig[] = [
   {
     id: 'qa',
     title: 'QA',
-    statuses: ['QA', 'qa'],
+    statuses: ['QA', 'qa', 'Q&A', 'q&a', 'In QA', 'in qa', 'QA Process', 'Quality Assurance', 'Testing/QA', 'QA/Testing'],
     dot: 'bg-amber-400',
     emptyMessage: 'No tasks in QA.',
     actions: [{ label: 'Move In Review', target: 'In Review', doneLabel: 'Moved to In Review' }],
@@ -124,7 +124,7 @@ const STATUS_CARDS: StatusCardConfig[] = [
   { label: 'Draft', statuses: ['Draft', 'draft'], Icon: FileText, chip: 'bg-[#6b7280]/25' },
   { label: 'Not Started', statuses: ['Not Started', 'Not started'], Icon: FileClock, chip: 'bg-[#6646B1]/25' },
   { label: 'In Progress', statuses: ['In Progress', 'In progress'], Icon: Loader2, chip: 'bg-[#3B7BFF]/25' },
-  { label: 'QA', statuses: ['QA', 'qa'], Icon: Hourglass, chip: 'bg-[#3B7BFF]/25' },
+  { label: 'QA', statuses: ['QA', 'qa', 'Q&A', 'q&a', 'In QA', 'in qa', 'QA Process', 'Quality Assurance', 'Testing/QA', 'QA/Testing'], Icon: Hourglass, chip: 'bg-[#3B7BFF]/25' },
   { label: 'In Review', statuses: ['In Review', 'In review'], Icon: FileCheck2, chip: 'bg-[#F0A848]/25' },
   { label: 'Approved', statuses: ['Aproved', 'Approved'], Icon: CheckCircle2, chip: 'bg-[#22C35D]/25' },
   { label: 'Profile Only', statuses: ['Aproved-Profile Only', 'Approved-Profile Only'], Icon: UserCheck, chip: 'bg-[#EC4899]/25' },
