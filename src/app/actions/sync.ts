@@ -4,9 +4,9 @@ import { syncNotionData } from '@/lib/sync-notion';
 import { revalidatePath } from 'next/cache';
 import prisma from '@/lib/prisma';
 
-export async function triggerSyncAction() {
+export async function triggerSyncAction(mode: import('@/lib/sync-notion').NotionSyncMode = 'full') {
   try {
-    const result = await syncNotionData('incremental');
+    const result = await syncNotionData(mode);
     revalidatePath('/');
     revalidatePath('/production');
     return result;
