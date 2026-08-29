@@ -52,28 +52,28 @@ const COLUMNS: ColumnConfig[] = [
   {
     id: 'draft',
     title: 'Draft',
-    statuses: ['Draft'],
+    statuses: ['Draft', 'draft'],
     dot: 'bg-gray-400',
     emptyMessage: 'No Draft tasks.',
   },
   {
     id: 'notStarted',
     title: 'Not Started',
-    statuses: ['Not Started'],
+    statuses: ['Not Started', 'Not started'],
     dot: 'bg-indigo-300',
     emptyMessage: 'No Not Started tasks.',
   },
   {
     id: 'inProgress',
     title: 'In Progress',
-    statuses: ['In Progress'],
+    statuses: ['In Progress', 'In progress'],
     dot: 'bg-indigo-400',
     emptyMessage: 'No In Progress tasks.',
   },
   {
     id: 'qa',
     title: 'QA',
-    statuses: ['QA'],
+    statuses: ['QA', 'qa'],
     dot: 'bg-amber-400',
     emptyMessage: 'No tasks in QA.',
     actions: [{ label: 'Move In Review', target: 'In Review', doneLabel: 'Moved to In Review' }],
@@ -81,7 +81,7 @@ const COLUMNS: ColumnConfig[] = [
   {
     id: 'review',
     title: 'In Review',
-    statuses: ['In Review'],
+    statuses: ['In Review', 'In review'],
     dot: 'bg-blue-400',
     emptyMessage: 'No tasks in review.',
     actions: [
@@ -92,21 +92,21 @@ const COLUMNS: ColumnConfig[] = [
   {
     id: 'approved',
     title: 'Approved',
-    statuses: ['Aproved'],
+    statuses: ['Aproved', 'Approved'],
     dot: 'bg-emerald-400',
     emptyMessage: 'No approved tasks.',
   },
   {
     id: 'profileOnly',
     title: 'Approved - Profile Only',
-    statuses: ['Aproved-Profile Only'],
+    statuses: ['Aproved-Profile Only', 'Approved-Profile Only'],
     dot: 'bg-teal-400',
     emptyMessage: 'No profile-only tasks.',
   },
   {
     id: 'reject',
     title: 'Reject',
-    statuses: ['Reject'],
+    statuses: ['Reject', 'reject'],
     dot: 'bg-rose-400',
     emptyMessage: 'No rejected tasks.',
   },
@@ -121,14 +121,14 @@ interface StatusCardConfig {
 
 /** 8 status stat cards (Figma node 408:1214). Order matches the board pipeline. */
 const STATUS_CARDS: StatusCardConfig[] = [
-  { label: 'Draft', statuses: ['Draft'], Icon: FileText, chip: 'bg-[#6b7280]/25' },
-  { label: 'Not Started', statuses: ['Not Started'], Icon: FileClock, chip: 'bg-[#6646B1]/25' },
-  { label: 'In Progress', statuses: ['In Progress'], Icon: Loader2, chip: 'bg-[#3B7BFF]/25' },
-  { label: 'QA', statuses: ['QA'], Icon: Hourglass, chip: 'bg-[#3B7BFF]/25' },
-  { label: 'In Review', statuses: ['In Review'], Icon: FileCheck2, chip: 'bg-[#F0A848]/25' },
-  { label: 'Approved', statuses: ['Aproved'], Icon: CheckCircle2, chip: 'bg-[#22C35D]/25' },
-  { label: 'Profile Only', statuses: ['Aproved-Profile Only'], Icon: UserCheck, chip: 'bg-[#EC4899]/25' },
-  { label: 'Rejected', statuses: ['Reject'], Icon: XCircle, chip: 'bg-[#E05C5E]/25' },
+  { label: 'Draft', statuses: ['Draft', 'draft'], Icon: FileText, chip: 'bg-[#6b7280]/25' },
+  { label: 'Not Started', statuses: ['Not Started', 'Not started'], Icon: FileClock, chip: 'bg-[#6646B1]/25' },
+  { label: 'In Progress', statuses: ['In Progress', 'In progress'], Icon: Loader2, chip: 'bg-[#3B7BFF]/25' },
+  { label: 'QA', statuses: ['QA', 'qa'], Icon: Hourglass, chip: 'bg-[#3B7BFF]/25' },
+  { label: 'In Review', statuses: ['In Review', 'In review'], Icon: FileCheck2, chip: 'bg-[#F0A848]/25' },
+  { label: 'Approved', statuses: ['Aproved', 'Approved'], Icon: CheckCircle2, chip: 'bg-[#22C35D]/25' },
+  { label: 'Profile Only', statuses: ['Aproved-Profile Only', 'Approved-Profile Only'], Icon: UserCheck, chip: 'bg-[#EC4899]/25' },
+  { label: 'Rejected', statuses: ['Reject', 'reject'], Icon: XCircle, chip: 'bg-[#E05C5E]/25' },
 ];
 
 /** Serialized payloads deliver dates as ISO strings, so coerce before comparing. */
