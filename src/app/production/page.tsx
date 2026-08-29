@@ -8,13 +8,21 @@ export const dynamic = 'force-dynamic';
 /** Every status the board renders as a column. "Aproved" is Notion's spelling. */
 const BOARD_STATUSES = [
   'QA',
+  'qa',
   'In Review',
+  'In review',
   'Aproved',
+  'Approved',
   'Aproved-Profile Only',
+  'Approved-Profile Only',
   'In Progress',
+  'In progress',
   'Not Started',
+  'Not started',
   'Reject',
+  'reject',
   'Draft',
+  'draft',
 ];
 
 export default async function ProductionPage() {
