@@ -1,6 +1,6 @@
 'use server';
 
-import { syncNotionData } from '@/lib/sync-notion';
+import { syncNotionData, getSyncProgress } from '@/lib/sync-notion';
 import { revalidatePath } from 'next/cache';
 import prisma from '@/lib/prisma';
 
@@ -13,6 +13,10 @@ export async function triggerSyncAction(mode: import('@/lib/sync-notion').Notion
   } catch (error: any) {
     return { status: 'failed', errorMessage: error.message || String(error) };
   }
+}
+
+export async function getSyncProgressAction() {
+  return getSyncProgress();
 }
 
 export async function getLatestSyncStatus() {

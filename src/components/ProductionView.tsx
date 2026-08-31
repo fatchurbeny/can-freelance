@@ -22,7 +22,7 @@ export default function ProductionView({ kanbanTasks, issueTasks, selectedMonths
   };
 
   return (
-    <div className="w-full rounded-xl border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] divide-y divide-[#f0f0f0] dark:divide-[#272a34] shadow-none">
+    <div className="w-full rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] divide-y divide-[#f0f0f0] dark:divide-[#272a34] shadow-none">
       <ProductionTabNav
         activeTab={activeTab}
         onTabChange={setActiveTab}
@@ -38,9 +38,7 @@ export default function ProductionView({ kanbanTasks, issueTasks, selectedMonths
       )}
 
       {activeTab === 'parameterIssue' && (
-        <div className="p-6">
-          <ParameterIssueTable initialTasks={issueTasks} onParametersUpdated={handleRefresh} />
-        </div>
+        <ParameterIssueTable initialTasks={issueTasks} onParametersUpdated={handleRefresh} />
       )}
     </div>
   );

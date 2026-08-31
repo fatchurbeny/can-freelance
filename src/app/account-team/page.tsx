@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 import Sidebar from '@/components/Sidebar';
 import CloudflareTopBar from '@/components/CloudflareTopBar';
 import DesignerStatusSelect from '@/components/DesignerStatusSelect';
-import { Gavel, Trophy, CircleDot } from 'lucide-react';
+import { Gavel, Trophy, CircleDot, Plus } from 'lucide-react';
 
 function getInitials(name: string) {
   return name.substring(0, 2).toUpperCase();
@@ -67,7 +67,7 @@ export default async function AccountTeamPage() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#0d0e12] text-[#262626] dark:text-[#f4f4f5] transition-colors">
-      <CloudflareTopBar badgeLabel="ACCOUNT & TEAM" actionButton={{ label: 'Add Team/Account' }} />
+      <CloudflareTopBar badgeLabel="ACCOUNT & TEAM" />
       <div className="flex min-h-[calc(100vh-56px)] flex-col md:flex-row">
         <Sidebar currentSyncLog={latestSyncLog} />
 
@@ -75,33 +75,42 @@ export default async function AccountTeamPage() {
 
 
         {/* Single Continuous Container */}
-        <div className="w-full rounded-xl overflow-hidden border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] divide-y divide-[#f0f0f0] dark:divide-[#272a34] shadow-none">
+        <div className="w-full rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] divide-y divide-[#f0f0f0] dark:divide-[#272a34] shadow-none">
 
-          {/* Contract Rules Banner */}
-          <div className="p-6 bg-white dark:bg-[#0d0e12] flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-[#ff5e1f]/10 text-[#ff5e1f] flex items-center justify-center shrink-0">
+          {/* Contract Rules Banner (Symmetrical 50/50 2-Column Grid Aligned with Tables Below) */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-[#f0f0f0] dark:divide-[#272a34] bg-gray-50/50 dark:bg-[#0d0e12]">
+            {/* Left Title Cell (Column 1 - 50%) */}
+            <div className="flex items-center gap-3 p-4 sm:p-5 min-w-0">
+              <div className="w-9 h-9 rounded-lg bg-[#ff5e1f]/10 text-[#ff5e1f] border border-[#ff5e1f]/20 flex items-center justify-center shrink-0">
                 <Gavel className="w-5 h-5" />
               </div>
-              <div>
-                <h2 className="font-bold text-sm text-gray-900 dark:text-white capitalize">
+              <div className="min-w-0">
+                <h2 className="font-bold text-sm text-gray-900 dark:text-white capitalize truncate">
                   Ketentuan & Aturan Kontrak Freelance
                 </h2>
-                <p className="text-xs text-gray-400 dark:text-gray-500 font-mono mt-0.5">
+                <p className="text-xs text-gray-400 dark:text-gray-500 font-mono mt-0.5 truncate">
                   Kontrak dimulai sejak 26 Januari 2026
                 </p>
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3 text-xs font-mono">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 text-gray-600 dark:text-gray-300">
-                <CircleDot className="w-3.5 h-3.5 text-gray-400" />
-                <span>Kalender: <strong className="font-bold text-gray-900 dark:text-white">25 Hari Kerja/Bulan</strong></span>
+            {/* Right Full-Height Table Cells (Column 2 - 50%) */}
+            <div className="flex items-stretch divide-x divide-[#f0f0f0] dark:divide-[#272a34] font-mono text-xs min-w-0">
+              <div className="flex-1 flex items-center justify-center gap-2 px-3 sm:px-4 py-4 bg-white dark:bg-[#0d0e12] text-gray-700 dark:text-gray-300">
+                <CircleDot className="w-3.5 h-3.5 text-[#ff5e1f] shrink-0" />
+                <span className="whitespace-nowrap">Kalender: <strong className="font-bold text-gray-900 dark:text-white">25 Hari Kerja/Bulan</strong></span>
               </div>
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 text-gray-600 dark:text-gray-300">
-                <CircleDot className="w-3.5 h-3.5 text-gray-400" />
-                <span>Rate/Poll: <strong className="font-bold text-gray-900 dark:text-white">IDR {contractRate!.toLocaleString('id-ID')}</strong></span>
+              <div className="flex-1 flex items-center justify-center gap-2 px-3 sm:px-4 py-4 bg-white dark:bg-[#0d0e12] text-gray-700 dark:text-gray-300">
+                <CircleDot className="w-3.5 h-3.5 text-[#ff5e1f] shrink-0" />
+                <span className="whitespace-nowrap">Rate/Pool: <strong className="font-bold text-gray-900 dark:text-white">IDR {contractRate!.toLocaleString('id-ID')}</strong></span>
               </div>
+              <button
+                type="button"
+                className="flex items-center gap-2 px-4 sm:px-5 py-4 bg-[#ff5e1f] hover:bg-[#ff7038] text-white font-mono text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer whitespace-nowrap shrink-0"
+              >
+                <Plus className="w-4 h-4 stroke-[3]" />
+                <span>Add Team/Account</span>
+              </button>
             </div>
           </div>
 

@@ -1,6 +1,6 @@
 {
-  "version": "1.0.0",
-  "generatedAt": "2026-08-29T15:42:28.841Z",
+  "version": "2.0.0",
+  "generatedAt": "2026-08-31T18:08:04.967Z",
   "nodes": [
     {
       "id": "page:/",
@@ -59,6 +59,14 @@
       "details": "Next.js 16 App Router Page (/notion-config)"
     },
     {
+      "id": "component:AccountSwitcher",
+      "label": "AccountSwitcher",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/AccountSwitcher.tsx",
+      "details": "React UI Component in src/components/AccountSwitcher.tsx"
+    },
+    {
       "id": "component:AddDoctypeButton",
       "label": "AddDoctypeButton",
       "type": "component",
@@ -97,6 +105,38 @@
       "group": "React Components",
       "filepath": "src/components/BrandTabs.tsx",
       "details": "React UI Component in src/components/BrandTabs.tsx"
+    },
+    {
+      "id": "component:CloudflareGridCards",
+      "label": "CloudflareGridCards",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/CloudflareGridCards.tsx",
+      "details": "React UI Component in src/components/CloudflareGridCards.tsx"
+    },
+    {
+      "id": "component:CloudflareHeroHeader",
+      "label": "CloudflareHeroHeader",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/CloudflareHeroHeader.tsx",
+      "details": "React UI Component in src/components/CloudflareHeroHeader.tsx"
+    },
+    {
+      "id": "component:CloudflareTabPanel",
+      "label": "CloudflareTabPanel",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/CloudflareTabPanel.tsx",
+      "details": "React UI Component in src/components/CloudflareTabPanel.tsx"
+    },
+    {
+      "id": "component:CloudflareTopBar",
+      "label": "CloudflareTopBar",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/CloudflareTopBar.tsx",
+      "details": "React UI Component in src/components/CloudflareTopBar.tsx"
     },
     {
       "id": "component:ContractRateEditor",
@@ -147,6 +187,14 @@
       "details": "React UI Component in src/components/GaugesWidget.tsx"
     },
     {
+      "id": "component:GraphifyVisualizer",
+      "label": "GraphifyVisualizer",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/GraphifyVisualizer.tsx",
+      "details": "React UI Component in src/components/GraphifyVisualizer.tsx"
+    },
+    {
       "id": "component:Header",
       "label": "Header",
       "type": "component",
@@ -179,6 +227,14 @@
       "details": "React UI Component in src/components/LeaderboardWidget.tsx"
     },
     {
+      "id": "component:ParameterIssueTable",
+      "label": "ParameterIssueTable",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/ParameterIssueTable.tsx",
+      "details": "React UI Component in src/components/ParameterIssueTable.tsx"
+    },
+    {
       "id": "component:PayrollStatusToggle",
       "label": "PayrollStatusToggle",
       "type": "component",
@@ -203,12 +259,36 @@
       "details": "React UI Component in src/components/PipelineWidget.tsx"
     },
     {
+      "id": "component:ProductionOverview",
+      "label": "ProductionOverview",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/ProductionOverview.tsx",
+      "details": "React UI Component in src/components/ProductionOverview.tsx"
+    },
+    {
+      "id": "component:ProductionTabNav",
+      "label": "ProductionTabNav",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/ProductionTabNav.tsx",
+      "details": "React UI Component in src/components/ProductionTabNav.tsx"
+    },
+    {
       "id": "component:ProductionToolbar",
       "label": "ProductionToolbar",
       "type": "component",
       "group": "React Components",
       "filepath": "src/components/ProductionToolbar.tsx",
       "details": "React UI Component in src/components/ProductionToolbar.tsx"
+    },
+    {
+      "id": "component:ProductionView",
+      "label": "ProductionView",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/ProductionView.tsx",
+      "details": "React UI Component in src/components/ProductionView.tsx"
     },
     {
       "id": "component:QACard",
@@ -403,66 +483,434 @@
       "details": "Execution logs of Notion sync operations"
     },
     {
-      "id": "doc:business-rules",
-      "label": "business-rules.md",
+      "id": "rule:qty-pages",
+      "label": "QTY Pages Calculation",
       "type": "doc",
-      "group": "Knowledge Base",
+      "group": "SaaS Business Rules",
       "filepath": "docs/knowledge/business-rules.md",
-      "details": "Modular Knowledge Document (docs/knowledge/business-rules.md)"
+      "details": "Formula: qty_submit * pages per task record"
     },
     {
-      "id": "doc:data-flows",
-      "label": "data-flows.md",
+      "id": "rule:designer-resign",
+      "label": "Resign Designer Status",
       "type": "doc",
-      "group": "Knowledge Base",
-      "filepath": "docs/knowledge/data-flows.md",
-      "details": "Modular Knowledge Document (docs/knowledge/data-flows.md)"
+      "group": "SaaS Business Rules",
+      "filepath": "docs/knowledge/business-rules.md",
+      "details": "Designer status === Resign forces calculated payroll payment to 0"
     },
     {
-      "id": "doc:entities",
-      "label": "entities.md",
+      "id": "rule:base-pages",
+      "label": "Base Template Pages",
       "type": "doc",
-      "group": "Knowledge Base",
-      "filepath": "docs/knowledge/entities.md",
-      "details": "Modular Knowledge Document (docs/knowledge/entities.md)"
+      "group": "SaaS Business Rules",
+      "filepath": "docs/knowledge/business-rules.md",
+      "details": "Formula: MAX(pages) on grouped doctype queries"
     },
     {
-      "id": "doc:index",
-      "label": "index.md",
+      "id": "rule:dynamic-period",
+      "label": "Dynamic Period Labels",
       "type": "doc",
-      "group": "Knowledge Base",
-      "filepath": "docs/knowledge/index.md",
-      "details": "Modular Knowledge Document (docs/knowledge/index.md)"
+      "group": "SaaS Business Rules",
+      "filepath": "docs/knowledge/business-rules.md",
+      "details": "Period strings must reflect active month filter"
     },
     {
-      "id": "doc:issues-and-fixes",
-      "label": "issues-and-fixes.md",
+      "id": "sync:full-mode",
+      "label": "Full Sync Mode",
+      "type": "action",
+      "group": "Notion Sync Engine",
+      "filepath": "src/lib/sync-notion.ts",
+      "details": "Manual sync default: reconciles updated, new, and deleted pages"
+    },
+    {
+      "id": "sync:cron-mode",
+      "label": "Background Cron Sync",
+      "type": "action",
+      "group": "Notion Sync Engine",
+      "filepath": "src/app/api/sync/cron/route.ts",
+      "details": "Automated background polling using referenceStartTime logic"
+    },
+    {
+      "id": "sync:rate-limiter",
+      "label": "Notion API Limiter",
+      "type": "action",
+      "group": "Notion Sync Engine",
+      "filepath": "src/lib/sync-notion.ts",
+      "details": "Pacing & batching requests to prevent HTTP 429 rate limit"
+    },
+    {
+      "id": "gotcha:directive-preservation",
+      "label": "Directive Preservation",
       "type": "doc",
-      "group": "Knowledge Base",
+      "group": "Gotchas & Layout Rules",
       "filepath": "docs/knowledge/issues-and-fixes.md",
-      "details": "Modular Knowledge Document (docs/knowledge/issues-and-fixes.md)"
+      "details": "Must preserve \"use client\" on RSC interactive files"
     },
     {
-      "id": "doc:modules",
-      "label": "modules.md",
+      "id": "gotcha:decimal-serialization",
+      "label": "Decimal Serialization",
       "type": "doc",
-      "group": "Knowledge Base",
-      "filepath": "docs/knowledge/modules.md",
-      "details": "Modular Knowledge Document (docs/knowledge/modules.md)"
+      "group": "Gotchas & Layout Rules",
+      "filepath": "docs/knowledge/issues-and-fixes.md",
+      "details": "JSON.parse(JSON.stringify) for Prisma Decimal fields"
     },
     {
-      "id": "doc:session-handover",
-      "label": "session-handover.md",
+      "id": "gotcha:double-border-prevention",
+      "label": "Double Border Prevention",
       "type": "doc",
-      "group": "Knowledge Base",
+      "group": "Gotchas & Layout Rules",
+      "filepath": "docs/knowledge/issues-and-fixes.md",
+      "details": "No redundant border-t/border-b on divide-y continuous card children"
+    },
+    {
+      "id": "gotcha:nav-tab-proportional",
+      "label": "Nav Tab Proportional Sizing",
+      "type": "doc",
+      "group": "Gotchas & Layout Rules",
+      "filepath": "docs/knowledge/issues-and-fixes.md",
+      "details": "Top navigation tabs prioritize label readability without truncation"
+    },
+    {
+      "id": "gotcha:force-graph-isolation",
+      "label": "Force Graph Hover Isolation",
+      "type": "doc",
+      "group": "Gotchas & Layout Rules",
+      "filepath": "docs/knowledge/issues-and-fixes.md",
+      "details": "Store hoveredNode in useRef to prevent physics simulation resets"
+    },
+    {
+      "id": "handover:decision-1",
+      "label": "50% Vertical Border Alignment",
+      "type": "doc",
+      "group": "Session Handover & Log",
       "filepath": "docs/knowledge/session-handover.md",
-      "details": "Modular Knowledge Document (docs/knowledge/session-handover.md)"
+      "details": "Aligned Account & Team banner divider with 2-column tables"
+    },
+    {
+      "id": "handover:decision-2",
+      "label": "Symmetrical Table Style Billing",
+      "type": "doc",
+      "group": "Session Handover & Log",
+      "filepath": "docs/knowledge/session-handover.md",
+      "details": "Flat table header toolbar with full container height cells"
+    },
+    {
+      "id": "handover:active-state",
+      "label": "Active Session State",
+      "type": "doc",
+      "group": "Session Handover & Log",
+      "filepath": "docs/knowledge/session-handover.md",
+      "details": "Knowledge Graph fully synchronized across all 7 domains"
+    },
+    {
+      "id": "page:/actions/approval-payroll.ts",
+      "label": "approval-payroll.ts Page",
+      "type": "page",
+      "group": "App Router Pages",
+      "filepath": "src/app/actions/approval-payroll.ts",
+      "details": "Next.js App Router Page (/actions/approval-payroll.ts)"
+    },
+    {
+      "id": "page:/actions/designer.ts",
+      "label": "designer.ts Page",
+      "type": "page",
+      "group": "App Router Pages",
+      "filepath": "src/app/actions/designer.ts",
+      "details": "Next.js App Router Page (/actions/designer.ts)"
+    },
+    {
+      "id": "page:/actions/notion-config.ts",
+      "label": "notion-config.ts Page",
+      "type": "page",
+      "group": "App Router Pages",
+      "filepath": "src/app/actions/notion-config.ts",
+      "details": "Next.js App Router Page (/actions/notion-config.ts)"
+    },
+    {
+      "id": "page:/actions/parameter-issue.ts",
+      "label": "parameter-issue.ts Page",
+      "type": "page",
+      "group": "App Router Pages",
+      "filepath": "src/app/actions/parameter-issue.ts",
+      "details": "Next.js App Router Page (/actions/parameter-issue.ts)"
+    },
+    {
+      "id": "page:/actions/payroll-status.ts",
+      "label": "payroll-status.ts Page",
+      "type": "page",
+      "group": "App Router Pages",
+      "filepath": "src/app/actions/payroll-status.ts",
+      "details": "Next.js App Router Page (/actions/payroll-status.ts)"
+    },
+    {
+      "id": "page:/actions/qa.ts",
+      "label": "qa.ts Page",
+      "type": "page",
+      "group": "App Router Pages",
+      "filepath": "src/app/actions/qa.ts",
+      "details": "Next.js App Router Page (/actions/qa.ts)"
+    },
+    {
+      "id": "page:/actions/rate-card.ts",
+      "label": "rate-card.ts Page",
+      "type": "page",
+      "group": "App Router Pages",
+      "filepath": "src/app/actions/rate-card.ts",
+      "details": "Next.js App Router Page (/actions/rate-card.ts)"
+    },
+    {
+      "id": "page:/actions/sync.ts",
+      "label": "sync.ts Page",
+      "type": "page",
+      "group": "App Router Pages",
+      "filepath": "src/app/actions/sync.ts",
+      "details": "Next.js App Router Page (/actions/sync.ts)"
+    },
+    {
+      "id": "page:/api/knowledge-graph/route.ts",
+      "label": "route.ts Page",
+      "type": "page",
+      "group": "App Router Pages",
+      "filepath": "src/app/api/knowledge-graph/route.ts",
+      "details": "Next.js App Router Page (/api/knowledge-graph/route.ts)"
+    },
+    {
+      "id": "page:/api/notion/databases/route.ts",
+      "label": "route.ts Page",
+      "type": "page",
+      "group": "App Router Pages",
+      "filepath": "src/app/api/notion/databases/route.ts",
+      "details": "Next.js App Router Page (/api/notion/databases/route.ts)"
+    },
+    {
+      "id": "page:/api/sync/cron/route.ts",
+      "label": "route.ts Page",
+      "type": "page",
+      "group": "App Router Pages",
+      "filepath": "src/app/api/sync/cron/route.ts",
+      "details": "Next.js App Router Page (/api/sync/cron/route.ts)"
+    },
+    {
+      "id": "page:/billing-statement/MonthFilter.tsx",
+      "label": "MonthFilter.tsx Page",
+      "type": "page",
+      "group": "App Router Pages",
+      "filepath": "src/app/billing-statement/MonthFilter.tsx",
+      "details": "Next.js App Router Page (/billing-statement/MonthFilter.tsx)"
+    },
+    {
+      "id": "page:/billing-statement/print/layout.tsx",
+      "label": "layout.tsx Page",
+      "type": "page",
+      "group": "App Router Pages",
+      "filepath": "src/app/billing-statement/print/layout.tsx",
+      "details": "Next.js App Router Page (/billing-statement/print/layout.tsx)"
+    },
+    {
+      "id": "page:/billing-statement/print",
+      "label": "print Page",
+      "type": "page",
+      "group": "App Router Pages",
+      "filepath": "src/app/billing-statement/print/page.tsx",
+      "details": "Next.js App Router Page (/billing-statement/print)"
+    },
+    {
+      "id": "page:/content-access",
+      "label": "content-access Page",
+      "type": "page",
+      "group": "App Router Pages",
+      "filepath": "src/app/content-access/page.tsx",
+      "details": "Next.js App Router Page (/content-access)"
+    },
+    {
+      "id": "page:/layout.tsx",
+      "label": "layout.tsx Page",
+      "type": "page",
+      "group": "App Router Pages",
+      "filepath": "src/app/layout.tsx",
+      "details": "Next.js App Router Page (/layout.tsx)"
+    },
+    {
+      "id": "page:/notion-config/databases",
+      "label": "databases Page",
+      "type": "page",
+      "group": "App Router Pages",
+      "filepath": "src/app/notion-config/databases/page.tsx",
+      "details": "Next.js App Router Page (/notion-config/databases)"
     }
   ],
   "links": [
     {
+      "source": "page:/account-team",
+      "target": "component:Sidebar",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/account-team",
+      "target": "component:CloudflareTopBar",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/account-team",
+      "target": "component:DesignerStatusSelect",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/billing-statement",
+      "target": "component:Sidebar",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/billing-statement",
+      "target": "component:CloudflareTopBar",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/billing-statement",
+      "target": "component:MonthFilter",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/billing-statement",
+      "target": "component:PayrollStatusToggle",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/billing-statement",
+      "target": "component:ApprovalPayrollTable",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/billing-statement/print",
+      "target": "component:AutoPrint",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/content-access",
+      "target": "component:CloudflareTopBar",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/knowledge-graph",
+      "target": "component:Sidebar",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/knowledge-graph",
+      "target": "component:CloudflareTopBar",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/knowledge-graph",
+      "target": "component:KnowledgeGraphViewer",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/notion-config/databases",
+      "target": "component:Sidebar",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/notion-config/databases",
+      "target": "component:CloudflareTopBar",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/notion-config",
+      "target": "component:Sidebar",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/notion-config",
+      "target": "component:CloudflareTopBar",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/notion-config",
+      "target": "component:SelectDropdown",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/",
+      "target": "component:sync",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/",
+      "target": "component:Sidebar",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/",
+      "target": "component:Header",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/",
+      "target": "component:CloudflareTopBar",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/",
+      "target": "component:BrandTabs",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
       "source": "page:/",
       "target": "component:KPISection",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/",
+      "target": "component:TrenVolumeWidget",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/",
+      "target": "component:DistribusiWidget",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/",
+      "target": "component:PipelineWidget",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/",
+      "target": "component:DoctypeWidget",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/",
+      "target": "component:GaugesWidget",
       "relation": "renders",
       "confidence": "EXTRACTED"
     },
@@ -474,37 +922,109 @@
     },
     {
       "source": "page:/",
-      "target": "component:TrenVolumeWidget",
+      "target": "component:ApprovedProfileOnlyWidget",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/",
+      "target": "component:LeaderboardWidget",
       "relation": "renders",
       "confidence": "EXTRACTED"
     },
     {
       "source": "page:/production",
-      "target": "component:SortableTaskLists",
+      "target": "component:Sidebar",
       "relation": "renders",
       "confidence": "EXTRACTED"
     },
     {
       "source": "page:/production",
-      "target": "component:ProductionToolbar",
+      "target": "component:CloudflareTopBar",
       "relation": "renders",
       "confidence": "EXTRACTED"
     },
     {
-      "source": "page:/billing-statement",
-      "target": "component:ApprovalPayrollTable",
+      "source": "page:/production",
+      "target": "component:ProductionView",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/rate-card",
+      "target": "component:Sidebar",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/rate-card",
+      "target": "component:CloudflareTopBar",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/rate-card",
+      "target": "component:DoctypeTable",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/rate-card",
+      "target": "component:ContractRateEditor",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/rate-card",
+      "target": "component:AddDoctypeButton",
       "relation": "renders",
       "confidence": "EXTRACTED"
     },
     {
       "source": "component:ApprovalPayrollTable",
-      "target": "action:approval-payroll",
-      "relation": "invokes",
+      "target": "component:PayrollTableRow",
+      "relation": "renders",
       "confidence": "EXTRACTED"
     },
     {
-      "source": "page:/knowledge-graph",
-      "target": "component:KnowledgeGraphViewer",
+      "source": "component:ApprovalPayrollTable",
+      "target": "component:PayrollToolbar",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:CloudflareTopBar",
+      "target": "component:PeriodPicker",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:CloudflareTopBar",
+      "target": "component:AccountSwitcher",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:DoctypeTable",
+      "target": "component:RateCardRow",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:DoctypeTable",
+      "target": "component:ContractRateEditor",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:DoctypeTable",
+      "target": "component:AddDoctypeButton",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:Header",
+      "target": "component:PeriodPicker",
       "relation": "renders",
       "confidence": "EXTRACTED"
     },
@@ -512,6 +1032,114 @@
       "source": "component:KnowledgeGraphViewer",
       "target": "component:GraphifyVisualizer",
       "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:ProductionToolbar",
+      "target": "component:SortControl",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:ProductionToolbar",
+      "target": "component:board-filters",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:ProductionView",
+      "target": "component:ProductionTabNav",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:ProductionView",
+      "target": "component:ProductionOverview",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:ProductionView",
+      "target": "component:SortableTaskLists",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:ProductionView",
+      "target": "component:ParameterIssueTable",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:QAKanbanBoard",
+      "target": "component:QACard",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:Sidebar",
+      "target": "component:SyncButton",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:SortableTaskLists",
+      "target": "component:SortControl",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:SortableTaskLists",
+      "target": "component:ProductionToolbar",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:SortableTaskLists",
+      "target": "component:QAKanbanBoard",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:SortableTaskLists",
+      "target": "component:board-filters",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:SortableTaskLists",
+      "target": "component:TaskDetailSheet",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:SortableTaskLists",
+      "target": "component:kanban-config",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:SortableTaskLists",
+      "target": "component:KanbanBoardHeader",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:TaskDetailSheet",
+      "target": "component:QACard",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:KanbanBoardHeader",
+      "target": "component:kanban-config",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:ApprovalPayrollTable",
+      "target": "action:approval-payroll",
+      "relation": "invokes",
       "confidence": "EXTRACTED"
     },
     {
@@ -551,20 +1179,86 @@
       "confidence": "EXTRACTED"
     },
     {
-      "source": "action:approval-payroll",
-      "target": "doc:business-rules",
+      "source": "rule:qty-pages",
+      "target": "model:Task",
       "relation": "enforces",
       "confidence": "INFERRED"
     },
     {
-      "source": "action:sync-notion",
-      "target": "doc:data-flows",
+      "source": "rule:designer-resign",
+      "target": "action:approval-payroll",
       "relation": "enforces",
       "confidence": "INFERRED"
     },
     {
-      "source": "component:SortableTaskLists",
-      "target": "doc:issues-and-fixes",
+      "source": "rule:base-pages",
+      "target": "model:Doctype",
+      "relation": "enforces",
+      "confidence": "INFERRED"
+    },
+    {
+      "source": "rule:dynamic-period",
+      "target": "component:MonthFilter",
+      "relation": "enforces",
+      "confidence": "INFERRED"
+    },
+    {
+      "source": "sync:full-mode",
+      "target": "action:sync-notion",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "sync:cron-mode",
+      "target": "action:sync-notion",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "sync:rate-limiter",
+      "target": "action:sync-notion",
+      "relation": "enforces",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "gotcha:double-border-prevention",
+      "target": "page:/billing-statement",
+      "relation": "enforces",
+      "confidence": "INFERRED"
+    },
+    {
+      "source": "gotcha:nav-tab-proportional",
+      "target": "component:CloudflareTopBar",
+      "relation": "enforces",
+      "confidence": "INFERRED"
+    },
+    {
+      "source": "gotcha:force-graph-isolation",
+      "target": "component:GraphifyVisualizer",
+      "relation": "enforces",
+      "confidence": "INFERRED"
+    },
+    {
+      "source": "gotcha:decimal-serialization",
+      "target": "action:queries",
+      "relation": "enforces",
+      "confidence": "INFERRED"
+    },
+    {
+      "source": "handover:decision-1",
+      "target": "page:/account-team",
+      "relation": "enforces",
+      "confidence": "INFERRED"
+    },
+    {
+      "source": "handover:decision-2",
+      "target": "page:/billing-statement",
+      "relation": "enforces",
+      "confidence": "INFERRED"
+    },
+    {
+      "source": "handover:active-state",
+      "target": "component:KnowledgeGraphViewer",
       "relation": "enforces",
       "confidence": "INFERRED"
     }

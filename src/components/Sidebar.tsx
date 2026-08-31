@@ -137,8 +137,8 @@ export default function Sidebar({ currentSyncLog }: SidebarProps) {
           </nav>
         </div>
 
-        {/* Bottom Actions: Sync Button */}
-        <div className="pt-3 border-t border-[#f0f0f0] dark:border-[#272a34]">
+        {/* Bottom Actions: Symmetrical Sidebar Sync Table */}
+        <div className="-mx-4 -mb-4">
           <SyncButton initialSyncLog={currentSyncLog} isCollapsed={false} />
         </div>
       </aside>

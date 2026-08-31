@@ -115,7 +115,11 @@ export async function saveSchedulingConfigAction(autoSync: boolean, syncInterval
   try {
     const existingConfig = await prisma.notionConfig.findFirst();
     if (!existingConfig) return { success: false, error: 'Notion configuration not found. Please save API credentials first.' };
-    await prisma.notionConfig.update({ where: { id: existingConfig.id }, data: { autoSync, syncInterval } });
+    await prisma.notionConfig.update({
+      where: { id: existingConfig.id },
+      data: { autoSync, syncInterval, updatedAt: new Date() }
+    });
+    revalidatePath('/');
     revalidatePath('/notion-config');
     return { success: true };
   } catch (error: any) {

@@ -4,11 +4,52 @@ import { decrypt } from '@/lib/encryption';
 
 export type NotionSyncMode = 'incremental' | 'full';
 
+export interface SyncProgressState {
+  isSyncing: boolean;
+  startTime: number | null;
+  processedRecords: number;
+  totalRecordsEst: number;
+  percentage: number;
+  etaSeconds: number;
+  currentStepMessage: string;
+  newRecords: number;
+  failedRecords: number;
+}
+
+let syncProgressStore: SyncProgressState = {
+  isSyncing: false,
+  startTime: null,
+  processedRecords: 0,
+  totalRecordsEst: 288,
+  percentage: 0,
+  etaSeconds: 0,
+  currentStepMessage: 'Idle',
+  newRecords: 0,
+  failedRecords: 0,
+};
+
+export function getSyncProgress(): SyncProgressState {
+  return syncProgressStore;
+}
+
 const INCREMENTAL_OVERLAP_MS = 2 * 60 * 1000;
 
 export async function syncNotionData(mode: NotionSyncMode = 'incremental') {
   const startedAt = new Date();
   
+  const baselineCount = (await prisma.task.count().catch(() => 288)) || 288;
+  syncProgressStore = {
+    isSyncing: true,
+    startTime: Date.now(),
+    processedRecords: 0,
+    totalRecordsEst: baselineCount,
+    percentage: 5,
+    etaSeconds: 25,
+    currentStepMessage: 'Connecting to Notion API...',
+    newRecords: 0,
+    failedRecords: 0,
+  };
+
   // Create running sync log
   const log = await prisma.syncLog.create({
     data: {
@@ -47,6 +88,9 @@ export async function syncNotionData(mode: NotionSyncMode = 'incremental') {
       const notionClient = new Client({ auth: activeApiKey });
 
       let recordsSynced = 0;
+      let newRecords = 0;
+      let updatedRecords = 0;
+      let failedRecords = 0;
 
       // Start-time cutoff prevents edits made during a prior run from being skipped.
       // Two-minute overlap also protects timestamp boundaries; upserts make repeats safe.
@@ -127,15 +171,14 @@ export async function syncNotionData(mode: NotionSyncMode = 'incremental') {
           const response: any = await (notionClient as any).dataSources.query(queryPayload);
 
           for (const page of response.results as any[]) {
-          const properties = page.properties;
-          const notionPageId = page.id;
-          const notionUrl = page.url;
+            const properties = page.properties;
+            const notionPageId = page.id;
+            const notionUrl = page.url;
 
-          // Parse name
-          const name = properties.Name?.title?.map((t: any) => t.plain_text).join('') || 'Untitled Task';
+            // Parse name
+            const name = properties.Name?.title?.map((t: any) => t.plain_text).join('') || 'Untitled Task';
 
-          // Parse Designer (lookup by name/notionKey, create if missing)
-          const designerName = properties.Designer?.select?.name;
+            const designerName = properties.Designer?.select?.name;
           const designerStatusProp = properties['Designer Status']?.select?.name;
           
           let isDesignerActive = true;
@@ -277,7 +320,7 @@ export async function syncNotionData(mode: NotionSyncMode = 'incremental') {
           const datePO = datePOVal ? new Date(datePOVal) : null;
           const dateRejectVal = properties['Date Reject']?.date?.start;
           const dateReject = dateRejectVal ? new Date(dateRejectVal) : null;
-          const poolScore = properties['Pool Score']?.number || null;
+          const poolScore = properties['Pool Score']?.number ?? null;
 
           const taskData = {
               name,
@@ -303,6 +346,17 @@ export async function syncNotionData(mode: NotionSyncMode = 'incremental') {
           };
 
           // Upsert Task
+          const existingTask = await prisma.task.findUnique({
+            where: { notionPageId },
+            select: { id: true },
+          });
+
+          if (existingTask) {
+            updatedRecords++;
+          } else {
+            newRecords++;
+          }
+
           const task = await prisma.task.upsert({
             where: { notionPageId },
             update: taskData,
@@ -466,6 +520,24 @@ export async function syncNotionData(mode: NotionSyncMode = 'incremental') {
 
           recordsSynced++;
           allSyncedNotionIds.push(notionPageId);
+
+          const elapsedMs = Math.max(1, Date.now() - (syncProgressStore.startTime || Date.now()));
+          const recordsPerMs = recordsSynced / elapsedMs;
+          const totalEst = Math.max(recordsSynced, syncProgressStore.totalRecordsEst);
+          const percentage = Math.min(99, Math.round((recordsSynced / totalEst) * 100));
+          const remainingRecords = Math.max(0, totalEst - recordsSynced);
+          const etaSeconds = Math.max(1, Math.ceil(remainingRecords / (recordsPerMs * 1000)));
+
+          syncProgressStore = {
+            ...syncProgressStore,
+            processedRecords: recordsSynced,
+            totalRecordsEst: totalEst,
+            percentage,
+            etaSeconds,
+            currentStepMessage: `Mengunduh task: ${name.substring(0, 25)}...`,
+            newRecords,
+            failedRecords,
+          };
         }
 
         hasMore = response.has_more;
@@ -494,7 +566,13 @@ export async function syncNotionData(mode: NotionSyncMode = 'incremental') {
         },
       });
 
-      return { status: 'success', recordsSynced };
+      return { 
+        status: 'success', 
+        recordsSynced,
+        newRecords,
+        updatedRecords,
+        failedRecords,
+      };
     } else {
       // Fallback: Generate mock data changes to simulate active sync execution
       console.warn('Notion credentials missing. Running mock incremental sync...');
@@ -616,5 +694,13 @@ export async function syncNotionData(mode: NotionSyncMode = 'incremental') {
     });
 
     return { status: 'failed', errorMessage: error.message || String(error) };
+  } finally {
+    syncProgressStore = {
+      ...syncProgressStore,
+      isSyncing: false,
+      percentage: 100,
+      etaSeconds: 0,
+      currentStepMessage: 'Selesai',
+    };
   }
 }

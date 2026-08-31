@@ -24,7 +24,7 @@ export default function BrandTabs({ brands, currentBrand }: BrandTabsProps) {
   const allBrandLabel = `Semua Brand (${brands.length})`;
 
   return (
-    <div className="sticky top-[56px] z-30 flex items-stretch overflow-x-auto rounded-t-xl border-b border-[#f0f0f0] dark:border-[#272a34] bg-[#f8f9fa] dark:bg-[#0d0e12] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+    <div className="sticky top-[56px] z-30 flex items-stretch overflow-x-auto border-b border-[#f0f0f0] dark:border-[#272a34] bg-[#f8f9fa] dark:bg-[#0d0e12] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
       {/* Semua Brand Tab */}
       <button
         onClick={() => handleBrandClick('Semua Brand')}

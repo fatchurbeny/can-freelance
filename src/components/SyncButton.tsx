@@ -3,10 +3,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { RefreshCw, CheckCircle2, Timer } from 'lucide-react';
-import { triggerSyncAction } from '@/app/actions/sync';
+import { triggerSyncAction, getSyncProgressAction, getLatestSyncStatus } from '@/app/actions/sync';
 import { getNotionConfigAction } from '@/app/actions/notion-config';
-import { getLatestSyncStatus } from '@/app/actions/sync';
-import toast, { Toaster } from 'react-hot-toast';
+import toast from 'react-hot-toast';
+import { useSyncQueue } from '@/context/SyncQueueContext';
 
 interface SyncButtonProps {
   initialSyncLog: {
@@ -29,10 +29,63 @@ function formatCountdown(ms: number): string {
 }
 
 export default function SyncButton({ initialSyncLog, isCollapsed = false }: SyncButtonProps) {
+  const { isSyncing, setIsSyncing } = useSyncQueue();
   const [mounted, setMounted] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
   const [syncLog, setSyncLog] = useState(initialSyncLog);
   const [modalState, setModalState] = useState<'idle' | 'syncing' | 'success'>('idle');
+  const [syncMetrics, setSyncMetrics] = useState<{
+    recordsSynced: number;
+    newRecords: number;
+    updatedRecords: number;
+    failedRecords: number;
+  } | null>(null);
+
+  // Live progress, percentage & ETA tracking
+  const [liveProgress, setLiveProgress] = useState<{
+    percent: number;
+    processedRecords: number;
+    totalRecordsEst: number;
+    etaSeconds: number;
+    currentStepMessage: string;
+  }>({
+    percent: 0,
+    processedRecords: 0,
+    totalRecordsEst: 288,
+    etaSeconds: 0,
+    currentStepMessage: '',
+  });
+
+  // Poll live progress every 500ms while isSyncing is true
+  useEffect(() => {
+    if (!isSyncing) {
+      setLiveProgress((prev) => ({
+        ...prev,
+        percent: 100,
+        etaSeconds: 0,
+        currentStepMessage: 'Selesai',
+      }));
+      return;
+    }
+
+    const interval = setInterval(async () => {
+      try {
+        const p = await getSyncProgressAction();
+        if (p) {
+          setLiveProgress({
+            percent: p.percentage,
+            processedRecords: p.processedRecords,
+            totalRecordsEst: p.totalRecordsEst,
+            etaSeconds: p.etaSeconds,
+            currentStepMessage: p.currentStepMessage,
+          });
+        }
+      } catch (err) {
+        console.error('Failed to fetch live sync progress:', err);
+      }
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, [isSyncing]);
 
   // Auto-sync state
   const [autoSync, setAutoSync] = useState(false);
@@ -42,6 +95,17 @@ export default function SyncButton({ initialSyncLog, isCollapsed = false }: Sync
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Sync initialSyncLog or auto-fetch latest sync log on mount
+  useEffect(() => {
+    if (initialSyncLog) {
+      setSyncLog(initialSyncLog);
+    } else {
+      getLatestSyncStatus().then((log) => {
+        if (log) setSyncLog(log);
+      });
+    }
+  }, [initialSyncLog]);
 
   // Fetch cron status and update countdown
   const refetchCronStatus = useCallback(async () => {
@@ -154,27 +218,56 @@ export default function SyncButton({ initialSyncLog, isCollapsed = false }: Sync
 
   // Manual sync (only when autoSync is off)
   const handleSync = async () => {
-    if (autoSync || isSyncing) return;
+    if (autoSync) return;
+    if (isSyncing) {
+      // Re-open modal if user clicks button while sync is running in background
+      setModalState(syncMetrics ? 'success' : 'syncing');
+      return;
+    }
     setIsSyncing(true);
     setModalState('syncing');
+
+    // 1-minute auto-close timer for modal popup
+    const autoCloseTimer = setTimeout(() => {
+      setModalState((currentModalState) => {
+        if (currentModalState === 'syncing') {
+          toast('Sync sedang berjalan di latar belakang. Pantau indikator pada sidebar menu.', {
+            icon: '⏳',
+            className: '!bg-white dark:!bg-[#0d0e12] !text-gray-900 dark:!text-gray-100 !border !border-[#f0f0f0] dark:!border-[#272a34] !shadow-2xl !rounded-xl font-mono text-xs p-3.5',
+            duration: 6000,
+          });
+          return 'idle';
+        }
+        return currentModalState;
+      });
+    }, 60_000);
+
     try {
       const res = await triggerSyncAction();
+      clearTimeout(autoCloseTimer);
       if (res.status === 'success') {
+        const recordsSynced = res.recordsSynced || 0;
+        const newRecords = (res as any).newRecords || 0;
+        const updatedRecords = (res as any).updatedRecords || 0;
+        const failedRecords = (res as any).failedRecords || 0;
+
+        setSyncMetrics({
+          recordsSynced,
+          newRecords,
+          updatedRecords,
+          failedRecords,
+        });
+
         setSyncLog({
           startedAt: new Date(),
           finishedAt: new Date(),
           status: 'success',
-          recordsSynced: res.recordsSynced || 0,
+          recordsSynced,
           errorMessage: null,
         });
         setModalState('success');
-        toast.success('Notion sync completed!', {
-          style: {
-            background: '#0B0F19',
-            color: '#4ade80',
-            border: '1px solid #166534',
-          },
-          iconTheme: { primary: '#4ade80', secondary: '#0B0F19' },
+        toast.success(`Notion sync completed! (${recordsSynced} synced, ${newRecords} new)`, {
+          className: '!bg-white dark:!bg-[#0d0e12] !text-emerald-600 dark:!text-emerald-400 !border !border-[#f0f0f0] dark:!border-[#272a34] !shadow-2xl !rounded-xl font-mono text-xs p-3.5',
         });
       } else {
         setSyncLog({
@@ -186,10 +279,11 @@ export default function SyncButton({ initialSyncLog, isCollapsed = false }: Sync
         });
         setModalState('idle');
         toast.error(`Sync failed: ${res.errorMessage || 'Unknown error'}`, {
-          style: { background: '#0B0F19', color: '#f87171', border: '1px solid #991b1b' },
+          className: '!bg-white dark:!bg-[#0d0e12] !text-rose-600 dark:!text-rose-400 !border !border-[#f0f0f0] dark:!border-[#272a34] !shadow-2xl !rounded-xl font-mono text-xs p-3.5',
         });
       }
     } catch (err: any) {
+      clearTimeout(autoCloseTimer);
       setSyncLog({
         startedAt: new Date(),
         finishedAt: new Date(),
@@ -199,7 +293,7 @@ export default function SyncButton({ initialSyncLog, isCollapsed = false }: Sync
       });
       setModalState('idle');
       toast.error(`Sync failed: ${err.message || String(err)}`, {
-        style: { background: '#0B0F19', color: '#f87171', border: '1px solid #991b1b' },
+        className: '!bg-white dark:!bg-[#0d0e12] !text-rose-600 dark:!text-rose-400 !border !border-[#f0f0f0] dark:!border-[#272a34] !shadow-2xl !rounded-xl font-mono text-xs p-3.5',
       });
     } finally {
       setIsSyncing(false);
@@ -208,117 +302,231 @@ export default function SyncButton({ initialSyncLog, isCollapsed = false }: Sync
 
   return (
     <>
-      <Toaster position="bottom-center" />
-
-      {/* Manual sync modal (only shown when autoSync is off) */}
+      {/* Cloudflare Table Simetris Sync Modal */}
       {mounted && !autoSync && modalState !== 'idle' && createPortal(
-        <div className="fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="bg-[#111827] border border-gray-800 rounded-2xl p-7 w-full max-w-xl shadow-2xl relative">
-            <div className="flex items-center gap-4 mb-5">
-              {modalState === 'syncing' ? (
-                <div className="w-12 h-12 rounded-xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
-                   <RefreshCw className="w-6 h-6 text-indigo-400 animate-spin" />
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setModalState('idle');
+              if (isSyncing) {
+                toast('Sync berjalan di latar belakang. Pantau indikator pada sidebar menu.', {
+                  icon: '⏳',
+                  className: '!bg-white dark:!bg-[#0d0e12] !text-gray-900 dark:!text-gray-100 !border !border-[#f0f0f0] dark:!border-[#272a34] !shadow-2xl !rounded-xl font-mono text-xs p-3.5',
+                  duration: 4000,
+                });
+              }
+            }
+          }}
+          className="fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200 cursor-pointer"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-lg rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] divide-y divide-[#f0f0f0] dark:divide-[#272a34] shadow-2xl overflow-hidden font-sans text-gray-900 dark:text-gray-100 cursor-default"
+          >
+            {/* Top Bar Header */}
+            <div className="px-5 py-4 flex items-center justify-between bg-white dark:bg-[#0d0e12] rounded-none">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-[#ff5e1f]/10 border border-[#ff5e1f]/20 flex items-center justify-center">
+                  <RefreshCw className={`w-4 h-4 text-[#ff5e1f] ${modalState === 'syncing' ? 'animate-spin' : ''}`} />
                 </div>
+                <div>
+                  <h2 className="font-mono text-xs font-bold uppercase tracking-wider text-gray-900 dark:text-white">
+                    Notion Database Sync
+                  </h2>
+                  <p className="text-[11px] font-mono text-gray-500 dark:text-gray-400">
+                    {modalState === 'syncing' ? 'Connecting to Notion API & downloading live data...' : 'Notion database reconciliation complete'}
+                  </p>
+                </div>
+              </div>
+              <span className="font-mono text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-[#ff5e1f]/10 text-[#ff5e1f] border border-[#ff5e1f]/20 uppercase">
+                {modalState === 'syncing' ? 'SYNCING' : 'FINISHED'}
+              </span>
+            </div>
+
+            {/* Live Progress Bar Section */}
+            <div className="px-5 py-3.5 bg-white dark:bg-[#0d0e12] space-y-2 border-b border-[#f0f0f0] dark:border-[#272a34]">
+              <div className="flex items-center justify-between font-mono text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-[#ff5e1f] px-2 py-0.5 rounded bg-[#ff5e1f]/10 border border-[#ff5e1f]/20">
+                    {modalState === 'syncing' ? `${liveProgress.percent}%` : '100%'}
+                  </span>
+                  <span className="text-gray-600 dark:text-gray-300 font-medium text-[11px]">
+                    {modalState === 'syncing'
+                      ? `${liveProgress.processedRecords} / ${liveProgress.totalRecordsEst} Records`
+                      : `${syncMetrics?.recordsSynced || syncLog?.recordsSynced || 0} Records Synced`}
+                  </span>
+                </div>
+                {modalState === 'syncing' && (
+                  <div className="flex items-center gap-1.5 text-[#ff5e1f] text-[11px] font-bold">
+                    <Timer className="w-3.5 h-3.5 animate-pulse" />
+                    <span>Estimasi: ~{liveProgress.etaSeconds}s</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Progress Track */}
+              <div className="w-full h-2 rounded-full bg-gray-100 dark:bg-[#16181d] overflow-hidden p-0.5 border border-[#f0f0f0] dark:border-[#272a34]">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-[#ff5e1f] via-[#ff7038] to-[#ff5e1f] transition-all duration-300 shadow-[0_0_10px_rgba(255,94,31,0.5)]"
+                  style={{ width: `${modalState === 'syncing' ? Math.max(5, liveProgress.percent) : 100}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Simetris KPI Metrics Grid */}
+            <div className="p-4 bg-gray-50/50 dark:bg-[#16181d]/50 grid grid-cols-3 gap-3">
+              {/* Total Synced Card */}
+              <div className="p-3 rounded-lg border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] flex flex-col justify-between">
+                <span className="font-mono text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">Total Data</span>
+                <div className="my-1">
+                  <span className="font-display text-2xl font-bold text-gray-900 dark:text-white">
+                    {syncMetrics?.recordsSynced ?? (syncLog?.recordsSynced ?? 0)}
+                  </span>
+                </div>
+                <span className="font-mono text-[9px] font-bold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 uppercase w-max">
+                  Synced
+                </span>
+              </div>
+
+              {/* New Data Card */}
+              <div className="p-3 rounded-lg border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] flex flex-col justify-between">
+                <span className="font-mono text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">Data Baru</span>
+                <div className="my-1">
+                  <span className="font-display text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                    {syncMetrics?.newRecords ?? 0}
+                  </span>
+                </div>
+                <span className="font-mono text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 uppercase w-max">
+                  Baru
+                </span>
+              </div>
+
+              {/* Failed Data Card */}
+              <div className="p-3 rounded-lg border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] flex flex-col justify-between">
+                <span className="font-mono text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">Gagal Sync</span>
+                <div className="my-1">
+                  <span className="font-display text-2xl font-bold text-amber-600 dark:text-amber-400">
+                    {syncMetrics?.failedRecords ?? 0}
+                  </span>
+                </div>
+                <span className="font-mono text-[9px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 uppercase w-max">
+                  {(syncMetrics?.failedRecords ?? 0) > 0 ? 'Error' : 'Clean'}
+                </span>
+              </div>
+            </div>
+
+            {/* Log Terminal Console */}
+            <div className="p-4 bg-white dark:bg-[#0d0e12]">
+              <div className="p-3.5 bg-gray-50 dark:bg-[#16181d] border border-[#f0f0f0] dark:border-[#272a34] rounded-lg font-mono text-[11px] text-gray-700 dark:text-gray-300 h-[140px] overflow-y-auto space-y-1">
+                <p className="text-gray-500 dark:text-gray-400">Spawning Node worker process...</p>
+                <p className="text-gray-500 dark:text-gray-400">[{new Date().toLocaleTimeString()}] Starting Notion to PostgreSQL Synchronization...</p>
+                {modalState === 'syncing' && liveProgress.currentStepMessage && (
+                  <p className="text-[#ff5e1f] font-medium animate-pulse">└─ {liveProgress.currentStepMessage}</p>
+                )}
+                {modalState === 'success' && (
+                  <>
+                    <p className="text-emerald-600 dark:text-emerald-400 font-bold mt-1">✔ Success: {syncMetrics?.recordsSynced || syncLog?.recordsSynced || 0} records reconciled cleanly.</p>
+                    <p className="text-emerald-600/80 dark:text-emerald-500/80">└─ {syncMetrics?.newRecords ?? 0} new tasks created, {syncMetrics?.updatedRecords ?? 0} updated, {syncMetrics?.failedRecords ?? 0} failed.</p>
+                    <p className="text-gray-400 dark:text-gray-500">Worker process exited code 0.</p>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Action Footer */}
+            <div className="px-5 py-3 flex items-center justify-between bg-gray-50/50 dark:bg-[#16181d]/50 rounded-none">
+              <div className="flex items-center gap-1.5 font-mono text-xs text-gray-500 dark:text-gray-400">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                <span>Postgres Cache Active</span>
+              </div>
+              {modalState === 'success' ? (
+                <button
+                  onClick={() => setModalState('idle')}
+                  className="px-5 py-1.5 rounded-lg bg-[#ff5e1f] text-white hover:bg-[#ff7038] font-mono text-xs font-bold transition-all shadow-sm cursor-pointer"
+                >
+                  Tutup Panel
+                </button>
               ) : (
-                <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/30">
-                   <CheckCircle2 className="w-6 h-6 text-emerald-500" />
+                <div className="flex items-center gap-1.5 font-mono text-xs text-[#ff5e1f]">
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  <span>Proses Berjalan ({liveProgress.percent}%)...</span>
                 </div>
               )}
-              <h2 className="text-2xl font-bold text-white tracking-tight">
-                {modalState === 'syncing' ? 'Synchronizing Notion Database...' : 'Sync Completed Successfully!'}
-              </h2>
             </div>
-            
-            <p className="text-gray-400 text-sm mb-6 leading-relaxed">
-              {modalState === 'syncing' 
-                ? 'Connecting to the Notion integration service and downloading approved briefing items into PostgreSQL cache layer...'
-                : 'All tasks with "Completed (Approved)" status have been merged into the database.'}
-            </p>
-
-            <div className="bg-[#0B0F19] border border-gray-800 rounded-xl p-5 font-mono text-[13px] text-gray-400 h-[190px] overflow-y-auto mb-6 flex flex-col gap-1.5 shadow-inner">
-               <p>Spawning Node worker process...</p>
-               <br />
-               <p>[Log Output]</p>
-               <p className="text-gray-300">[{new Date().toISOString()}] Starting Notion to PostgreSQL Synchronization...</p>
-               <p className="text-gray-300">Querying Notion database for active tasks (Not Started, In Progress, Review, Approved)...</p>
-               {modalState === 'success' && (
-                 <>
-                   <p className="text-emerald-400 mt-2">✔ Success: Sync completed successfully.</p>
-                   <p className="text-gray-500">Worker process exited with code 0.</p>
-                 </>
-               )}
-            </div>
-
-            {modalState === 'success' && (
-              <div className="flex justify-end mt-2">
-                <button 
-                  onClick={() => setModalState('idle')}
-                  className="px-6 py-2.5 rounded-xl border border-gray-700 hover:bg-gray-800 hover:text-white text-sm font-semibold text-gray-300 transition-all shadow-sm"
-                >
-                  Close Panel
-                </button>
-              </div>
-            )}
           </div>
         </div>,
         document.body
       )}
 
-      <div className="mt-auto space-y-4">
-
-        {/* ── Auto Sync ON: countdown button ── */}
-        {autoSync ? (
-          <div
-            className={`flex items-center justify-center px-3 py-2 rounded-lg border border-[#f0f0f0] dark:border-[#272a34] bg-gray-50 dark:bg-[#16181d] transition-all font-mono font-bold text-xs select-none ${
-              isSyncing
-                ? 'border-amber-500/40 text-amber-500 animate-pulse'
-                : 'border-[#ff5e1f]/30 text-[#ff5e1f]'
-            } ${isCollapsed ? 'w-9 h-9 p-0' : 'w-full gap-2'}`}
-          >
-            <Timer className={`w-3.5 h-3.5 shrink-0 ${isSyncing ? 'animate-spin' : ''}`} />
-            {!isCollapsed && (
-              <span className="font-mono tracking-wider text-xs">
-                {isSyncing
-                  ? 'Syncing...'
-                  : countdownMs === null
-                  ? 'Loading...'
-                  : formatCountdown(countdownMs)}
-              </span>
-            )}
-          </div>
-        ) : (
-          /* ── Auto Sync OFF: normal manual button ── */
-          <button
-            onClick={handleSync}
-            disabled={isSyncing}
-            className={`flex items-center justify-center px-4 py-2 rounded-lg border border-[#f0f0f0] dark:border-[#272a34] bg-gray-50 dark:bg-[#16181d] text-gray-900 dark:text-gray-100 hover:border-[#ff5e1f] hover:text-[#ff5e1f] dark:hover:text-[#ff5e1f] transition-all font-mono text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer group shadow-none ${isCollapsed ? 'w-9 h-9 p-0' : 'w-full gap-2'}`}
-          >
-            <RefreshCw className={`w-3.5 h-3.5 text-gray-500 dark:text-gray-400 group-hover:text-[#ff5e1f] ${isSyncing ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
-            {!isCollapsed && <span>{isSyncing ? 'Syncing...' : 'Notion Sync'}</span>}
-          </button>
-        )}
-
-        {/* Sync and Postgres Status */}
+      <div className="w-full">
+        {/* Symmetrical Table-Style Sidebar Sync Block */}
         {isCollapsed ? (
           <div className="flex justify-center py-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
+            <span className={`w-2 h-2 rounded-full ${isSyncing ? 'bg-[#ff5e1f] animate-ping' : 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]'}`}></span>
           </div>
         ) : (
-          <div className="p-3 rounded-xl border border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 space-y-2 font-mono text-[11px]">
-            <div className="flex items-center justify-between">
+          <div className="w-full rounded-none divide-y divide-[#f0f0f0] dark:divide-[#272a34] bg-white dark:bg-[#0d0e12] border-t border-[#f0f0f0] dark:border-[#272a34] font-mono text-xs select-none">
+            
+            {/* Row 1: Sync Button / Auto Sync Countdown */}
+            {autoSync ? (
+              <div
+                className={`flex items-center justify-center px-4 py-2.5 transition-all font-mono font-bold text-xs select-none bg-gray-50 dark:bg-[#16181d] ${
+                  isSyncing ? 'text-amber-500 animate-pulse' : 'text-[#ff5e1f]'
+                } w-full gap-2`}
+              >
+                <Timer className={`w-3.5 h-3.5 shrink-0 ${isSyncing ? 'animate-spin' : ''}`} />
+                <span className="font-mono tracking-wider text-xs">
+                  {isSyncing
+                    ? `Syncing ${liveProgress.percent}%...`
+                    : countdownMs === null
+                    ? 'Loading...'
+                    : formatCountdown(countdownMs)}
+                </span>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={handleSync}
+                className={`flex items-center justify-center px-4 py-2.5 transition-all font-mono text-xs font-bold cursor-pointer group bg-gray-50 dark:bg-[#16181d] text-gray-900 dark:text-gray-100 hover:bg-[#ff5e1f]/10 hover:text-[#ff5e1f] dark:hover:text-[#ff5e1f] w-full gap-2 ${
+                  isSyncing ? 'text-[#ff5e1f] animate-pulse' : ''
+                }`}
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'text-[#ff5e1f] animate-spin' : 'text-gray-500 dark:text-gray-400 group-hover:text-[#ff5e1f] group-hover:rotate-180 transition-transform duration-500'}`} />
+                <span>{isSyncing ? `Syncing ${liveProgress.percent}%...` : 'Notion Sync'}</span>
+              </button>
+            )}
+
+            {/* Row 2: Status */}
+            <div className="flex items-center justify-between px-4 py-2 bg-white dark:bg-[#0d0e12] text-[11px]">
               <span className="text-gray-400 dark:text-gray-500">Status</span>
               <span className="text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                 Postgres Active
               </span>
             </div>
-            <div className="pt-1.5 border-t border-[#f0f0f0] dark:border-[#272a34]/60 space-y-1">
+
+            {/* Row 3: Live sync progress indicator if syncing */}
+            {isSyncing && (
+              <div className="flex items-center gap-1.5 px-4 py-1.5 bg-amber-500/5 text-[#ff5e1f] font-mono text-[10px] font-bold animate-pulse">
+                <RefreshCw className="w-3 h-3 animate-spin shrink-0" />
+                <span>Sync Sedang Berjalan...</span>
+              </div>
+            )}
+
+            {/* Row 4: Terakhir Sync */}
+            <div className="px-4 py-2 bg-white dark:bg-[#0d0e12] space-y-0.5 text-[11px]">
               <div className="text-gray-400 dark:text-gray-500">Terakhir Sync :</div>
-              <div className="text-gray-900 dark:text-gray-200 font-bold">
-                {syncLog?.status === 'success' ? `Success - ${syncLog.recordsSynced} Data` : (syncLog ? 'Failed' : 'Belum Pernah Sync')}
+              <div className="text-gray-900 dark:text-gray-100 font-bold">
+                {syncLog?.status === 'success'
+                  ? `Success - ${syncLog.recordsSynced ?? 0} Data`
+                  : syncLog?.status === 'running'
+                  ? 'Sedang Berjalan...'
+                  : syncLog?.status === 'failed'
+                  ? 'Failed'
+                  : 'Belum Pernah Sync'}
               </div>
               {syncLog && (
-                <div className="text-[10px] text-gray-400 dark:text-gray-500">
+                <div className="text-[10px] text-gray-400 dark:text-gray-500 pt-0.5">
                   {new Date(syncLog.finishedAt || syncLog.startedAt).toLocaleDateString('en-CA') === new Date().toLocaleDateString('en-CA') ? 'Today' : new Date(syncLog.finishedAt || syncLog.startedAt).toLocaleDateString('id-ID')} • {new Date(syncLog.finishedAt || syncLog.startedAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                 </div>
               )}

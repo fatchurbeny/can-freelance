@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Database } from 'lucide-react';
+import CloudflareTopBar from '@/components/CloudflareTopBar';
 
 export default function ContentAccessPage() {
   const [databases, setDatabases] = useState<any[]>([]);
@@ -25,7 +26,9 @@ export default function ContentAccessPage() {
   }, []);
 
   return (
-    <div className="p-8">
+    <>
+      <CloudflareTopBar badgeLabel="CONTENT ACCESS" />
+      <div className="p-8">
       <h1 className="text-2xl font-bold mb-6">Accessible Notion Databases</h1>
       {loading && <p>Loading...</p>}
       {error && <p className="text-red-500">Error: {error}</p>}
@@ -40,5 +43,6 @@ export default function ContentAccessPage() {
         </ul>
       )}
     </div>
+    </>
   );
 }

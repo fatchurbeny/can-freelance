@@ -40,9 +40,9 @@ export default function KnowledgeGraphViewer({ initialStats }: KnowledgeGraphVie
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-12">
+    <div className="space-y-6 w-full pb-12">
       {/* Top Banner / Header (Cloudflare Continuous Card Style) */}
-      <div className="w-full rounded-xl border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] p-5 sm:p-6 shadow-none transition-colors">
+      <div className="w-full rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] p-5 sm:p-6 shadow-none transition-colors">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-lg bg-[#ff5e1f]/10 text-[#ff5e1f] border border-[#ff5e1f]/20 flex items-center justify-center shrink-0">
@@ -81,31 +81,66 @@ export default function KnowledgeGraphViewer({ initialStats }: KnowledgeGraphVie
           </div>
         </div>
 
-        {/* Quick Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-[#f0f0f0] dark:border-[#272a34]">
-          <div className="bg-gray-50 dark:bg-[#16181d] p-3.5 rounded-xl border border-[#f0f0f0] dark:border-[#272a34]">
-            <span className="text-xs font-mono text-gray-500 dark:text-gray-400 block">Total Data Entities</span>
-            <span className="text-base sm:text-lg font-sans font-bold text-gray-900 dark:text-white">9 Models</span>
+        {/* Quick Stats Table Grid Row (Cloudflare Continuous Style - KPI Icon Styling) */}
+        <div className="-mx-5 -mb-5 sm:-mx-6 sm:-mb-6 mt-6 border-t border-[#f0f0f0] dark:border-[#272a34] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-[#f0f0f0] dark:divide-[#272a34] bg-gray-50/50 dark:bg-[#0d0e12]">
+          {/* 1. Total Data Entities */}
+          <div className="p-4 sm:p-5 flex flex-col justify-between hover:bg-gray-50/80 dark:hover:bg-[#16181d]/50 transition-colors">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-mono text-gray-500 dark:text-gray-400">Total Data Entities</span>
+              <div className="w-6 h-6 rounded-md bg-purple-500/10 flex items-center justify-center text-purple-500 shrink-0">
+                <Database className="w-3.5 h-3.5" />
+              </div>
+            </div>
+            <span className="text-base sm:text-lg font-sans font-bold text-gray-900 dark:text-white mt-3 block">
+              9 Models
+            </span>
           </div>
-          <div className="bg-gray-50 dark:bg-[#16181d] p-3.5 rounded-xl border border-[#f0f0f0] dark:border-[#272a34]">
-            <span className="text-xs font-mono text-gray-500 dark:text-gray-400 block">App Modules & Actions</span>
-            <span className="text-base sm:text-lg font-sans font-bold text-gray-900 dark:text-white">7 Routes & 3 Actions</span>
+
+          {/* 2. App Modules & Actions */}
+          <div className="p-4 sm:p-5 flex flex-col justify-between hover:bg-gray-50/80 dark:hover:bg-[#16181d]/50 transition-colors">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-mono text-gray-500 dark:text-gray-400">App Modules & Actions</span>
+              <div className="w-6 h-6 rounded-md bg-blue-500/10 flex items-center justify-center text-blue-500 shrink-0">
+                <Layers className="w-3.5 h-3.5" />
+              </div>
+            </div>
+            <span className="text-base sm:text-lg font-sans font-bold text-gray-900 dark:text-white mt-3 block">
+              7 Routes & 3 Actions
+            </span>
           </div>
-          <div className="bg-gray-50 dark:bg-[#16181d] p-3.5 rounded-xl border border-[#f0f0f0] dark:border-[#272a34]">
-            <span className="text-xs font-mono text-gray-500 dark:text-gray-400 block">Business Logic Rules</span>
-            <span className="text-base sm:text-lg font-sans font-bold text-gray-900 dark:text-white">4 SaaS Formulas</span>
+
+          {/* 3. Business Logic Rules */}
+          <div className="p-4 sm:p-5 flex flex-col justify-between hover:bg-gray-50/80 dark:hover:bg-[#16181d]/50 transition-colors">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-mono text-gray-500 dark:text-gray-400">Business Logic Rules</span>
+              <div className="w-6 h-6 rounded-md bg-amber-500/10 flex items-center justify-center text-amber-500 shrink-0">
+                <Cpu className="w-3.5 h-3.5" />
+              </div>
+            </div>
+            <span className="text-base sm:text-lg font-sans font-bold text-gray-900 dark:text-white mt-3 block">
+              4 SaaS Formulas
+            </span>
           </div>
-          <div className="bg-gray-50 dark:bg-[#16181d] p-3.5 rounded-xl border border-[#f0f0f0] dark:border-[#272a34]">
-            <span className="text-xs font-mono text-gray-500 dark:text-gray-400 block">Sync & Token Strategy</span>
-            <span className="text-base sm:text-lg font-sans font-bold text-[#ff5e1f]">On-Demand Token</span>
+
+          {/* 4. Sync & Token Strategy */}
+          <div className="p-4 sm:p-5 flex flex-col justify-between hover:bg-gray-50/80 dark:hover:bg-[#16181d]/50 transition-colors">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-mono text-gray-500 dark:text-gray-400">Sync & Token Strategy</span>
+              <div className="w-6 h-6 rounded-md bg-[#ff5e1f]/10 flex items-center justify-center text-[#ff5e1f] shrink-0">
+                <Activity className="w-3.5 h-3.5" />
+              </div>
+            </div>
+            <span className="text-base sm:text-lg font-sans font-bold text-[#ff5e1f] mt-3 block">
+              On-Demand Token
+            </span>
           </div>
         </div>
       </div>
 
       {/* Continuous Cloudflare Card (Tab Navigation Bar + Active Tab Panel) */}
-      <div className="w-full rounded-xl border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] divide-y divide-[#f0f0f0] dark:divide-[#272a34] shadow-none overflow-hidden">
+      <div className="w-full rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] divide-y divide-[#f0f0f0] dark:divide-[#272a34] shadow-none overflow-hidden">
         {/* Tab Navigation Header Bar (Image 2 / ProductionTabNav Style) */}
-        <div className="flex items-stretch overflow-x-auto bg-[#f8f9fa] dark:bg-[#0d0e12] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        <div className="flex items-stretch w-full overflow-x-auto bg-[#f8f9fa] dark:bg-[#0d0e12] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {[
             { id: 'visual', label: 'Interactive Node Map', icon: Network },
             { id: 'entities', label: 'Entities & Schema', icon: Database },
@@ -121,7 +156,7 @@ export default function KnowledgeGraphViewer({ initialStats }: KnowledgeGraphVie
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`relative flex items-center gap-2 px-5 py-3 text-xs font-mono transition-all duration-150 cursor-pointer whitespace-nowrap border-r border-[#f0f0f0] dark:border-[#272a34] ${
+                className={`relative flex-1 min-w-max flex items-center justify-center gap-2 px-4 py-3.5 text-xs font-mono transition-all duration-150 cursor-pointer whitespace-nowrap border-r last:border-r-0 border-[#f0f0f0] dark:border-[#272a34] ${
                   isActive
                     ? 'bg-white dark:bg-[#16181d] text-gray-900 dark:text-white font-bold'
                     : 'bg-[#f8f9fa] dark:bg-[#0d0e12] text-gray-600 dark:text-gray-400 font-medium hover:bg-[#f0f1f3] dark:hover:bg-[#16181d]/50 hover:text-gray-900 dark:hover:text-gray-200'
@@ -293,13 +328,19 @@ export default function KnowledgeGraphViewer({ initialStats }: KnowledgeGraphVie
               </h2>
               <div className="space-y-3">
                 {[
-                  { title: 'Preservasi Directive "use client"', level: 'High', desc: 'Komponen yang menggunakan React Hooks wajib memiliki directive "use client" di paling atas file agar tidak memicu build error RSC.' },
-                  { title: 'Prisma Decimal & Date Serialization', level: 'High', desc: 'Field Decimal Prisma diserialisasi dengan JSON.parse(JSON.stringify()) sebelum dikirim ke Client Component, dan field Date dispesifikasikan coercion getTime().' },
-                  { title: 'Prevensi Overflow Clipping', level: 'Medium', desc: 'Jangan tempatkan absolute floating UI (dropdown/tooltip) di dalam kontainer yang menggunakan overflow-hidden/scroll.' },
-                  { title: 'Prevensi Stacking Context Trap', level: 'Medium', desc: 'Hindari opacity, transform, atau backdrop-blur pada kontainer induk yang membungkus floating UI agar z-index tidak terperangkap.' },
-                  { title: 'Cloudflare Checkbox Contrast Inversion', level: 'Medium', desc: 'Native & custom checkboxes mengikuti kontras Cloudflare. Mode Terang: bg-black border-black text-white. Mode Gelap: bg-white border-white text-black.' },
-                  { title: 'Cloudflare Translucent Pill Badges', level: 'Info', desc: 'Badge statistik (WorkloadWidget, QACard) menggunakan font-mono text-[10px] font-bold uppercase dengan 10% opacity background & 20% border.' },
-                  { title: 'Sidebar Mini Rail Default Desktop', level: 'Info', desc: 'Pada layar desktop, sidebar selalu berada dalam status mini icon rail (~72px) di flow flex, tidak pernah di-unmount.' },
+                  { title: 'Force Graph Simulation Hover Isolation', level: 'High', desc: 'State hoveredNode/selectedNode/isDark diikat ke useRef dan dihapus dari useEffect simulasi fisik agar grafik tidak bergetar saat di-hover.' },
+                  { title: 'Preservasi Next.js Directive "use client"', level: 'High', desc: 'Wajib mempertahankan "use client" di baris paling atas file komponen client yang memakai React hooks.' },
+                  { title: 'Prisma Decimal & Date Coercion', level: 'High', desc: 'Decimal diserialisasi dengan JSON.parse/stringify. Date coerce dengan getTime() sebelum komparasi.' },
+                  { title: 'Prevensi Overflow & Stacking Context Trap', level: 'Medium', desc: 'Dilarang overflow-hidden pada induk floating UI. Terapkan visual state ke elemen anak spesifik.' },
+                  { title: 'Cloudflare Symmetrical Table & Control Layout Rules', level: 'Medium', desc: 'Layout kontainer main p-6 md:p-8, outer card rounded-none, tab nav flex-1 simetris, flat search toolbar h-10, dan 2-column table list (flex-1 + w-16 border-l).' },
+                  { title: 'Outer Container vs. Control Rounding Invariant', level: 'High', desc: 'Kontainer utama luar menggunakan rounded-none, namun sakelar toggle, badge, pill, dan tombol aksi WAJIB mempertahankan rounded-lg / rounded-full agar tidak boxy.' },
+                  { title: 'Notion Auto Sync Countdown Reference Time', level: 'Medium', desc: 'Calculated referenceStartTime = Math.max(lastFinished, configUpdatedAt) agar mengaktifkan Auto Sync mengatur timer mundur penuh tanpa instant sync.' },
+                  { title: 'Sidebar Sync Indicator Table Standard', level: 'Info', desc: 'Indikator sync sidebar menggunakan layout tabel simetris full-width (w-full rounded-none divide-y) tanpa double top border dan tanpa bottom border.' },
+                  { title: 'Cloudflare Inline Table Editing Standard', level: 'High', desc: 'Kontrol inline edit wajib h-full min-h-[44px] align-stretch p-0 pada td, hapus stepper arrow native, dan gunakan sel aksi 2-kolom simetris (Save/Cancel).' },
+                  { title: 'Force Graph Hover Isolation', level: 'High', desc: 'Dilarang menempatkan state hoveredNode/selectedNode di useEffect simulasi canvas 2D force graph untuk mencegah getaran/reset fisika.' },
+                  { title: 'Prevensi Double Border Lines pada Kontainer divide-y', level: 'Medium', desc: 'Dilarang menambahkan border-t atau border-b eksplisit pada elemen child di dalam kontainer divide-y divide-[#272a34] untuk mencegah garis tebal ganda.' },
+                  { title: 'Proportional Navigation Tabs vs Grid Column Precision', level: 'Medium', desc: 'Tab navigasi utama mengutamakan keterbacaan teks label (px-5 sm:px-6 py-3.5) tanpa truncate, sedangkan data cards & table header wajib 25%/50% grid.' },
+                  { title: 'Knowledge Graph Full-Domain Mapping Protocol', level: 'High', desc: 'Memparsing seluruh modul docs/knowledge/*.md menjadi 92 Nodes & 87 Edges terstruktur yang terbagi dalam 8 Kluster Komunitas interaktif.' }
                 ].map((iss, idx) => (
                   <div key={idx} className="p-4 rounded-xl bg-gray-50/50 dark:bg-[#16181d]/50 border border-[#f0f0f0] dark:border-[#272a34] space-y-1">
                     <div className="flex items-center justify-between">
@@ -325,7 +366,7 @@ export default function KnowledgeGraphViewer({ initialStats }: KnowledgeGraphVie
                   <History className="w-4 h-4 text-[#ff5e1f]" />
                   Log Handover Konteks Sesi LLM & Editor
                 </h2>
-                <span className="text-xs text-gray-400 font-mono">Last Log: 2026-08-31 14:15 WIB</span>
+                <span className="text-xs text-gray-400 font-mono">Last Log: 2026-09-01 00:57 WIB</span>
               </div>
 
               <div className="p-4 rounded-xl bg-[#ff5e1f]/5 border border-[#ff5e1f]/20 space-y-3">
@@ -334,23 +375,23 @@ export default function KnowledgeGraphViewer({ initialStats }: KnowledgeGraphVie
                   <span className="font-bold font-sans text-sm text-gray-900 dark:text-white">Active Task & State</span>
                 </div>
                 <p className="text-xs font-mono text-gray-600 dark:text-gray-300 leading-relaxed">
-                  Standarisasi Cloudflare Checkboxes, Unified Filter Toolbar, Translucent Badges, &amp; Knowledge Graph Protocol selesai dilaksanakan. Seluruh file pengetahuan dan log handover ter-update di <code className="bg-white dark:bg-[#0d0e12] border border-[#f0f0f0] dark:border-[#272a34] px-1.5 py-0.5 rounded font-mono text-[#ff5e1f]">docs/knowledge/session-handover.md</code>.
+                  Penyelarasan 50% Vertical Border Account &amp; Team, Symmetrical Table Style Billing &amp; Statement, MonthFilter Flat Table Dropdown, Double Border Elimination, Payout Breakdown 25% Grid Alignment, &amp; Proportional Navigation Tabs Spacing selesai dilaksanakan. Seluruh log ter-update di <code className="bg-white dark:bg-[#0d0e12] border border-[#f0f0f0] dark:border-[#272a34] px-1.5 py-0.5 rounded font-mono text-[#ff5e1f]">docs/knowledge/session-handover.md</code>.
                 </p>
               </div>
 
               <div className="space-y-2 pt-2">
                 <span className="text-xs font-mono font-bold text-gray-400 uppercase tracking-wider">Historical Session Notes</span>
                 <div className="p-4 rounded-xl bg-gray-50/50 dark:bg-[#16181d]/50 border border-[#f0f0f0] dark:border-[#272a34] space-y-2 text-xs font-mono text-gray-600 dark:text-gray-300">
-                  <p className="font-bold font-sans text-gray-900 dark:text-white">1. Cloudflare Checkbox Contrast Inversion Rule</p>
-                  <p className="text-gray-500 dark:text-gray-400 leading-relaxed">Native &amp; custom checkboxes diselaraskan ke aturan kontras Cloudflare (Light mode: Kotak Hitam + Checkmark Putih; Dark mode: Kotak Putih + Checkmark Hitam).</p>
+                  <p className="font-bold font-sans text-gray-900 dark:text-white">1. Double Border Elimination &amp; Navigation Tab Proportional Sizing</p>
+                  <p className="text-gray-500 dark:text-gray-400 leading-relaxed">Menghapus <code className="text-[#ff5e1f]">border-t</code> / <code className="text-[#ff5e1f]">border-b</code> berlebih pada kontainer <code className="text-[#ff5e1f]">divide-y</code>, serta mengatur tab navigasi dengan padding proporsional sama rata (<code className="text-[#ff5e1f]">px-5 sm:px-6 py-3.5</code>) tanpa truncate.</p>
                 </div>
                 <div className="p-4 rounded-xl bg-gray-50/50 dark:bg-[#16181d]/50 border border-[#f0f0f0] dark:border-[#272a34] space-y-2 text-xs font-mono text-gray-600 dark:text-gray-300">
-                  <p className="font-bold font-sans text-gray-900 dark:text-white">2. Unified Filter Toolbar Approval Payroll</p>
-                  <p className="text-gray-500 dark:text-gray-400 leading-relaxed">Restrukturisasi toolbar dengan pencarian di kiri, Sort dropdown, Filter popover 2-stage (Kategori -&gt; Item), chips filter aktif, dan batch actions di kanan.</p>
+                  <p className="font-bold font-sans text-gray-900 dark:text-white">2. Billing &amp; Statement Symmetrical Table Style &amp; Payout Header Grid</p>
+                  <p className="text-gray-500 dark:text-gray-400 leading-relaxed">Merombak header Payout Breakdown &amp; <code className="text-[#ff5e1f]">MonthFilter</code> ke flat table style (<code className="text-[#ff5e1f]">rounded-none</code>, <code className="text-[#ff5e1f]">min-h-[52px]</code>) dengan pemicu rata kanan di kolom 25% grid.</p>
                 </div>
                 <div className="p-4 rounded-xl bg-gray-50/50 dark:bg-[#16181d]/50 border border-[#f0f0f0] dark:border-[#272a34] space-y-2 text-xs font-mono text-gray-600 dark:text-gray-300">
-                  <p className="font-bold font-sans text-gray-900 dark:text-white">3. Standarisasi Translucent Pill Badges &amp; Metrics</p>
-                  <p className="text-gray-500 dark:text-gray-400 leading-relaxed">Badge statistik pada WorkloadWidget, ApprovedProfileOnlyWidget, LeaderboardWidget, dan QACard menggunakan <code className="text-[#ff5e1f]">font-mono text-[10px] font-bold uppercase rounded-full</code> dengan 10% opacity background &amp; 20% border.</p>
+                  <p className="font-bold font-sans text-gray-900 dark:text-white">3. Account &amp; Team 50% Vertical Border Alignment</p>
+                  <p className="text-gray-500 dark:text-gray-400 leading-relaxed">Menyelaraskan garis pembatas vertikal tengah antara banner atas dan 2 tabel di bawahnya menggunakan <code className="text-[#ff5e1f]">grid grid-cols-1 lg:grid-cols-2 divide-x divide-[#272a34]</code>.</p>
                 </div>
               </div>
             </div>

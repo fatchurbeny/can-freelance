@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Plus, X } from 'lucide-react';
 import { createDoctypeAction } from '@/app/actions/rate-card';
+import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
 
 interface Props {
   className?: string;
@@ -16,6 +18,7 @@ export default function AddDoctypeButton({ className }: Props) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     if (!open) return;
@@ -46,6 +49,7 @@ export default function AddDoctypeButton({ className }: Props) {
 
     if (!nextName || !Number.isFinite(nextPoolRate) || !Number.isFinite(nextRatePages) || nextPoolRate < 0 || nextRatePages < 1) {
       setError('Fill valid name, pool rate, pages.');
+      toast.error('Fill valid name, pool rate, pages.');
       return;
     }
 
@@ -60,11 +64,13 @@ export default function AddDoctypeButton({ className }: Props) {
 
     if (!res.success) {
       setError(res.error || 'Failed to create doctype.');
+      toast.error(res.error || 'Failed to create doctype.');
       return;
     }
 
+    toast.success(`Doctype "${nextName}" created successfully!`);
     closeModal();
-    window.location.reload();
+    router.refresh();
   };
 
   return (
@@ -74,7 +80,7 @@ export default function AddDoctypeButton({ className }: Props) {
         onClick={() => setOpen(true)}
         className={
           className ||
-          'inline-flex items-center gap-1.5 rounded-full bg-[#ff5e1f] hover:bg-[#ff7038] px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition-all duration-150 cursor-pointer'
+          'inline-flex items-center gap-1.5 rounded-full bg-[#ff5e1f] hover:bg-[#ff7038] px-4 py-1.5 text-xs font-mono font-bold text-white shadow-sm transition-all duration-150 cursor-pointer'
         }
         id="add-doctype-button"
       >
@@ -86,7 +92,7 @@ export default function AddDoctypeButton({ className }: Props) {
         ? createPortal(
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
               <div
-                className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+                className="fixed inset-0 bg-black/60 backdrop-blur-xs"
                 onClick={closeModal}
                 id="add-doctype-backdrop"
               />
@@ -95,56 +101,58 @@ export default function AddDoctypeButton({ className }: Props) {
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="add-doctype-title"
-                className="relative w-full max-w-xl rounded-2xl border border-white/10 bg-white/95 dark:bg-[#0f1218]/95 p-6 shadow-2xl shadow-black/30 backdrop-blur-xl"
+                className="relative w-full max-w-md rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] divide-y divide-[#f0f0f0] dark:divide-[#272a34] shadow-2xl overflow-hidden font-sans"
                 id="add-doctype-modal"
               >
-                <div className="flex items-start justify-between gap-4">
+                {/* Header Cell */}
+                <div className="p-4 sm:p-5 bg-gray-50/50 dark:bg-[#16181d]/50 flex items-start justify-between gap-4">
                   <div>
-                    <h2 id="add-doctype-title" className="text-lg font-semibold text-gray-900 dark:text-white">
-                      Add new doctype
+                    <h2 id="add-doctype-title" className="text-xs font-bold font-mono uppercase tracking-wider text-gray-900 dark:text-white">
+                      Add New Doctype
                     </h2>
-                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    <p className="mt-1 text-xs font-mono text-gray-500 dark:text-gray-400">
                       Create doctype on web, then sync option to Notion.
                     </p>
                   </div>
                   <button
                     type="button"
                     onClick={closeModal}
-                    className="rounded-full p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
+                    className="flex size-7 shrink-0 items-center justify-center rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer"
                     id="close-add-doctype-button"
                   >
                     <X className="h-4 w-4" />
                   </button>
                 </div>
 
-                <div className="mt-5 grid grid-cols-1 gap-4">
-                  <label className="grid gap-2 text-sm text-gray-700 dark:text-gray-200">
-                    <span>Doctype name</span>
+                {/* Body Content Cell */}
+                <div className="p-4 sm:p-5 space-y-4 bg-white dark:bg-[#0d0e12]">
+                  <label className="flex flex-col gap-2.5 text-xs font-mono font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">
+                    <span>Doctype Name</span>
                     <input
                       id="doctype-name-input"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       placeholder="ex: Presentation"
-                      className="rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                      className="w-full rounded-lg border border-[#f0f0f0] dark:border-[#272a34] bg-gray-50 dark:bg-[#16181d] px-3.5 py-2.5 font-mono text-xs font-bold text-gray-900 dark:text-white outline-none focus:border-[#ff5e1f] transition-colors"
                     />
                   </label>
-                  <label className="grid gap-2 text-sm text-gray-700 dark:text-gray-200">
+
+                  <label className="flex flex-col gap-2.5 text-xs font-mono font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">
                     <span>Pool Rate</span>
-                    <div className="flex items-center gap-2">
-                      <input
-                        id="pool-rate-input"
-                        type="number"
-                        inputMode="decimal"
-                        step="0.01"
-                        min="0"
-                        value={poolRate}
-                        onChange={(e) => setPoolRate(e.target.value)}
-                        className="flex-1 rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
-                      />
-                    </div>
+                    <input
+                      id="pool-rate-input"
+                      type="number"
+                      inputMode="decimal"
+                      step="0.01"
+                      min="0"
+                      value={poolRate}
+                      onChange={(e) => setPoolRate(e.target.value)}
+                      className="w-full rounded-lg border border-[#f0f0f0] dark:border-[#272a34] bg-gray-50 dark:bg-[#16181d] px-3.5 py-2.5 font-mono text-xs font-bold text-gray-900 dark:text-white outline-none focus:border-[#ff5e1f] transition-colors"
+                    />
                   </label>
-                  <label className="grid gap-2 text-sm text-gray-700 dark:text-gray-200">
-                    <span>Pages per template</span>
+
+                  <label className="flex flex-col gap-2.5 text-xs font-mono font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">
+                    <span>Pages Per Template</span>
                     <input
                       id="pages-input"
                       type="number"
@@ -153,23 +161,24 @@ export default function AddDoctypeButton({ className }: Props) {
                       step="1"
                       value={ratePages}
                       onChange={(e) => setRatePages(e.target.value)}
-                      className="rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                      className="w-full rounded-lg border border-[#f0f0f0] dark:border-[#272a34] bg-gray-50 dark:bg-[#16181d] px-3.5 py-2.5 font-mono text-xs font-bold text-gray-900 dark:text-white outline-none focus:border-[#ff5e1f] transition-colors"
                     />
                   </label>
+
+                  {error ? (
+                    <p className="text-xs font-mono font-bold text-rose-500 mt-2">
+                      {error}
+                    </p>
+                  ) : null}
                 </div>
 
-                {error ? (
-                  <div className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
-                    {error}
-                  </div>
-                ) : null}
-
-                <div className="mt-6 flex items-center justify-end gap-3 border-t border-gray-200 pt-4 dark:border-gray-800">
+                {/* Footer Action Table Row */}
+                <div className="grid grid-cols-2 divide-x divide-[#f0f0f0] dark:divide-[#272a34]">
                   <button
                     type="button"
                     onClick={closeModal}
                     disabled={isSaving}
-                    className="rounded-xl px-5 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-100 disabled:opacity-50 dark:text-gray-400 dark:hover:bg-gray-800"
+                    className="w-full py-3.5 px-4 bg-gray-50/50 dark:bg-[#16181d]/50 hover:bg-gray-100 dark:hover:bg-[#16181d] font-mono text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 transition-colors disabled:opacity-50 cursor-pointer text-center"
                     id="cancel-add-doctype-button"
                   >
                     Cancel
@@ -179,7 +188,7 @@ export default function AddDoctypeButton({ className }: Props) {
                     id="save-doctype-button"
                     disabled={isSaving}
                     onClick={handleSave}
-                    className="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-700 disabled:opacity-50"
+                    className="w-full py-3.5 px-4 bg-[#ff5e1f] hover:bg-[#ff7038] font-mono text-xs font-bold uppercase tracking-wider text-white transition-colors disabled:opacity-50 cursor-pointer text-center"
                   >
                     {isSaving ? 'Saving…' : 'Save'}
                   </button>

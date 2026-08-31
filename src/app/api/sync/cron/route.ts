@@ -87,7 +87,12 @@ export async function GET(request: Request) {
 
     const now = Date.now();
     const lastFinished = lastLog?.finishedAt ? new Date(lastLog.finishedAt).getTime() : 0;
-    const elapsed = now - lastFinished;
+    const configUpdatedAt = config.updatedAt ? new Date(config.updatedAt).getTime() : 0;
+    
+    // The reference start time for countdown calculation is the LATEST of the last finished sync OR when auto sync schedule was configured.
+    // This ensures enabling or reconfiguring auto sync sets a countdown timer for the full interval rather than executing an instant sync.
+    const referenceStartTime = Math.max(lastFinished, configUpdatedAt);
+    const elapsed = now - referenceStartTime;
 
     if (elapsed < intervalMs) {
       const msRemaining = intervalMs - elapsed;

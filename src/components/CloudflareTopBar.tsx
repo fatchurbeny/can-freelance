@@ -17,6 +17,7 @@ import {
   Plus
 } from 'lucide-react';
 import PeriodPicker from './PeriodPicker';
+import AccountSwitcher from './AccountSwitcher';
 
 interface CloudflareTopBarProps {
   badgeLabel?: string;
@@ -124,6 +125,7 @@ export default function CloudflareTopBar({
 
             {/* Quick Theme Toggle Icon Button */}
             <button
+              type="button"
               onClick={toggleTheme}
               className="flex items-center justify-center p-2 rounded-lg border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] text-gray-500 dark:text-gray-400 hover:text-[#ff5e1f] dark:hover:text-[#ff5e1f] transition-colors cursor-pointer"
               aria-label="Toggle Theme"
@@ -161,14 +163,13 @@ export default function CloudflareTopBar({
                   <span>{actionButton.label}</span>
                 </button>
               )
-            ) : (
-              <a
-                href="/"
-                className="inline-flex items-center gap-1.5 rounded-full bg-[#ff5e1f] hover:bg-[#ff7038] px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition-all duration-150 cursor-pointer"
-              >
-                <span>Dashboard</span>
-              </a>
-            )}
+            ) : null}
+
+            {/* Vertical Separator Divider */}
+            <div className="w-px h-4 bg-[#f0f0f0] dark:bg-[#272a34] shrink-0 mx-0.5" />
+
+            {/* User Login & Account Management Switcher (Position: Far Right) */}
+            <AccountSwitcher />
           </div>
         </div>
       </div>

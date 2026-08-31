@@ -39,7 +39,10 @@ const COMMUNITY_COLORS: Record<string, string> = {
   'React Components': '#06B6D4', // Cyan/Teal
   'Server Actions & Lib': '#3B82F6', // Blue
   'Prisma DB Models': '#A855F7', // Purple
-  'Knowledge Base': '#EC4899', // Pink
+  'SaaS Business Rules': '#10B981', // Emerald Green
+  'Notion Sync Engine': '#F59E0B', // Amber
+  'Gotchas & Layout Rules': '#EF4444', // Red/Rose
+  'Session Handover & Log': '#8B5CF6', // Violet
 };
 
 const DEFAULT_COLOR = '#64748B';
@@ -48,6 +51,7 @@ export default function GraphifyVisualizer() {
   const [data, setData] = useState<GraphData | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
   const [hoveredNode, setHoveredNode] = useState<GraphNode | null>(null);
   const [isDark, setIsDark] = useState(false);
@@ -110,16 +114,32 @@ export default function GraphifyVisualizer() {
       .sort((a, b) => b.count - a.count);
   }, [data]);
 
-  // Initialize Force Simulation
+  // Hover & selection refs to avoid re-triggering simulation physics effect on mouse hover
+  const hoveredNodeRef = useRef<GraphNode | null>(null);
+  const selectedNodeRef = useRef<GraphNode | null>(null);
+  const isDarkRef = useRef<boolean>(false);
+
+  useEffect(() => { hoveredNodeRef.current = hoveredNode; }, [hoveredNode]);
+  useEffect(() => { selectedNodeRef.current = selectedNode; }, [selectedNode]);
+  useEffect(() => { isDarkRef.current = isDark; }, [isDark]);
+
+  // Initialize Force Simulation (Runs ONLY when data/selectedGroup changes, NOT on mouse hover)
   useEffect(() => {
     if (!data || !canvasRef.current || !containerRef.current) return;
 
     const width = containerRef.current.clientWidth || 800;
     const height = containerRef.current.clientHeight || 600;
 
+    // Filter nodes by selectedGroup if active
+    const targetNodesData = selectedGroup
+      ? data.nodes.filter(n => n.group === selectedGroup)
+      : data.nodes;
+
+    const targetNodeIds = new Set(targetNodesData.map(n => n.id));
+
     // Map degrees and colors
     const nodeMap = new Map<string, GraphNode>();
-    const preparedNodes: GraphNode[] = data.nodes.map(n => {
+    const preparedNodes: GraphNode[] = targetNodesData.map(n => {
       const color = COMMUNITY_COLORS[n.group] || DEFAULT_COLOR;
       const newNode: GraphNode = {
         ...n,
@@ -138,12 +158,14 @@ export default function GraphifyVisualizer() {
     const preparedLinks: { sourceNode: GraphNode; targetNode: GraphNode; relation: string; confidence: string }[] = [];
 
     data.links.forEach(l => {
-      const sourceNode = nodeMap.get(l.source);
-      const targetNode = nodeMap.get(l.target);
-      if (sourceNode && targetNode) {
-        preparedLinks.push({ sourceNode, targetNode, relation: l.relation, confidence: l.confidence });
-        sourceNode.degree = (sourceNode.degree || 0) + 1;
-        targetNode.degree = (targetNode.degree || 0) + 1;
+      if (targetNodeIds.has(l.source) && targetNodeIds.has(l.target)) {
+        const sourceNode = nodeMap.get(l.source);
+        const targetNode = nodeMap.get(l.target);
+        if (sourceNode && targetNode) {
+          preparedLinks.push({ sourceNode, targetNode, relation: l.relation, confidence: l.confidence });
+          sourceNode.degree = (sourceNode.degree || 0) + 1;
+          targetNode.degree = (targetNode.degree || 0) + 1;
+        }
       }
     });
 
@@ -241,8 +263,12 @@ export default function GraphifyVisualizer() {
       ctx.save();
       ctx.scale(dpr, dpr);
 
+      const currentIsDark = isDarkRef.current;
+      const currentHovered = hoveredNodeRef.current;
+      const currentSelected = selectedNodeRef.current;
+
       // Canvas background adapting to light/dark theme
-      ctx.fillStyle = isDark ? '#0d0e12' : '#F8FAFC';
+      ctx.fillStyle = currentIsDark ? '#0d0e12' : '#F8FAFC';
       ctx.fillRect(0, 0, w, h);
 
       // Apply zoom & pan transform
@@ -254,8 +280,8 @@ export default function GraphifyVisualizer() {
       linksRef.current.forEach(l => {
         const s = l.sourceNode;
         const t = l.targetNode;
-        const isHovered = hoveredNode && (s.id === hoveredNode.id || t.id === hoveredNode.id);
-        const isSelected = selectedNode && (s.id === selectedNode.id || t.id === selectedNode.id);
+        const isHovered = currentHovered && (s.id === currentHovered.id || t.id === currentHovered.id);
+        const isSelected = currentSelected && (s.id === currentSelected.id || t.id === currentSelected.id);
 
         ctx.beginPath();
         ctx.moveTo(s.x!, s.y!);
@@ -266,11 +292,11 @@ export default function GraphifyVisualizer() {
           ctx.lineWidth = 2.2 / k;
           ctx.globalAlpha = 0.9;
         } else {
-          ctx.strokeStyle = isDark
+          ctx.strokeStyle = currentIsDark
             ? (l.confidence === 'EXTRACTED' ? '#272a34' : '#1e2029')
             : (l.confidence === 'EXTRACTED' ? '#CBD5E1' : '#E2E8F0');
           ctx.lineWidth = 1 / k;
-          ctx.globalAlpha = isDark ? 0.45 : 0.65;
+          ctx.globalAlpha = currentIsDark ? 0.45 : 0.65;
         }
         ctx.stroke();
         ctx.globalAlpha = 1.0;
@@ -278,8 +304,8 @@ export default function GraphifyVisualizer() {
 
       // Draw Nodes
       nodesRef.current.forEach(n => {
-        const isSelected = selectedNode?.id === n.id;
-        const isHovered = hoveredNode?.id === n.id;
+        const isSelected = currentSelected?.id === n.id;
+        const isHovered = currentHovered?.id === n.id;
         const isHighlighted = isSelected || isHovered;
 
         // Glow ring for selected/hovered node
@@ -288,7 +314,7 @@ export default function GraphifyVisualizer() {
           ctx.arc(n.x!, n.y!, n.radius! + 6 / k, 0, Math.PI * 2);
           ctx.fillStyle = isSelected
             ? 'rgba(255, 94, 31, 0.35)'
-            : (isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.08)');
+            : (currentIsDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.08)');
           ctx.fill();
         }
 
@@ -299,8 +325,8 @@ export default function GraphifyVisualizer() {
         ctx.fill();
 
         ctx.strokeStyle = isHighlighted
-          ? (isDark ? '#FFFFFF' : '#0F172A')
-          : (isDark ? '#0d0e12' : '#FFFFFF');
+          ? (currentIsDark ? '#FFFFFF' : '#0F172A')
+          : (currentIsDark ? '#0d0e12' : '#FFFFFF');
         ctx.lineWidth = 1.5 / k;
         ctx.stroke();
 
@@ -308,8 +334,8 @@ export default function GraphifyVisualizer() {
         if (n.radius! > 10 || isHighlighted) {
           ctx.font = `${isHighlighted ? '600 11px' : '500 9px'} system-ui, sans-serif`;
           ctx.fillStyle = isHighlighted
-            ? (isDark ? '#FFFFFF' : '#0F172A')
-            : (isDark ? 'rgba(226, 232, 240, 0.75)' : '#475569');
+            ? (currentIsDark ? '#FFFFFF' : '#0F172A')
+            : (currentIsDark ? 'rgba(226, 232, 240, 0.75)' : '#475569');
           ctx.fillText(n.label, n.x! + n.radius! + 4, n.y! + 3);
         }
       });
@@ -322,7 +348,7 @@ export default function GraphifyVisualizer() {
     return () => {
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     };
-  }, [data, hoveredNode, selectedNode, isDark]);
+  }, [data, selectedGroup]);
 
   // Event Handlers for Canvas Interaction (Drag, Hover, Click, Zoom)
   const getCanvasMousePos = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -429,6 +455,28 @@ export default function GraphifyVisualizer() {
           className="w-full h-full block"
         />
 
+        {/* Top Left Active Community Cluster Filter Indicator */}
+        <div className="absolute top-4 left-4 flex items-center gap-2 z-10">
+          {selectedGroup ? (
+            <div className="bg-white/95 dark:bg-[#16181d]/95 backdrop-blur-md px-3 py-1.5 rounded-lg border border-[#ff5e1f]/30 text-xs font-mono text-gray-900 dark:text-white flex items-center gap-2 shadow-md">
+              <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: COMMUNITY_COLORS[selectedGroup] || DEFAULT_COLOR }} />
+              <span className="font-bold">{selectedGroup}</span>
+              <button
+                type="button"
+                onClick={() => setSelectedGroup(null)}
+                className="ml-1 text-gray-400 hover:text-[#ff5e1f] cursor-pointer flex items-center gap-1 font-mono text-[10px] font-bold uppercase"
+              >
+                <X className="w-3 h-3" /> Reset
+              </button>
+            </div>
+          ) : (
+            <div className="bg-white/80 dark:bg-[#16181d]/80 backdrop-blur-md px-3 py-1.5 rounded-lg border border-[#f0f0f0] dark:border-[#272a34] text-[11px] font-mono text-gray-500 dark:text-gray-400 flex items-center gap-2 shadow-sm">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Showing All Communities ({nodesRef.current.length} Nodes)</span>
+            </div>
+          )}
+        </div>
+
         {/* Canvas Bottom Instructions Overlay (Cloudflare Light/Dark Badge) */}
         <div className="absolute bottom-4 left-4 bg-white/90 dark:bg-[#16181d]/90 backdrop-blur-md px-3.5 py-1.5 rounded-lg border border-[#f0f0f0] dark:border-[#272a34] text-[11px] font-mono text-gray-700 dark:text-gray-300 flex items-center gap-2.5 shadow-sm select-none pointer-events-none">
           <span className="flex items-center gap-1">
@@ -442,36 +490,44 @@ export default function GraphifyVisualizer() {
         </div>
       </div>
 
-      {/* Right Sidebar Panel (Cloudflare Continuous Style) */}
-      <div className="w-full lg:w-[320px] bg-white dark:bg-[#0d0e12] p-5 flex flex-col justify-between overflow-y-auto scrollbar-none shrink-0 font-mono text-xs">
-        <div className="space-y-6">
-          {/* Search Box */}
-          <div>
-            <div className="relative">
-              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search nodes..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg bg-gray-50 dark:bg-[#16181d] border border-[#f0f0f0] dark:border-[#272a34] text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-[#ff5e1f] transition-colors font-mono"
-              />
-            </div>
+      {/* Right Sidebar Panel (Cloudflare Continuous Symmetrical Table Style) */}
+      <div className="w-full lg:w-[320px] bg-white dark:bg-[#0d0e12] divide-y divide-[#f0f0f0] dark:divide-[#272a34] overflow-y-auto scrollbar-none shrink-0 font-mono text-xs flex flex-col justify-between">
+        <div className="divide-y divide-[#f0f0f0] dark:divide-[#272a34]">
+          
+          {/* Top Search Input Box (Image 2 Symmetrical Toolbar Style) */}
+          <div className="relative h-10 flex items-center bg-white dark:bg-[#0d0e12] px-3.5 border-b border-[#f0f0f0] dark:border-[#272a34]">
+            <Search className="pointer-events-none w-3.5 h-3.5 text-gray-400 shrink-0" />
+            <input
+              type="text"
+              placeholder="Search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-transparent pl-2.5 pr-6 py-1 text-xs font-mono text-gray-900 dark:text-white outline-none placeholder:text-gray-400"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 text-gray-400 hover:text-gray-700 dark:hover:text-white cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
 
-          {/* NODE INFO Section */}
-          <div className="space-y-2 border-b border-[#f0f0f0] dark:border-[#272a34] pb-5">
-            <span className="text-[11px] font-bold tracking-wider text-gray-400 uppercase font-mono block">
+          {/* NODE INFO Table Block (Full Width Symmetrical Style) */}
+          <div>
+            <div className="px-4 py-2 bg-gray-50/50 dark:bg-[#0d0e12] border-b border-[#f0f0f0] dark:border-[#272a34] text-[10px] font-mono font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
               NODE INFO
-            </span>
+            </div>
             {selectedNode ? (
-              <div className="bg-gray-50 dark:bg-[#16181d] p-3.5 rounded-xl border border-[#f0f0f0] dark:border-[#272a34] space-y-2.5">
+              <div className="p-4 space-y-2.5 bg-white dark:bg-[#0d0e12]">
                 <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
                     <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: selectedNode.color }} />
                     <span className="font-bold text-xs text-gray-900 dark:text-white font-mono truncate">{selectedNode.label}</span>
                   </div>
-                  <button onClick={() => setSelectedNode(null)} className="text-gray-400 hover:text-gray-600 dark:hover:text-white cursor-pointer">
+                  <button onClick={() => setSelectedNode(null)} className="text-gray-400 hover:text-gray-600 dark:hover:text-white cursor-pointer shrink-0">
                     <X className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -483,7 +539,7 @@ export default function GraphifyVisualizer() {
                 </div>
 
                 {(outgoingLinks.length > 0 || incomingLinks.length > 0) && (
-                  <div className="pt-2 border-t border-[#f0f0f0] dark:border-[#272a34] space-y-1 text-[11px] font-mono">
+                  <div className="pt-2.5 border-t border-[#f0f0f0] dark:border-[#272a34] space-y-1 text-[11px] font-mono">
                     <span className="text-[#ff5e1f] font-bold block">Connections ({incomingLinks.length + outgoingLinks.length})</span>
                     {outgoingLinks.map((l, idx) => (
                       <div key={idx} className="text-gray-600 dark:text-gray-300 truncate">→ {l.relation} ({l.target})</div>
@@ -495,27 +551,46 @@ export default function GraphifyVisualizer() {
                 )}
               </div>
             ) : (
-              <p className="text-xs text-gray-400 italic font-mono">Click a node to inspect it</p>
+              <div className="px-4 py-4 text-xs text-gray-400 italic font-mono bg-white dark:bg-[#0d0e12]">
+                Click a node to inspect it
+              </div>
             )}
           </div>
 
-          {/* COMMUNITIES Section */}
-          <div className="space-y-3">
-            <span className="text-[11px] font-bold tracking-wider text-gray-400 uppercase font-mono block">
-              COMMUNITIES
-            </span>
-            <div className="space-y-1 max-h-[340px] overflow-y-auto pr-1 scrollbar-none font-mono">
-              {filteredCommunities.map((c, i) => (
-                <div key={i} className="flex items-center justify-between text-xs py-1.5 hover:bg-gray-50 dark:hover:bg-[#16181d] px-2.5 rounded-lg transition-colors cursor-pointer">
-                  <div className="flex items-center gap-2.5 truncate pr-2">
-                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: c.color }} />
-                    <span className="text-gray-700 dark:text-gray-300 font-medium truncate text-xs font-mono">{c.name}</span>
+          {/* COMMUNITIES Table Block (True 2-Column Symmetrical Table Style) */}
+          <div>
+            <div className="flex items-stretch border-b border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#0d0e12] text-[10px] font-mono font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+              <span className="flex-1 px-4 py-2">COMMUNITIES</span>
+              <span className="w-16 text-center py-2 border-l border-[#f0f0f0] dark:border-[#272a34]">COUNT</span>
+            </div>
+            <div className="divide-y divide-[#f0f0f0] dark:divide-[#272a34] max-h-[360px] overflow-y-auto font-mono">
+              {filteredCommunities.map((c, i) => {
+                const isSelected = selectedGroup === c.name;
+                return (
+                  <div
+                    key={i}
+                    onClick={() => setSelectedGroup(isSelected ? null : c.name)}
+                    className={`flex items-stretch transition-colors font-mono text-xs cursor-pointer ${
+                      isSelected
+                        ? 'bg-[#ff5e1f]/10 text-[#ff5e1f]'
+                        : 'hover:bg-gray-50/60 dark:hover:bg-[#16181d]/60 text-gray-700 dark:text-gray-300'
+                    }`}
+                  >
+                    <div className="flex-1 px-4 py-2.5 flex items-center gap-2.5 truncate min-w-0">
+                      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: c.color }} />
+                      <span className={`font-medium truncate text-xs font-mono ${isSelected ? 'text-[#ff5e1f] font-bold' : ''}`}>
+                        {c.name}
+                      </span>
+                    </div>
+                    <div className="w-16 border-l border-[#f0f0f0] dark:border-[#272a34] flex items-center justify-center font-mono text-xs font-bold shrink-0">
+                      {c.count}
+                    </div>
                   </div>
-                  <span className="text-gray-400 font-mono text-[11px] font-bold">{c.count}</span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
+
         </div>
       </div>
     </div>

@@ -3,6 +3,7 @@
 import { useMemo, useState, useTransition } from 'react';
 import { Edit3, Save, X, Clock3 } from 'lucide-react';
 import { updateDoctypeRateCardAction } from '@/app/actions/rate-card';
+import toast from 'react-hot-toast';
 
 interface RateCardRowProps {
   doctype: {
@@ -44,6 +45,7 @@ export default function RateCardRow({ doctype, contractRate }: RateCardRowProps)
 
     if (!Number.isFinite(nextPoolRate) || !Number.isFinite(nextPages)) {
       setError('Pool Rate and Pages must be numbers.');
+      toast.error('Pool Rate and Pages must be numbers.');
       return;
     }
 
@@ -56,20 +58,22 @@ export default function RateCardRow({ doctype, contractRate }: RateCardRowProps)
 
       if (!res.success) {
         setError(res.error || 'Failed to save rate card.');
+        toast.error(res.error || 'Failed to save rate card.');
         return;
       }
 
+      toast.success(`Rate card "${doctype.notionKey}" updated!`);
       setIsEditing(false);
     });
   };
 
   return (
     <tr className="hover:bg-gray-50/60 dark:hover:bg-[#16181d]/60 transition-colors font-mono text-xs">
-      <td className="pl-5 pr-4 py-3 font-bold text-gray-900 dark:text-white">{doctype.notionKey}</td>
-      <td className="px-4 py-3 text-center font-bold text-indigo-600 dark:text-[#ff5e1f]">
+      <td className="pl-5 pr-4 py-3 font-bold text-gray-900 dark:text-white w-[260px] truncate">{doctype.notionKey}</td>
+      <td className="px-4 py-3 text-center font-bold text-indigo-600 dark:text-[#ff5e1f] w-[180px] whitespace-nowrap">
         IDR {new Intl.NumberFormat('id-ID').format(contractRate)}
       </td>
-      <td className="px-4 py-3 text-center font-bold text-emerald-600 dark:text-emerald-400">
+      <td className="p-0 text-center font-bold text-emerald-600 dark:text-emerald-400 w-[140px] whitespace-nowrap h-full align-stretch">
         {isEditing ? (
           <input
             id={`pool-rate-${doctype.id}`}
@@ -78,13 +82,13 @@ export default function RateCardRow({ doctype, contractRate }: RateCardRowProps)
             step="0.01"
             value={poolRate}
             onChange={(e) => setPoolRate(e.target.value)}
-            className="w-24 rounded-md border border-[#f0f0f0] dark:border-[#272a34] bg-gray-50 dark:bg-[#16181d] px-2 py-1 text-center text-xs font-mono font-bold text-gray-900 dark:text-white focus:outline-none focus:border-[#ff5e1f]"
+            className="w-full h-full min-h-[44px] rounded-none border-x border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-2 text-center text-xs font-mono font-bold text-gray-900 dark:text-white outline-none focus:bg-white dark:focus:bg-[#16181d] focus:border-[#ff5e1f] transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
           />
         ) : (
-          String(doctype.poolRate)
+          <div className="py-3 px-4">{String(doctype.poolRate)}</div>
         )}
       </td>
-      <td className="px-4 py-3 text-center font-bold text-blue-600 dark:text-blue-400">
+      <td className="p-0 text-center font-bold text-blue-600 dark:text-blue-400 w-[120px] whitespace-nowrap h-full align-stretch">
         {isEditing ? (
           <input
             id={`pages-${doctype.id}`}
@@ -93,54 +97,51 @@ export default function RateCardRow({ doctype, contractRate }: RateCardRowProps)
             step="0.01"
             value={pages}
             onChange={(e) => setPages(e.target.value)}
-            className="w-20 rounded-md border border-[#f0f0f0] dark:border-[#272a34] bg-gray-50 dark:bg-[#16181d] px-2 py-1 text-center text-xs font-mono font-bold text-gray-900 dark:text-white focus:outline-none focus:border-[#ff5e1f]"
+            className="w-full h-full min-h-[44px] rounded-none border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-2 text-center text-xs font-mono font-bold text-gray-900 dark:text-white outline-none focus:bg-white dark:focus:bg-[#16181d] focus:border-[#ff5e1f] transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
           />
         ) : (
-          doctype.pages ?? 1
+          <div className="py-3 px-4">{doctype.pages ?? 1}</div>
         )}
       </td>
-      <td className="px-4 py-3 text-center text-gray-400 dark:text-gray-500 text-xs">
+      <td className="px-4 py-3 text-center text-gray-400 dark:text-gray-500 text-xs w-[200px] whitespace-nowrap">
         <div className="inline-flex items-center justify-center gap-1.5">
           <Clock3 className="h-3.5 w-3.5 text-gray-400" />
           <span>{lastUpdate}</span>
         </div>
       </td>
-      <td className="pr-5 pl-4 py-3 text-center whitespace-nowrap">
+      <td className="p-0 text-center whitespace-nowrap w-[180px] h-full align-stretch">
         {isEditing ? (
-          <div className="flex flex-col items-center gap-1.5">
-            <div className="flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={handleSave}
-                disabled={isPending}
-                className="inline-flex items-center gap-1 rounded-md bg-[#ff5e1f] px-2.5 py-1 text-xs font-mono font-bold text-white transition-colors hover:bg-[#ff7038] disabled:opacity-60 cursor-pointer"
-                id={`save-rate-card-${doctype.id}`}
-              >
-                <Save className="h-3.5 w-3.5" />
-                Save
-              </button>
-              <button
-                type="button"
-                onClick={handleCancel}
-                disabled={isPending}
-                className="inline-flex items-center gap-1 rounded-md border border-[#f0f0f0] dark:border-[#272a34] bg-gray-50 dark:bg-[#16181d] px-2.5 py-1 text-xs font-mono font-medium text-gray-600 dark:text-gray-300 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-60 cursor-pointer"
-                id={`cancel-rate-card-${doctype.id}`}
-              >
-                <X className="h-3.5 w-3.5" />
-                Cancel
-              </button>
-            </div>
-            {error ? <p className="max-w-[180px] text-[10px] text-rose-500">{error}</p> : null}
+          <div className="grid grid-cols-2 divide-x divide-[#f0f0f0] dark:divide-[#272a34] border-l border-[#f0f0f0] dark:border-[#272a34] h-full min-h-[44px] items-stretch font-mono text-xs">
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={isPending}
+              className="h-full min-h-[44px] py-3 px-2 bg-[#ff5e1f] hover:bg-[#ff7038] font-bold text-white transition-colors cursor-pointer flex items-center justify-center gap-1 uppercase tracking-wider disabled:opacity-60"
+              id={`save-rate-card-${doctype.id}`}
+            >
+              <Save className="h-3.5 w-3.5" />
+              <span>Save</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleCancel}
+              disabled={isPending}
+              className="h-full min-h-[44px] py-3 px-2 bg-gray-50/50 dark:bg-[#16181d]/50 hover:bg-gray-100 dark:hover:bg-[#16181d] font-bold text-gray-700 dark:text-gray-300 transition-colors cursor-pointer flex items-center justify-center gap-1 uppercase tracking-wider disabled:opacity-60"
+              id={`cancel-rate-card-${doctype.id}`}
+            >
+              <X className="h-3.5 w-3.5" />
+              <span>Cancel</span>
+            </button>
           </div>
         ) : (
           <button
             type="button"
             onClick={() => setIsEditing(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] px-3 py-1 text-xs font-mono font-medium text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-700 hover:text-[#ff5e1f] dark:hover:text-[#ff5e1f] transition-colors cursor-pointer"
+            className="w-full h-full min-h-[44px] border-l border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/30 dark:bg-[#16181d]/30 hover:bg-[#ff5e1f] dark:hover:bg-[#ff5e1f] text-gray-700 dark:text-gray-300 hover:text-white dark:hover:text-white transition-colors cursor-pointer flex items-center justify-center gap-1.5 font-mono text-xs font-bold uppercase tracking-wider"
             id={`edit-rate-card-${doctype.id}`}
           >
             <Edit3 className="h-3.5 w-3.5" />
-            Edit Rate Card
+            <span>Edit</span>
           </button>
         )}
       </td>

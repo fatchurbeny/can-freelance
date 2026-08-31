@@ -64,7 +64,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
         <main className="flex min-h-0 min-w-0 flex-1 md:ml-56 flex-col p-6 md:p-8 bg-grid-pattern">
 
           {/* Single Continuous Outer Container (Gabung Semua Baris/Card) */}
-          <div className="w-full rounded-xl border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] divide-y divide-[#f0f0f0] dark:divide-[#272a34] shadow-none">
+          <div className="w-full rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] divide-y divide-[#f0f0f0] dark:divide-[#272a34] shadow-none">
             
             {/* Block 0: Brand Tabs */}
             <Suspense fallback={<div className="h-[44px] bg-gray-100 dark:bg-gray-800 animate-pulse" />}>

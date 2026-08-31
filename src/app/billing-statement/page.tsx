@@ -298,75 +298,79 @@ export default async function BillingStatementPage(props: {
         <main className="flex min-h-0 min-w-0 flex-1 md:ml-56 flex-col p-6 md:p-8 bg-grid-pattern">
 
           {/* Single Continuous Outer Container */}
-          <div className="w-full rounded-xl border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] divide-y divide-[#f0f0f0] dark:divide-[#272a34] shadow-none">
+          <div className="w-full rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] divide-y divide-[#f0f0f0] dark:divide-[#272a34] shadow-none">
             
-            {/* Block 0: Sticky Navigation Tabs */}
-            <div className="sticky top-[56px] z-30 flex items-stretch overflow-x-auto rounded-t-xl border-b border-[#f0f0f0] dark:border-[#272a34] bg-[#f8f9fa] dark:bg-[#0d0e12] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-              <Link
-                href={`?paymentMonth=${selectedMonth}&tab=summary`}
-                className={`relative flex items-center gap-2 px-5 py-3 text-sm transition-all duration-150 cursor-pointer whitespace-nowrap border-r border-[#f0f0f0] dark:border-[#272a34] ${
-                  activeTab === 'summary'
-                    ? 'bg-white dark:bg-[#16181d] text-gray-900 dark:text-white font-bold'
-                    : 'bg-[#f8f9fa] dark:bg-[#0d0e12] text-gray-600 dark:text-gray-400 font-medium hover:bg-[#f0f1f3] dark:hover:bg-[#16181d]/50 hover:text-gray-900 dark:hover:text-gray-200'
-                }`}
-              >
-                <LayoutGrid className={`w-4 h-4 shrink-0 transition-colors ${activeTab === 'summary' ? 'text-[#ff5e1f]' : 'text-gray-400 dark:text-gray-500'}`} />
-                <span>Summary</span>
-                {activeTab === 'summary' && (
-                  <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#ff5e1f]" />
-                )}
-              </Link>
-              <Link
-                href={`?paymentMonth=${selectedMonth}&tab=approval-payroll`}
-                className={`relative flex items-center gap-2 px-5 py-3 text-sm transition-all duration-150 cursor-pointer whitespace-nowrap border-r border-[#f0f0f0] dark:border-[#272a34] ${
-                  activeTab === 'approval-payroll'
-                    ? 'bg-white dark:bg-[#16181d] text-gray-900 dark:text-white font-bold'
-                    : 'bg-[#f8f9fa] dark:bg-[#0d0e12] text-gray-600 dark:text-gray-400 font-medium hover:bg-[#f0f1f3] dark:hover:bg-[#16181d]/50 hover:text-gray-900 dark:hover:text-gray-200'
-                }`}
-              >
-                <CheckSquare className={`w-4 h-4 shrink-0 transition-colors ${activeTab === 'approval-payroll' ? 'text-[#ff5e1f]' : 'text-gray-400 dark:text-gray-500'}`} />
-                <span>Approval Payroll</span>
-                {upcomingTasksData.length > 0 && (
-                  <span className={`rounded px-1.5 py-0.5 text-[10px] font-mono font-bold ${
+            {/* Block 0: Sticky Navigation Tabs (Proportional Spacing) */}
+            <div className="sticky top-[56px] z-30 flex items-stretch overflow-x-auto border-b border-[#f0f0f0] dark:border-[#272a34] bg-[#f8f9fa] dark:bg-[#0d0e12] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+              <div className="flex items-stretch divide-x divide-[#f0f0f0] dark:divide-[#272a34] border-r border-[#f0f0f0] dark:border-[#272a34]">
+                <Link
+                  href={`?paymentMonth=${selectedMonth}&tab=summary`}
+                  className={`relative flex items-center justify-center gap-2 px-5 sm:px-6 py-3.5 text-xs sm:text-sm transition-all duration-150 cursor-pointer whitespace-nowrap ${
+                    activeTab === 'summary'
+                      ? 'bg-white dark:bg-[#16181d] text-gray-900 dark:text-white font-bold'
+                      : 'bg-[#f8f9fa] dark:bg-[#0d0e12] text-gray-600 dark:text-gray-400 font-medium hover:bg-[#f0f1f3] dark:hover:bg-[#16181d]/50 hover:text-gray-900 dark:hover:text-gray-200'
+                  }`}
+                >
+                  <LayoutGrid className={`w-4 h-4 shrink-0 transition-colors ${activeTab === 'summary' ? 'text-[#ff5e1f]' : 'text-gray-400 dark:text-gray-500'}`} />
+                  <span>Summary</span>
+                  {activeTab === 'summary' && (
+                    <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#ff5e1f]" />
+                  )}
+                </Link>
+                <Link
+                  href={`?paymentMonth=${selectedMonth}&tab=approval-payroll`}
+                  className={`relative flex items-center justify-center gap-2 px-5 sm:px-6 py-3.5 text-xs sm:text-sm transition-all duration-150 cursor-pointer whitespace-nowrap ${
                     activeTab === 'approval-payroll'
-                      ? 'bg-[#ff5e1f]/10 text-[#ff5e1f]'
-                      : 'bg-gray-200/60 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
-                  }`}>
-                    {upcomingTasksData.length}
-                  </span>
-                )}
-                {activeTab === 'approval-payroll' && (
-                  <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#ff5e1f]" />
-                )}
-              </Link>
+                      ? 'bg-white dark:bg-[#16181d] text-gray-900 dark:text-white font-bold'
+                      : 'bg-[#f8f9fa] dark:bg-[#0d0e12] text-gray-600 dark:text-gray-400 font-medium hover:bg-[#f0f1f3] dark:hover:bg-[#16181d]/50 hover:text-gray-900 dark:hover:text-gray-200'
+                  }`}
+                >
+                  <CheckSquare className={`w-4 h-4 shrink-0 transition-colors ${activeTab === 'approval-payroll' ? 'text-[#ff5e1f]' : 'text-gray-400 dark:text-gray-500'}`} />
+                  <span>Approval Payroll</span>
+                  {upcomingTasksData.length > 0 && (
+                    <span className={`rounded px-2 py-0.5 text-[10px] font-mono font-bold ${
+                      activeTab === 'approval-payroll'
+                        ? 'bg-[#ff5e1f]/10 text-[#ff5e1f]'
+                        : 'bg-gray-200/60 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+                    }`}>
+                      {upcomingTasksData.length}
+                    </span>
+                  )}
+                  {activeTab === 'approval-payroll' && (
+                    <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#ff5e1f]" />
+                  )}
+                </Link>
+              </div>
             </div>
 
             {activeTab === 'summary' ? (
               <>
-                {/* Block 1: Contract Rules Banner Header */}
-                <div className="p-6 bg-white dark:bg-[#0d0e12] flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-[#ff5e1f]/10 text-[#ff5e1f] flex items-center justify-center shrink-0">
+                {/* Block 1: Contract Rules Banner Header (Full-Height Symmetrical Table Style) */}
+                <div className="flex flex-col md:flex-row items-stretch justify-between bg-gray-50/50 dark:bg-[#0d0e12]">
+                  {/* Left Title Cell */}
+                  <div className="flex items-center gap-3 p-4 sm:p-5 flex-1 min-w-0">
+                    <div className="w-9 h-9 rounded-lg bg-[#ff5e1f]/10 text-[#ff5e1f] border border-[#ff5e1f]/20 flex items-center justify-center shrink-0">
                       <Gavel className="w-5 h-5" />
                     </div>
-                    <div>
-                      <h2 className="font-bold text-sm text-gray-900 dark:text-white capitalize">
+                    <div className="min-w-0">
+                      <h2 className="font-bold text-sm text-gray-900 dark:text-white capitalize truncate">
                         Ketentuan & Aturan Kontrak Freelance
                       </h2>
-                      <p className="text-xs text-gray-400 dark:text-gray-500 font-mono mt-0.5">
+                      <p className="text-xs text-gray-400 dark:text-gray-500 font-mono mt-0.5 truncate">
                         Kontrak dimulai sejak 26 Januari 2026
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-3 text-xs font-mono">
-                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 text-gray-600 dark:text-gray-300">
-                      <span className="w-2 h-2 rounded-full bg-[#ff5e1f]" />
-                      <span>Kalender: <strong className="font-bold text-gray-900 dark:text-white">25 Hari Kerja/Bulan</strong></span>
+                  {/* Right Full-Height Table Cells */}
+                  <div className="flex items-stretch divide-x divide-[#f0f0f0] dark:divide-[#272a34] border-t md:border-t-0 md:border-l border-[#f0f0f0] dark:border-[#272a34] shrink-0 font-mono text-xs">
+                    <div className="flex items-center gap-2.5 px-5 sm:px-6 py-4 bg-white dark:bg-[#0d0e12] text-gray-700 dark:text-gray-300">
+                      <span className="w-2 h-2 rounded-full bg-[#ff5e1f] shrink-0" />
+                      <span className="whitespace-nowrap">Kalender: <strong className="font-bold text-gray-900 dark:text-white">25 Hari Kerja/Bulan</strong></span>
                     </div>
-                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 text-gray-600 dark:text-gray-300">
-                      <span className="w-2 h-2 rounded-full bg-[#ff5e1f]" />
-                      <span>Rate/Pool: <strong className="font-bold text-gray-900 dark:text-white">IDR {contractRate!.toLocaleString('id-ID')}</strong></span>
+                    <div className="flex items-center gap-2.5 px-5 sm:px-6 py-4 bg-white dark:bg-[#0d0e12] text-gray-700 dark:text-gray-300">
+                      <span className="w-2 h-2 rounded-full bg-[#ff5e1f] shrink-0" />
+                      <span className="whitespace-nowrap">Rate/Pool: <strong className="font-bold text-gray-900 dark:text-white">IDR {contractRate!.toLocaleString('id-ID')}</strong></span>
                     </div>
                   </div>
                 </div>
@@ -463,7 +467,7 @@ export default async function BillingStatementPage(props: {
                 </div>
 
                 {/* Second KPI Grid Row */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 divide-y md:divide-y-0 divide-[#f0f0f0] dark:divide-[#272a34] bg-white dark:bg-[#0d0e12] border-t border-[#f0f0f0] dark:border-[#272a34]">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 divide-y md:divide-y-0 divide-[#f0f0f0] dark:divide-[#272a34] bg-white dark:bg-[#0d0e12]">
                   
                   {/* Card 5: Total Template */}
                   <div className="p-5 flex flex-col justify-between h-[130px] border-b md:border-b-0 md:border-r border-[#f0f0f0] dark:border-[#272a34] hover:bg-gray-50/50 dark:hover:bg-[#16181d]/50 transition-colors">
@@ -563,23 +567,36 @@ export default async function BillingStatementPage(props: {
                 </div>
 
                 {/* Block 3: Payout Breakdown Section */}
-                <div className="flex flex-col bg-white dark:bg-[#0d0e12] rounded-b-xl">
-                  {/* Toolbar Header */}
-                  <div className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12]">
-                    <div className="flex items-center gap-3">
-                      <h3 className="font-mono font-bold text-xs uppercase text-gray-900 dark:text-white tracking-wider">
-                        Payout Breakdown
-                      </h3>
-                      <MonthFilter availableMonths={availableMonths} selectedMonth={selectedMonth} />
+                <div className="flex flex-col bg-white dark:bg-[#0d0e12] rounded-none">
+                  {/* Toolbar Header (Full-Height Symmetrical Table Style) */}
+                  <div className="flex flex-col lg:flex-row items-stretch justify-between bg-white dark:bg-[#0d0e12] border-b border-[#f0f0f0] dark:border-[#272a34] min-h-[52px]">
+                    {/* Left 25% Cell (PAYOUT BREAKDOWN + MonthFilter Aligned Right to Card 1 / Card 5 Above) */}
+                    <div className="flex items-stretch justify-between w-full lg:w-1/4 shrink-0 font-mono text-xs font-bold uppercase tracking-wider text-gray-900 dark:text-white border-b lg:border-b-0 lg:border-r border-[#f0f0f0] dark:border-[#272a34]">
+                      {/* Left Title Text */}
+                      <div className="flex items-center px-4 py-3.5 whitespace-nowrap min-w-0">
+                        <span className="truncate">Payout Breakdown</span>
+                      </div>
+
+                      {/* Right MonthFilter Dropdown (Align Right at 25% Vertical Line) */}
+                      <div className="flex items-stretch border-l border-[#f0f0f0] dark:border-[#272a34] shrink-0">
+                        <MonthFilter availableMonths={availableMonths} selectedMonth={selectedMonth} />
+                      </div>
                     </div>
-                    <button className="inline-flex items-center gap-1.5 rounded-full bg-[#ff5e1f] hover:bg-[#ff7038] px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition-all duration-150 cursor-pointer">
-                      <Archive className="w-3.5 h-3.5" />
-                      <span>Download all Statement</span>
-                    </button>
+
+                    {/* Right Download Action Cell (Full-Height Flat Table Style) */}
+                    <div className="flex items-stretch border-t lg:border-t-0 shrink-0 font-mono text-xs">
+                      <a
+                        href={`/api/billing/download-all?month=${selectedMonth}`}
+                        className="flex items-center gap-2 px-5 py-3.5 bg-[#ff5e1f] hover:bg-[#ff7038] text-white font-mono text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer whitespace-nowrap rounded-none"
+                      >
+                        <Archive className="w-4 h-4 stroke-[2.5]" />
+                        <span>Download all Statement</span>
+                      </a>
+                    </div>
                   </div>
 
                   {/* Designer Payout Accordions */}
-                  <div className="divide-y divide-[#f0f0f0] dark:divide-[#272a34] bg-white dark:bg-[#0d0e12] rounded-b-xl">
+                  <div className="divide-y divide-[#f0f0f0] dark:divide-[#272a34] bg-white dark:bg-[#0d0e12] rounded-none">
                     {designers.filter(d => d.totalTasks > 0).map((designer) => (
                       <details key={designer.id} className={`group bg-white dark:bg-[#0d0e12] marker:content-[''] ${designer.status !== 'Active' ? 'opacity-60 grayscale-[50%]' : ''}`}>
                         <summary className="flex flex-col lg:flex-row items-start lg:items-center justify-between p-4 cursor-pointer hover:bg-gray-50/60 dark:hover:bg-[#16181d]/60 transition-colors list-none gap-4">

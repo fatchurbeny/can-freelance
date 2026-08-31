@@ -101,7 +101,7 @@ async function generateGraphifyData() {
     });
   });
 
-  // 4. Prisma Database Models
+  // 4. Prisma Database Models & Entities
   const prismaModels = [
     { id: 'model:Task', label: 'Task Model', filepath: 'prisma/schema.prisma', details: 'Notion Task card record (qtySubmit, pages, status)' },
     { id: 'model:Designer', label: 'Designer Model', filepath: 'prisma/schema.prisma', details: 'Designer profile & status (Active/Resign/Hold)' },
@@ -123,51 +123,178 @@ async function generateGraphifyData() {
     });
   });
 
-  // 5. Knowledge Base Docs
-  const docsDir = path.join(rootDir, 'docs/knowledge');
-  if (fs.existsSync(docsDir)) {
-    const docFiles = fs.readdirSync(docsDir).filter(f => f.endsWith('.md'));
-    docFiles.forEach(file => {
-      const docName = path.basename(file, '.md');
-      addNode({
-        id: `doc:${docName}`,
-        label: `${docName}.md`,
-        type: 'doc',
-        group: 'Knowledge Base',
-        filepath: `docs/knowledge/${file}`,
-        details: `Modular Knowledge Document (docs/knowledge/${file})`,
-      });
+  // 5. SaaS Business Rules Cluster
+  const businessRules = [
+    { id: 'rule:qty-pages', label: 'QTY Pages Calculation', filepath: 'docs/knowledge/business-rules.md', details: 'Formula: qty_submit * pages per task record' },
+    { id: 'rule:designer-resign', label: 'Resign Designer Status', filepath: 'docs/knowledge/business-rules.md', details: 'Designer status === Resign forces calculated payroll payment to 0' },
+    { id: 'rule:base-pages', label: 'Base Template Pages', filepath: 'docs/knowledge/business-rules.md', details: 'Formula: MAX(pages) on grouped doctype queries' },
+    { id: 'rule:dynamic-period', label: 'Dynamic Period Labels', filepath: 'docs/knowledge/business-rules.md', details: 'Period strings must reflect active month filter' },
+  ];
+  businessRules.forEach(r => {
+    addNode({
+      id: r.id,
+      label: r.label,
+      type: 'doc',
+      group: 'SaaS Business Rules',
+      filepath: r.filepath,
+      details: r.details,
     });
-  }
+  });
 
-  // 6. Explicit & Inferred Relationships (Links)
-  addLink({ source: 'page:/', target: 'component:KPISection', relation: 'renders', confidence: 'EXTRACTED' });
-  addLink({ source: 'page:/', target: 'component:WorkloadWidget', relation: 'renders', confidence: 'EXTRACTED' });
-  addLink({ source: 'page:/', target: 'component:TrenVolumeWidget', relation: 'renders', confidence: 'EXTRACTED' });
+  // 6. Notion Sync Engine Cluster
+  const syncEngine = [
+    { id: 'sync:full-mode', label: 'Full Sync Mode', filepath: 'src/lib/sync-notion.ts', details: 'Manual sync default: reconciles updated, new, and deleted pages' },
+    { id: 'sync:cron-mode', label: 'Background Cron Sync', filepath: 'src/app/api/sync/cron/route.ts', details: 'Automated background polling using referenceStartTime logic' },
+    { id: 'sync:rate-limiter', label: 'Notion API Limiter', filepath: 'src/lib/sync-notion.ts', details: 'Pacing & batching requests to prevent HTTP 429 rate limit' },
+  ];
+  syncEngine.forEach(s => {
+    addNode({
+      id: s.id,
+      label: s.label,
+      type: 'action',
+      group: 'Notion Sync Engine',
+      filepath: s.filepath,
+      details: s.details,
+    });
+  });
 
-  addLink({ source: 'page:/production', target: 'component:SortableTaskLists', relation: 'renders', confidence: 'EXTRACTED' });
-  addLink({ source: 'page:/production', target: 'component:ProductionToolbar', relation: 'renders', confidence: 'EXTRACTED' });
+  // 7. Gotchas & Layout Rules Cluster
+  const gotchas = [
+    { id: 'gotcha:directive-preservation', label: 'Directive Preservation', filepath: 'docs/knowledge/issues-and-fixes.md', details: 'Must preserve "use client" on RSC interactive files' },
+    { id: 'gotcha:decimal-serialization', label: 'Decimal Serialization', filepath: 'docs/knowledge/issues-and-fixes.md', details: 'JSON.parse(JSON.stringify) for Prisma Decimal fields' },
+    { id: 'gotcha:double-border-prevention', label: 'Double Border Prevention', filepath: 'docs/knowledge/issues-and-fixes.md', details: 'No redundant border-t/border-b on divide-y continuous card children' },
+    { id: 'gotcha:nav-tab-proportional', label: 'Nav Tab Proportional Sizing', filepath: 'docs/knowledge/issues-and-fixes.md', details: 'Top navigation tabs prioritize label readability without truncation' },
+    { id: 'gotcha:force-graph-isolation', label: 'Force Graph Hover Isolation', filepath: 'docs/knowledge/issues-and-fixes.md', details: 'Store hoveredNode in useRef to prevent physics simulation resets' },
+  ];
+  gotchas.forEach(g => {
+    addNode({
+      id: g.id,
+      label: g.label,
+      type: 'doc',
+      group: 'Gotchas & Layout Rules',
+      filepath: g.filepath,
+      details: g.details,
+    });
+  });
 
-  addLink({ source: 'page:/billing-statement', target: 'component:ApprovalPayrollTable', relation: 'renders', confidence: 'EXTRACTED' });
+  // 8. Session Handover Log Cluster
+  const handoverLog = [
+    { id: 'handover:decision-1', label: '50% Vertical Border Alignment', filepath: 'docs/knowledge/session-handover.md', details: 'Aligned Account & Team banner divider with 2-column tables' },
+    { id: 'handover:decision-2', label: 'Symmetrical Table Style Billing', filepath: 'docs/knowledge/session-handover.md', details: 'Flat table header toolbar with full container height cells' },
+    { id: 'handover:active-state', label: 'Active Session State', filepath: 'docs/knowledge/session-handover.md', details: 'Knowledge Graph fully synchronized across all 7 domains' },
+  ];
+  handoverLog.forEach(h => {
+    addNode({
+      id: h.id,
+      label: h.label,
+      type: 'doc',
+      group: 'Session Handover & Log',
+      filepath: h.filepath,
+      details: h.details,
+    });
+  });
+
+  // 9. AST Import Scanner (Extract Real Component & Page Import Links)
+  const scanImports = (dirPath: string) => {
+    if (!fs.existsSync(dirPath)) return;
+
+    const scanFile = (filePath: string) => {
+      const relPath = path.relative(rootDir, filePath).replace(/\\/g, '/');
+      const content = fs.readFileSync(filePath, 'utf-8');
+
+      let sourceId: string | null = null;
+      if (relPath.startsWith('src/app/')) {
+        let route = relPath.replace('src/app', '').replace('/page.tsx', '').replace('/page.ts', '');
+        if (route === '') route = '/';
+        sourceId = `page:${route}`;
+        const pageLabel = route === '/' ? 'Dashboard Page' : `${route.split('/').pop()} Page`;
+        addNode({
+          id: sourceId,
+          label: pageLabel,
+          type: 'page',
+          group: 'App Router Pages',
+          filepath: relPath,
+          details: `Next.js App Router Page (${route})`,
+        });
+      } else if (relPath.startsWith('src/components/')) {
+        const compName = path.basename(filePath, path.extname(filePath));
+        sourceId = `component:${compName}`;
+      }
+
+      if (!sourceId) return;
+
+      // Extract import statements from @/components/... or relative ./
+      const importMatches = content.matchAll(/import\s+.*?from\s+['"](?:@\/components\/|\.\/|\.\.\/components\/)([^'"]+)['"]/g);
+      for (const match of importMatches) {
+        const importedPath = match[1];
+        const compName = path.basename(importedPath, path.extname(importedPath));
+        if (compName && compName !== sourceId.replace('component:', '')) {
+          const targetId = `component:${compName}`;
+          addLink({
+            source: sourceId,
+            target: targetId,
+            relation: 'renders',
+            confidence: 'EXTRACTED',
+          });
+        }
+      }
+    };
+
+    const walk = (dir: string) => {
+      const items = fs.readdirSync(dir, { withFileTypes: true });
+      for (const item of items) {
+        const full = path.join(dir, item.name);
+        if (item.isDirectory()) {
+          walk(full);
+        } else if (item.isFile() && (item.name.endsWith('.tsx') || item.name.endsWith('.ts'))) {
+          scanFile(full);
+        }
+      }
+    };
+
+    walk(dirPath);
+  };
+
+  scanImports(path.join(rootDir, 'src/app'));
+  scanImports(path.join(rootDir, 'src/components'));
+
+  // 10. Explicit & Inferred Relationships Across All Communities
   addLink({ source: 'component:ApprovalPayrollTable', target: 'action:approval-payroll', relation: 'invokes', confidence: 'EXTRACTED' });
-
   addLink({ source: 'page:/knowledge-graph', target: 'component:KnowledgeGraphViewer', relation: 'renders', confidence: 'EXTRACTED' });
   addLink({ source: 'component:KnowledgeGraphViewer', target: 'component:GraphifyVisualizer', relation: 'renders', confidence: 'EXTRACTED' });
-
   addLink({ source: 'component:SyncButton', target: 'action:sync-notion', relation: 'invokes', confidence: 'EXTRACTED' });
+  
+  // Model Links
   addLink({ source: 'action:sync-notion', target: 'model:Task', relation: 'queries', confidence: 'EXTRACTED' });
   addLink({ source: 'action:sync-notion', target: 'model:Designer', relation: 'queries', confidence: 'EXTRACTED' });
   addLink({ source: 'action:sync-notion', target: 'model:SyncLog', relation: 'queries', confidence: 'EXTRACTED' });
-
   addLink({ source: 'action:approval-payroll', target: 'model:Designer', relation: 'queries', confidence: 'EXTRACTED' });
   addLink({ source: 'action:approval-payroll', target: 'model:BillingStatement', relation: 'queries', confidence: 'EXTRACTED' });
 
-  addLink({ source: 'action:approval-payroll', target: 'doc:business-rules', relation: 'enforces', confidence: 'INFERRED' });
-  addLink({ source: 'action:sync-notion', target: 'doc:data-flows', relation: 'enforces', confidence: 'INFERRED' });
-  addLink({ source: 'component:SortableTaskLists', target: 'doc:issues-and-fixes', relation: 'enforces', confidence: 'INFERRED' });
+  // Business Rules Links
+  addLink({ source: 'rule:qty-pages', target: 'model:Task', relation: 'enforces', confidence: 'INFERRED' });
+  addLink({ source: 'rule:designer-resign', target: 'action:approval-payroll', relation: 'enforces', confidence: 'INFERRED' });
+  addLink({ source: 'rule:base-pages', target: 'model:Doctype', relation: 'enforces', confidence: 'INFERRED' });
+  addLink({ source: 'rule:dynamic-period', target: 'component:MonthFilter', relation: 'enforces', confidence: 'INFERRED' });
+
+  // Sync Engine Links
+  addLink({ source: 'sync:full-mode', target: 'action:sync-notion', relation: 'invokes', confidence: 'EXTRACTED' });
+  addLink({ source: 'sync:cron-mode', target: 'action:sync-notion', relation: 'invokes', confidence: 'EXTRACTED' });
+  addLink({ source: 'sync:rate-limiter', target: 'action:sync-notion', relation: 'enforces', confidence: 'EXTRACTED' });
+
+  // Gotchas Links
+  addLink({ source: 'gotcha:double-border-prevention', target: 'page:/billing-statement', relation: 'enforces', confidence: 'INFERRED' });
+  addLink({ source: 'gotcha:nav-tab-proportional', target: 'component:CloudflareTopBar', relation: 'enforces', confidence: 'INFERRED' });
+  addLink({ source: 'gotcha:force-graph-isolation', target: 'component:GraphifyVisualizer', relation: 'enforces', confidence: 'INFERRED' });
+  addLink({ source: 'gotcha:decimal-serialization', target: 'action:queries', relation: 'enforces', confidence: 'INFERRED' });
+
+  // Session Handover Links
+  addLink({ source: 'handover:decision-1', target: 'page:/account-team', relation: 'enforces', confidence: 'INFERRED' });
+  addLink({ source: 'handover:decision-2', target: 'page:/billing-statement', relation: 'enforces', confidence: 'INFERRED' });
+  addLink({ source: 'handover:active-state', target: 'component:KnowledgeGraphViewer', relation: 'enforces', confidence: 'INFERRED' });
 
   const graphData: GraphData = {
-    version: '1.0.0',
+    version: '2.0.0',
     generatedAt: new Date().toISOString(),
     nodes,
     links,
@@ -180,3 +307,4 @@ async function generateGraphifyData() {
 }
 
 generateGraphifyData().catch(console.error);
+

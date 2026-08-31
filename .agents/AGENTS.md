@@ -321,6 +321,10 @@ When building or refactoring multi-section pages (like `/rate-card`, `/billing-s
    - Top navigation bar: `CloudflareTopBar` (`sticky top-0 z-50 h-14` / `56px`).
    - Inner sticky headers / tab bars: `sticky top-[56px] z-30 bg-white dark:bg-[#0d0e12]`.
    - Ancestor `<main>` and container elements MUST NOT use `overflow-hidden` or `overflow-x-hidden`, which breaks CSS `position: sticky` relative to the window viewport.
+4. **Double Border Prevention**:
+   - Direct child elements inside a `divide-y` continuous container MUST NOT specify redundant `border-t` or `border-b` classes to avoid double horizontal divider lines.
+5. **Navigation Tab Proportional Sizing**:
+   - Top navigation tabs must prioritize label readability with generous padding (`px-5 sm:px-6 py-3.5`) and clear spacing without forcing narrow grid column truncation (`grid-cols-2 lg:w-1/4`), while data cards and table action buttons enforce 25%/50% symmetrical grid column alignment (`lg:w-1/4`, `lg:grid-cols-2`, `lg:grid-cols-4`).
 <!-- END:cloudflare-continuous-card-layout -->
 
 <!-- BEGIN:knowledge-graph-learning-documentation-rule -->
@@ -347,4 +351,14 @@ When rendering badges, tags, or count pills across dashboard widgets (`WorkloadW
 2. **Color Inversion**: Use 10% opacity background (`bg-color/10`), 20% opacity border (`border-color/20`), and solid text (`text-color dark:text-color-light`).
 3. **Property Pills (`QACard`)**: Use `rounded-[4px] border px-1.5 py-0.5 font-mono text-[10px] font-semibold` with dynamic tint (`tint18` background, `tint40` border).
 <!-- END:cloudflare-translucent-pills -->
+
+<!-- BEGIN:knowledge-graph-full-domain-mapping-rule -->
+# Knowledge Graph Full-Domain Mapping Protocol
+
+When maintaining or updating the project Knowledge Graph:
+1. **Full-Domain Nodes**: Parsers MUST generate nodes not only for code files (pages, components, models) but also for domain knowledge items (business rules, sync flows, layout gotchas, handover decisions).
+2. **8 Community Clusters**: Group nodes into 8 distinct color-coded communities (`App Router Pages`, `React Components`, `Server Actions & Lib`, `Prisma DB Models`, `SaaS Business Rules`, `Notion Sync Engine`, `Gotchas & Layout Rules`, `Session Handover & Log`).
+3. **Inter-Cluster Edge Relations**: Link domain knowledge nodes to concrete UI components and server actions using `enforces`, `queries`, `invokes`, and `renders` relations.
+4. **Interactive Filtering**: Visualizers MUST support interactive cluster filtering when a community row is clicked.
+<!-- END:knowledge-graph-full-domain-mapping-rule -->
 

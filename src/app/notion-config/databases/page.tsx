@@ -24,7 +24,8 @@ import {
   AlertCircle,
   Key,
   Edit2,
-  Trash2
+  Trash2,
+  X
 } from 'lucide-react';
 import Link from 'next/link';
 import { NotionLogo } from '@/logo/NotionLogo';
@@ -144,7 +145,7 @@ export default function DatabasesPage() {
       <div className="flex min-h-[calc(100vh-56px)] flex-col md:flex-row">
         <Sidebar currentSyncLog={latestSyncLog} />
 
-        <main className="flex-1 md:ml-56 p-6 md:p-8 space-y-6 overflow-x-hidden relative">
+        <main className="flex min-h-0 min-w-0 flex-1 md:ml-56 flex-col p-6 md:p-8 space-y-6 overflow-x-hidden relative bg-grid-pattern">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
             <RefreshCw className="w-8 h-8 text-[#ff5e1f] animate-spin" />
@@ -167,7 +168,7 @@ export default function DatabasesPage() {
               </span>
             </nav>
 
-            <div className="w-full rounded-xl border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] divide-y divide-[#f0f0f0] dark:divide-[#272a34] shadow-none">
+            <div className="w-full rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] divide-y divide-[#f0f0f0] dark:divide-[#272a34] shadow-none">
               {/* Header Section */}
               <div className="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
@@ -266,47 +267,64 @@ export default function DatabasesPage() {
       </main>
 
       {showDbModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 sm:p-6">
-          <div className="bg-white dark:bg-[#0d0e12] border border-[#f0f0f0] dark:border-[#272a34] w-full max-w-2xl rounded-xl shadow-2xl flex flex-col max-h-[95vh] relative text-xs font-mono">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 sm:p-6">
+          <div
+            className="fixed inset-0"
+            onClick={() => {
+              setShowDbModal(false);
+              setDbTestResult(null);
+              setInputDbName('');
+              setInputDbId('');
+            }}
+          />
+          <div className="relative w-full max-w-2xl rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] divide-y divide-[#f0f0f0] dark:divide-[#272a34] shadow-2xl overflow-hidden font-sans text-xs">
             
-            {/* Header */}
-            <div className="flex items-center justify-between p-5 border-b border-[#f0f0f0] dark:border-[#272a34] shrink-0">
-              <h2 className="text-base font-bold text-gray-900 dark:text-white">Add Database</h2>
+            {/* Header Cell */}
+            <div className="p-4 sm:p-5 bg-gray-50/50 dark:bg-[#16181d]/50 flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-xs font-bold font-mono uppercase tracking-wider text-gray-900 dark:text-white">
+                  Add Notion Database
+                </h2>
+                <p className="mt-1 text-xs font-mono text-gray-500 dark:text-gray-400">
+                  Connect a new Notion database and verify schema mapping.
+                </p>
+              </div>
               <button 
+                type="button"
                 onClick={() => {
                   setShowDbModal(false);
                   setDbTestResult(null);
                   setInputDbName('');
                   setInputDbId('');
                 }} 
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors cursor-pointer"
+                className="flex size-7 shrink-0 items-center justify-center rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer"
               >
-                <XCircle className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Scrollable Content */}
-            <div className="p-5 overflow-y-auto space-y-6">
+            {/* Scrollable Form Body Cell */}
+            <div className="p-4 sm:p-5 overflow-y-auto max-h-[70vh] space-y-5 bg-white dark:bg-[#0d0e12]">
               
-              <form onSubmit={handleTestDatabase} className="space-y-4">
-                <div className="space-y-1.5">
-                  <label className="font-bold text-gray-700 dark:text-gray-300">Name</label>
+              <form id="add-db-form" onSubmit={handleTestDatabase} className="space-y-4">
+                <label className="flex flex-col gap-2.5 text-xs font-mono font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">
+                  <span>Database Name</span>
                   <div className="relative">
                     <input
                       type="text"
                       value={inputDbName}
                       onChange={(e) => setInputDbName(e.target.value)}
                       placeholder="Database Name"
-                      className="w-full bg-gray-50 dark:bg-[#16181d] border border-[#f0f0f0] dark:border-[#272a34] rounded-lg px-3.5 py-2 text-xs text-gray-900 dark:text-white font-mono focus:outline-none focus:border-[#ff5e1f] transition-colors"
+                      className="w-full bg-gray-50 dark:bg-[#16181d] border border-[#f0f0f0] dark:border-[#272a34] rounded-lg px-3.5 py-2.5 text-xs text-gray-900 dark:text-white font-mono font-bold outline-none focus:border-[#ff5e1f] transition-colors"
                     />
                     <div className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 pointer-events-none">
                       <Eye className="w-3.5 h-3.5" />
                     </div>
                   </div>
-                </div>
+                </label>
 
-                <div className="space-y-1.5">
-                  <label className="font-bold text-gray-700 dark:text-gray-300">Database ID</label>
+                <label className="flex flex-col gap-2.5 text-xs font-mono font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">
+                  <span>Database ID</span>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                       <Key className="w-3.5 h-3.5" />
@@ -319,7 +337,7 @@ export default function DatabasesPage() {
                         setDbTestResult(null);
                       }}
                       placeholder="Enter 32-character Notion Database ID"
-                      className="w-full bg-gray-50 dark:bg-[#16181d] border border-[#f0f0f0] dark:border-[#272a34] rounded-lg pl-9 pr-9 py-2 text-xs text-gray-900 dark:text-white font-mono focus:outline-none focus:border-[#ff5e1f] transition-colors"
+                      className="w-full bg-gray-50 dark:bg-[#16181d] border border-[#f0f0f0] dark:border-[#272a34] rounded-lg pl-9 pr-9 py-2.5 text-xs text-gray-900 dark:text-white font-mono font-bold outline-none focus:border-[#ff5e1f] transition-colors"
                       required
                     />
                     <button
@@ -330,35 +348,7 @@ export default function DatabasesPage() {
                       {showDbId ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                     </button>
                   </div>
-                </div>
-
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-4 border-t border-[#f0f0f0] dark:border-[#272a34]">
-                  <div className="flex flex-wrap gap-4 text-[10px] text-emerald-500 font-mono">
-                    {dbTestResult?.capabilities?.map((cap: string) => (
-                      <span key={cap}>#{cap}</span>
-                    ))}
-                  </div>
-                  
-                  <div className="flex items-center gap-3 w-full md:w-auto">
-                    <button
-                      type="submit"
-                      disabled={isTestingDb || !inputDbId}
-                      className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap cursor-pointer"
-                    >
-                      {isTestingDb ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Activity className="w-4 h-4" />}
-                      Test Connection
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleSaveDatabase}
-                      disabled={isSavingDb || !dbTestResult?.success || !inputDbName}
-                      className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-mono font-bold text-white bg-[#ff5e1f] hover:bg-[#ff7038] rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap cursor-pointer"
-                    >
-                      {isSavingDb ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                      Save
-                    </button>
-                  </div>
-                </div>
+                </label>
               </form>
 
               {dbTestResult && (
@@ -431,6 +421,29 @@ export default function DatabasesPage() {
               )}
 
             </div>
+
+            {/* Action Footer (2-Column Full-Width Table Row) */}
+            <div className="grid grid-cols-2 divide-x divide-[#f0f0f0] dark:divide-[#272a34]">
+              <button
+                type="submit"
+                form="add-db-form"
+                disabled={isTestingDb || !inputDbId}
+                className="w-full py-3.5 px-4 bg-gray-50/50 dark:bg-[#16181d]/50 hover:bg-gray-100 dark:hover:bg-[#16181d] font-mono text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 transition-colors disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+              >
+                {isTestingDb ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Activity className="w-3.5 h-3.5" />}
+                <span>Test Connection</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveDatabase}
+                disabled={isSavingDb || !dbTestResult?.success || !inputDbName}
+                className="w-full py-3.5 px-4 bg-[#ff5e1f] hover:bg-[#ff7038] font-mono text-xs font-bold uppercase tracking-wider text-white transition-colors disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+              >
+                {isSavingDb ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                <span>Save Database</span>
+              </button>
+            </div>
+
           </div>
         </div>
       )}

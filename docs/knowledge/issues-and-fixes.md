@@ -46,3 +46,43 @@ Dokumen ini mencatat histori bug, edge cases, serta aturan layout CSS/React untu
 ### 7. Cloudflare Translucent Pill Badges & Property Pills
 * **Aturan**: Badge statistik (`AVG. X PAGES`, `X TEMPLATE`, `🏆 Top Performer`) dan property pills (`QACard`) wajib menggunakan `font-mono text-[10px] font-bold uppercase rounded-full px-2.5 py-0.5` dengan transparansi 10% background (`bg-color/10`), 20% border (`border-color/20`), dan teks solid.
 
+### 8. Outer Container vs. Control Rounding Invariant
+* **Aturan Layout**: Kontainer utama luar (*continuous card*) menggunakan `rounded-none` tanpa gap. Namun, elemen kontrol interaktif di dalamnya (sakelar toggle, badge status, pill count, tombol aksi, dan tempat logo) WAJIB MEMPERTAHANKAN bentuk melengkungnya (`rounded-full`, `rounded-lg`, `rounded`) agar tidak tampil *boxy* (kotak kaku).
+
+### 9. Notion Auto Sync Countdown Reference Start Time
+* **Masalah**: Mengaktifkan atau menyimpan jadwal Auto Sync sebelumnya langsung memicu *instant sync* jika sync terakhir sudah lama terjadi.
+* **Aturan**: Gunakan `referenceStartTime = Math.max(lastFinishedSyncTimestamp, configUpdatedAtTimestamp)`. Hal ini menjamin bahwa pengubahan jadwal Auto Sync akan menginisialisasi timer hitung mundur (*countdown*) sebesar durasi interval penuh, bukan eksekusi langsung.
+
+### 11. Force Graph Simulation Hover Isolation & State Ref Binding
+* **Masalah**: Pada komponen canvas 2D Force Graph (`GraphifyVisualizer.tsx`), memasukkan state `hoveredNode`, `selectedNode`, atau `isDark` ke dalam dependency array `useEffect` simulasi fisik menyebabkan efek dibersihkan (*cleanup*) dan dieksekusi ulang dari awal setiap kali kursor tetikus menyentuh node (`setHoveredNode`). Hal ini mereset koordinat `x, y` secara acak (`Math.random()`) dan mereset energi simulasi (`alpha = 1`), sehingga grafik bergetar/melompat hebat saat di-hover.
+* **Aturan Solusi**:
+  1. Tempatkan `hoveredNode`, `selectedNode`, dan `isDark` ke dalam `useRef` (seperti `hoveredNodeRef.current = hoveredNode`).
+  2. Dependency array `useEffect` yang menginisialisasi simulasi gaya fisik WAJIB strictly dibatasi pada data grafik (`[data]`) saja.
+  3. Loop animasi `requestAnimationFrame(simulate)` di dalam `renderCanvas` membaca nilai dari `hoveredNodeRef.current` secara real-time untuk merender sorotan (*glow ring*) tanpa pernah mereset posisi node atau fisika simulasi.
+
+### 12. Cloudflare Modal Popup Structure & Layout Standard
+* **Aturan Structure & Layout Modal**: Seluruh modal pop-up (`AddDoctypeButton.tsx`, `ContractRateEditor.tsx`, `SyncButton.tsx`) WAJIB mengikuti standar tata letak Cloudflare Continuous Card:
+  1. **Kontainer Luar**: `rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] divide-y divide-[#f0f0f0] dark:divide-[#272a34] shadow-2xl overflow-hidden font-sans`. Dilarang menggunakan `rounded-2xl` atau kontainer melayang ber-border terpisah.
+  2. **Header Cell**: `p-4 sm:p-5 bg-gray-50/50 dark:bg-[#16181d]/50 flex items-start justify-between gap-4`. Judul font-mono uppercase `text-xs font-bold`, tombol penutup `X` flat.
+  3. **Body Form Cell**: `p-4 sm:p-5 space-y-4 bg-white dark:bg-[#0d0e12]` dengan wrapper label `flex flex-col gap-2.5 font-mono text-xs font-bold uppercase` dan input `rounded-lg border-[#272a34] bg-gray-50 dark:bg-[#16181d] px-3.5 py-2.5`.
+  4. **Action Footer Row**: `grid grid-cols-2 divide-x divide-[#f0f0f0] dark:divide-[#272a34]`. Tombol `CANCEL` (kiri 50% `bg-gray-50/50 dark:bg-[#16181d]/50`) dan `SAVE` (kanan 50% `bg-[#ff5e1f] hover:bg-[#ff7038] text-white`).
+
+### 13. Prevensi Double Border Lines pada Kontainer `divide-y`
+* **Masalah**: Terjadi tumpukan 2 garis horizontal tebal di antara blok KPI Grid dan Banner Kontrak.
+* **Penyebab**: Kontainer induk (*Continuous Card*) sudah menerapkan `divide-y divide-[#f0f0f0] dark:divide-[#272a34]`, namun blok child di dalamnya secara eksplisit masih menambahkan `border-t` atau `border-b`.
+* **Aturan Solusi**: Seluruh blok child langsung di dalam kontainer `divide-y` DILARANG mendeklarasikan `border-t` atau `border-b` horizontal tambahan. Serahkan garis pembatas horizontal secara bersih kepada `divide-y`.
+
+### 14. Proportional Navigation Tabs vs Grid Column Precision
+* **Masalah**: Memaksa tab navigasi (`Summary` & `Approval Payroll`) ke dalam kolom grid sempit 25% (`lg:w-1/4 grid-cols-2`) menyebabkan teks tab terpotong (`Approval Pay...`) atau mepet ke border line.
+* **Aturan Solusi**: 
+  - **Data Cards / KPI Grid / Table Action Buttons**: Wajib mengikuti grid simetris presisi 25% (`lg:w-1/4` / `lg:grid-cols-4`) atau 50% (`lg:w-1/2` / `lg:grid-cols-2`).
+  - **Tab Navigasi Utama**: Mengutamakan keterbacaan penuh teks label & *breathing room* proporsional (`px-5 sm:px-6 py-3.5 whitespace-nowrap gap-2`) tanpa memotong teks label context.
+
+### 15. Knowledge Graph Full-Domain Mapping Protocol
+* **Masalah**: Membatasi node Knowledge Graph hanya pada file kode (pages/components/models) membuat item pengetahuan domain (rumus bisnis, gotchas layout, alur sync, handover log) terpisah sebagai teks saja.
+* **Aturan Solusi**:
+  1. Skrip parser (`scripts/graphify-parser.ts`) WAJIB memparsing dokumen `docs/knowledge/*.md` menjadi **Nodes** & **Edges inter-cluster** (`enforces`, `queries`, `invokes`, `renders`).
+  2. Kelompokkan ke dalam **8 Kluster Komunitas Berwarna** dengan dukungan penyaringan interaktif pada canvas 2D force graph (`GraphifyVisualizer.tsx`).
+
+
+
