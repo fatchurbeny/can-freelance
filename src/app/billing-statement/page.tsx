@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { getLatestSyncStatus } from '@/app/actions/sync';
 import { getContractRateAction } from '@/app/actions/notion-config';
 import Sidebar from '@/components/Sidebar';
+import CloudflareTopBar from '@/components/CloudflareTopBar';
 import { 
   Gavel, 
   Archive, 
@@ -287,413 +288,432 @@ export default async function BillingStatementPage(props: {
   const approvalMonthOptions = Array.from(new Set([...availableMonths, currentMonthStr, nextMonthStr]));
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen bg-[#F5F0EB] dark:bg-[#0a0b0e] text-gray-900 dark:text-gray-100 transition-colors">
-      <Sidebar currentSyncLog={latestSyncLog} />
+    <div className="min-h-screen bg-white dark:bg-[#0d0e12] text-[#262626] dark:text-[#f4f4f5] transition-colors">
+      <CloudflareTopBar badgeLabel="BILLING" />
+      <div className="flex min-h-[calc(100vh-56px)] flex-col md:flex-row">
+        <Sidebar currentSyncLog={latestSyncLog} />
 
-      <main className="flex-1 p-6 md:p-8 space-y-8 overflow-x-hidden">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-[#E8E0D8] dark:border-gray-800">
-          <div>
-            <h1 className="text-2xl font-bold font-display text-gray-900 dark:text-white">
-              Billing Statements
-            </h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              Akumulasi rekapitulasi total gaji desainer per bulan berdasarkan QTY desain ter-approve.
-            </p>
-          </div>
-        </div>
+        <main className="flex min-h-0 min-w-0 flex-1 md:ml-56 flex-col p-6 md:p-8 bg-grid-pattern">
 
-        {/* Tab Navigation */}
-        <div className="flex flex-wrap gap-2.5 items-center pb-4">
-          <Link
-            href={`?paymentMonth=${selectedMonth}&tab=summary`}
-            className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all border ${
-              activeTab === 'summary'
-                ? 'bg-indigo-600 dark:bg-indigo-500 text-white border-indigo-600 dark:border-indigo-500 shadow-sm shadow-indigo-600/10'
-                : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 border-[#E8E0D8] dark:border-gray-800 hover:border-[#615FFF] dark:hover:border-[#615FFF] hover:text-[#615FFF] dark:hover:text-[#615FFF] hover:ring-1 hover:ring-[#615FFF] shadow-sm'
-            }`}
-          >
-            Summary
-          </Link>
-          <Link
-            href={`?paymentMonth=${selectedMonth}&tab=approval-payroll`}
-            className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all border ${
-              activeTab === 'approval-payroll'
-                ? 'bg-indigo-600 dark:bg-indigo-500 text-white border-indigo-600 dark:border-indigo-500 shadow-sm shadow-indigo-600/10'
-                : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 border-[#E8E0D8] dark:border-gray-800 hover:border-[#615FFF] dark:hover:border-[#615FFF] hover:text-[#615FFF] dark:hover:text-[#615FFF] hover:ring-1 hover:ring-[#615FFF] shadow-sm'
-            }`}
-          >
-            Approval Payroll
-            {upcomingTasksData.length > 0 && (
-              <span className={`ml-2 inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5 rounded-full text-[11px] font-bold ${
-                activeTab === 'approval-payroll'
-                  ? 'bg-white/30 dark:bg-white/20 text-white'
-                  : 'bg-indigo-600/15 dark:bg-indigo-500/25 text-indigo-600 dark:text-indigo-400'
-              }`}>
-                {upcomingTasksData.length}
-              </span>
-            )}
-          </Link>
-        </div>
-
-        {activeTab === 'summary' ? (
-          <>
-            {/* Contract Banner */}
-        <div className="glass dark:bg-[#111827] border border-[#E8E0D8] dark:border-gray-800 p-4 rounded-xl shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4 w-full">
-          <div className="flex items-center gap-4">
-            <div className="bg-indigo-600 text-white p-2.5 rounded-lg shrink-0">
-              <Gavel className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="font-semibold text-gray-900 dark:text-white">
-                Ketentuan & aturan kontrak freelance
-              </h2>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                kontrak dimulai sejak 26 januari 2026
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-6 md:border-l border-[#E8E0D8] dark:border-gray-800 md:pl-6">
-            <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-              <span className="w-3 h-3 rounded-full border-[3px] border-indigo-500" />
-              <span>Kalender : <strong className="font-semibold text-gray-900 dark:text-white">25 hari kerja/bulan</strong></span>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-              <span className="w-3 h-3 rounded-full border-[3px] border-indigo-500" />
-              <span>rate/poll : <strong className="font-bold text-gray-900 dark:text-white">IDR {contractRate!.toLocaleString('id-ID')}</strong></span>
-            </div>
-          </div>
-        </div>
-
-        {/* Stats Grid */}
-        <div className="flex flex-col xl:flex-row gap-6">
-          {/* Main Stat Card (Total Payout & Upcoming) */}
-          <div className="flex flex-col gap-6 w-full xl:w-[380px] shrink-0">
-            <div className="glass dark:bg-[#111827] border border-[#E8E0D8] dark:border-gray-800 rounded-xl p-5 flex flex-col justify-between h-[140px] shadow-sm">
-              <div className="flex justify-between items-center w-full">
-                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                  Total Unpaid This Month
-                </span>
-                <div className="bg-orange-100 dark:bg-orange-500/20 p-1.5 rounded-md">
-                  <FileText className="w-4 h-4 text-orange-500" />
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between items-center">
-                  <span className="text-3xl font-bold text-gray-900 dark:text-white">{formatCurrency(totalMonthlyPayout)}</span>
-                  <StatIndicator current={totalMonthlyPayout} prev={prevTotalMonthlyPayout} />
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Bulan Lalu : {formatCurrency(prevTotalMonthlyPayout)}</p>
-              </div>
-            </div>
-
-            <div className="glass dark:bg-[#111827] border border-[#E8E0D8] dark:border-gray-800 rounded-xl p-5 flex flex-col justify-between h-[140px] shadow-sm">
-              <div className="flex justify-between items-center w-full mb-4">
-                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                  Approved, No Payroll Month
-                </span>
-                <div className="bg-orange-100 dark:bg-orange-500/20 p-1.5 rounded-md">
-                  <FileText className="w-4 h-4 text-orange-500" />
-                </div>
-              </div>
-              <div>
-                <span className="text-3xl font-bold text-gray-900 dark:text-white">{formatCurrency(upcomingPayout)}</span>
-                <div className="flex items-center gap-1.5 mt-1 text-[11px] text-gray-500 dark:text-gray-400 font-medium whitespace-nowrap overflow-x-auto hide-scrollbar">
-                  <span>{upcomingTasksData.length} Task</span>
-                  <span className="text-gray-300 dark:text-gray-700">|</span>
-                  <span>{upcomingTemplates} Template</span>
-                  <span className="text-gray-300 dark:text-gray-700">|</span>
-                  <span>{upcomingPages} Pages</span>
-                  <span className="text-gray-300 dark:text-gray-700">|</span>
-                  <span>{upcomingDoctypes.size} Doctype</span>
-                  <span className="text-gray-300 dark:text-gray-700">|</span>
-                  <span>{upcomingDesigners.size} Designer</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Grid of smaller stats */}
-          <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Single Continuous Outer Container */}
+          <div className="w-full rounded-xl border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] divide-y divide-[#f0f0f0] dark:divide-[#272a34] shadow-none">
             
-            {/* Design Leader */}
-            <div className="glass dark:bg-[#111827] border border-[#E8E0D8] dark:border-gray-800 rounded-xl p-5 flex flex-col justify-between h-[140px] shadow-sm">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Design Leader</span>
-                <div className="bg-yellow-100 dark:bg-yellow-500/20 p-1.5 rounded-md">
-                  <Trophy className="w-4 h-4 text-yellow-500" />
-                </div>
-              </div>
-              <div>
-                <span className="text-3xl font-bold text-yellow-500">{designLeader}</span>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Bulan lalu : {prevDesignLeader}</p>
-              </div>
+            {/* Block 0: Sticky Navigation Tabs */}
+            <div className="sticky top-[56px] z-30 flex items-stretch overflow-x-auto rounded-t-xl border-b border-[#f0f0f0] dark:border-[#272a34] bg-[#f8f9fa] dark:bg-[#0d0e12] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+              <Link
+                href={`?paymentMonth=${selectedMonth}&tab=summary`}
+                className={`relative flex items-center gap-2 px-5 py-3 text-sm transition-all duration-150 cursor-pointer whitespace-nowrap border-r border-[#f0f0f0] dark:border-[#272a34] ${
+                  activeTab === 'summary'
+                    ? 'bg-white dark:bg-[#16181d] text-gray-900 dark:text-white font-bold'
+                    : 'bg-[#f8f9fa] dark:bg-[#0d0e12] text-gray-600 dark:text-gray-400 font-medium hover:bg-[#f0f1f3] dark:hover:bg-[#16181d]/50 hover:text-gray-900 dark:hover:text-gray-200'
+                }`}
+              >
+                <span>Summary</span>
+                {activeTab === 'summary' && (
+                  <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#ff5e1f]" />
+                )}
+              </Link>
+              <Link
+                href={`?paymentMonth=${selectedMonth}&tab=approval-payroll`}
+                className={`relative flex items-center gap-2 px-5 py-3 text-sm transition-all duration-150 cursor-pointer whitespace-nowrap border-r border-[#f0f0f0] dark:border-[#272a34] ${
+                  activeTab === 'approval-payroll'
+                    ? 'bg-white dark:bg-[#16181d] text-gray-900 dark:text-white font-bold'
+                    : 'bg-[#f8f9fa] dark:bg-[#0d0e12] text-gray-600 dark:text-gray-400 font-medium hover:bg-[#f0f1f3] dark:hover:bg-[#16181d]/50 hover:text-gray-900 dark:hover:text-gray-200'
+                }`}
+              >
+                <span>Approval Payroll</span>
+                {upcomingTasksData.length > 0 && (
+                  <span className={`rounded px-1.5 py-0.5 text-[10px] font-mono font-bold ${
+                    activeTab === 'approval-payroll'
+                      ? 'bg-[#ff5e1f]/10 text-[#ff5e1f]'
+                      : 'bg-gray-200/60 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+                  }`}>
+                    {upcomingTasksData.length}
+                  </span>
+                )}
+                {activeTab === 'approval-payroll' && (
+                  <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#ff5e1f]" />
+                )}
+              </Link>
             </div>
 
-            {/* Total Tasks */}
-            <div className="glass dark:bg-[#111827] border border-[#E8E0D8] dark:border-gray-800 rounded-xl p-5 flex flex-col justify-between h-[140px] shadow-sm">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Tasks</span>
-                <div className="bg-indigo-100 dark:bg-indigo-500/20 p-1.5 rounded-md">
-                  <Layers className="w-4 h-4 text-indigo-500" />
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between items-center">
-                  <span className="text-3xl font-bold text-gray-900 dark:text-white">{totalTasks}</span>
-                  <StatIndicator current={totalTasks} prev={prevTotalTasks} />
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Bulan lalu : {prevTotalTasks}</p>
-              </div>
-            </div>
-
-            {/* Total Template */}
-            <div className="glass dark:bg-[#111827] border border-[#E8E0D8] dark:border-gray-800 rounded-xl p-5 flex flex-col justify-between h-[140px] shadow-sm">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Template</span>
-                <div className="bg-orange-100 dark:bg-orange-500/20 p-1.5 rounded-md">
-                  <Package className="w-4 h-4 text-orange-500" />
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between items-center">
-                  <span className="text-3xl font-bold text-gray-900 dark:text-white">{totalTemplates}</span>
-                  <StatIndicator current={totalTemplates} prev={prevTotalTemplates} />
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Bulan lalu : {prevTotalTemplates}</p>
-              </div>
-            </div>
-
-            {/* Total Pages */}
-            <div className="glass dark:bg-[#111827] border border-[#E8E0D8] dark:border-gray-800 rounded-xl p-5 flex flex-col justify-between h-[140px] shadow-sm">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Pages</span>
-                <div className="bg-blue-100 dark:bg-blue-500/20 p-1.5 rounded-md">
-                  <Files className="w-4 h-4 text-blue-500" />
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between items-center">
-                  <span className="text-3xl font-bold text-gray-900 dark:text-white">{totalPages}</span>
-                  <StatIndicator current={totalPages} prev={prevTotalPages} />
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Bulan lalu : {prevTotalPages}</p>
-              </div>
-            </div>
-
-            {/* Total Doctype */}
-            <div className="glass dark:bg-[#111827] border border-[#E8E0D8] dark:border-gray-800 rounded-xl p-5 flex flex-col justify-between h-[140px] shadow-sm">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Doctype</span>
-                <div className="bg-pink-100 dark:bg-pink-500/20 p-1.5 rounded-md">
-                  <FileText className="w-4 h-4 text-pink-500" />
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between items-center">
-                  <span className="text-3xl font-bold text-gray-900 dark:text-white">{uniqueDoctypes.size}</span>
-                  <StatIndicator current={uniqueDoctypes.size} prev={prevUniqueDoctypes.size} />
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Bulan lalu : {prevUniqueDoctypes.size}</p>
-              </div>
-            </div>
-
-
-            {/* Designer Status */}
-            <div className="glass dark:bg-[#111827] border border-[#E8E0D8] dark:border-gray-800 rounded-xl p-5 flex flex-col justify-between h-[140px] shadow-sm overflow-hidden">
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                  Designer Status
-                </span>
-                <div className="bg-indigo-100 dark:bg-indigo-500/20 p-1.5 rounded-md">
-                  <Users className="w-4 h-4 text-indigo-500" />
-                </div>
-              </div>
-
-              <div className="flex items-end justify-between gap-3 flex-1 min-h-0">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-semibold text-sm mb-1">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                    Paid
-                  </div>
-                  <div className="text-3xl font-bold text-gray-900 dark:text-white leading-none">
-                    {paidDesignerCount}
-                  </div>
-                </div>
-
-                <div className="shrink-0 self-stretch flex items-center px-1 text-gray-300 dark:text-gray-600 font-semibold select-none">
-                  |
-                </div>
-
-                <div className="flex-1 min-w-0 text-right">
-                  <div className="flex items-center justify-end gap-2 text-rose-600 dark:text-rose-400 font-semibold text-sm mb-1">
-                    <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
-                    Unpaid
-                  </div>
-                  <div className="text-3xl font-bold text-gray-900 dark:text-white leading-none">
-                    {unpaidDesignerCount}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Payout Breakdown Section */}
-        <div className="space-y-4">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <h2 className="text-xl font-semibold uppercase tracking-wide text-gray-900 dark:text-white">
-              Payout Breakdown
-            </h2>
-            <button className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors opacity-50 cursor-not-allowed">
-              <Archive className="w-4 h-4" />
-              Download all Statement
-            </button>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            <div className="flex items-center gap-4">
-              <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Statement Period</span>
-              <MonthFilter availableMonths={availableMonths} selectedMonth={selectedMonth} />
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            {designers.filter(d => d.totalTasks > 0).map((designer) => (
-              <details key={designer.id} className={`group glass dark:bg-[#111827] border border-[#E8E0D8] dark:border-gray-800 rounded-xl overflow-hidden shadow-sm marker:content-[''] ${designer.status !== 'Active' ? 'opacity-60 grayscale-[50%]' : ''}`}>
-                <summary className="flex flex-col lg:flex-row items-start lg:items-center justify-between p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors list-none gap-4">
-                  
-                  <div className="flex items-center gap-3 w-[220px] shrink-0">
-                    <div className="w-10 h-10 rounded-full border border-[#E8E0D8] dark:border-gray-700 flex items-center justify-center font-semibold text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-800 text-sm">
-                      {getInitials(designer.displayName)}
+            {activeTab === 'summary' ? (
+              <>
+                {/* Block 1: Contract Rules Banner Header */}
+                <div className="p-6 bg-white dark:bg-[#0d0e12] flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-[#ff5e1f]/10 text-[#ff5e1f] flex items-center justify-center shrink-0">
+                      <Gavel className="w-5 h-5" />
                     </div>
                     <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className={`font-semibold text-sm ${designer.status === 'Resign' ? 'text-gray-400 line-through' : 'text-gray-900 dark:text-white'}`}>
-                          {designer.displayName}
-                        </h3>
-                        {designer.status !== 'Active' && (
-                          <span className={`px-1.5 py-0.5 text-[9px] font-bold tracking-wider rounded-md uppercase ${
-                            designer.status === 'Resign' ? 'text-red-600 bg-red-100 dark:bg-red-500/20' : 'text-amber-600 bg-amber-100 dark:bg-amber-500/20'
-                          }`}>
-                            {designer.status}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Designer</p>
+                      <h2 className="font-display font-bold text-sm text-gray-900 dark:text-white capitalize">
+                        Ketentuan & Aturan Kontrak Freelance
+                      </h2>
+                      <p className="text-xs text-gray-400 dark:text-gray-500 font-mono mt-0.5">
+                        Kontrak dimulai sejak 26 Januari 2026
+                      </p>
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap lg:flex-nowrap items-center gap-4 lg:gap-8 flex-1 w-full justify-between lg:justify-start">
-                    <div className="flex flex-col items-center">
-                      <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400">Task</span>
-                      <span className="font-semibold text-indigo-600 dark:text-indigo-400 text-sm">{designer.totalTasks}</span>
+                  <div className="flex flex-wrap items-center gap-3 text-xs font-mono">
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 text-gray-600 dark:text-gray-300">
+                      <span className="w-2 h-2 rounded-full bg-[#ff5e1f]" />
+                      <span>Kalender: <strong className="font-bold text-gray-900 dark:text-white">25 Hari Kerja/Bulan</strong></span>
                     </div>
-                    <div className="flex flex-col items-center">
-                      <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400">Templates</span>
-                      <span className="font-semibold text-yellow-600 dark:text-yellow-500 text-sm">{designer.totalTemplates}</span>
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 text-gray-600 dark:text-gray-300">
+                      <span className="w-2 h-2 rounded-full bg-[#ff5e1f]" />
+                      <span>Rate/Pool: <strong className="font-bold text-gray-900 dark:text-white">IDR {contractRate!.toLocaleString('id-ID')}</strong></span>
                     </div>
-                    <div className="flex flex-col items-center">
-                      <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400">QTY Pages</span>
-                      <span className="font-semibold text-blue-600 dark:text-blue-500 text-sm">{designer.totalPages}</span>
-                    </div>
-                    <div className="flex flex-col items-center">
-                      <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400">Total Payroll</span>
-                      <span className="font-semibold text-green-600 dark:text-green-500 text-sm">{formatCurrency(designer.totalPayroll)}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-4 w-full lg:w-auto justify-end">
-                    <PayrollStatusToggle
-                      designerId={designer.id}
-                      payrollMonth={selectedMonth}
-                      isPaid={payrollStatusMap.get(designer.id) ?? false}
-                    />
-                    <Link 
-                      href={`/billing-statement/print?designerId=${designer.id}&paymentMonth=${selectedMonth}`}
-                      target="_blank"
-                      className="flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-900 dark:text-white px-3 py-1.5 rounded-lg text-[11px] font-medium transition-colors"
-                    >
-                      <Printer className="w-3.5 h-3.5" />
-                      Print
-                    </Link>
-                    <div className="w-px h-6 bg-[#E8E0D8] dark:bg-gray-700"></div>
-                    <ChevronDown className="w-5 h-5 text-gray-500 dark:text-gray-400 transition-transform group-open:rotate-180" />
-                  </div>
-                </summary>
-
-                <div className="p-4 border-t border-[#E8E0D8] dark:border-gray-800 bg-gray-50 dark:bg-[#0a0b0e]">
-                  <h4 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-4">Itemized Task Calculations</h4>
-                  
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse min-w-[800px]">
-                      <thead className="text-[11px] font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">
-                        <tr>
-                          <th className="pb-3 px-2">Task title</th>
-                          <th className="pb-3 px-2">Doctype</th>
-                          <th className="pb-3 px-2">Canva Account</th>
-                          <th className="pb-3 px-2 text-center">QTY Submit</th>
-                          <th className="pb-3 px-2 text-center">Pages</th>
-                          <th className="pb-3 px-2 text-center">Poll Score</th>
-                          <th className="pb-3 px-2 text-right">Rate/Poll</th>
-                          <th className="pb-3 px-2 text-right">Total Payment</th>
-                        </tr>
-                      </thead>
-                      <tbody className="text-sm divide-y divide-[#E8E0D8] dark:divide-gray-800/50">
-                        {designer.tasks.map((task) => (
-                          <tr key={task.id} className="group-hover:bg-gray-100/50 dark:group-hover:bg-gray-800/20 transition-colors">
-                            <td className="py-3 px-2 text-gray-900 dark:text-white font-medium truncate max-w-[200px]" title={task.name || 'Untitled'}>
-                              {task.name || 'Untitled'}
-                            </td>
-                            <td className="py-3 px-2 text-gray-600 dark:text-gray-400">
-                              {task.doctype?.displayName || '-'}
-                            </td>
-                            <td className={`py-3 px-2 font-medium ${getBrandColor(task.accountName)}`}>
-                              {task.accountName}
-                            </td>
-                            <td className="py-3 px-2 text-center text-gray-900 dark:text-white font-medium">
-                              {task.qty}
-                            </td>
-                            <td className="py-3 px-2 text-center text-gray-600 dark:text-gray-400">
-                              {task.pages}
-                            </td>
-                            <td className="py-3 px-2 text-center text-indigo-600 dark:text-indigo-400 font-semibold">
-                              {task.poolRate}
-                            </td>
-                            <td className="py-3 px-2 text-right text-gray-600 dark:text-gray-400">
-                              {formatCurrency(contractRate!)}
-                            </td>
-                            <td className="py-3 px-2 text-right text-green-600 dark:text-green-500 font-semibold">
-                              {formatCurrency(task.payment)}
-                            </td>
-                          </tr>
-                        ))}
-                        {designer.tasks.length === 0 && (
-                          <tr>
-                            <td colSpan={8} className="py-4 text-center text-gray-500 dark:text-gray-400 text-sm">
-                              No approved tasks for this period.
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
                   </div>
                 </div>
-              </details>
-            ))}
 
-            {designers.filter(d => d.totalTasks > 0).length === 0 && (
-              <div className="glass dark:bg-[#111827] border border-[#E8E0D8] dark:border-gray-800 p-8 rounded-xl text-center text-gray-500 dark:text-gray-400">
-                No payroll data available for {selectedMonth}.
-              </div>
+                {/* Block 2: Continuous KPI Grid (Refrensi Image 3) */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 divide-y md:divide-y-0 divide-[#f0f0f0] dark:divide-[#272a34] bg-white dark:bg-[#0d0e12]">
+                  
+                  {/* Card 1: Total Unpaid This Month */}
+                  <div className="p-5 flex flex-col justify-between h-[130px] border-b md:border-b-0 md:border-r border-[#f0f0f0] dark:border-[#272a34] hover:bg-gray-50/50 dark:hover:bg-[#16181d]/50 transition-colors">
+                    <div className="flex justify-between items-center w-full">
+                      <span className="text-xs font-mono font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                        Total Unpaid This Month
+                      </span>
+                      <div className="w-7 h-7 rounded-lg bg-[#ff5e1f]/10 text-[#ff5e1f] flex items-center justify-center">
+                        <FileText className="w-4 h-4" />
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-2xl font-bold font-mono text-gray-900 dark:text-white">
+                          {formatCurrency(totalMonthlyPayout)}
+                        </span>
+                        <StatIndicator current={totalMonthlyPayout} prev={prevTotalMonthlyPayout} />
+                      </div>
+                      <p className="text-[11px] font-mono text-gray-400 dark:text-gray-500 mt-1">
+                        Bulan Lalu : {formatCurrency(prevTotalMonthlyPayout)}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Card 2: Approved, No Payroll Month */}
+                  <div className="p-5 flex flex-col justify-between h-[130px] border-b md:border-b-0 lg:border-r border-[#f0f0f0] dark:border-[#272a34] hover:bg-gray-50/50 dark:hover:bg-[#16181d]/50 transition-colors">
+                    <div className="flex justify-between items-center w-full">
+                      <span className="text-xs font-mono font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                        Approved, No Payroll Month
+                      </span>
+                      <div className="w-7 h-7 rounded-lg bg-[#ff5e1f]/10 text-[#ff5e1f] flex items-center justify-center">
+                        <FileText className="w-4 h-4" />
+                      </div>
+                    </div>
+                    <div>
+                      <span className="text-2xl font-bold font-mono text-gray-900 dark:text-white">
+                        {formatCurrency(upcomingPayout)}
+                      </span>
+                      <div className="flex items-center gap-1.5 mt-1 text-[10px] font-mono text-gray-400 dark:text-gray-500 whitespace-nowrap overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                        <span>{upcomingTasksData.length} Task</span>
+                        <span>•</span>
+                        <span>{upcomingTemplates} Template</span>
+                        <span>•</span>
+                        <span>{upcomingPages} Pages</span>
+                        <span>•</span>
+                        <span>{upcomingDoctypes.size} Doctype</span>
+                        <span>•</span>
+                        <span>{upcomingDesigners.size} Designer</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 3: Design Leader */}
+                  <div className="p-5 flex flex-col justify-between h-[130px] border-b md:border-b-0 md:border-r border-[#f0f0f0] dark:border-[#272a34] hover:bg-gray-50/50 dark:hover:bg-[#16181d]/50 transition-colors">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-mono font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                        Design Leader
+                      </span>
+                      <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center">
+                        <Trophy className="w-4 h-4" />
+                      </div>
+                    </div>
+                    <div>
+                      <span className="text-2xl font-bold font-mono text-amber-500">{designLeader}</span>
+                      <p className="text-[11px] font-mono text-gray-400 dark:text-gray-500 mt-1">Bulan lalu : {prevDesignLeader}</p>
+                    </div>
+                  </div>
+
+                  {/* Card 4: Total Tasks */}
+                  <div className="p-5 flex flex-col justify-between h-[130px] hover:bg-gray-50/50 dark:hover:bg-[#16181d]/50 transition-colors">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-mono font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                        Total Tasks
+                      </span>
+                      <div className="w-7 h-7 rounded-lg bg-indigo-500/10 text-indigo-500 flex items-center justify-center">
+                        <Layers className="w-4 h-4" />
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-2xl font-bold font-mono text-gray-900 dark:text-white">{totalTasks}</span>
+                        <StatIndicator current={totalTasks} prev={prevTotalTasks} />
+                      </div>
+                      <p className="text-[11px] font-mono text-gray-400 dark:text-gray-500 mt-1">Bulan lalu : {prevTotalTasks}</p>
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* Second KPI Grid Row */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 divide-y md:divide-y-0 divide-[#f0f0f0] dark:divide-[#272a34] bg-white dark:bg-[#0d0e12] border-t border-[#f0f0f0] dark:border-[#272a34]">
+                  
+                  {/* Card 5: Total Template */}
+                  <div className="p-5 flex flex-col justify-between h-[130px] border-b md:border-b-0 md:border-r border-[#f0f0f0] dark:border-[#272a34] hover:bg-gray-50/50 dark:hover:bg-[#16181d]/50 transition-colors">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-mono font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                        Total Template
+                      </span>
+                      <div className="w-7 h-7 rounded-lg bg-orange-500/10 text-orange-500 flex items-center justify-center">
+                        <Package className="w-4 h-4" />
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-2xl font-bold font-mono text-gray-900 dark:text-white">{totalTemplates}</span>
+                        <StatIndicator current={totalTemplates} prev={prevTotalTemplates} />
+                      </div>
+                      <p className="text-[11px] font-mono text-gray-400 dark:text-gray-500 mt-1">Bulan lalu : {prevTotalTemplates}</p>
+                    </div>
+                  </div>
+
+                  {/* Card 6: Total Pages */}
+                  <div className="p-5 flex flex-col justify-between h-[130px] border-b md:border-b-0 lg:border-r border-[#f0f0f0] dark:border-[#272a34] hover:bg-gray-50/50 dark:hover:bg-[#16181d]/50 transition-colors">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-mono font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                        Total Pages
+                      </span>
+                      <div className="w-7 h-7 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center">
+                        <Files className="w-4 h-4" />
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-2xl font-bold font-mono text-gray-900 dark:text-white">{totalPages}</span>
+                        <StatIndicator current={totalPages} prev={prevTotalPages} />
+                      </div>
+                      <p className="text-[11px] font-mono text-gray-400 dark:text-gray-500 mt-1">Bulan lalu : {prevTotalPages}</p>
+                    </div>
+                  </div>
+
+                  {/* Card 7: Total Doctype */}
+                  <div className="p-5 flex flex-col justify-between h-[130px] border-b md:border-b-0 md:border-r border-[#f0f0f0] dark:border-[#272a34] hover:bg-gray-50/50 dark:hover:bg-[#16181d]/50 transition-colors">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-mono font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                        Total Doctype
+                      </span>
+                      <div className="w-7 h-7 rounded-lg bg-pink-500/10 text-pink-500 flex items-center justify-center">
+                        <FileText className="w-4 h-4" />
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-2xl font-bold font-mono text-gray-900 dark:text-white">{uniqueDoctypes.size}</span>
+                        <StatIndicator current={uniqueDoctypes.size} prev={prevUniqueDoctypes.size} />
+                      </div>
+                      <p className="text-[11px] font-mono text-gray-400 dark:text-gray-500 mt-1">Bulan lalu : {prevUniqueDoctypes.size}</p>
+                    </div>
+                  </div>
+
+                  {/* Card 8: Designer Status */}
+                  <div className="p-5 flex flex-col justify-between h-[130px] hover:bg-gray-50/50 dark:hover:bg-[#16181d]/50 transition-colors">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-xs font-mono font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                        Designer Status
+                      </span>
+                      <div className="w-7 h-7 rounded-lg bg-indigo-500/10 text-indigo-500 flex items-center justify-center">
+                        <Users className="w-4 h-4" />
+                      </div>
+                    </div>
+
+                    <div className="flex items-end justify-between gap-3 flex-1 min-h-0">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-mono font-bold text-xs mb-1">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                          Paid
+                        </div>
+                        <div className="text-2xl font-bold font-mono text-gray-900 dark:text-white leading-none">
+                          {paidDesignerCount}
+                        </div>
+                      </div>
+
+                      <div className="shrink-0 self-stretch flex items-center px-1 text-gray-300 dark:text-gray-700 font-semibold select-none">
+                        |
+                      </div>
+
+                      <div className="flex-1 min-w-0 text-right">
+                        <div className="flex items-center justify-end gap-1.5 text-rose-600 dark:text-rose-400 font-mono font-bold text-xs mb-1">
+                          <span className="w-2 h-2 rounded-full bg-rose-500" />
+                          Unpaid
+                        </div>
+                        <div className="text-2xl font-bold font-mono text-gray-900 dark:text-white leading-none">
+                          {unpaidDesignerCount}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* Block 3: Payout Breakdown Section */}
+                <div className="flex flex-col bg-white dark:bg-[#0d0e12] rounded-b-xl">
+                  {/* Toolbar Header */}
+                  <div className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12]">
+                    <div className="flex items-center gap-3">
+                      <h3 className="font-mono font-bold text-xs uppercase text-gray-900 dark:text-white tracking-wider">
+                        Payout Breakdown
+                      </h3>
+                      <MonthFilter availableMonths={availableMonths} selectedMonth={selectedMonth} />
+                    </div>
+                    <button className="inline-flex items-center gap-1.5 rounded-full bg-[#ff5e1f] hover:bg-[#ff7038] px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition-all duration-150 cursor-pointer">
+                      <Archive className="w-3.5 h-3.5" />
+                      <span>Download all Statement</span>
+                    </button>
+                  </div>
+
+                  {/* Designer Payout Accordions */}
+                  <div className="divide-y divide-[#f0f0f0] dark:divide-[#272a34] bg-white dark:bg-[#0d0e12] rounded-b-xl">
+                    {designers.filter(d => d.totalTasks > 0).map((designer) => (
+                      <details key={designer.id} className={`group bg-white dark:bg-[#0d0e12] marker:content-[''] ${designer.status !== 'Active' ? 'opacity-60 grayscale-[50%]' : ''}`}>
+                        <summary className="flex flex-col lg:flex-row items-start lg:items-center justify-between p-4 cursor-pointer hover:bg-gray-50/60 dark:hover:bg-[#16181d]/60 transition-colors list-none gap-4">
+                          
+                          <div className="flex items-center gap-3 w-[220px] shrink-0">
+                            <div className="w-9 h-9 rounded-full border border-[#f0f0f0] dark:border-[#272a34] flex items-center justify-center font-mono font-bold text-gray-900 dark:text-white bg-gray-50 dark:bg-[#16181d] text-xs">
+                              {getInitials(designer.displayName)}
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <h3 className={`font-bold text-xs font-mono ${designer.status === 'Resign' ? 'text-gray-400 line-through' : 'text-gray-900 dark:text-white'}`}>
+                                  {designer.displayName}
+                                </h3>
+                                {designer.status !== 'Active' && (
+                                  <span className={`px-1.5 py-0.5 text-[9px] font-mono font-bold tracking-wider rounded uppercase ${
+                                    designer.status === 'Resign' ? 'text-rose-500 bg-rose-500/10' : 'text-amber-500 bg-amber-500/10'
+                                  }`}>
+                                    {designer.status}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-[11px] font-mono text-gray-400 dark:text-gray-500">Designer</p>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-wrap lg:flex-nowrap items-center gap-4 lg:gap-8 flex-1 w-full justify-between lg:justify-start">
+                            <div className="flex flex-col items-center">
+                              <span className="text-[10px] font-mono text-gray-400 dark:text-gray-500 uppercase">Task</span>
+                              <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400 text-xs">{designer.totalTasks}</span>
+                            </div>
+                            <div className="flex flex-col items-center">
+                              <span className="text-[10px] font-mono text-gray-400 dark:text-gray-500 uppercase">Templates</span>
+                              <span className="font-mono font-bold text-amber-600 dark:text-amber-500 text-xs">{designer.totalTemplates}</span>
+                            </div>
+                            <div className="flex flex-col items-center">
+                              <span className="text-[10px] font-mono text-gray-400 dark:text-gray-500 uppercase">QTY Pages</span>
+                              <span className="font-mono font-bold text-blue-600 dark:text-blue-400 text-xs">{designer.totalPages}</span>
+                            </div>
+                            <div className="flex flex-col items-center">
+                              <span className="text-[10px] font-mono text-gray-400 dark:text-gray-500 uppercase">Total Payroll</span>
+                              <span className="font-mono font-bold text-emerald-600 dark:text-[#ff5e1f] text-xs">{formatCurrency(designer.totalPayroll)}</span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-3 w-full lg:w-auto justify-end">
+                            <PayrollStatusToggle
+                              designerId={designer.id}
+                              payrollMonth={selectedMonth}
+                              isPaid={payrollStatusMap.get(designer.id) ?? false}
+                            />
+                            <Link 
+                              href={`/billing-statement/print?designerId=${designer.id}&paymentMonth=${selectedMonth}`}
+                              target="_blank"
+                              className="inline-flex items-center gap-1.5 rounded-lg border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] px-3 py-1 text-xs font-mono font-medium text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-700 hover:text-[#ff5e1f] dark:hover:text-[#ff5e1f] transition-colors cursor-pointer"
+                            >
+                              <Printer className="w-3.5 h-3.5" />
+                              <span>Print</span>
+                            </Link>
+                            <ChevronDown className="w-4 h-4 text-gray-400 dark:text-gray-500 transition-transform group-open:rotate-180" />
+                          </div>
+                        </summary>
+
+                        <div className="p-4 border-t border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#0d0e12]">
+                          <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">
+                            Itemized Task Calculations
+                          </h4>
+                          
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse font-mono text-xs min-w-[800px]">
+                              <thead>
+                                <tr className="border-b border-[#f0f0f0] dark:border-[#272a34] text-[11px] font-mono font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                                  <th className="pb-2 px-2 font-semibold">TASK TITLE</th>
+                                  <th className="pb-2 px-2 font-semibold">DOCTYPE</th>
+                                  <th className="pb-2 px-2 font-semibold">CANVA ACCOUNT</th>
+                                  <th className="pb-2 px-2 text-center font-semibold">QTY SUBMIT</th>
+                                  <th className="pb-2 px-2 text-center font-semibold">PAGES</th>
+                                  <th className="pb-2 px-2 text-center font-semibold">POLL SCORE</th>
+                                  <th className="pb-2 px-2 text-right font-semibold">RATE/POLL</th>
+                                  <th className="pb-2 px-2 text-right font-semibold">TOTAL PAYMENT</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-[#f0f0f0] dark:divide-[#272a34]">
+                                {designer.tasks.map((task) => (
+                                  <tr key={task.id} className="hover:bg-gray-100/50 dark:hover:bg-[#16181d]/50 transition-colors">
+                                    <td className="py-2.5 px-2 text-gray-900 dark:text-white font-bold truncate max-w-[200px]" title={task.name || 'Untitled'}>
+                                      {task.name || 'Untitled'}
+                                    </td>
+                                    <td className="py-2.5 px-2 text-gray-600 dark:text-gray-400">
+                                      {task.doctype?.displayName || '-'}
+                                    </td>
+                                    <td className={`py-2.5 px-2 font-bold ${getBrandColor(task.accountName)}`}>
+                                      {task.accountName}
+                                    </td>
+                                    <td className="py-2.5 px-2 text-center text-gray-900 dark:text-white font-bold">
+                                      {task.qty}
+                                    </td>
+                                    <td className="py-2.5 px-2 text-center text-gray-600 dark:text-gray-400">
+                                      {task.pages}
+                                    </td>
+                                    <td className="py-2.5 px-2 text-center text-indigo-600 dark:text-indigo-400 font-bold">
+                                      {task.poolRate}
+                                    </td>
+                                    <td className="py-2.5 px-2 text-right text-gray-600 dark:text-gray-400">
+                                      {formatCurrency(contractRate!)}
+                                    </td>
+                                    <td className="py-2.5 px-2 text-right text-emerald-600 dark:text-[#ff5e1f] font-bold">
+                                      {formatCurrency(task.payment)}
+                                    </td>
+                                  </tr>
+                                ))}
+                                {designer.tasks.length === 0 && (
+                                  <tr>
+                                    <td colSpan={8} className="py-4 text-center text-gray-400 dark:text-gray-500 text-xs">
+                                      No approved tasks for this period.
+                                    </td>
+                                  </tr>
+                                )}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      </details>
+                    ))}
+
+                    {designers.filter(d => d.totalTasks > 0).length === 0 && (
+                      <div className="p-8 text-center text-xs font-mono text-gray-400 dark:text-gray-500">
+                        No payroll data available for {selectedMonth}.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <ApprovalPayrollTable tasks={upcomingTasksData as any} allMonthOptions={approvalMonthOptions} />
             )}
           </div>
-        </div>
-          </>
-        ) : (
-          <ApprovalPayrollTable tasks={upcomingTasksData as any} allMonthOptions={approvalMonthOptions} />
-        )}
-      </main>
+        </main>
     </div>
+  </div>
   );
 }

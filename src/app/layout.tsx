@@ -1,5 +1,6 @@
 import './globals.css';
 import { Inter, Outfit } from 'next/font/google';
+import Script from 'next/script';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -30,7 +31,9 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        <script
+        <Script
+          id="theme-script"
+          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
@@ -50,7 +53,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="font-sans antialiased text-gray-900 dark:text-gray-100 min-h-screen bg-[#F5F0EB] dark:bg-[#0b0f19]">
+      <body className="font-sans antialiased text-[#262626] dark:text-[#f4f4f5] min-h-screen bg-white dark:bg-[#0d0e12]">
         {children}
       </body>
     </html>

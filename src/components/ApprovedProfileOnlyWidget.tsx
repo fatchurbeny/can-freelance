@@ -17,7 +17,7 @@ export default function ApprovedProfileOnlyWidget({ data, brandName }: ApprovedP
   const totalQty = data.reduce((sum, item) => sum + item.qty, 0);
 
   return (
-    <div className="glass dark:bg-[#111827] rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full self-start overflow-visible">
+    <div className="p-6 flex flex-col h-full bg-white dark:bg-[#0d0e12] overflow-visible">
       {/* Title & Badge */}
       <div className="flex items-center justify-between pb-4">
         <div>
@@ -28,7 +28,7 @@ export default function ApprovedProfileOnlyWidget({ data, brandName }: ApprovedP
             Jenis Doctype Approved-Profile Only - {brandName}
           </p>
         </div>
-        <span className="text-[10px] font-bold px-3 py-1 rounded-full bg-[#F0A848] text-gray-900 uppercase shadow-sm">
+        <span className="text-[10px] font-bold px-3 py-1 rounded-full bg-[#F0A848] text-gray-900 uppercase shadow-sm whitespace-nowrap">
           {totalQty} TEMPLATE
         </span>
       </div>
@@ -36,23 +36,23 @@ export default function ApprovedProfileOnlyWidget({ data, brandName }: ApprovedP
       {/* Table Container */}
       <div className="flex-1 overflow-auto pr-3">
         <table className="w-full text-left text-xs border-collapse">
-          <thead className="sticky top-0 z-10 bg-white dark:bg-[#111827] shadow-[0_1px_0_0_#E8E0D8] dark:shadow-[0_1px_0_0_#1F2937]">
+          <thead className="sticky top-0 z-10 bg-white dark:bg-[#0d0e12] shadow-[0_1px_0_0_#f0f0f0] dark:shadow-[0_1px_0_0_#1F2937]">
             <tr className="text-gray-400 dark:text-gray-500 font-bold">
-              <th className="py-2.5 font-semibold">Doctype</th>
-              <th className="py-2.5 font-semibold text-center">License</th>
-              <th className="py-2.5 font-semibold text-center">Language</th>
-              <th className="py-2.5 font-semibold">Account</th>
-              <th className="py-2.5 font-semibold text-right">QTY</th>
+              <th className="py-2.5 pl-4 pr-2 font-semibold">Doctype</th>
+              <th className="py-2.5 px-2 font-semibold text-center">License</th>
+              <th className="py-2.5 px-2 font-semibold text-center">Language</th>
+              <th className="py-2.5 px-2 font-semibold">Account</th>
+              <th className="py-2.5 pl-2 pr-4 font-semibold text-right">QTY</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#E8E0D8]/60 dark:divide-gray-800 font-medium text-gray-700 dark:text-gray-300">
+          <tbody className="divide-y divide-[#f0f0f0] dark:divide-gray-800 font-medium text-gray-700 dark:text-gray-300">
             {data.length > 0 ? (
               data.map((item, idx) => (
                 <tr key={idx} className="hover:bg-[#F5F0EB]/50 dark:hover:bg-gray-800/20 transition-colors">
-                  <td className="py-3 font-semibold text-gray-900 dark:text-white truncate max-w-[130px]" title={item.doctype}>
+                  <td className="py-3 pl-4 pr-2 font-semibold text-gray-900 dark:text-white truncate max-w-[130px]" title={item.doctype}>
                     {item.doctype}
                   </td>
-                  <td className="py-3 text-center">
+                  <td className="py-3 px-2 text-center">
                     <span className={`inline-block px-2 py-0.5 rounded-md text-[9px] font-bold ${
                       item.license?.toLowerCase() === 'pro'
                         ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
@@ -61,7 +61,7 @@ export default function ApprovedProfileOnlyWidget({ data, brandName }: ApprovedP
                       {item.license}
                     </span>
                   </td>
-                  <td className="py-3 text-center">
+                  <td className="py-3 px-2 text-center">
                     <span className={`inline-block px-2 py-0.5 rounded-md text-[9px] font-bold ${
                       item.language?.toUpperCase() === 'ENG'
                         ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
@@ -70,10 +70,10 @@ export default function ApprovedProfileOnlyWidget({ data, brandName }: ApprovedP
                       {item.language}
                     </span>
                   </td>
-                  <td className="py-3 text-gray-500 dark:text-gray-400 truncate max-w-[100px]" title={item.account}>
+                  <td className="py-3 px-2 text-gray-500 dark:text-gray-400 truncate max-w-[100px]" title={item.account}>
                     {item.account}
                   </td>
-                  <td className="py-3 text-right font-bold text-gray-900 dark:text-white">
+                  <td className="py-3 pl-2 pr-4 text-right font-bold text-gray-900 dark:text-white">
                     {item.qty}
                   </td>
                 </tr>

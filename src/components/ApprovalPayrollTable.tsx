@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation';
 interface TaskItem {
   id: string;
   name: string | null;
+  taskMonth?: string | null;
   qtySubmit: string | null;
   pages: string | null;
   lastEditedTime: string;
@@ -39,11 +40,13 @@ function FilterSelect({ id, value, placeholder, options, onChange }: FilterSelec
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const close = (event: MouseEvent) => {
-      if (!containerRef.current?.contains(event.target as Node)) setOpen(false);
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
     };
-    document.addEventListener('mousedown', close);
-    return () => document.removeEventListener('mousedown', close);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const selectedLabel = options.find(([optionValue]) => optionValue === value)?.[1];
@@ -56,10 +59,10 @@ function FilterSelect({ id, value, placeholder, options, onChange }: FilterSelec
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => setOpen((current) => !current)}
-        className={`h-9 w-[145px] flex items-center justify-between gap-2 rounded-xl border bg-white dark:bg-gray-900 px-3 text-xs font-semibold shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500/20 ${
+        className={`h-8 w-[140px] flex items-center justify-between gap-1.5 rounded-lg border bg-gray-50 dark:bg-[#16181d] px-3 text-xs font-mono font-medium transition-colors focus:outline-none ${
           open
-            ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
-            : 'border-[#E8E0D8] dark:border-gray-800 text-gray-700 dark:text-gray-200 hover:bg-[#F5F0EB] dark:hover:bg-gray-800'
+            ? 'border-[#ff5e1f] text-[#ff5e1f]'
+            : 'border-[#f0f0f0] dark:border-[#272a34] text-gray-700 dark:text-gray-300 hover:border-[#ff5e1f]'
         }`}
       >
         <span className="truncate">{selectedLabel || placeholder}</span>
@@ -69,17 +72,17 @@ function FilterSelect({ id, value, placeholder, options, onChange }: FilterSelec
         <div
           role="listbox"
           aria-labelledby={id}
-          className="absolute left-0 top-full z-50 mt-2 w-[190px] max-h-64 overflow-y-auto rounded-2xl border border-[#E8E0D8] dark:border-gray-800 bg-white dark:bg-gray-950 p-1.5 shadow-xl"
+          className="absolute left-0 top-full z-50 mt-1.5 w-[180px] max-h-64 overflow-y-auto rounded-xl border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] p-1.5 shadow-xl font-mono text-xs"
         >
           <button
             type="button"
             role="option"
             aria-selected={!value}
             onClick={() => { onChange(''); setOpen(false); }}
-            className="w-full flex items-center justify-between rounded-xl px-3 py-2 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 hover:bg-[#F5F0EB] dark:hover:bg-gray-800 transition-colors"
+            className="w-full flex items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-xs font-mono text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
           >
             {placeholder}
-            {!value && <Check className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />}
+            {!value && <Check className="h-3.5 w-3.5 text-[#ff5e1f]" />}
           </button>
           {options.map(([optionValue, label]) => (
             <button
@@ -88,14 +91,14 @@ function FilterSelect({ id, value, placeholder, options, onChange }: FilterSelec
               role="option"
               aria-selected={value === optionValue}
               onClick={() => { onChange(optionValue); setOpen(false); }}
-              className={`w-full flex items-center justify-between gap-3 rounded-xl px-3 py-2 text-left text-xs font-semibold transition-colors ${
+              className={`w-full flex items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-mono transition-colors ${
                 value === optionValue
-                  ? 'bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300'
-                  : 'text-gray-700 dark:text-gray-300 hover:bg-[#F5F0EB] dark:hover:bg-gray-800'
+                  ? 'bg-[#ff5e1f]/10 text-[#ff5e1f] font-bold'
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
               }`}
             >
               <span className="truncate">{label}</span>
-              {value === optionValue && <Check className="h-3.5 w-3.5 shrink-0 text-indigo-600 dark:text-indigo-400" />}
+              {value === optionValue && <Check className="h-3.5 w-3.5 shrink-0 text-[#ff5e1f]" />}
             </button>
           ))}
         </div>
@@ -124,7 +127,6 @@ export default function ApprovalPayrollTable({ tasks, allMonthOptions }: Props) 
       if (batchRef.current && !batchRef.current.contains(e.target as Node)) {
         setBatchOpen(false);
       }
-      // Row dropdown: close if click outside its panel
       if (rowDropdown) {
         const panel = document.querySelector(`[data-dropdown-id="${rowDropdown}"]`);
         if (panel && !panel.contains(e.target as Node)) {
@@ -203,116 +205,115 @@ export default function ApprovalPayrollTable({ tasks, allMonthOptions }: Props) 
     });
 
   return (
-    <div className="glass dark:bg-[#111827] border border-[#E8E0D8] dark:border-gray-800 rounded-xl overflow-hidden shadow-sm">
+    <div className="flex flex-col bg-white dark:bg-[#0d0e12] rounded-xl border border-[#f0f0f0] dark:border-[#272a34]">
+      {/* Table Toolbar Bar */}
+      <div className="p-4 border-b border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] flex flex-wrap items-center justify-between gap-3 font-mono text-xs">
+        <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-[280px]">
+          <div className="relative flex-1 max-w-[280px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 dark:text-gray-500 pointer-events-none" />
+            <input
+              id="approval-payroll-search"
+              type="search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search tasks..."
+              className="w-full pl-9 pr-4 py-1.5 rounded-lg border border-[#f0f0f0] dark:border-[#272a34] bg-gray-50 dark:bg-[#16181d] text-xs font-mono text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:border-[#ff5e1f] transition-colors"
+            />
+          </div>
+          {[
+            { id: 'approval-sort', placeholder: 'Sort by', value: sortBy, set: setSortBy, options: [['last-edited', 'Last edited'], ['az', 'A–Z'], ['za', 'Z–A']] as Array<[string, string]> },
+            { id: 'doctype-filter', placeholder: 'All doctypes', value: doctypeFilter, set: setDoctypeFilter, options: doctypeOptions.map((item) => [item, item] as [string, string]) },
+            { id: 'brand-filter', placeholder: 'All brands', value: brandFilter, set: setBrandFilter, options: brandOptions.map((item) => [item, item] as [string, string]) },
+            { id: 'designer-filter', placeholder: 'All designers', value: designerFilter, set: setDesignerFilter, options: designerOptions.map((item) => [item, item] as [string, string]) },
+          ].map((control) => (
+            <FilterSelect
+              key={control.id}
+              id={control.id}
+              value={control.value}
+              placeholder={control.placeholder}
+              options={control.options}
+              onChange={control.set}
+            />
+          ))}
+          <span className="text-xs font-mono text-gray-400 dark:text-gray-500 whitespace-nowrap">
+            {selectedIds.size} of {filteredTasks.length} selected
+          </span>
+        </div>
+
+        {/* Batch Actions */}
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="relative flex justify-center" ref={batchRef}>
+            <button
+              onClick={() => setBatchOpen(!batchOpen)}
+              className="w-[130px] flex items-center justify-between px-3 py-1.5 rounded-lg border border-[#f0f0f0] dark:border-[#272a34] bg-gray-50 dark:bg-[#16181d] text-xs font-mono font-medium text-gray-700 dark:text-gray-200 hover:border-[#ff5e1f] focus:outline-none transition-colors cursor-pointer select-none whitespace-nowrap"
+            >
+              <span className="truncate">{batchMonth || 'Pilih bulan...'}</span>
+              <ChevronDown className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 shrink-0" />
+            </button>
+            {batchOpen && (
+              <div className="absolute right-0 mt-8 w-44 rounded-xl border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] shadow-xl z-50 py-1.5 max-h-60 overflow-y-auto font-mono text-xs">
+                <div className="space-y-0.5 px-1.5">
+                  {allMonthOptions.map((month) => {
+                    const isChecked = batchMonth === month;
+                    return (
+                      <button
+                        key={month}
+                        onClick={() => { setBatchMonth(month); setBatchOpen(false); }}
+                        className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left text-xs font-mono text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                      >
+                        <span>{month}</span>
+                        <div className={`w-3.5 h-3.5 rounded-[4px] border flex items-center justify-center transition-all ${
+                          isChecked
+                            ? 'bg-black border-black text-white dark:bg-white dark:border-white dark:text-black'
+                            : 'border-gray-300 dark:border-[#272a34] bg-white dark:bg-[#16181d]'
+                        }`}>
+                          {isChecked && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <button
+            onClick={handleBatchAssign}
+            disabled={selectedIds.size === 0 || !batchMonth || isPending}
+            className="px-4 py-1.5 rounded-full bg-[#ff5e1f] hover:bg-[#ff7038] disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-mono font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap"
+          >
+            {isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+            Assign Selected
+          </button>
+        </div>
+      </div>
+
       {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse min-w-[950px]">
-          <thead className="bg-gray-50 dark:bg-gray-900/50">
-            {/* Batch Actions Row */}
-            <tr className="border-b border-[#E8E0D8] dark:border-gray-800">
-              <th colSpan={8} className="p-4 font-normal">
-                <div className="flex flex-wrap items-center gap-3">
-                  <div className="relative flex-1 min-w-[240px] max-w-[340px]">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500 pointer-events-none" />
-                    <input
-                      id="approval-payroll-search"
-                      type="search"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Search tasks..."
-                      className="w-full pl-9 pr-4 py-2 rounded-xl border border-[#E8E0D8] dark:border-gray-800 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-colors font-sans"
-                    />
-                  </div>
-                  {[
-                    { id: 'approval-sort', placeholder: 'Sort by', value: sortBy, set: setSortBy, options: [['last-edited', 'Last edited'], ['az', 'A–Z'], ['za', 'Z–A']] as Array<[string, string]> },
-                    { id: 'doctype-filter', placeholder: 'All doctypes', value: doctypeFilter, set: setDoctypeFilter, options: doctypeOptions.map((item) => [item, item] as [string, string]) },
-                    { id: 'brand-filter', placeholder: 'All brands', value: brandFilter, set: setBrandFilter, options: brandOptions.map((item) => [item, item] as [string, string]) },
-                    { id: 'designer-filter', placeholder: 'All designers', value: designerFilter, set: setDesignerFilter, options: designerOptions.map((item) => [item, item] as [string, string]) },
-                  ].map((control) => (
-                    <FilterSelect
-                      key={control.id}
-                      id={control.id}
-                      value={control.value}
-                      placeholder={control.placeholder}
-                      options={control.options}
-                      onChange={control.set}
-                    />
-                  ))}
-                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap font-sans">
-                    {selectedIds.size} of {filteredTasks.length} selected
-                  </span>
-                </div>
-              </th>
-              <th className="p-4 text-center font-normal">
-                <div className="relative flex justify-center" ref={batchRef}>
-                  <button
-                    onClick={() => setBatchOpen(!batchOpen)}
-                    className="w-[130px] flex items-center justify-between px-3 py-1.5 rounded-xl border border-[#E8E0D8] dark:border-gray-800 bg-white dark:bg-gray-900 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-[#F5F0EB] dark:hover:bg-gray-800 focus:outline-none transition-colors shadow-sm cursor-pointer select-none whitespace-nowrap font-sans"
-                  >
-                    <span className="truncate">{batchMonth || 'Pilih bulan...'}</span>
-                    <ChevronDown className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 shrink-0" />
-                  </button>
-                  {batchOpen && (
-                    <div className="absolute right-1/2 translate-x-1/2 mt-9 w-48 rounded-2xl border border-[#E8E0D8] dark:border-gray-800 bg-white dark:bg-gray-950 shadow-xl z-50 py-2.5 max-h-60 overflow-y-auto backdrop-blur-md">
-                      <div className="space-y-0.5 px-1.5">
-                        {allMonthOptions.map((month) => {
-                          const isChecked = batchMonth === month;
-                          return (
-                            <button
-                              key={month}
-                              onClick={() => { setBatchMonth(month); setBatchOpen(false); }}
-                              className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-left text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-[#F5F0EB] dark:hover:bg-gray-800 dark:hover:text-white transition-colors cursor-pointer font-sans"
-                            >
-                              <span className="dark:text-gray-200">{month}</span>
-                              <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${
-                                isChecked
-                                  ? 'bg-indigo-600 border-indigo-600 dark:bg-indigo-500 dark:border-indigo-500 text-white'
-                                  : 'border-gray-300 dark:border-gray-600'
-                              }`}>
-                                {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </th>
-              <th className="p-4 text-center font-normal">
-                <div className="flex justify-center">
-                  <button
-                    onClick={handleBatchAssign}
-                    disabled={selectedIds.size === 0 || !batchMonth || isPending}
-                    className="min-w-[110px] px-4 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 whitespace-nowrap font-sans"
-                  >
-                    {isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                    Assign Selected
-                  </button>
-                </div>
-              </th>
-            </tr>
-            <tr className="text-[11px] font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">
-              <th className="py-3 px-4 w-10">
+      <div className="overflow-x-auto rounded-b-xl">
+        <table className="w-full border-collapse text-left font-mono text-xs min-w-[950px] rounded-b-xl">
+          <thead>
+            <tr className="border-b border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#0d0e12] text-[11px] font-mono font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+              <th className="py-3 pl-5 pr-2 w-10">
                 <input
                   type="checkbox"
                   checked={selectedIds.size === filteredTasks.length && filteredTasks.length > 0}
                   onChange={toggleSelectAll}
-                  className="rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500"
+                  className="rounded border-gray-300 dark:border-gray-700 text-[#ff5e1f] focus:ring-[#ff5e1f]"
                 />
               </th>
-              <th className="py-3 px-2 w-full">Task</th>
-              <th className="py-3 px-2">Designer</th>
-              <th className="py-3 px-2 whitespace-nowrap">Doctype</th>
-              <th className="py-3 px-2 whitespace-nowrap">Brand</th>
-              <th className="py-3 px-2 text-center whitespace-nowrap">QTY</th>
-              <th className="py-3 px-2 text-center whitespace-nowrap">Pages</th>
-              <th className="py-3 px-2 text-center whitespace-nowrap">QTY Pages</th>
-              <th className="py-3 px-1 w-[140px] text-center">Payroll Month</th>
-              <th className="py-3 px-1 w-[120px] text-center">Action</th>
+              <th className="py-3 px-2 w-full font-semibold">TASK</th>
+              <th className="py-3 px-2 font-semibold">DESIGNER</th>
+              <th className="py-3 px-2 whitespace-nowrap font-semibold">DOCTYPE</th>
+              <th className="py-3 px-2 whitespace-nowrap font-semibold">BRAND</th>
+              <th className="py-3 px-2 whitespace-nowrap font-semibold">TASK MONTH</th>
+              <th className="py-3 px-2 text-center whitespace-nowrap font-semibold">QTY</th>
+              <th className="py-3 px-2 text-center whitespace-nowrap font-semibold">PAGES</th>
+              <th className="py-3 px-2 text-center whitespace-nowrap font-semibold">QTY PAGES</th>
+              <th className="py-3 px-1 w-[140px] text-center font-semibold">PAYROLL MONTH</th>
+              <th className="py-3 pr-5 pl-1 w-[120px] text-center font-semibold">ACTION</th>
             </tr>
           </thead>
-          <tbody className="text-sm divide-y divide-[#E8E0D8] dark:divide-gray-800/50">
+          <tbody className="divide-y divide-[#f0f0f0] dark:divide-[#272a34] bg-white dark:bg-[#0d0e12]">
             {filteredTasks.map((task) => {
               const qty = Number(task.qtySubmit || 0);
               const pages = Number(task.pages || 0);
@@ -323,18 +324,18 @@ export default function ApprovalPayrollTable({ tasks, allMonthOptions }: Props) 
               return (
                 <tr
                   key={task.id}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-800/20 transition-colors"
+                  className="hover:bg-gray-50/60 dark:hover:bg-[#16181d]/60 transition-colors font-mono text-xs"
                 >
-                  <td className="py-3 px-4">
+                  <td className="py-3 pl-5 pr-2">
                     <input
                       type="checkbox"
                       checked={selectedIds.has(task.id)}
                       onChange={() => toggleSelect(task.id)}
-                      className="rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500"
+                      className="rounded border-gray-300 dark:border-gray-700 text-[#ff5e1f] focus:ring-[#ff5e1f]"
                     />
                   </td>
                   <td
-                    className="py-3 px-2 text-gray-900 dark:text-white font-medium truncate max-w-[160px]"
+                    className="py-3 px-2 font-bold text-gray-900 dark:text-white truncate max-w-[200px]"
                     title={task.name || 'Untitled'}
                   >
                     {task.name || 'Untitled'}
@@ -348,69 +349,71 @@ export default function ApprovalPayrollTable({ tasks, allMonthOptions }: Props) 
                   <td className="py-3 px-2 text-gray-600 dark:text-gray-400 whitespace-nowrap">
                     {accountName}
                   </td>
-                  <td className="py-3 px-2 text-center text-gray-900 dark:text-white font-medium whitespace-nowrap">
+                  <td className="py-3 px-2 text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                    {task.taskMonth || '-'}
+                  </td>
+                  <td className="py-3 px-2 text-center text-gray-900 dark:text-white font-bold whitespace-nowrap">
                     {qty}
                   </td>
                   <td className="py-3 px-2 text-center text-gray-600 dark:text-gray-400 whitespace-nowrap">
                     {pages}
                   </td>
-                  <td className="py-3 px-2 text-center text-blue-600 dark:text-blue-400 font-semibold whitespace-nowrap">
+                  <td className="py-3 px-2 text-center text-blue-600 dark:text-blue-400 font-bold whitespace-nowrap">
                     {qtyPages}
                   </td>
                   <td className="py-3 px-1 relative text-center">
-                    {/* Per-row month custom dropdown */}
                     <div className="relative flex justify-center">
                       <div className="relative w-full max-w-[130px]">
                         <button
                           data-trigger-id={task.id}
                           onClick={() => setRowDropdown(rowDropdown === task.id ? null : task.id)}
-                          className="w-[130px] flex items-center justify-between px-3 py-1.5 rounded-xl border border-[#E8E0D8] dark:border-gray-800 bg-white dark:bg-gray-900 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-[#F5F0EB] dark:hover:bg-gray-800 focus:outline-none transition-colors shadow-sm cursor-pointer select-none whitespace-nowrap font-sans"
+                          className="w-[130px] flex items-center justify-between px-3 py-1 rounded-lg border border-[#f0f0f0] dark:border-[#272a34] bg-gray-50 dark:bg-[#16181d] text-xs font-mono font-medium text-gray-700 dark:text-gray-200 hover:border-[#ff5e1f] focus:outline-none transition-colors cursor-pointer select-none whitespace-nowrap"
                         >
                           <span className="truncate">{monthSelections[task.id] || 'Pilih...'}</span>
-                          <ChevronDown className="w-3 h-3 text-gray-400 dark:text-gray-500 shrink-0" />
+                          <ChevronDown className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 shrink-0" />
                         </button>
                         {rowDropdown === task.id && (
                           <div
                             data-dropdown-id={task.id}
-                            className="absolute right-1/2 translate-x-1/2 mt-2 w-48 rounded-2xl border border-[#E8E0D8] dark:border-gray-800 bg-white dark:bg-gray-950 shadow-xl z-50 py-2.5 max-h-60 overflow-y-auto backdrop-blur-md"
+                            className="absolute right-0 mt-1.5 w-44 rounded-xl border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] shadow-xl z-50 py-1.5 max-h-60 overflow-y-auto font-mono text-xs"
                           >
-                          <div className="space-y-0.5 px-1.5">
-                            {allMonthOptions.map((month) => {
-                              const isChecked = monthSelections[task.id] === month;
-                              return (
-                                <button
-                                  key={month}
-                                  onClick={() => {
-                                    setMonthSelections((prev) => ({ ...prev, [task.id]: month }));
-                                    setRowDropdown(null);
-                                  }}
-                                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-left text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-[#F5F0EB] dark:hover:bg-gray-800 dark:hover:text-white transition-colors cursor-pointer"
-                                >
-                                  <span className="dark:text-gray-200">{month}</span>
-                                  <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${
-                                    isChecked
-                                      ? 'bg-indigo-600 border-indigo-600 dark:bg-indigo-500 dark:border-indigo-500 text-white'
-                                      : 'border-gray-300 dark:border-gray-600'
-                                  }`}>
-                                    {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
-                                  </div>
-                                </button>
-                              );
-                            })}
+                            <div className="space-y-0.5 px-1.5">
+                              {allMonthOptions.map((month) => {
+                                const isChecked = monthSelections[task.id] === month;
+                                return (
+                                  <button
+                                    key={month}
+                                    onClick={() => {
+                                      setMonthSelections((prev) => ({ ...prev, [task.id]: month }));
+                                      setRowDropdown(null);
+                                    }}
+                                    className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left text-xs font-mono text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                                  >
+                                    <span>{month}</span>
+                                    <div className={`w-3.5 h-3.5 rounded-[4px] border flex items-center justify-center transition-all ${
+                                      isChecked
+                                        ? 'bg-black border-black text-white dark:bg-white dark:border-white dark:text-black'
+                                        : 'border-gray-300 dark:border-[#272a34] bg-white dark:bg-[#16181d]'
+                                    }`}>
+                                      {isChecked && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                                    </div>
+                                  </button>
+                                );
+                              })}
+                            </div>
                           </div>
-                        </div>
-                      )}
-                    </div>
+                        )}
+                      </div>
                     </div>
                   </td>
-                  <td className="py-3 px-1 text-center">
+                  <td className="py-3 pr-5 pl-1 text-center">
                     <button
                       onClick={() => handleAssign(task.id)}
                       disabled={!monthSelections[task.id] || isPending}
-                      className="min-w-[90px] px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-semibold transition-colors flex items-center justify-center gap-1 mx-auto"
+                      className="px-3 py-1 rounded-lg border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-700 hover:text-[#ff5e1f] dark:hover:text-[#ff5e1f] disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer text-xs font-mono font-medium flex items-center justify-center gap-1 mx-auto"
                     >
                       {isPending ? (
-                        <Loader2 className="w-3 h-3 animate-spin" />
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
                       ) : null}
                       Assign
                     </button>

@@ -1,0 +1,572 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-08-29T15:42:28.841Z",
+  "nodes": [
+    {
+      "id": "page:/",
+      "label": "Dashboard Page",
+      "type": "page",
+      "group": "App Router Pages",
+      "filepath": "src/app/page.tsx",
+      "details": "Next.js 16 App Router Page (/)"
+    },
+    {
+      "id": "page:/production",
+      "label": "Production Kanban",
+      "type": "page",
+      "group": "App Router Pages",
+      "filepath": "src/app/production/page.tsx",
+      "details": "Next.js 16 App Router Page (/production)"
+    },
+    {
+      "id": "page:/billing-statement",
+      "label": "Billing Statement",
+      "type": "page",
+      "group": "App Router Pages",
+      "filepath": "src/app/billing-statement/page.tsx",
+      "details": "Next.js 16 App Router Page (/billing-statement)"
+    },
+    {
+      "id": "page:/knowledge-graph",
+      "label": "Knowledge Graph Page",
+      "type": "page",
+      "group": "App Router Pages",
+      "filepath": "src/app/knowledge-graph/page.tsx",
+      "details": "Next.js 16 App Router Page (/knowledge-graph)"
+    },
+    {
+      "id": "page:/rate-card",
+      "label": "Rate Card Editor",
+      "type": "page",
+      "group": "App Router Pages",
+      "filepath": "src/app/rate-card/page.tsx",
+      "details": "Next.js 16 App Router Page (/rate-card)"
+    },
+    {
+      "id": "page:/account-team",
+      "label": "Account & Team",
+      "type": "page",
+      "group": "App Router Pages",
+      "filepath": "src/app/account-team/page.tsx",
+      "details": "Next.js 16 App Router Page (/account-team)"
+    },
+    {
+      "id": "page:/notion-config",
+      "label": "Notion Config",
+      "type": "page",
+      "group": "App Router Pages",
+      "filepath": "src/app/notion-config/page.tsx",
+      "details": "Next.js 16 App Router Page (/notion-config)"
+    },
+    {
+      "id": "component:AddDoctypeButton",
+      "label": "AddDoctypeButton",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/AddDoctypeButton.tsx",
+      "details": "React UI Component in src/components/AddDoctypeButton.tsx"
+    },
+    {
+      "id": "component:ApprovalPayrollTable",
+      "label": "ApprovalPayrollTable",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/ApprovalPayrollTable.tsx",
+      "details": "React UI Component in src/components/ApprovalPayrollTable.tsx"
+    },
+    {
+      "id": "component:ApprovedProfileOnlyWidget",
+      "label": "ApprovedProfileOnlyWidget",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/ApprovedProfileOnlyWidget.tsx",
+      "details": "React UI Component in src/components/ApprovedProfileOnlyWidget.tsx"
+    },
+    {
+      "id": "component:AutoPrint",
+      "label": "AutoPrint",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/AutoPrint.tsx",
+      "details": "React UI Component in src/components/AutoPrint.tsx"
+    },
+    {
+      "id": "component:BrandTabs",
+      "label": "BrandTabs",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/BrandTabs.tsx",
+      "details": "React UI Component in src/components/BrandTabs.tsx"
+    },
+    {
+      "id": "component:ContractRateEditor",
+      "label": "ContractRateEditor",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/ContractRateEditor.tsx",
+      "details": "React UI Component in src/components/ContractRateEditor.tsx"
+    },
+    {
+      "id": "component:DesignerStatusSelect",
+      "label": "DesignerStatusSelect",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/DesignerStatusSelect.tsx",
+      "details": "React UI Component in src/components/DesignerStatusSelect.tsx"
+    },
+    {
+      "id": "component:DistribusiWidget",
+      "label": "DistribusiWidget",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/DistribusiWidget.tsx",
+      "details": "React UI Component in src/components/DistribusiWidget.tsx"
+    },
+    {
+      "id": "component:DoctypeTable",
+      "label": "DoctypeTable",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/DoctypeTable.tsx",
+      "details": "React UI Component in src/components/DoctypeTable.tsx"
+    },
+    {
+      "id": "component:DoctypeWidget",
+      "label": "DoctypeWidget",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/DoctypeWidget.tsx",
+      "details": "React UI Component in src/components/DoctypeWidget.tsx"
+    },
+    {
+      "id": "component:GaugesWidget",
+      "label": "GaugesWidget",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/GaugesWidget.tsx",
+      "details": "React UI Component in src/components/GaugesWidget.tsx"
+    },
+    {
+      "id": "component:Header",
+      "label": "Header",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/Header.tsx",
+      "details": "React UI Component in src/components/Header.tsx"
+    },
+    {
+      "id": "component:KPISection",
+      "label": "KPISection",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/KPISection.tsx",
+      "details": "React UI Component in src/components/KPISection.tsx"
+    },
+    {
+      "id": "component:KnowledgeGraphViewer",
+      "label": "KnowledgeGraphViewer",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/KnowledgeGraphViewer.tsx",
+      "details": "React UI Component in src/components/KnowledgeGraphViewer.tsx"
+    },
+    {
+      "id": "component:LeaderboardWidget",
+      "label": "LeaderboardWidget",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/LeaderboardWidget.tsx",
+      "details": "React UI Component in src/components/LeaderboardWidget.tsx"
+    },
+    {
+      "id": "component:PayrollStatusToggle",
+      "label": "PayrollStatusToggle",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/PayrollStatusToggle.tsx",
+      "details": "React UI Component in src/components/PayrollStatusToggle.tsx"
+    },
+    {
+      "id": "component:PeriodPicker",
+      "label": "PeriodPicker",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/PeriodPicker.tsx",
+      "details": "React UI Component in src/components/PeriodPicker.tsx"
+    },
+    {
+      "id": "component:PipelineWidget",
+      "label": "PipelineWidget",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/PipelineWidget.tsx",
+      "details": "React UI Component in src/components/PipelineWidget.tsx"
+    },
+    {
+      "id": "component:ProductionToolbar",
+      "label": "ProductionToolbar",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/ProductionToolbar.tsx",
+      "details": "React UI Component in src/components/ProductionToolbar.tsx"
+    },
+    {
+      "id": "component:QACard",
+      "label": "QACard",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/QACard.tsx",
+      "details": "React UI Component in src/components/QACard.tsx"
+    },
+    {
+      "id": "component:QAKanbanBoard",
+      "label": "QAKanbanBoard",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/QAKanbanBoard.tsx",
+      "details": "React UI Component in src/components/QAKanbanBoard.tsx"
+    },
+    {
+      "id": "component:RateCardRow",
+      "label": "RateCardRow",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/RateCardRow.tsx",
+      "details": "React UI Component in src/components/RateCardRow.tsx"
+    },
+    {
+      "id": "component:SelectDropdown",
+      "label": "SelectDropdown",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/SelectDropdown.tsx",
+      "details": "React UI Component in src/components/SelectDropdown.tsx"
+    },
+    {
+      "id": "component:Sidebar",
+      "label": "Sidebar",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/Sidebar.tsx",
+      "details": "React UI Component in src/components/Sidebar.tsx"
+    },
+    {
+      "id": "component:SortControl",
+      "label": "SortControl",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/SortControl.tsx",
+      "details": "React UI Component in src/components/SortControl.tsx"
+    },
+    {
+      "id": "component:SortableTaskLists",
+      "label": "SortableTaskLists",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/SortableTaskLists.tsx",
+      "details": "React UI Component in src/components/SortableTaskLists.tsx"
+    },
+    {
+      "id": "component:SyncButton",
+      "label": "SyncButton",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/SyncButton.tsx",
+      "details": "React UI Component in src/components/SyncButton.tsx"
+    },
+    {
+      "id": "component:TaskDetailSheet",
+      "label": "TaskDetailSheet",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/TaskDetailSheet.tsx",
+      "details": "React UI Component in src/components/TaskDetailSheet.tsx"
+    },
+    {
+      "id": "component:ThemeToggle",
+      "label": "ThemeToggle",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/ThemeToggle.tsx",
+      "details": "React UI Component in src/components/ThemeToggle.tsx"
+    },
+    {
+      "id": "component:TrenVolumeWidget",
+      "label": "TrenVolumeWidget",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/TrenVolumeWidget.tsx",
+      "details": "React UI Component in src/components/TrenVolumeWidget.tsx"
+    },
+    {
+      "id": "component:WorkloadWidget",
+      "label": "WorkloadWidget",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/WorkloadWidget.tsx",
+      "details": "React UI Component in src/components/WorkloadWidget.tsx"
+    },
+    {
+      "id": "component:board-filters",
+      "label": "board-filters",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/board-filters.ts",
+      "details": "React UI Component in src/components/board-filters.ts"
+    },
+    {
+      "id": "action:approval-payroll",
+      "label": "approval-payroll.ts",
+      "type": "action",
+      "group": "Server Actions & Lib",
+      "filepath": "src/app/actions/approval-payroll.ts",
+      "details": "Server Actions for Payroll calculations & status toggles"
+    },
+    {
+      "id": "action:sync-notion",
+      "label": "sync-notion.ts Engine",
+      "type": "action",
+      "group": "Server Actions & Lib",
+      "filepath": "src/lib/sync-notion.ts",
+      "details": "Notion API Full & Incremental sync engine"
+    },
+    {
+      "id": "action:queries",
+      "label": "queries.ts Aggregations",
+      "type": "action",
+      "group": "Server Actions & Lib",
+      "filepath": "src/lib/queries.ts",
+      "details": "Prisma aggregation queries for KPI & volume trends"
+    },
+    {
+      "id": "model:Task",
+      "label": "Task Model",
+      "type": "model",
+      "group": "Prisma DB Models",
+      "filepath": "prisma/schema.prisma",
+      "details": "Notion Task card record (qtySubmit, pages, status)"
+    },
+    {
+      "id": "model:Designer",
+      "label": "Designer Model",
+      "type": "model",
+      "group": "Prisma DB Models",
+      "filepath": "prisma/schema.prisma",
+      "details": "Designer profile & status (Active/Resign/Hold)"
+    },
+    {
+      "id": "model:Doctype",
+      "label": "Doctype Model",
+      "type": "model",
+      "group": "Prisma DB Models",
+      "filepath": "prisma/schema.prisma",
+      "details": "Document template format & base page rate"
+    },
+    {
+      "id": "model:Brand",
+      "label": "Brand Model",
+      "type": "model",
+      "group": "Prisma DB Models",
+      "filepath": "prisma/schema.prisma",
+      "details": "Client brand entity"
+    },
+    {
+      "id": "model:DesignStatus",
+      "label": "DesignStatus Model",
+      "type": "model",
+      "group": "Prisma DB Models",
+      "filepath": "prisma/schema.prisma",
+      "details": "Kanban production status stage"
+    },
+    {
+      "id": "model:ContractRate",
+      "label": "ContractRate Model",
+      "type": "model",
+      "group": "Prisma DB Models",
+      "filepath": "prisma/schema.prisma",
+      "details": "Custom rate overrides per designer & doctype"
+    },
+    {
+      "id": "model:BillingStatement",
+      "label": "BillingStatement Model",
+      "type": "model",
+      "group": "Prisma DB Models",
+      "filepath": "prisma/schema.prisma",
+      "details": "Monthly designer payment statement"
+    },
+    {
+      "id": "model:SyncLog",
+      "label": "SyncLog Model",
+      "type": "model",
+      "group": "Prisma DB Models",
+      "filepath": "prisma/schema.prisma",
+      "details": "Execution logs of Notion sync operations"
+    },
+    {
+      "id": "doc:business-rules",
+      "label": "business-rules.md",
+      "type": "doc",
+      "group": "Knowledge Base",
+      "filepath": "docs/knowledge/business-rules.md",
+      "details": "Modular Knowledge Document (docs/knowledge/business-rules.md)"
+    },
+    {
+      "id": "doc:data-flows",
+      "label": "data-flows.md",
+      "type": "doc",
+      "group": "Knowledge Base",
+      "filepath": "docs/knowledge/data-flows.md",
+      "details": "Modular Knowledge Document (docs/knowledge/data-flows.md)"
+    },
+    {
+      "id": "doc:entities",
+      "label": "entities.md",
+      "type": "doc",
+      "group": "Knowledge Base",
+      "filepath": "docs/knowledge/entities.md",
+      "details": "Modular Knowledge Document (docs/knowledge/entities.md)"
+    },
+    {
+      "id": "doc:index",
+      "label": "index.md",
+      "type": "doc",
+      "group": "Knowledge Base",
+      "filepath": "docs/knowledge/index.md",
+      "details": "Modular Knowledge Document (docs/knowledge/index.md)"
+    },
+    {
+      "id": "doc:issues-and-fixes",
+      "label": "issues-and-fixes.md",
+      "type": "doc",
+      "group": "Knowledge Base",
+      "filepath": "docs/knowledge/issues-and-fixes.md",
+      "details": "Modular Knowledge Document (docs/knowledge/issues-and-fixes.md)"
+    },
+    {
+      "id": "doc:modules",
+      "label": "modules.md",
+      "type": "doc",
+      "group": "Knowledge Base",
+      "filepath": "docs/knowledge/modules.md",
+      "details": "Modular Knowledge Document (docs/knowledge/modules.md)"
+    },
+    {
+      "id": "doc:session-handover",
+      "label": "session-handover.md",
+      "type": "doc",
+      "group": "Knowledge Base",
+      "filepath": "docs/knowledge/session-handover.md",
+      "details": "Modular Knowledge Document (docs/knowledge/session-handover.md)"
+    }
+  ],
+  "links": [
+    {
+      "source": "page:/",
+      "target": "component:KPISection",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/",
+      "target": "component:WorkloadWidget",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/",
+      "target": "component:TrenVolumeWidget",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/production",
+      "target": "component:SortableTaskLists",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/production",
+      "target": "component:ProductionToolbar",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/billing-statement",
+      "target": "component:ApprovalPayrollTable",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:ApprovalPayrollTable",
+      "target": "action:approval-payroll",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/knowledge-graph",
+      "target": "component:KnowledgeGraphViewer",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:KnowledgeGraphViewer",
+      "target": "component:GraphifyVisualizer",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:SyncButton",
+      "target": "action:sync-notion",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:sync-notion",
+      "target": "model:Task",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:sync-notion",
+      "target": "model:Designer",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:sync-notion",
+      "target": "model:SyncLog",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:approval-payroll",
+      "target": "model:Designer",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:approval-payroll",
+      "target": "model:BillingStatement",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:approval-payroll",
+      "target": "doc:business-rules",
+      "relation": "enforces",
+      "confidence": "INFERRED"
+    },
+    {
+      "source": "action:sync-notion",
+      "target": "doc:data-flows",
+      "relation": "enforces",
+      "confidence": "INFERRED"
+    },
+    {
+      "source": "component:SortableTaskLists",
+      "target": "doc:issues-and-fixes",
+      "relation": "enforces",
+      "confidence": "INFERRED"
+    }
+  ]
+}

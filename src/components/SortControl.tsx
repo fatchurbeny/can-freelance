@@ -37,24 +37,24 @@ export default function SortControl({ value, onChange, disabled }: Props) {
   const Arrow = ASCENDING.includes(value) ? ArrowUp : ArrowDown;
 
   return (
-    <div className="relative" ref={ref}>
+    <div className="relative h-full flex items-stretch" ref={ref}>
       <button
         type="button"
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
-        className="inline-flex items-center gap-2 rounded-full border border-[#E8E0D8] px-4 py-1.5 text-[13px] font-medium text-indigo-600 transition-colors hover:bg-black/[0.03] disabled:opacity-50 dark:border-gray-800 dark:text-indigo-400 dark:hover:bg-white/5"
+        className="h-full px-4 border-r border-[#f0f0f0] dark:border-[#272a34] flex items-center gap-2 text-xs font-mono font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#16181d]/50 transition-colors disabled:opacity-50 cursor-pointer select-none"
       >
-        <Arrow className="size-3.5" />
-        {selected?.label}
-        <ChevronDown className={`size-3.5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <Arrow className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
+        <span>{selected?.label}</span>
+        <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {isOpen && (
         <div
           role="listbox"
-          className="absolute left-0 z-50 mt-1.5 min-w-[160px] rounded-xl border border-[#E8E0D8] bg-white py-1.5 shadow-xl dark:border-gray-800 dark:bg-[#111827]"
+          className="absolute left-0 top-full z-50 mt-1 min-w-[160px] rounded-xl border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] py-1.5 shadow-none"
         >
           {SORT_OPTIONS.map((opt) => (
             <button

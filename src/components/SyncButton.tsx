@@ -264,20 +264,20 @@ export default function SyncButton({ initialSyncLog, isCollapsed = false }: Sync
         document.body
       )}
 
-      <div className="mt-auto pt-6 border-t border-[#E8E0D8] dark:border-gray-800 space-y-4">
+      <div className="mt-auto space-y-4">
 
         {/* ── Auto Sync ON: countdown button ── */}
         {autoSync ? (
           <div
-            className={`flex items-center justify-center px-3.5 py-2.5 rounded-xl border transition-all font-medium text-[13px] select-none ${
+            className={`flex items-center justify-center px-3 py-2 rounded-lg border border-[#f0f0f0] dark:border-[#272a34] bg-gray-50 dark:bg-[#16181d] transition-all font-mono font-bold text-xs select-none ${
               isSyncing
-                ? 'border-amber-500/40 bg-amber-950/20 text-amber-400 animate-pulse'
-                : 'border-red-500/40 bg-red-950/20 dark:bg-red-950/10 text-red-500 dark:text-red-400'
-            } ${isCollapsed ? 'w-10 h-10 p-0' : 'w-full gap-2'}`}
+                ? 'border-amber-500/40 text-amber-500 animate-pulse'
+                : 'border-[#ff5e1f]/30 text-[#ff5e1f]'
+            } ${isCollapsed ? 'w-9 h-9 p-0' : 'w-full gap-2'}`}
           >
-            <Timer className={`w-4 h-4 shrink-0 ${isSyncing ? 'animate-spin' : ''}`} />
+            <Timer className={`w-3.5 h-3.5 shrink-0 ${isSyncing ? 'animate-spin' : ''}`} />
             {!isCollapsed && (
-              <span className="font-mono tracking-wider text-[13px]">
+              <span className="font-mono tracking-wider text-xs">
                 {isSyncing
                   ? 'Syncing...'
                   : countdownMs === null
@@ -291,9 +291,9 @@ export default function SyncButton({ initialSyncLog, isCollapsed = false }: Sync
           <button
             onClick={handleSync}
             disabled={isSyncing}
-            className={`flex items-center justify-center px-3.5 py-2.5 rounded-xl border border-indigo-600/30 dark:border-indigo-500/20 bg-indigo-50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-950/30 transition-all font-medium text-[13px] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer group shadow-sm hover:shadow ${isCollapsed ? 'w-10 h-10 p-0' : 'w-full gap-2'}`}
+            className={`flex items-center justify-center px-4 py-2 rounded-lg border border-[#f0f0f0] dark:border-[#272a34] bg-gray-50 dark:bg-[#16181d] text-gray-900 dark:text-gray-100 hover:border-[#ff5e1f] hover:text-[#ff5e1f] dark:hover:text-[#ff5e1f] transition-all font-mono text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer group shadow-none ${isCollapsed ? 'w-9 h-9 p-0' : 'w-full gap-2'}`}
           >
-            <RefreshCw className={`w-4 h-4 text-indigo-600 dark:text-indigo-400 ${isSyncing ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
+            <RefreshCw className={`w-3.5 h-3.5 text-gray-500 dark:text-gray-400 group-hover:text-[#ff5e1f] ${isSyncing ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
             {!isCollapsed && <span>{isSyncing ? 'Syncing...' : 'Notion Sync'}</span>}
           </button>
         )}
@@ -301,29 +301,27 @@ export default function SyncButton({ initialSyncLog, isCollapsed = false }: Sync
         {/* Sync and Postgres Status */}
         {isCollapsed ? (
           <div className="flex justify-center py-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
+            <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
           </div>
         ) : (
-          <div className="space-y-3 text-xs">
-            <div className="flex items-center gap-4">
-              <span className="text-gray-500 dark:text-gray-400">Status</span>
-              <span className="text-emerald-500 font-medium flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+          <div className="p-3 rounded-xl border border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 space-y-2 font-mono text-[11px]">
+            <div className="flex items-center justify-between">
+              <span className="text-gray-400 dark:text-gray-500">Status</span>
+              <span className="text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                 Postgres Active
               </span>
             </div>
-            <div className="flex flex-col gap-2">
-              <span className="text-gray-500 dark:text-gray-400">Terakhir Sync :</span>
-              <ul className="text-gray-900 dark:text-white font-medium list-disc list-outside ml-4 space-y-1 text-xs">
-                <li>
-                  {syncLog?.status === 'success' ? `Success - ${syncLog.recordsSynced} Data` : (syncLog ? 'Failed' : 'Belum Pernah Sync')}
-                </li>
-                {syncLog && (
-                  <li>
-                    {new Date(syncLog.finishedAt || syncLog.startedAt).toLocaleDateString('en-CA') === new Date().toLocaleDateString('en-CA') ? 'Today' : new Date(syncLog.finishedAt || syncLog.startedAt).toLocaleDateString('id-ID')} - {new Date(syncLog.finishedAt || syncLog.startedAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                  </li>
-                )}
-              </ul>
+            <div className="pt-1.5 border-t border-[#f0f0f0] dark:border-[#272a34]/60 space-y-1">
+              <div className="text-gray-400 dark:text-gray-500">Terakhir Sync :</div>
+              <div className="text-gray-900 dark:text-gray-200 font-bold">
+                {syncLog?.status === 'success' ? `Success - ${syncLog.recordsSynced} Data` : (syncLog ? 'Failed' : 'Belum Pernah Sync')}
+              </div>
+              {syncLog && (
+                <div className="text-[10px] text-gray-400 dark:text-gray-500">
+                  {new Date(syncLog.finishedAt || syncLog.startedAt).toLocaleDateString('en-CA') === new Date().toLocaleDateString('en-CA') ? 'Today' : new Date(syncLog.finishedAt || syncLog.startedAt).toLocaleDateString('id-ID')} • {new Date(syncLog.finishedAt || syncLog.startedAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                </div>
+              )}
             </div>
           </div>
         )}

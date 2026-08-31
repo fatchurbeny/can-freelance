@@ -9,12 +9,13 @@ For Recharts:
 <!-- END:rounded-charts-rule -->
 
 <!-- BEGIN:prisma-schema-update-workflow -->
-# Prisma Schema Updates
+# Prisma Schema & Build Workflow
 
-When making changes to the `schema.prisma` file (e.g., adding or modifying fields):
+When making changes to `schema.prisma` or configuring Prisma in this project:
 1. Always run `npx prisma db push` (or `migrate dev`) to sync the database schema.
-2. Always run `npx prisma generate` to rebuild the TypeScript types for `@prisma/client`.
-3. If the Next.js dev server is running, explicitly instruct the user to restart it so the updated Prisma Client is properly loaded.
+2. Always run `npx prisma generate` to rebuild TypeScript types for `@prisma/client`.
+3. If custom output paths are used (`output = "../generated/prisma"`), ensure `package.json` contains `"postinstall": "prisma generate"` under `scripts` so cloud deployments (Vercel) automatically generate Prisma Client during package installation before `next build`.
+4. If the Next.js dev server is running, explicitly instruct the user to restart it so the updated Prisma Client is properly loaded.
 <!-- END:prisma-schema-update-workflow -->
 
 <!-- BEGIN:notion-indonesian-months-rule -->
@@ -204,3 +205,121 @@ When the user asks to move, align, swap, or remove dashboard cards, make the sma
 
 If a component file becomes corrupted during a UI edit, restore it by rewriting the full file cleanly, then verify with `npx tsc --noEmit` before continuing.
 <!-- END:dashboard-card-layout-learning -->
+
+<!-- BEGIN:notion-status-case-and-alias-handling -->
+# Notion Status Case Sensitivity & Alias Handling
+
+When fetching, filtering, or rendering tasks synchronized from Notion:
+1. **Case-Insensitive Array Matching**: Server-side queries (`BOARD_STATUSES` in `page.tsx`) and client-side column filters (`COLUMNS` and `STATUS_CARDS` in `SortableTaskLists.tsx`) MUST include both title-case and lowercase variants (e.g., `['Not Started', 'Not started']`, `['In Progress', 'In progress']`).
+2. **Support Status Aliases**: Include common alias variants for statuses (e.g. QA variants: `['QA', 'qa', 'Q&A', 'q&a', 'In QA', 'in qa', 'QA Process', 'Quality Assurance']`).
+3. **Intelligent Sync Mapping**: In `syncNotionData`, normalize or match status names using case-insensitive and substring checks so that new status records are mapped to canonical existing status entities whenever possible.
+<!-- END:notion-status-case-and-alias-handling -->
+
+<!-- BEGIN:notion-sync-mode-and-manual-trigger -->
+# Notion Sync Mode & Manual Sync Defaults
+
+1. **Manual User Sync**: When a server action is invoked directly from a user UI action (such as clicking the "Notion Sync" button via `triggerSyncAction`), it MUST default to **Full Sync mode** (`syncNotionData('full')`) to guarantee complete reconciliation of updated statuses, deleted pages, and new tasks.
+2. **Background Cron Sync**: Background automated syncs (e.g., `/api/sync/cron`) may use incremental mode for routine polling, but should run full sync reconciliation periodically.
+<!-- END:notion-sync-mode-and-manual-trigger -->
+
+<!-- BEGIN:workspace-cleanliness-rule -->
+# Workspace Cleanliness & Temporary File Rules
+
+Untuk menjaga direktori proyek tetap bersih, rapi, dan mudah dipelihara:
+
+1. **Dilarang Membuat Skrip Debug di Root Directory**:
+   - Jangan membuat file `.ts`, `.js`, `.py`, `.sql`, atau `.log` sementara untuk uji coba langsung di root folder (`./`).
+   
+2. **Gunakan Folder `scratch/` untuk Eksperimen**:
+   - Seluruh skrip pengujian sementara, eksplorasi API (seperti Notion/Prisma), atau investigasi bug HARUS diletakkan di dalam folder `./scratch/`.
+   - Folder `./scratch/` sudah terdaftar di `.gitignore` sehingga tidak akan menyampahi riwayat commit Git.
+
+3. **Skrip Resmi Wajib Masuk `scripts/`**:
+   - Jika suatu skrip utilitas bersifat permanen dan dibutuhkan oleh tim/CI (misal: verifikasi DB, seeding kustom), tempatkan di folder `./scripts/` (contoh: `scripts/verify-prisma.ts`) dan daftarkan di `package.json` jika perlu.
+
+4. **Pembersihan Berkala & Dilarang Commit Log**:
+   - File log (`*.log`) tidak boleh dicommit ke git repository.
+   - Hapus atau arsip skrip uji coba di `scratch/` secara berkala jika fitur terkait telah selesai dikembangkan dan masuk ke tahap production.
+<!-- END:workspace-cleanliness-rule -->
+
+<!-- BEGIN:knowledge-graph-hybrid-protocol -->
+# Hybrid Knowledge Graph & Session Handover Protocol
+
+Untuk efisiensi token dan kontinuitas konteks antar LLM (Gemini/Claude/GPT) dan Code Editor (Antigravity/Cursor/VS Code):
+
+1. **Inisialisasi Sesi (On-Demand Retrieval)**:
+   - LLM HARUS membaca `docs/knowledge/index.md` di awal sesi untuk memahami peta repositori.
+   - Untuk penelusuran dependensi kode teknis (call graph/imports), merujuk pada `graph.json` (Graphify) jika tersedia.
+   - Untuk aturan bisnis, skema data, dan gotchas, merujuk pada modul `docs/knowledge/*.md` yang relevan.
+
+2. **Konsultasi Handover Log**:
+   - Sebelum mengeksekusi tugas baru, periksa `docs/knowledge/session-handover.md` untuk mengetahui status pengerjaan terakhir dan keputusan arsitektur terbaru.
+
+3. **Mekanisme Update Sesi**:
+   - Setelah menyelesaikan perubahan besar, bug fix, atau penambahan fitur, LLM WAJIB memperbarui `docs/knowledge/session-handover.md` (status aktif & catatan keputusan) dan `docs/knowledge/issues-and-fixes.md` (jika menemukan bug/edge case baru).
+<!-- END:knowledge-graph-hybrid-protocol -->
+
+<!-- BEGIN:period-picker-dynamic-pathname-rule -->
+# PeriodPicker & Shared Filter Dynamic Pathname Routing
+
+When building or updating shared filter components that modify URL search parameters (like `PeriodPicker` or `MonthFilter`):
+- NEVER hardcode the target route to `/` or a specific page path in `router.push()`.
+- ALWAYS use `usePathname()` from `next/navigation` to dynamically retain the current page location:
+  ```ts
+  const pathname = usePathname();
+  const params = new URLSearchParams(searchParams.toString());
+  params.set('period', updatedPeriod);
+  router.push(`${pathname}?${params.toString()}`);
+  ```
+This ensures the filter works seamlessly across any page (e.g. Dashboard `/`, `/production`, `/billing-statement`) without causing unwanted page redirects.
+<!-- END:period-picker-dynamic-pathname-rule -->
+
+<!-- BEGIN:period-string-normalization-rule -->
+# Period & Month String Normalization Protocol
+
+When filtering tasks or calculating metrics based on month/period selections:
+- NEVER rely on strict literal equality (`taskMonth === filter`) or raw `Array.includes()`.
+- ALWAYS use a canonical normalization helper (such as `isTaskInPeriods` / `parseTaskMonthToKey` from `@/lib/period-utils`) that converts both the filter key and `taskMonth` strings into standard `YYYY-MM` format before matching.
+- This guarantees accurate filtering regardless of whether `taskMonth` is stored as an Indonesian full month (`Agustus-2026`), short month (`Agt-2026`), ISO string (`2026-08`), or numeric month (`8-2026`).
+<!-- END:period-string-normalization-rule -->
+
+<!-- BEGIN:unwrapped-metric-cards-rule -->
+# Unwrapped Metric Cards Layout Standard
+
+When rendering groups of KPI metric cards or status overview cards:
+- DO NOT wrap the grid of cards inside a secondary outer card container (`rounded-2xl border border-[#E8E0D8] bg-white p-6`).
+- Render each metric card as an **individual card directly on the page background** (`glass dark:bg-[#111827] rounded-2xl p-5 border border-[#E8E0D8] dark:border-gray-800 bg-white shadow-sm hover:shadow-md transition-all`).
+- Maintain standard typography: `font-display font-bold text-3xl` for metric counts, and `w-8 h-8 rounded-lg` with 10% opacity backgrounds (`bg-color/10`) for status icons.
+<!-- END:unwrapped-metric-cards-rule -->
+
+<!-- BEGIN:cloudflare-checkbox-style -->
+# Cloudflare Checkbox Design & Contrast Inversion Standard
+
+When styling native or custom checkboxes across the application, enforce Cloudflare's exact light/dark contrast inversion pattern:
+
+1. **Light Mode**:
+   - Unchecked: `border border-gray-300 bg-white rounded-[5px]`
+   - Checked: `bg-black border-black text-white rounded-[5px]`
+2. **Dark Mode**:
+   - Unchecked: `border border-[#272a34] bg-[#16181d] rounded-[5px]`
+   - Checked: `bg-white border-white text-black rounded-[5px]`
+3. **Native HTML Inputs**:
+   - Native `<input type="checkbox">` should rely on the global CSS rules in `src/app/globals.css` which automatically apply this contrast inversion.
+<!-- END:cloudflare-checkbox-style -->
+
+<!-- BEGIN:cloudflare-continuous-card-layout -->
+# Cloudflare Continuous Card Container Layout Standard
+
+When building or refactoring multi-section pages (like `/rate-card`, `/billing-statement`, `/account-team`):
+
+1. **Unified Outer Wrapper**: Wrap all sections inside a single continuous container:
+   `w-full rounded-xl border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] divide-y divide-[#f0f0f0] dark:divide-[#272a34] shadow-none`.
+2. **Corner Radius Preservation**:
+   - The top-most child inside the container MUST specify `rounded-t-xl`.
+   - The bottom-most child (or `<tbody>` container) MUST specify `rounded-b-xl`.
+3. **Sticky Stacking & Overflow Trap Rules**:
+   - Top navigation bar: `CloudflareTopBar` (`sticky top-0 z-50 h-14` / `56px`).
+   - Inner sticky headers / tab bars: `sticky top-[56px] z-30 bg-white dark:bg-[#0d0e12]`.
+   - Ancestor `<main>` and container elements MUST NOT use `overflow-hidden` or `overflow-x-hidden`, which breaks CSS `position: sticky` relative to the window viewport.
+<!-- END:cloudflare-continuous-card-layout -->
+

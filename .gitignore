@@ -31,11 +31,6 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 /scratch/
-/check_mock.ts
-/debug_*.ts
-/delete_*.sql
-/get_status_counts.ts
-/sync_trigger.ts
 
 # environment files and Vercel project link
 .env*
@@ -51,8 +46,3 @@ next-env.d.ts
 # local assistant settings
 /.claude/
 
-# local test and helper scripts
-/test-*.js
-/trigger-sync.js
-/read-sync-logs.js
-.vercel

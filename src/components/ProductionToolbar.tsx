@@ -108,217 +108,159 @@ export default function ProductionToolbar({
   const hasFilters = selectedCount > 0;
 
   return (
-    <div className="flex min-w-0 flex-col items-stretch gap-3">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        {/* Left: month + sort + applied-filter pills + filter */}
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="relative" ref={monthRef}>
-            <button
-              type="button"
-              onClick={() => setMonthOpen((o) => !o)}
-              aria-haspopup="listbox"
-              aria-expanded={monthOpen}
-              className={`inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-[13px] font-medium transition-colors ${
-                filters.taskMonths.length > 0
-                  ? 'border-[#615FFF] bg-[#615FFF]/10 text-[#615FFF] dark:bg-[#615FFF]/15'
-                  : 'border-[#E8E0D8] text-gray-600 hover:bg-black/[0.03] dark:border-gray-800 dark:text-gray-300 dark:hover:bg-white/5'
-              }`}
-            >
-              <Calendar className="size-4" />
-              <span className="whitespace-nowrap">{monthLabel}</span>
-              <ChevronDown className={`size-4 transition-transform ${monthOpen ? 'rotate-180' : ''}`} />
-            </button>
+    <div className="w-full h-10 flex items-stretch justify-between border-b border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] select-none text-xs shrink-0">
+      {/* Left side: SortControl + Filter Button + Active Filter Chips */}
+      <div className="flex items-stretch">
+        <SortControl value={sortKey} onChange={onSortChange} />
 
-            {monthOpen && (
-              <div className="absolute left-0 z-50 mt-1.5 min-w-[180px] overflow-hidden rounded-[10px] border border-[#E8E0D8] bg-white p-1 shadow-xl dark:border-gray-800 dark:bg-[#111827]">
-                <div className="flex flex-col gap-[2px]">
-                  {facets.months.map((month) => {
-                    const on = filters.taskMonths.includes(month);
-                    return (
-                      <button
-                        key={month}
-                        type="button"
-                        onClick={() => toggleMonth(month)}
-                        className={`flex w-full items-center gap-2 rounded px-2 py-[6px] text-left text-[12px] font-medium transition-colors ${
-                          on ? 'bg-[#615FFF]/10 text-[#615FFF] dark:bg-[#615FFF]/15' : 'text-gray-600 hover:bg-black/[0.03] hover:text-gray-900 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white'
-                        }`}
-                      >
-                        <span className={`grid size-4 place-items-center rounded border ${on ? 'border-[#615FFF] bg-[#615FFF]' : 'border-[#6b7280]'}`}>
-                          {on && <Check className="size-3 text-white" />}
-                        </span>
-                        <span className="whitespace-nowrap">{month}</span>
-                      </button>
-                    );
-                  })}
-                  {facets.months.length === 0 && (
-                    <span className="px-2 py-[6px] text-[12px] text-gray-500 dark:text-[#6b7280]">
-                      No months available
-                    </span>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-
-          <SortControl value={sortKey} onChange={onSortChange} />
-
-          {groups
-            .filter((g) => filters[g.key].length > 0)
-            .map((g) => {
-              const labels = filters[g.key]
-                .map((value) => g.options.find((o) => o.value === value)?.label)
-                .filter(Boolean)
-                .join(', ');
-              return (
-                <span
-                  key={g.key}
-                  title={`${g.label}: ${labels}`}
-                  className="inline-flex max-w-[240px] items-center gap-1.5 rounded-full border border-[#E8E0D8] bg-white px-[12px] py-[8px] text-[12px] font-medium text-gray-900 hover:bg-black/[0.03] dark:border-[#262936] dark:bg-[#0A0B0E] dark:text-white dark:hover:bg-white/[0.04]"
-                >
-                  <span className="grid size-4 shrink-0 place-items-center">{g.icon}</span>
-                  <span className="truncate">
-                    {g.label}: {labels}
-                  </span>
-                  <button
-                    type="button"
-                    aria-label={`Remove ${g.label} filter`}
-                    onClick={() => clearGroup(g.key)}
-                    className="flex size-4 shrink-0 items-center justify-center rounded text-white/80 hover:text-white"
-                  >
-                    <X className="size-3.5" />
-                  </button>
-                </span>
-              );
-            })}
-
-          <div className="relative" ref={filterRef}>
-            <button
-              type="button"
-              onClick={() => { setFilterOpen((o) => !o); setActiveGroup(null); }}
-              aria-haspopup="dialog"
-              aria-expanded={filterOpen}
-              className={`inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-[13px] font-medium transition-colors ${
-                hasFilters
-                  ? 'border-[#615FFF] bg-[#615FFF]/10 text-[#615FFF] dark:bg-[#615FFF]/15'
-                  : 'border-[#E8E0D8] text-gray-600 hover:bg-black/[0.03] dark:border-gray-800 dark:text-gray-300 dark:hover:bg-white/5'
-              }`}
-            >
-              <SlidersHorizontal className="size-3.5" />
-              Filter
-              {hasFilters && (
-                <span className="grid size-4 place-items-center rounded-full bg-[#615FFF] text-[10px] font-semibold text-white">
-                  {selectedCount}
-                </span>
-              )}
-              <ChevronDown className={`size-3.5 transition-transform ${filterOpen ? 'rotate-180' : ''}`} />
-            </button>
-
-            {filterOpen && (
-              <div className="absolute left-0 z-50 mt-1.5 min-w-[200px] overflow-hidden rounded-[10px] border border-[#E8E0D8] bg-white p-1 shadow-xl dark:border-[#262936] dark:bg-[#111827]">
-                {!activeGroup ? (
-                  /* Stage 1: category list */
-                  groups.map((g) => {
-                    const selectedIn = filters[g.key].length > 0;
-                    return (
-                      <button
-                        key={g.key}
-                        type="button"
-                        onClick={() => setActiveGroup(g.key)}
-                        className={`flex w-full items-center gap-2 rounded px-2 py-[6px] text-left text-[12px] font-medium transition-colors ${
-                          selectedIn
-                            ? 'bg-gray-100 capitalize text-gray-900 dark:bg-[#12141a] dark:text-white'
-                            : 'capitalize text-gray-500 hover:bg-gray-50 hover:text-gray-900 dark:text-[#6b7280] dark:hover:bg-[#12141a] dark:hover:text-white'
-                        }`}
-                      >
-                        <span className="grid size-4 place-items-center">{g.icon}</span>
-                        {g.label}
-                      </button>
-                    );
-                  })
-                ) : (
-                  /* Stage 2: drill-down multi-select */
-                  (() => {
-                    const active = groupMap[activeGroup];
-                    return (
-                      <div className="flex flex-col gap-1">
-                        <div className="flex items-center justify-between px-2 py-1">
-                          <div className="flex items-center gap-1 text-[12px]">
-                            <button type="button" onClick={() => setActiveGroup(null)} className="text-gray-500 hover:text-gray-900 dark:text-[#6b7280] dark:hover:text-white">
-                              <ChevronLeft className="size-4" />
-                            </button>
-                            <span className="capitalize text-gray-500 dark:text-[#6b7280]">{active.label}</span>
-                            <span className="font-medium text-gray-900 dark:text-white">is</span>
-                            <ChevronDown className="size-4 text-gray-500 dark:text-[#6b7280]" />
-                          </div>
-                          <button type="button" onClick={() => clearGroup(active.key)} className="text-gray-500 hover:text-gray-900 dark:text-[#6b7280] dark:hover:text-white" aria-label="Clear all">
-                            <X className="size-4" />
-                          </button>
-                        </div>
-                        <div className="border-t border-[#E8E0D8] dark:border-[#262936]" />
-                        <div className="flex flex-col gap-[2px] p-1">
-                          {active.options.map((opt) => {
-                            const on = filters[active.key].includes(opt.value);
-                            const dotColor = optionColor(active.key, opt);
-                            return (
-                              <button
-                                key={opt.value}
-                                type="button"
-                                onClick={() => toggleValue(active.key, opt.value)}
-                                className={`flex w-full items-center gap-2 rounded px-2 py-[6px] text-left text-[12px] font-medium transition-colors ${
-                                  on ? 'bg-gray-100 text-gray-900 dark:bg-[#0a0b0e] dark:text-white' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900 dark:text-[#6b7280] dark:hover:bg-[#12141a] dark:hover:text-white'
-                                }`}
-                              >
-                                <span className={`grid size-4 place-items-center rounded border ${on ? 'border-[#615FFF] bg-[#615FFF]' : 'border-[#6b7280]'}`}>
-                                  {on && <Check className="size-3 text-white" />}
-                                </span>
-                                {dotColor && (
-                                  <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: dotColor }} />
-                                )}
-                                <span className="whitespace-nowrap">{opt.label}</span>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })()
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Right: search + new task */}
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-gray-400 dark:text-white/40" />
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => onQueryChange(e.target.value)}
-              placeholder="Search"
-              aria-label="Search tasks"
-              className="w-[180px] rounded-full border border-[#E8E0D8] bg-white py-1.5 pl-8 pr-8 text-[13px] text-gray-700 outline-none transition-colors placeholder:text-gray-400 focus:border-[#615FFF] dark:border-gray-800 dark:bg-white/[0.04] dark:text-gray-200 dark:placeholder:text-white/40"
-            />
-            {query && (
-              <button
-                type="button"
-                aria-label="Clear search"
-                onClick={() => onQueryChange('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 rounded text-gray-400 hover:text-gray-700 dark:hover:text-white"
-              >
-                <X className="size-3.5" />
-              </button>
-            )}
-          </div>
-
+        {/* Filter Dropdown Button */}
+        <div className="relative h-full flex items-stretch" ref={filterRef}>
           <button
             type="button"
-            className="inline-flex items-center gap-1.5 rounded-[10px] bg-[#615FFF] px-4 py-2 text-[13px] font-medium text-white shadow-sm transition-colors hover:bg-[#5151e6]"
+            onClick={() => { setFilterOpen((o) => !o); setActiveGroup(null); }}
+            aria-haspopup="dialog"
+            aria-expanded={filterOpen}
+            className={`h-full px-4 border-r border-[#f0f0f0] dark:border-[#272a34] flex items-center gap-2 text-xs font-mono font-medium transition-colors cursor-pointer ${
+              hasFilters
+                ? 'bg-[#ff5e1f]/10 text-[#ff5e1f] font-bold'
+                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#16181d]/50'
+            }`}
           >
-            <Plus className="size-4" />
-            Add New Task
+            <SlidersHorizontal className="w-3.5 h-3.5" />
+            <span>Filter</span>
+            {hasFilters && (
+              <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-[#ff5e1f] text-[10px] font-bold text-white">
+                {selectedCount}
+              </span>
+            )}
+            <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform ${filterOpen ? 'rotate-180' : ''}`} />
           </button>
+
+          {/* Filter Popover Dropdown */}
+          {filterOpen && (
+            <div className="absolute left-0 top-full z-50 mt-1 min-w-[220px] overflow-hidden rounded-xl border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] p-1.5 shadow-none">
+              {!activeGroup ? (
+                /* Stage 1: Category List */
+                groups.map((g) => {
+                  const selectedIn = filters[g.key].length > 0;
+                  return (
+                    <button
+                      key={g.key}
+                      type="button"
+                      onClick={() => setActiveGroup(g.key)}
+                      className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-mono font-medium transition-colors cursor-pointer ${
+                        selectedIn
+                          ? 'bg-gray-100 dark:bg-[#1e2028] text-gray-900 dark:text-white font-bold'
+                          : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#1e2028] hover:text-gray-900 dark:hover:text-white'
+                      }`}
+                    >
+                      <span className="grid size-4 place-items-center">{g.icon}</span>
+                      <span>{g.label}</span>
+                    </button>
+                  );
+                })
+              ) : (
+                /* Stage 2: Drill-down Multi-select */
+                (() => {
+                  const active = groupMap[activeGroup];
+                  return (
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center justify-between px-2 py-1">
+                        <div className="flex items-center gap-1 text-xs font-mono">
+                          <button type="button" onClick={() => setActiveGroup(null)} className="text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
+                            <ChevronLeft className="size-4" />
+                          </button>
+                          <span className="capitalize text-gray-500 dark:text-gray-400">{active.label}</span>
+                          <span className="font-bold text-gray-900 dark:text-white">is</span>
+                        </div>
+                        <button type="button" onClick={() => clearGroup(active.key)} className="text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white" aria-label="Clear all">
+                          <X className="size-4" />
+                        </button>
+                      </div>
+                      <div className="border-t border-[#f0f0f0] dark:border-[#272a34]" />
+                      <div className="flex flex-col gap-0.5 p-1 max-h-56 overflow-y-auto">
+                        {active.options.map((opt) => {
+                          const on = filters[active.key].includes(opt.value);
+                          const dotColor = optionColor(active.key, opt);
+                          return (
+                            <button
+                              key={opt.value}
+                              type="button"
+                              onClick={() => toggleValue(active.key, opt.value)}
+                              className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-mono font-medium transition-colors cursor-pointer ${
+                                on ? 'bg-gray-100 dark:bg-[#1e2028] text-gray-900 dark:text-white font-bold' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#1e2028]'
+                              }`}
+                            >
+                              <span className={`grid size-3.5 place-items-center rounded border ${on ? 'border-[#ff5e1f] bg-[#ff5e1f]' : 'border-gray-400 dark:border-gray-600'}`}>
+                                {on && <Check className="size-2.5 text-white stroke-[3]" />}
+                              </span>
+                              {dotColor && (
+                                <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: dotColor }} />
+                              )}
+                              <span className="whitespace-nowrap">{opt.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Active Filter Chips as Flat Table Cells */}
+        {hasFilters && (
+          <div className="flex items-stretch">
+            {Object.keys(filters).map((k) => {
+              const key = k as keyof BoardFilters;
+              if (!filters[key].length || key === 'taskMonths') return null;
+              const g = groupMap[key];
+              if (!g) return null;
+              return (
+                <div
+                  key={g.key}
+                  className="h-full px-4 border-r border-[#f0f0f0] dark:border-[#272a34] flex items-center gap-2 text-xs font-mono font-medium text-gray-700 dark:text-gray-300 bg-gray-50/50 dark:bg-[#16181d]/50"
+                >
+                  <span>{g.label}: {filters[g.key].length}</span>
+                  <button
+                    type="button"
+                    onClick={() => clearGroup(g.key)}
+                    className="p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-[#ff5e1f] transition-colors cursor-pointer"
+                    aria-label={`Clear ${g.label} filter`}
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Right side: Integrated Search Input */}
+      <div className="flex items-stretch">
+        <div className="relative h-full flex items-center border-l border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] px-3">
+          <Search className="pointer-events-none w-3.5 h-3.5 text-gray-400" />
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => onQueryChange(e.target.value)}
+            placeholder="Search"
+            aria-label="Search tasks"
+            className="w-[140px] sm:w-[180px] bg-transparent pl-2 pr-6 py-1 text-xs font-mono text-gray-700 dark:text-gray-200 outline-none placeholder:text-gray-400"
+          />
+          {query && (
+            <button
+              type="button"
+              aria-label="Clear search"
+              onClick={() => onQueryChange('')}
+              className="absolute right-2 text-gray-400 hover:text-gray-700 dark:hover:text-white"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
       </div>
     </div>
