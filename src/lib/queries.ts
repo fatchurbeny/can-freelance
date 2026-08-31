@@ -508,7 +508,7 @@ export async function getDashboardData(filters: DashboardFilters) {
   `);
 
 
-  // Determine top 3 doctypes overall in the current selection
+  // Determine top 5 doctypes overall in the current selection
   const doctypeTotals: { [key: string]: number } = {};
   for (const row of designerDoctypeCounts) {
     doctypeTotals[row.doctype] = (doctypeTotals[row.doctype] || 0) + Number(row.total_tasks);
@@ -516,11 +516,13 @@ export async function getDashboardData(filters: DashboardFilters) {
   const sortedDoctypes = Object.keys(doctypeTotals).sort(
     (a, b) => doctypeTotals[b] - doctypeTotals[a]
   );
-  const top3 = sortedDoctypes.slice(0, 3);
-  const col1 = top3[0] || 'Specialist 1';
-  const col2 = top3[1] || 'Specialist 2';
-  const col3 = top3[2] || 'Specialist 3';
-  const leaderboardCols = [col1, col2, col3];
+  const top5 = sortedDoctypes.slice(0, 5);
+  const col1 = top5[0] || 'Specialist 1';
+  const col2 = top5[1] || 'Specialist 2';
+  const col3 = top5[2] || 'Specialist 3';
+  const col4 = top5[3] || 'Specialist 4';
+  const col5 = top5[4] || 'Specialist 5';
+  const leaderboardCols = [col1, col2, col3, col4, col5];
 
   // Initialize data mapping for all active designers
   const allDesigners = await prisma.designer.findMany();
@@ -533,6 +535,8 @@ export async function getDashboardData(filters: DashboardFilters) {
       col1Count: 0,
       col2Count: 0,
       col3Count: 0,
+      col4Count: 0,
+      col5Count: 0,
       otherCount: 0,
       otherBreakdown: {} as { [key: string]: number }
     };
@@ -549,6 +553,8 @@ export async function getDashboardData(filters: DashboardFilters) {
         col1Count: 0,
         col2Count: 0,
         col3Count: 0,
+        col4Count: 0,
+        col5Count: 0,
         otherCount: 0,
         otherBreakdown: {} as { [key: string]: number }
       };
@@ -567,6 +573,10 @@ export async function getDashboardData(filters: DashboardFilters) {
       des.col2Count += total;
     } else if (row.doctype === col3) {
       des.col3Count += total;
+    } else if (row.doctype === col4) {
+      des.col4Count += total;
+    } else if (row.doctype === col5) {
+      des.col5Count += total;
     } else {
       des.otherCount += total;
       des.otherBreakdown[row.doctype] = (des.otherBreakdown[row.doctype] || 0) + total;
@@ -589,6 +599,8 @@ export async function getDashboardData(filters: DashboardFilters) {
       col1Count: des.col1Count,
       col2Count: des.col2Count,
       col3Count: des.col3Count,
+      col4Count: des.col4Count,
+      col5Count: des.col5Count,
       otherCount: des.otherCount,
       otherTooltip
     };

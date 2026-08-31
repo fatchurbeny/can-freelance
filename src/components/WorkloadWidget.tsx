@@ -45,7 +45,7 @@ export default function WorkloadWidget({ data, brandName }: WorkloadWidgetProps)
   const avgPages = Math.round(totalPages / count);
 
   return (
-    <div className="glass dark:bg-[#111827] rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow relative flex flex-col h-[268px]">
+    <div className="p-6 relative flex flex-col h-full bg-white dark:bg-[#0d0e12]">
       {/* Title & Badge */}
       <div className="flex items-center justify-between pb-4">
         <div>
@@ -56,7 +56,7 @@ export default function WorkloadWidget({ data, brandName }: WorkloadWidgetProps)
             Jumlah Task Ditangani Bulan Ini - {brandName}
           </p>
         </div>
-        <span className="text-[10px] font-bold px-3 py-1 rounded-full bg-blue-500 text-white uppercase shadow-sm whitespace-nowrap shrink-0">
+        <span className="text-[10px] font-bold px-3 py-1 rounded-full bg-blue-600 text-white uppercase shadow-sm whitespace-nowrap shrink-0">
           AVG.{avgPages} PAGES
         </span>
       </div>

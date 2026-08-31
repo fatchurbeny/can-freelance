@@ -88,7 +88,7 @@ export default function TrenVolumeWidget({ data, brandName }: TrenVolumeWidgetPr
     : Object.keys(BRAND_COLORS).filter((brand) => data.some((d) => d[brand] > 0));
 
   return (
-    <div className="glass dark:bg-[#111827] rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow relative flex flex-col h-full min-h-[400px]">
+    <div className="p-6 relative flex flex-col h-full min-h-[360px] bg-white dark:bg-[#0d0e12]">
       {/* Title & Badge */}
       <div className="flex items-center justify-between pb-4">
         <div>
@@ -99,7 +99,7 @@ export default function TrenVolumeWidget({ data, brandName }: TrenVolumeWidgetPr
             Jumlah Task Tiap Bulan - {brandName === 'Semua Brand' ? 'Semua Brand (6)' : brandName}
           </p>
         </div>
-        <span className="text-[10px] font-bold px-3 py-1 rounded-full bg-[#615FFF] text-white uppercase shadow-sm">
+        <span className="text-[10px] font-bold px-3 py-1 rounded-full bg-blue-600 text-white uppercase shadow-sm whitespace-nowrap shrink-0">
           AVG.{avgTasks} TASK
         </span>
       </div>

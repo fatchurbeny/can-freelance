@@ -5,7 +5,11 @@ import { createPortal } from 'react-dom';
 import { Plus, X } from 'lucide-react';
 import { createDoctypeAction } from '@/app/actions/rate-card';
 
-export default function AddDoctypeButton() {
+interface Props {
+  className?: string;
+}
+
+export default function AddDoctypeButton({ className }: Props) {
   const [name, setName] = useState('');
   const [poolRate, setPoolRate] = useState('1.5');
   const [ratePages, setRatePages] = useState('15000');
@@ -68,11 +72,14 @@ export default function AddDoctypeButton() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm"
+        className={
+          className ||
+          'inline-flex items-center gap-1.5 rounded-full bg-[#ff5e1f] hover:bg-[#ff7038] px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition-all duration-150 cursor-pointer'
+        }
         id="add-doctype-button"
       >
-        <Plus className="w-4 h-4" />
-        Add Doctype
+        <Plus className="w-3.5 h-3.5" />
+        <span>Add Doctype</span>
       </button>
 
       {open && typeof window !== 'undefined'

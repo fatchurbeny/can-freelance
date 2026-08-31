@@ -10,6 +10,8 @@ interface LeaderboardItem {
   col1Count: number;
   col2Count: number;
   col3Count: number;
+  col4Count?: number;
+  col5Count?: number;
   otherCount: number;
   otherTooltip: string;
 }
@@ -26,6 +28,8 @@ export default function LeaderboardWidget({ data, columns, topPerformer, brandNa
   const col1 = columns?.[0] || 'Specialist 1';
   const col2 = columns?.[1] || 'Specialist 2';
   const col3 = columns?.[2] || 'Specialist 3';
+  const col4 = columns?.[3] || 'Specialist 4';
+  const col5 = columns?.[4] || 'Specialist 5';
 
   const visibleRows = data.filter((row) => row.taskTotal > 0);
   const hoveredRow = hoveredRowIndex !== null ? visibleRows[hoveredRowIndex] : null;
@@ -50,16 +54,16 @@ export default function LeaderboardWidget({ data, columns, topPerformer, brandNa
   };
 
   return (
-    <div className="glass dark:bg-[#111827] rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col h-fit self-start overflow-visible">
+    <div className="p-6 flex flex-col h-full bg-white dark:bg-[#0d0e12] overflow-visible">
       <div className="flex items-center justify-between pb-4">
         <div>
           <h3 className="font-display font-bold text-sm text-gray-900 dark:text-white">Designer Leaderboard</h3>
           <p className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">
-            Output Top 3 Doctype Spesialis Designer - {brandName}
+            Output Top 5 Doctype Spesialis Designer - {brandName === 'Semua Brand' ? 'Semua Brand (6)' : brandName}
           </p>
         </div>
         {topPerformer && (
-          <span className="text-[10px] font-bold px-3 py-1 rounded-full text-[#F0A848] border border-[#F0A848] bg-transparent flex items-center gap-1 uppercase">
+          <span className="text-[10px] font-bold px-3 py-1 rounded-full text-[#F0A848] border border-[#F0A848] bg-transparent flex items-center gap-1 uppercase whitespace-nowrap">
             🏆 {topPerformer}
           </span>
         )}
@@ -67,38 +71,44 @@ export default function LeaderboardWidget({ data, columns, topPerformer, brandNa
 
       <div className="relative overflow-visible pr-3">
         <div className="overflow-x-auto overflow-y-visible">
-          <table className="w-full min-w-[500px] border-collapse text-left text-xs">
-            <thead className="sticky top-0 z-10 bg-white shadow-[0_1px_0_0_#E8E0D8] dark:bg-[#111827] dark:shadow-[0_1px_0_0_#1F2937]">
+          <table className="w-full min-w-[650px] border-collapse text-left text-xs">
+            <thead className="sticky top-0 z-10 bg-white dark:bg-[#0d0e12] shadow-[0_1px_0_0_#f0f0f0] dark:shadow-[0_1px_0_0_#1F2937]">
               <tr className="font-bold text-gray-400 dark:text-gray-500">
-                <th className="py-2.5 font-semibold">Designer</th>
-                <th className="py-2.5 font-semibold text-center">Task</th>
-                <th className="py-2.5 font-semibold">Approval</th>
-                <th className="py-2.5 font-semibold text-center text-emerald-600 truncate max-w-[120px] dark:text-emerald-400" title={col1}>{col1}</th>
-                <th className="py-2.5 font-semibold text-center text-pink-600 truncate max-w-[120px] dark:text-pink-400" title={col2}>{col2}</th>
-                <th className="py-2.5 font-semibold text-center text-orange-600 truncate max-w-[120px] dark:text-orange-400" title={col3}>{col3}</th>
-                <th className="py-2.5 font-semibold text-center flex items-center justify-center gap-1">
+                <th className="py-2.5 pl-4 pr-2 font-semibold">Designer</th>
+                <th className="py-2.5 px-2 font-semibold text-center">Task</th>
+                <th className="py-2.5 px-2 font-semibold">Approval</th>
+                <th className="py-2.5 px-2 font-semibold text-center text-emerald-600 truncate max-w-[110px] dark:text-emerald-400" title={col1}>{col1}</th>
+                <th className="py-2.5 px-2 font-semibold text-center text-pink-600 truncate max-w-[110px] dark:text-pink-400" title={col2}>{col2}</th>
+                <th className="py-2.5 px-2 font-semibold text-center text-orange-600 truncate max-w-[110px] dark:text-orange-400" title={col3}>{col3}</th>
+                <th className="py-2.5 px-2 font-semibold text-center text-purple-600 truncate max-w-[110px] dark:text-purple-400" title={col4}>{col4}</th>
+                <th className="py-2.5 px-2 font-semibold text-center text-cyan-600 truncate max-w-[110px] dark:text-cyan-400" title={col5}>{col5}</th>
+                <th className="py-2.5 pl-2 pr-4 font-semibold text-center flex items-center justify-center gap-1">
                   Other
-                  <span title="Doctype di luar spesialis top-3">
+                  <span title="Doctype di luar spesialis top-5">
                     <Info className="w-3 h-3 text-gray-400 cursor-help" />
                   </span>
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#E8E0D8]/60 font-medium text-gray-700 dark:divide-gray-800 dark:text-gray-300">
+            <tbody className="divide-y divide-[#f0f0f0] font-medium text-gray-700 dark:divide-gray-800 dark:text-gray-300">
               {visibleRows.length > 0 ? (
                 visibleRows.map((row, index) => (
                   <tr
                     key={row.designer}
-                    className="hover:bg-[#F5F0EB]/50 transition-colors dark:hover:bg-gray-800/20"
+                    className={`transition-colors ${
+                      index === 0
+                        ? 'bg-gray-100/70 dark:bg-[#161d2f]/70 hover:bg-gray-200/50 dark:hover:bg-[#161d2f]'
+                        : 'hover:bg-[#F5F0EB]/50 dark:hover:bg-gray-800/20'
+                    }`}
                     onMouseEnter={() => row.otherCount > 0 && setHoveredRowIndex(index)}
                     onMouseLeave={() => setHoveredRowIndex((current) => (current === index ? null : current))}
                   >
-                    <td className="py-3 flex items-center gap-2.5">
+                    <td className="py-3 pl-4 pr-2 flex items-center gap-2.5">
                       {renderAvatar(row.designer)}
                       <span className="font-semibold text-gray-900 dark:text-white">{row.designer}</span>
                     </td>
-                    <td className="py-3 text-center font-bold text-gray-900 dark:text-white">{row.taskTotal}</td>
-                    <td className="py-3">
+                    <td className="py-3 px-2 text-center font-bold text-gray-900 dark:text-white">{row.taskTotal}</td>
+                    <td className="py-3 px-2">
                       <div className="flex items-center gap-2">
                         <span className="w-7 text-right font-bold text-gray-900 dark:text-white">{row.approvalPct}%</span>
                         <div className="w-12 h-1 rounded-full bg-gray-200 overflow-hidden shrink-0 dark:bg-gray-850">
@@ -106,10 +116,12 @@ export default function LeaderboardWidget({ data, columns, topPerformer, brandNa
                         </div>
                       </div>
                     </td>
-                    <td className="py-3 text-center font-mono font-bold text-emerald-600 bg-emerald-500/5 dark:bg-emerald-500/2 dark:text-emerald-400">{row.col1Count}</td>
-                    <td className="py-3 text-center font-mono font-bold text-pink-600 bg-pink-500/5 dark:bg-pink-500/2 dark:text-pink-400">{row.col2Count}</td>
-                    <td className="py-3 text-center font-mono font-bold text-orange-600 bg-orange-500/5 dark:bg-orange-500/2 dark:text-orange-400">{row.col3Count}</td>
-                    <td className="py-3 text-center">
+                    <td className="py-3 px-2 text-center font-mono font-bold text-emerald-600 dark:text-emerald-400">{row.col1Count}</td>
+                    <td className="py-3 px-2 text-center font-mono font-bold text-pink-600 dark:text-pink-400">{row.col2Count}</td>
+                    <td className="py-3 px-2 text-center font-mono font-bold text-orange-600 dark:text-orange-400">{row.col3Count}</td>
+                    <td className="py-3 px-2 text-center font-mono font-bold text-purple-600 dark:text-purple-400">{row.col4Count || 0}</td>
+                    <td className="py-3 px-2 text-center font-mono font-bold text-cyan-600 dark:text-cyan-400">{row.col5Count || 0}</td>
+                    <td className="py-3 pl-2 pr-4 text-center">
                       {row.otherCount > 0 ? (
                         <button
                           type="button"
@@ -126,7 +138,7 @@ export default function LeaderboardWidget({ data, columns, topPerformer, brandNa
                 ))
               ) : (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center font-semibold text-gray-400 dark:text-gray-500">
+                  <td colSpan={9} className="py-8 text-center font-semibold text-gray-400 dark:text-gray-500">
                     Tidak ada data leaderboard
                   </td>
                 </tr>

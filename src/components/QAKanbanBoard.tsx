@@ -65,12 +65,12 @@ export default function QAKanbanBoard({
           const taskId = e.dataTransfer.getData('text/plain');
           if (taskId) void onDropTask(taskId, targetStatus);
         }}
-        className={`flex flex-col gap-1.5 rounded-md transition-colors ${
-          over ? 'bg-[#615FFF]/5 ring-1 ring-inset ring-[#615FFF]/60' : ''
+        className={`flex flex-col flex-1 divide-y divide-[#f0f0f0] dark:divide-[#272a34] transition-colors ${
+          over ? 'bg-[#ff5e1f]/5 dark:bg-[#ff5e1f]/10' : ''
         }`}
       >
         {tasks.length === 0 ? (
-          <p className="px-2 py-3 text-[12px] text-gray-400 dark:text-white/30">{emptyMessage}</p>
+          <p className="px-4 py-6 text-center text-xs text-gray-400 dark:text-gray-500 font-mono">{emptyMessage}</p>
         ) : (
           <>
             {visibleTasks.map((task) => (
@@ -86,9 +86,9 @@ export default function QAKanbanBoard({
               <button
                 type="button"
                 onClick={() => setShowAll(true)}
-                className="rounded px-2 py-1.5 text-left text-[12px] text-gray-500 transition-colors hover:bg-black/[0.04] dark:text-white/40 dark:hover:bg-white/5"
+                className="p-3 text-center text-xs font-mono font-bold text-[#ff5e1f] hover:bg-gray-50 dark:hover:bg-[#16181d]/50 transition-colors cursor-pointer"
               >
-                Show all {tasks.length}
+                Show all {tasks.length} tasks
               </button>
             )}
           </>

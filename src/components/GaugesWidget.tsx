@@ -31,7 +31,7 @@ export function LisensiGauge({ data, brandName }: GaugeProps) {
   ];
 
   return (
-    <div className="glass dark:bg-[#111827] rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full max-h-[268px]">
+    <div className="p-6 flex flex-col h-full bg-white dark:bg-[#0d0e12]">
       <div>
         <h3 className="font-display font-bold text-sm text-gray-900 dark:text-white">
           Lisensi Template
@@ -109,7 +109,7 @@ export function BahasaGauge({ data, brandName }: GaugeProps) {
   ];
 
   return (
-    <div className="glass dark:bg-[#111827] rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full max-h-[268px]">
+    <div className="p-6 flex flex-col h-full bg-white dark:bg-[#0d0e12]">
       <div>
         <h3 className="font-display font-bold text-sm text-gray-900 dark:text-white">
           Bahasa Template

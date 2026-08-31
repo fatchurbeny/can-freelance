@@ -7,6 +7,7 @@ import {
 import { getLatestSyncStatus } from './actions/sync';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
+import CloudflareTopBar from '@/components/CloudflareTopBar';
 import BrandTabs from '@/components/BrandTabs';
 import KPISection from '@/components/KPISection';
 import TrenVolumeWidget from '@/components/TrenVolumeWidget';
@@ -51,97 +52,102 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   const latestSyncLog = await getLatestSyncStatus();
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen bg-[#F5F0EB] dark:bg-[#0a0b0e] text-gray-900 dark:text-gray-100 transition-colors">
-      {/* Sidebar navigation */}
-      <Sidebar currentSyncLog={latestSyncLog} />
+    <div className="min-h-screen bg-white dark:bg-[#0d0e12] text-[#262626] dark:text-[#f4f4f5] transition-colors">
+      {/* Top Global Cloudflare Title Bar */}
+      <CloudflareTopBar badgeLabel="DASHBOARD" periods={periods} currentPeriod={selectedPeriod} />
 
-      {/* Main dashboard content */}
-      <main className="flex-1 p-6 md:p-8 space-y-6 overflow-x-hidden">
-        {/* Header toolbar */}
-        <Header 
-          periods={periods} 
-          currentPeriod={selectedPeriod} 
-        />
+      <div className="flex flex-col md:flex-row min-h-[calc(100vh-56px)]">
+        {/* Sidebar navigation */}
+        <Sidebar currentSyncLog={latestSyncLog} />
 
-        {/* Brand filter tabs */}
-        <div className="py-2 overflow-x-auto scrollbar-none">
-          <Suspense fallback={<div className="h-[44px] bg-gray-200 dark:bg-gray-800 rounded-xl animate-pulse" />}>
-            <BrandTabs 
-              brands={brandsList} 
-              currentBrand={activeBrand} 
-            />
-          </Suspense>
-        </div>
+        {/* Main dashboard content */}
+        <main className="flex min-h-0 min-w-0 flex-1 md:ml-56 flex-col p-6 md:p-8 bg-grid-pattern">
 
-        {/* Top summary KPI Cards */}
-        <KPISection kpi={dashboardData.kpi} selectedPeriod={selectedPeriod} />
+          {/* Single Continuous Outer Container (Gabung Semua Baris/Card) */}
+          <div className="w-full rounded-xl border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] divide-y divide-[#f0f0f0] dark:divide-[#272a34] shadow-none">
+            
+            {/* Block 0: Brand Tabs */}
+            <Suspense fallback={<div className="h-[44px] bg-gray-100 dark:bg-gray-800 animate-pulse" />}>
+              <BrandTabs 
+                brands={brandsList} 
+                currentBrand={activeBrand} 
+              />
+            </Suspense>
 
-        {/* Visual Charts & Tables Grid Layout */}
-        <div className="space-y-6">
-          {/* Row 1: Tren Volume (1/2) & Distribusi (1/2) */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div>
+            {/* Block 1: KPI Cards */}
+            <KPISection kpi={dashboardData.kpi} selectedPeriod={selectedPeriod} />
+
+            {/* Row 1: Tren Volume (1/2) & Distribusi (1/2) */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-[#f0f0f0] dark:divide-[#272a34]">
               <TrenVolumeWidget 
                 data={dashboardData.widgets.trenVolume} 
                 brandName={activeBrand} 
               />
+              <DistribusiWidget 
+                data={dashboardData.widgets.distribusiTemplate} 
+                brandName={activeBrand} 
+              />
             </div>
-            <div>
-              <ResponsiveWrapper>
-                <DistribusiWidget 
-                  data={dashboardData.widgets.distribusiTemplate} 
+
+            {/* Row 2: Pipeline (1/2) & Kategori Doctype (1/2) */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-[#f0f0f0] dark:divide-[#272a34]">
+              <PipelineWidget 
+                data={dashboardData.widgets.taskPipeline} 
+                inQueue={dashboardData.widgets.inQueue} 
+                brandName={activeBrand} 
+              />
+              <DoctypeWidget 
+                data={dashboardData.widgets.kategoriDoctype} 
+                totalDoctypes={dashboardData.kpi.totalDoctypes} 
+                brandName={activeBrand} 
+              />
+            </div>
+
+            {/* Row 3: Gauges (20%) + Beban Kerja per Designer (30%) + Approved-Profile Only Table (50%) */}
+            <div className="grid grid-cols-1 lg:grid-cols-10 divide-y lg:divide-y-0 lg:divide-x divide-[#f0f0f0] dark:divide-[#272a34]">
+              {/* 1. Stacked Gauges (20%) */}
+              <div className="lg:col-span-2 flex flex-col divide-y divide-[#f0f0f0] dark:divide-[#272a34]">
+                <LisensiGauge 
+                  data={dashboardData.widgets.lisensiTemplate} 
                   brandName={activeBrand} 
                 />
-              </ResponsiveWrapper>
+                <BahasaGauge 
+                  data={dashboardData.widgets.bahasaTemplate} 
+                  brandName={activeBrand} 
+                />
+              </div>
+
+              {/* 2. Beban Kerja per Designer (30%) */}
+              <div className="lg:col-span-3">
+                <WorkloadWidget 
+                  data={dashboardData.widgets.workloadPerDesigner} 
+                  brandName={activeBrand} 
+                />
+              </div>
+
+              {/* 3. Approved Profile Only Table (50%) */}
+              <div className="lg:col-span-5">
+                <ApprovedProfileOnlyWidget 
+                  data={dashboardData.widgets.approvedProfileOnlyTable} 
+                  brandName={activeBrand} 
+                />
+              </div>
             </div>
-          </div>
 
-          {/* Row 2: Pipeline (1/2) & Kategori Doctype (1/2) */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <PipelineWidget 
-              data={dashboardData.widgets.taskPipeline} 
-              inQueue={dashboardData.widgets.inQueue} 
-              brandName={activeBrand} 
-            />
-            <DoctypeWidget 
-              data={dashboardData.widgets.kategoriDoctype} 
-              totalDoctypes={dashboardData.kpi.totalDoctypes} 
-              brandName={activeBrand} 
-            />
-          </div>
+            {/* Row 4: Designer Leaderboard (Full Width) */}
+            <div>
+              <LeaderboardWidget 
+                data={dashboardData.widgets.leaderboard} 
+                columns={dashboardData.widgets.leaderboardCols}
+                topPerformer={dashboardData.widgets.topPerformer} 
+                brandName={activeBrand} 
+              />
+            </div>
 
-          {/* Row 3: Lisensi Gauge (1/3), Bahasa Gauge (1/3), & Beban Kerja per Designer (1/3) */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-            <LisensiGauge 
-              data={dashboardData.widgets.lisensiTemplate} 
-              brandName={activeBrand} 
-            />
-            <BahasaGauge 
-              data={dashboardData.widgets.bahasaTemplate} 
-              brandName={activeBrand} 
-            />
-            <WorkloadWidget 
-              data={dashboardData.widgets.workloadPerDesigner} 
-              brandName={activeBrand} 
-            />
           </div>
-
-          {/* Row 4: Designer Leaderboard (1/2) & Aproved-Profile Only (1/2) */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-            <LeaderboardWidget 
-              data={dashboardData.widgets.leaderboard} 
-              columns={dashboardData.widgets.leaderboardCols}
-              topPerformer={dashboardData.widgets.topPerformer} 
-              brandName={activeBrand} 
-            />
-            <ApprovedProfileOnlyWidget 
-              data={dashboardData.widgets.approvedProfileOnlyTable} 
-              brandName={activeBrand} 
-            />
-          </div>
-        </div>
-      </main>
+        </main>
     </div>
+  </div>
   );
 }
 

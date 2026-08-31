@@ -1,6 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
+import { isTaskInPeriods } from '@/lib/period-utils';
 import SortControl, { SortKey } from './SortControl';
 import ProductionToolbar from './ProductionToolbar';
 import QAKanbanBoard from './QAKanbanBoard';
@@ -36,6 +37,7 @@ interface QATask {
 
 interface Props {
   tasks: QATask[];
+  selectedMonths?: string[];
 }
 
 interface ColumnConfig {
@@ -197,7 +199,7 @@ function filterTask(task: QATask, filters: BoardFilters, query: string): boolean
   if (filters.languages.length && !filters.languages.some((l) => task.languages?.includes(l)))
     return false;
   if (filters.priorities.length && !filters.priorities.includes(task.priority ?? '')) return false;
-  if (filters.taskMonths.length && !filters.taskMonths.includes(task.taskMonth ?? '')) return false;
+  if (filters.taskMonths.length && !isTaskInPeriods(task.taskMonth, filters.taskMonths)) return false;
   return true;
 }
 
@@ -239,13 +241,18 @@ function deriveFacets(tasks: QATask[]): FilterFacets {
   };
 }
 
-export default function SortableTaskLists({ tasks }: Props) {
+export default function SortableTaskLists({ tasks, selectedMonths }: Props) {
   const [sortKey, setSortKey] = useState<SortKey>('lastEdited');
-  // Default: filter to the current computer month.
   const [filters, setFilters] = useState<BoardFilters>(() => ({
     ...EMPTY_FILTERS,
-    taskMonths: [currentTaskMonth()],
+    taskMonths: selectedMonths && selectedMonths.length > 0 ? selectedMonths : [currentTaskMonth()],
   }));
+
+  useEffect(() => {
+    if (selectedMonths && selectedMonths.length > 0) {
+      setFilters((prev) => ({ ...prev, taskMonths: selectedMonths }));
+    }
+  }, [selectedMonths]);
   const [query, setQuery] = useState('');
   // Optimistic status while a drop is persisting; delete override on settle (success or revert).
   const [statusOverride, setStatusOverride] = useState<Record<string, string>>({});
@@ -328,108 +335,91 @@ export default function SortableTaskLists({ tasks }: Props) {
     return true;
   };
 
+  const headerScrollRef = useRef<HTMLDivElement>(null);
+  const contentScrollRef = useRef<HTMLDivElement>(null);
+
+  const handleHeaderScroll = () => {
+    if (headerScrollRef.current && contentScrollRef.current) {
+      contentScrollRef.current.scrollLeft = headerScrollRef.current.scrollLeft;
+    }
+  };
+
+  const handleContentScroll = () => {
+    if (contentScrollRef.current && headerScrollRef.current) {
+      headerScrollRef.current.scrollLeft = contentScrollRef.current.scrollLeft;
+    }
+  };
+
   return (
-    <div className="flex min-w-0 flex-1 flex-col gap-4">
+    <div className="flex min-w-0 flex-1 flex-col">
       <Toaster position="bottom-center" />
-      <ProductionToolbar
-        facets={facets}
-        filters={filters}
-        onFiltersChange={setFilters}
-        query={query}
-        onQueryChange={setQuery}
-        sortKey={sortKey}
-        onSortChange={setSortKey}
-      />
+      
+      {/* Unified Sticky Header Container (Toolbar + Column Headers glued together) */}
+      <div className="sticky top-[101px] z-30 flex flex-col bg-white dark:bg-[#0d0e12]">
+        <ProductionToolbar
+          facets={facets}
+          filters={filters}
+          onFiltersChange={setFilters}
+          query={query}
+          onQueryChange={setQuery}
+          sortKey={sortKey}
+          onSortChange={setSortKey}
+        />
 
-      {/* Status statistics (Figma 410:1982) — follows the selected task month. */}
-      <div className="flex flex-col gap-2 xl:flex-row">
-        <div className="grid flex-1 grid-cols-2 gap-2 sm:grid-cols-4">
-          {statusCounts.map(({ label, count, Icon, chip }) => (
-            <div
-              key={label}
-              className="flex size-full flex-col gap-1.5 rounded-[10px] border border-[#E8E0D8] bg-white p-3 dark:border-[#262936] dark:bg-[#12141a]"
-            >
-              <div className="flex w-full items-center gap-1">
-                <p className="min-w-0 flex-1 truncate text-[11px] font-medium leading-normal text-gray-500 dark:text-[#6b7280]">
-                  {label}
-                </p>
-                <div className={`flex shrink-0 items-center rounded-[4px] p-[2px] ${chip}`}>
-                  <Icon className="size-[14px] text-gray-500 dark:text-gray-300" />
+        {(!hasAnyFilter || columns.some((c) => c.tasks.length > 0)) && (
+          <div
+            ref={headerScrollRef}
+            onScroll={handleHeaderScroll}
+            className="w-full overflow-x-auto [&::-webkit-scrollbar]:hidden border-b border-[#f0f0f0] dark:border-[#272a34] bg-[#f8f9fa] dark:bg-[#0d0e12]"
+          >
+            <div className="min-w-max flex items-stretch divide-x divide-[#f0f0f0] dark:divide-[#272a34]">
+              {columns.map((column) => (
+                <div
+                  key={column.id}
+                  className="w-[260px] shrink-0 px-4 py-2.5 flex items-center justify-between text-xs font-mono font-bold"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className={`size-2 shrink-0 rounded-full ${column.dot}`} />
+                    <span className="truncate text-gray-700 dark:text-gray-300">{column.title}</span>
+                  </div>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-200/70 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
+                    {column.tasks.length}
+                  </span>
                 </div>
-              </div>
-              <p className="text-[26px] font-bold leading-none text-gray-900 dark:text-white">
-                {count}
-              </p>
-            </div>
-          ))}
-        </div>
-
-        {/* Doctype created this month (Figma 410:1336). */}
-        <div className="flex w-full shrink-0 flex-col gap-2.5 rounded-[10px] border border-[#E8E0D8] bg-white px-3 py-2.5 dark:border-[#262936] dark:bg-[#12141a] xl:w-[420px]">
-          <div className="flex w-full items-center justify-between">
-            <p className="whitespace-nowrap text-[11px] font-medium leading-normal text-gray-500 dark:text-[#6b7280]">
-              {filters.taskMonths.length === 1
-                ? `Doctype created ${filters.taskMonths[0]}`
-                : filters.taskMonths.length > 1
-                  ? `Doctype created in ${filters.taskMonths.length} months`
-                  : 'Doctype created'}
-            </p>
-            <div className="flex shrink-0 items-center rounded-[4px] bg-[rgba(59,123,255,0.25)] p-[2px]">
-              <FileText className="size-[14px] text-gray-500 dark:text-gray-300" />
+              ))}
             </div>
           </div>
-          <div className="flex w-full flex-col gap-2">
-            {doctypeStats.length > 0 ? (
-              doctypeStats.map(({ name, count, pct }) => (
-                <div key={name} className="flex w-full flex-col gap-1">
-                  <div className="flex w-full items-center justify-between text-[11px] font-normal leading-normal text-gray-900 dark:text-white">
-                    <p className="truncate capitalize">{name}</p>
-                    <p className="shrink-0 text-right">{count}</p>
-                  </div>
-                  <div className="flex h-[5px] w-full items-start rounded-[80px] bg-gray-500/25 dark:bg-[rgba(107,114,128,0.25)]">
-                    <div
-                      className="h-[5px] rounded-[80px] bg-[#22c35d]"
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p className="text-[11px] text-gray-500 dark:text-[#6b7280]">
-                No doctypes for the selected month.
-              </p>
-            )}
-          </div>
-        </div>
+        )}
       </div>
 
       {(!hasAnyFilter || columns.some((c) => c.tasks.length > 0)) ? (
-        <div className="flex min-h-0 flex-1 gap-4 overflow-x-auto pb-4 [&::-webkit-scrollbar]:h-2">
-          {columns.map((column) => (
-            <section key={column.id} className="flex w-[240px] shrink-0 flex-col">
-              <div className="flex items-center gap-2 px-1 pb-2">
-                <span className={`size-2 shrink-0 rounded-full ${column.dot}`} />
-                <h2 className="truncate text-[13px] font-medium text-gray-700 dark:text-white/70">
-                  {column.title}
-                </h2>
-                <span className="text-[12px] text-gray-400 dark:text-white/35">{column.tasks.length}</span>
-              </div>
-
-              <QAKanbanBoard
-                tasks={column.tasks}
-                emptyMessage={column.emptyMessage}
-                targetStatus={column.statuses[0]}
-                onDropTask={handleDropTask}
-                draggingTaskId={draggingTaskId}
-                onDragStateChange={setDraggingTaskId}
-                onOpenTask={setSelectedTask}
-              />
-            </section>
-          ))}
+        <div
+          ref={contentScrollRef}
+          onScroll={handleContentScroll}
+          className="w-full flex flex-col overflow-x-auto [&::-webkit-scrollbar]:h-2"
+        >
+          <div className="min-w-max flex flex-col">
+            {/* 8 Column Content Grid */}
+            <div className="flex items-stretch divide-x divide-[#f0f0f0] dark:divide-[#272a34] bg-white dark:bg-[#0d0e12] min-h-[550px]">
+              {columns.map((column) => (
+                <div key={column.id} className="w-[260px] shrink-0 flex flex-col">
+                  <QAKanbanBoard
+                    tasks={column.tasks}
+                    emptyMessage={column.emptyMessage}
+                    targetStatus={column.statuses[0]}
+                    onDropTask={handleDropTask}
+                    draggingTaskId={draggingTaskId}
+                    onDragStateChange={setDraggingTaskId}
+                    onOpenTask={setSelectedTask}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       ) : (
-        <div className="rounded-xl border border-dashed border-[#E8E0D8] px-6 py-16 text-center dark:border-gray-800">
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+        <div className="p-12 text-center">
+          <p className="text-sm font-mono text-gray-500 dark:text-gray-400">
             No tasks match the current filters or search.
           </p>
         </div>

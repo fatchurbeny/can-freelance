@@ -70,8 +70,11 @@ export default function PipelineWidget({ data, inQueue, brandName }: PipelineWid
     displayStage: d.stage === 'Aproved-Profile Only' ? 'Profile Only' : d.stage,
   }));
 
+  const totalTasks = formattedData.reduce((acc, d) => acc + (d.taskCount || 0), 0);
+  const totalTemplates = formattedData.reduce((acc, d) => acc + (d.templateCount || 0), 0);
+
   return (
-    <div className="glass dark:bg-[#111827] rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow relative flex flex-col h-full min-h-[350px]">
+    <div className="p-6 relative flex flex-col h-full min-h-[350px] bg-white dark:bg-[#0d0e12]">
       {/* Title & Badge */}
       <div className="flex items-center justify-between pb-4">
         <div>
@@ -79,8 +82,16 @@ export default function PipelineWidget({ data, inQueue, brandName }: PipelineWid
             Task Pipeline
           </h3>
           <p className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">
-            Distribusi Task Per Tahap Pipeline - {brandName}
+            Distribusi Task Per Tahap Pipeline - {brandName === 'Semua Brand' ? 'Semua Brand (6)' : brandName}
           </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-bold px-3 py-1 rounded-full bg-blue-600 text-white uppercase shadow-sm whitespace-nowrap">
+            {totalTasks} TASK
+          </span>
+          <span className="text-[10px] font-bold px-3 py-1 rounded-full bg-[#F0A848] text-gray-900 uppercase shadow-sm whitespace-nowrap">
+            {totalTemplates} TEMPLATE
+          </span>
         </div>
       </div>
 

@@ -108,7 +108,7 @@ export default function DistribusiWidget({ data, brandName }: DistribusiWidgetPr
   const avgTemplates = Math.round(totalTemplates / 6);
 
   return (
-    <div className="glass dark:bg-[#111827] rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow relative flex flex-col h-full min-h-[400px]">
+    <div className="p-6 relative flex flex-col h-full min-h-[360px] bg-white dark:bg-[#0d0e12]">
       {/* Title & Badge */}
       <div className="flex items-center justify-between pb-2">
         <div>
@@ -119,7 +119,7 @@ export default function DistribusiWidget({ data, brandName }: DistribusiWidgetPr
             Jumlah Task Tiap Bulan - {brandName === 'Semua Brand' ? 'Semua Brand (6)' : brandName}
           </p>
         </div>
-        <span className="text-[10px] font-bold px-3 py-1 rounded-full bg-[#F0A848] text-gray-900 uppercase shadow-sm">
+        <span className="text-[10px] font-bold px-3 py-1 rounded-full bg-[#F0A848] text-gray-900 uppercase shadow-sm whitespace-nowrap shrink-0">
           AVG.{avgTemplates} TEMPLATE
         </span>
       </div>

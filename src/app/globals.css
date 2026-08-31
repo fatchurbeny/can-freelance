@@ -3,23 +3,23 @@
 @variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #F5F0EB;
-  --foreground: #1a1a2e;
+  --background: #ffffff;
+  --foreground: #262626;
   --font-sans: var(--font-inter), system-ui, sans-serif;
   --font-display: var(--font-outfit), system-ui, sans-serif;
-  --accent: #2D8B75;
-  --accent-light: #e8f5f0;
-  --accent-hover: #247a66;
-  --color-free-fill: #E8E0D8;
+  --accent: #ff5e1f;
+  --accent-light: rgba(255, 94, 31, 0.08);
+  --accent-hover: #ff7038;
+  --color-free-fill: #f0f0f0;
 }
 
 .dark {
-  --background: #0b0f19;
-  --foreground: #f3f4f6;
-  --accent: #34d399;
-  --accent-light: rgba(52, 211, 153, 0.1);
-  --accent-hover: #2dd4a0;
-  --color-free-fill: #1f2937;
+  --background: #0d0e12;
+  --foreground: #f4f4f5;
+  --accent: #ff5e1f;
+  --accent-light: rgba(255, 94, 31, 0.15);
+  --accent-hover: #ff7038;
+  --color-free-fill: #272a34;
 }
 
 @theme {
@@ -36,17 +36,17 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Glassmorphism custom styles */
+/* Glassmorphism / Card surface custom styles */
 .glass {
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(215, 205, 195, 0.4);
+  border: 1px solid #f0f0f0;
 }
 
 .dark .glass {
-  background: rgba(17, 24, 39, 0.6);
+  background: rgba(22, 24, 29, 0.95);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid #272a34;
 }
 
 /* Custom Scrollbars */
@@ -71,3 +71,63 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(156, 163, 175, 0.8);
 }
+
+/* Cloudflare Developer Docs Radial Grid Background Texture */
+.bg-grid-pattern {
+  background-image: radial-gradient(rgba(0, 0, 0, 0.06) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.dark .bg-grid-pattern {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Cloudflare Checkbox Style for Native Inputs */
+input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 5px;
+  border: 1.5px solid #d4d4d8;
+  background-color: transparent;
+  cursor: pointer;
+  display: inline-grid;
+  place-content: center;
+  transition: all 0.15s ease-in-out;
+}
+
+.dark input[type="checkbox"] {
+  border-color: #272a34;
+  background-color: #16181d;
+}
+
+input[type="checkbox"]:checked {
+  background-color: #18181b;
+  border-color: #18181b;
+}
+
+.dark input[type="checkbox"]:checked {
+  background-color: #ffffff;
+  border-color: #ffffff;
+}
+
+input[type="checkbox"]:checked::before {
+  content: "";
+  width: 0.5rem;
+  height: 0.5rem;
+  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+  background-color: #ffffff;
+}
+
+.dark input[type="checkbox"]:checked::before {
+  background-color: #0d0e12;
+}
+
+input[type="checkbox"]:focus-visible {
+  outline: 2px solid #ff5e1f;
+  outline-offset: 2px;
+}
+
+

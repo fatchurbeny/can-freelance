@@ -76,29 +76,29 @@ export default function QACard({ task, onOpen, dimmed = false, onDragStateChange
         if (dragging) return;
         onOpen(task);
       }}
-      className={`group cursor-pointer rounded-md border border-black/10 bg-white px-2.5 py-2 transition-colors hover:bg-black/[0.02] dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/[0.07] ${
+      className={`group cursor-pointer p-3.5 bg-white dark:bg-[#0d0e12] hover:bg-gray-50/80 dark:hover:bg-[#16181d]/80 transition-colors ${
         dragging ? 'cursor-grabbing opacity-50' : 'cursor-grab active:cursor-grabbing'
       } ${dimmed && !dragging ? 'opacity-40' : ''}`}
     >
       {/* Title */}
-      <div className="flex items-start gap-1.5">
-        <FileText className="mt-0.5 size-3.5 shrink-0 text-gray-400 dark:text-white/40" />
-        <h3 className="min-w-0 flex-1 text-[13px] leading-[18px] text-gray-900 dark:text-white/90">
+      <div className="flex items-start gap-2">
+        <FileText className="mt-0.5 w-3.5 h-3.5 shrink-0 text-gray-400 dark:text-gray-500" />
+        <h3 className="min-w-0 flex-1 text-xs font-medium leading-snug text-gray-900 dark:text-gray-100 group-hover:text-[#ff5e1f] transition-colors">
           {task.name || 'Untitled Task'}
         </h3>
       </div>
 
       {/* Properties */}
-      <div className="mt-1.5 flex flex-wrap items-center gap-1">
-        <span className="px-0.5 text-[11px] leading-none text-gray-500 dark:text-white/50">
+      <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+        <span className="px-1 text-[11px] font-mono text-gray-500 dark:text-gray-400 font-bold">
           {Number(task.qtySubmit || 0)}
         </span>
 
         {task.designer && <Pill label={task.designer.displayName} color={task.designer.avatarColor} />}
 
         {task.pages != null && (
-          <span className="px-0.5 text-[11px] leading-none text-gray-500 dark:text-white/50">
-            {Number(task.pages)}
+          <span className="px-1 text-[11px] font-mono text-gray-500 dark:text-gray-400 font-bold">
+            @{Number(task.pages)}p
           </span>
         )}
 
@@ -115,8 +115,8 @@ export default function QACard({ task, onOpen, dimmed = false, onDragStateChange
         {task.license && <Pill label={task.license} color="#22c55e" />}
 
         {commentCount > 0 && (
-          <span className="ml-0.5 inline-flex items-center gap-1 text-[11px] leading-none text-gray-400 dark:text-white/40">
-            <MessageSquare className="size-3" />
+          <span className="ml-auto inline-flex items-center gap-1 text-[11px] font-mono text-gray-400 dark:text-gray-500">
+            <MessageSquare className="w-3 h-3" />
             {commentCount}
           </span>
         )}

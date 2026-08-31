@@ -11,6 +11,7 @@ import {
 } from '@/app/actions/notion-config';
 import { getLatestSyncStatus } from '@/app/actions/sync';
 import Sidebar from '@/components/Sidebar';
+import CloudflareTopBar from '@/components/CloudflareTopBar';
 import { 
   Key, 
   Database, 
@@ -151,10 +152,12 @@ export default function NotionConfigPage() {
   };
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen bg-[#F5F0EB] dark:bg-[#0a0b0e] text-gray-900 dark:text-gray-100 transition-colors">
-      <Sidebar currentSyncLog={latestSyncLog} />
+    <div className="min-h-screen bg-white dark:bg-[#0d0e12] text-[#262626] dark:text-[#f4f4f5] transition-colors">
+      <CloudflareTopBar badgeLabel="NOTION CONFIG" />
+      <div className="flex min-h-[calc(100vh-56px)] flex-col md:flex-row">
+        <Sidebar currentSyncLog={latestSyncLog} />
 
-      <main className="flex-1 p-6 md:p-8 space-y-8 overflow-x-hidden relative">
+        <main className="flex-1 md:ml-56 p-6 md:p-8 space-y-8 overflow-x-hidden relative bg-grid-pattern">
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-[#E8E0D8] dark:border-gray-800">
           <div>
@@ -476,6 +479,7 @@ export default function NotionConfigPage() {
       )}
 
       {/* Add Database Modal has been moved to /notion-config/databases */}
+      </div>
     </div>
   );
 }

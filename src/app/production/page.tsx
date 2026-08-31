@@ -1,7 +1,9 @@
 import prisma from '@/lib/prisma';
 import { getLatestSyncStatus } from '@/app/actions/sync';
 import Sidebar from '@/components/Sidebar';
-import SortableTaskLists from '@/components/SortableTaskLists';
+import CloudflareTopBar from '@/components/CloudflareTopBar';
+import ProductionView from '@/components/ProductionView';
+import { getAvailablePeriods } from '@/lib/queries';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,8 +35,31 @@ const BOARD_STATUSES = [
   'draft',
 ];
 
-export default async function ProductionPage() {
-  const [tasks, latestSyncLog] = await Promise.all([
+const INDONESIAN_MONTHS = [
+  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+];
+
+function periodToTaskMonth(periodStr: string): string {
+  const parts = periodStr.split('-');
+  if (parts.length !== 2) return periodStr;
+  const [year, month] = parts;
+  const monthIdx = parseInt(month, 10) - 1;
+  if (monthIdx >= 0 && monthIdx < 12) {
+    return `${INDONESIAN_MONTHS[monthIdx]}-${year}`;
+  }
+  return periodStr;
+}
+
+interface PageProps {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
+
+export default async function ProductionPage({ searchParams }: PageProps) {
+  const resolvedSearchParams = await searchParams;
+  const activePeriod = typeof resolvedSearchParams.period === 'string' ? resolvedSearchParams.period : '';
+
+  const [tasks, issueTasks, latestSyncLog, periods] = await Promise.all([
     prisma.task.findMany({
       where: { designStatus: { notionKey: { in: BOARD_STATUSES } } },
       include: {
@@ -47,31 +72,44 @@ export default async function ProductionPage() {
       },
       orderBy: { lastEditedTime: 'desc' },
     }),
+    prisma.task.findMany({
+      where: {
+        OR: [
+          { taskMonth: null },
+          { poolScore: null },
+        ],
+      },
+      include: {
+        designer: true,
+        doctype: true,
+        designStatus: true,
+        taskAccounts: { include: { account: true } },
+      },
+      orderBy: { createdTime: 'desc' },
+    }),
     getLatestSyncStatus(),
+    getAvailablePeriods(),
   ]);
 
+  const currentPeriod = activePeriod || (periods[0] ?? '');
+  const selectedPeriods = currentPeriod
+    ? currentPeriod.split(',').filter(Boolean)
+    : [];
+
   return (
-    <div className="flex min-h-screen flex-col bg-[#F5F0EB] text-gray-900 transition-colors dark:bg-[#0a0b0e] dark:text-gray-100 md:flex-row">
-      <Sidebar currentSyncLog={latestSyncLog} />
+    <div className="min-h-screen bg-white dark:bg-[#0d0e12] text-[#262626] dark:text-[#f4f4f5] transition-colors">
+      <CloudflareTopBar badgeLabel="PRODUCTION" periods={periods} currentPeriod={currentPeriod} />
+      <div className="flex min-h-[calc(100vh-56px)] flex-col md:flex-row">
+        <Sidebar currentSyncLog={latestSyncLog} />
 
-      <main className="flex min-h-0 min-w-0 flex-1 flex-col gap-6 p-6 md:p-8">
-        <div className="flex flex-col items-start justify-between gap-4 border-b border-[#E8E0D8] pb-4 dark:border-gray-800 md:flex-row md:items-center">
-          <div>
-            <h1 className="font-display text-2xl font-bold text-gray-900 dark:text-white">Production</h1>
-          </div>
-        </div>
-
-        {tasks.length > 0 ? (
-          <SortableTaskLists tasks={JSON.parse(JSON.stringify(tasks))} />
-        ) : (
-          <div className="rounded-xl border border-dashed border-[#E8E0D8] px-6 py-16 text-center dark:border-gray-800">
-            <h2 className="text-base font-semibold text-gray-900 dark:text-white">No tasks found</h2>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              No tasks are currently in the production pipeline.
-            </p>
-          </div>
-        )}
-      </main>
+        <main className="flex min-h-0 min-w-0 flex-1 md:ml-56 flex-col gap-4 p-6 md:p-8 bg-grid-pattern">
+          <ProductionView
+            kanbanTasks={JSON.parse(JSON.stringify(tasks))}
+            issueTasks={JSON.parse(JSON.stringify(issueTasks))}
+            selectedMonths={selectedPeriods}
+          />
+        </main>
     </div>
+  </div>
   );
 }

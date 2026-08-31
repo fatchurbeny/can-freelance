@@ -52,7 +52,7 @@ export default function DoctypeWidget({ data, totalDoctypes, brandName }: Doctyp
   const sortedData = [...data].sort((a, b) => b.taskCount - a.taskCount);
 
   return (
-    <div className="glass dark:bg-[#111827] rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow relative flex flex-col h-full min-h-[350px]">
+    <div className="p-6 relative flex flex-col h-full min-h-[350px] bg-white dark:bg-[#0d0e12]">
       {/* Title & Badge */}
       <div className="flex items-center justify-between pb-4">
         <div>
@@ -63,7 +63,7 @@ export default function DoctypeWidget({ data, totalDoctypes, brandName }: Doctyp
             Doctype Yang Dikerjakan - {brandName}
           </p>
         </div>
-        <span className="text-[10px] font-bold px-3 py-1 rounded-full bg-[#EC4899] text-white uppercase shadow-sm">
+        <span className="text-[10px] font-bold px-3 py-1 rounded-full bg-[#EC4899] text-white uppercase shadow-sm whitespace-nowrap">
           {totalDoctypes} DOCTYPE
         </span>
       </div>

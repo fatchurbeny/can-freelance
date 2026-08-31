@@ -28,3 +28,42 @@ When a UI string references a time period (e.g., "this month", "last week", "tod
 
 Do not ship a static period string anywhere a period filter exists.
 <!-- END:dynamic-period-labels -->
+
+<!-- BEGIN:workspace-cleanliness-rule -->
+# Workspace Cleanliness & Temporary File Rules
+
+Untuk menjaga direktori proyek tetap bersih, rapi, dan mudah dipelihara:
+
+1. **Dilarang Membuat Skrip Debug di Root Directory**:
+   - Jangan membuat file `.ts`, `.js`, `.py`, `.sql`, atau `.log` sementara untuk uji coba langsung di root folder (`./`).
+   
+2. **Gunakan Folder `scratch/` untuk Eksperimen**:
+   - Seluruh skrip pengujian sementara, eksplorasi API (seperti Notion/Prisma), atau investigasi bug HARUS diletakkan di dalam folder `./scratch/`.
+   - Folder `./scratch/` sudah terdaftar di `.gitignore` sehingga tidak akan menyampahi riwayat commit Git.
+
+3. **Skrip Resmi Wajib Masuk `scripts/`**:
+   - Jika suatu skrip utilitas bersifat permanen dan dibutuhkan oleh tim/CI (misal: verifikasi DB, seeding kustom), tempatkan di folder `./scripts/` (contoh: `scripts/verify-prisma.ts`) dan daftarkan di `package.json` jika perlu.
+
+4. **Pembersihan Berkala & Dilarang Commit Log**:
+   - File log (`*.log`) tidak boleh dicommit ke git repository.
+   - Hapus atau arsip skrip uji coba di `scratch/` secara berkala jika fitur terkait telah selesai dikembangkan dan masuk ke tahap production.
+<!-- END:workspace-cleanliness-rule -->
+
+<!-- BEGIN:knowledge-graph-hybrid-protocol -->
+# Hybrid Knowledge Graph & Session Handover Protocol
+
+Untuk efisiensi token dan kontinuitas konteks antar LLM (Gemini/Claude/GPT) dan Code Editor (Antigravity/Cursor/VS Code):
+
+1. **Inisialisasi Sesi (On-Demand Retrieval)**:
+   - LLM HARUS membaca `docs/knowledge/index.md` di awal sesi untuk memahami peta repositori.
+   - Untuk penelusuran dependensi kode teknis (call graph/imports), merujuk pada `graph.json` (Graphify) jika tersedia.
+   - Untuk aturan bisnis, skema data, dan gotchas, merujuk pada modul `docs/knowledge/*.md` yang relevan.
+
+2. **Konsultasi Handover Log**:
+   - Sebelum mengeksekusi tugas baru, periksa `docs/knowledge/session-handover.md` untuk mengetahui status pengerjaan terakhir dan keputusan arsitektur terbaru.
+
+3. **Mekanisme Update Sesi**:
+   - Setelah menyelesaikan perubahan besar, bug fix, atau penambahan fitur, LLM WAJIB memperbarui `docs/knowledge/session-handover.md` (status aktif & catatan keputusan) dan `docs/knowledge/issues-and-fixes.md` (jika menemukan bug/edge case baru).
+<!-- END:knowledge-graph-hybrid-protocol -->
+
+
