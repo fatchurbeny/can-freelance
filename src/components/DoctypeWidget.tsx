@@ -63,7 +63,7 @@ export default function DoctypeWidget({ data, totalDoctypes, brandName }: Doctyp
             Doctype Yang Dikerjakan - {brandName}
           </p>
         </div>
-        <span className="text-[10px] font-bold px-3 py-1 rounded-full bg-[#EC4899] text-white uppercase shadow-sm whitespace-nowrap">
+        <span className="font-mono text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 uppercase whitespace-nowrap">
           {totalDoctypes} DOCTYPE
         </span>
       </div>

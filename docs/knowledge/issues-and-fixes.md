@@ -33,3 +33,16 @@ Dokumen ini mencatat histori bug, edge cases, serta aturan layout CSS/React untu
 
 ### 3. Sidebar Desktop Default State (Mini Rail ~72px)
 * **Aturan Layout**: Pada layar desktop (`md:` breakpoint), Sidebar berstatus default mini icon rail (~72px) yang selalu tampil di dalam flow flex row (`md:translate-x-0`). Jangan pernah meng-unmount atau memberikan `-translate-x-full` pada desktop.
+
+### 4. Continuous Cloudflare Card Layout & Prevensi Double Border
+* **Aturan**: Saat menggabungkan header (seperti Tab Bar) dan panel konten ke dalam 1 continuous card (`border border-[#f0f0f0] dark:border-[#272a34] divide-y`), hapus border luar ganda (`border`) dari komponen visualizer anak agar menyatu rapi tanpa tepi berlipat.
+
+### 5. Dynamic 2D Canvas Light/Dark Theme Rendering
+* **Aturan**: Komponen canvas HTML5 2D yang berada di luar React DOM tree standar wajib memanfaatkan `MutationObserver` pada `document.documentElement` (filter kelas `dark`) untuk memperbarui warna latar belakang canvas (`#F8FAFC` vs `#0d0e12`), garis link, dan badge overlay secara real-time saat tema berubah.
+
+### 6. Cloudflare Checkbox Contrast Inversion Rule
+* **Aturan**: Native & custom checkboxes mengikuti kontras Cloudflare. Mode Terang: `bg-black border-black text-white`. Mode Gelap: `bg-white border-white text-black`. Native inputs diatur otomatis di `src/app/globals.css`.
+
+### 7. Cloudflare Translucent Pill Badges & Property Pills
+* **Aturan**: Badge statistik (`AVG. X PAGES`, `X TEMPLATE`, `🏆 Top Performer`) dan property pills (`QACard`) wajib menggunakan `font-mono text-[10px] font-bold uppercase rounded-full px-2.5 py-0.5` dengan transparansi 10% background (`bg-color/10`), 20% border (`border-color/20`), dan teks solid.
+

@@ -16,7 +16,9 @@ import {
   Users,
   Trophy,
   ArrowUpRight,
-  ArrowDownRight
+  ArrowDownRight,
+  LayoutGrid,
+  CheckSquare
 } from 'lucide-react';
 import React from 'react';
 import MonthFilter from './MonthFilter';
@@ -277,8 +279,8 @@ export default async function BillingStatementPage(props: {
     upcomingPayout += payment;
     upcomingTemplates += qty;
     upcomingPages += qty * pages;
-    if (t.doctypeId) upcomingDoctypes.add(t.doctypeId);
-    if (t.designerId) upcomingDesigners.add(t.designerId);
+    if (t.doctype?.id) upcomingDoctypes.add(t.doctype.id);
+    if (t.designer?.id) upcomingDesigners.add(t.designer.id);
   });
 
   const now = new Date();
@@ -308,6 +310,7 @@ export default async function BillingStatementPage(props: {
                     : 'bg-[#f8f9fa] dark:bg-[#0d0e12] text-gray-600 dark:text-gray-400 font-medium hover:bg-[#f0f1f3] dark:hover:bg-[#16181d]/50 hover:text-gray-900 dark:hover:text-gray-200'
                 }`}
               >
+                <LayoutGrid className={`w-4 h-4 shrink-0 transition-colors ${activeTab === 'summary' ? 'text-[#ff5e1f]' : 'text-gray-400 dark:text-gray-500'}`} />
                 <span>Summary</span>
                 {activeTab === 'summary' && (
                   <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#ff5e1f]" />
@@ -321,6 +324,7 @@ export default async function BillingStatementPage(props: {
                     : 'bg-[#f8f9fa] dark:bg-[#0d0e12] text-gray-600 dark:text-gray-400 font-medium hover:bg-[#f0f1f3] dark:hover:bg-[#16181d]/50 hover:text-gray-900 dark:hover:text-gray-200'
                 }`}
               >
+                <CheckSquare className={`w-4 h-4 shrink-0 transition-colors ${activeTab === 'approval-payroll' ? 'text-[#ff5e1f]' : 'text-gray-400 dark:text-gray-500'}`} />
                 <span>Approval Payroll</span>
                 {upcomingTasksData.length > 0 && (
                   <span className={`rounded px-1.5 py-0.5 text-[10px] font-mono font-bold ${
@@ -346,7 +350,7 @@ export default async function BillingStatementPage(props: {
                       <Gavel className="w-5 h-5" />
                     </div>
                     <div>
-                      <h2 className="font-display font-bold text-sm text-gray-900 dark:text-white capitalize">
+                      <h2 className="font-bold text-sm text-gray-900 dark:text-white capitalize">
                         Ketentuan & Aturan Kontrak Freelance
                       </h2>
                       <p className="text-xs text-gray-400 dark:text-gray-500 font-mono mt-0.5">

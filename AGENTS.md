@@ -64,6 +64,18 @@ Untuk efisiensi token dan kontinuitas konteks antar LLM (Gemini/Claude/GPT) dan 
 
 3. **Mekanisme Update Sesi**:
    - Setelah menyelesaikan perubahan besar, bug fix, atau penambahan fitur, LLM WAJIB memperbarui `docs/knowledge/session-handover.md` (status aktif & catatan keputusan) dan `docs/knowledge/issues-and-fixes.md` (jika menemukan bug/edge case baru).
-<!-- END:knowledge-graph-hybrid-protocol -->
+<!-- BEGIN:knowledge-graph-learning-documentation-rule -->
+# Knowledge Graph Documentation Protocol on `/learn` & Bug Fixes
 
+Setiap kali menjalankan sesi `/learn`, menyelesaikan perbaikan bug (bug fix), atau menemukan edge case/gotchas baru, LLM WAJIB mendokumentasikannya ke Knowledge Graph proyek:
 
+1. **Update Modul Pengetahuan Gotchas (`docs/knowledge/issues-and-fixes.md`)**:
+   - Catat gejala bug, penyebab utama (*root cause*), dan pola solusi (*fix pattern*) agar tidak terulang kembali.
+
+2. **Update Log Handover Sesi (`docs/knowledge/session-handover.md`)**:
+   - Perbarui *Active State* (tanggal, waktu, status tugas).
+   - Tambahkan daftar keputusan arsitektur & perbaikan terbaru di bagian *Recent Decisions*.
+
+3. **Sinkronisasi Web UI (`src/components/KnowledgeGraphViewer.tsx`)**:
+   - Lakukan pembaruan pada Tab 6 (*Gotchas & Layout Rules*) dan Tab 7 (*Session Handover Log*) agar antarmuka visual di rute `/knowledge-graph` selalu mencerminkan data pengetahuan terbaru.
+<!-- END:knowledge-graph-learning-documentation-rule -->

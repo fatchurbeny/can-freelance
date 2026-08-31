@@ -84,7 +84,7 @@ export default async function AccountTeamPage() {
                 <Gavel className="w-5 h-5" />
               </div>
               <div>
-                <h2 className="font-display font-bold text-sm text-gray-900 dark:text-white capitalize">
+                <h2 className="font-bold text-sm text-gray-900 dark:text-white capitalize">
                   Ketentuan & Aturan Kontrak Freelance
                 </h2>
                 <p className="text-xs text-gray-400 dark:text-gray-500 font-mono mt-0.5">
@@ -112,7 +112,7 @@ export default async function AccountTeamPage() {
             <div className="flex flex-col">
               <div className="p-5 flex items-center justify-between border-b border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12]">
                 <div>
-                  <h3 className="font-display font-bold text-sm text-gray-900 dark:text-white">Designer ({designers.length})</h3>
+                  <h3 className="font-bold text-sm text-gray-900 dark:text-white">Designer ({designers.length})</h3>
                   <p className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">Designer Leaderboard All Time</p>
                 </div>
                 {designers.length > 0 && (
@@ -182,7 +182,7 @@ export default async function AccountTeamPage() {
             <div className="flex flex-col">
               <div className="p-5 flex items-center justify-between border-b border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12]">
                 <div>
-                  <h3 className="font-display font-bold text-sm text-gray-900 dark:text-white">Canva Account ({accounts.length})</h3>
+                  <h3 className="font-bold text-sm text-gray-900 dark:text-white">Canva Account ({accounts.length})</h3>
                   <p className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">Brand Leaderboard All Time</p>
                 </div>
                 {accounts.length > 0 && (

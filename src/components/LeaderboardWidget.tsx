@@ -63,7 +63,7 @@ export default function LeaderboardWidget({ data, columns, topPerformer, brandNa
           </p>
         </div>
         {topPerformer && (
-          <span className="text-[10px] font-bold px-3 py-1 rounded-full text-[#F0A848] border border-[#F0A848] bg-transparent flex items-center gap-1 uppercase whitespace-nowrap">
+          <span className="font-mono text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center gap-1 uppercase whitespace-nowrap">
             🏆 {topPerformer}
           </span>
         )}

@@ -119,7 +119,7 @@ export default function DistribusiWidget({ data, brandName }: DistribusiWidgetPr
             Jumlah Task Tiap Bulan - {brandName === 'Semua Brand' ? 'Semua Brand (6)' : brandName}
           </p>
         </div>
-        <span className="text-[10px] font-bold px-3 py-1 rounded-full bg-[#F0A848] text-gray-900 uppercase shadow-sm whitespace-nowrap shrink-0">
+        <span className="font-mono text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-[#ff5e1f]/10 text-[#ff5e1f] dark:text-[#ff7038] border border-[#ff5e1f]/20 uppercase whitespace-nowrap shrink-0">
           AVG.{avgTemplates} TEMPLATE
         </span>
       </div>

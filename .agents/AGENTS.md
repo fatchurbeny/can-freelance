@@ -323,3 +323,28 @@ When building or refactoring multi-section pages (like `/rate-card`, `/billing-s
    - Ancestor `<main>` and container elements MUST NOT use `overflow-hidden` or `overflow-x-hidden`, which breaks CSS `position: sticky` relative to the window viewport.
 <!-- END:cloudflare-continuous-card-layout -->
 
+<!-- BEGIN:knowledge-graph-learning-documentation-rule -->
+# Knowledge Graph Documentation Protocol on `/learn` & Bug Fixes
+
+Setiap kali menjalankan sesi `/learn`, menyelesaikan perbaikan bug (bug fix), atau menemukan edge case/gotchas baru, LLM WAJIB mendokumentasikannya ke Knowledge Graph proyek:
+
+1. **Update Modul Pengetahuan Gotchas (`docs/knowledge/issues-and-fixes.md`)**:
+   - Catat gejala bug, penyebab utama (*root cause*), dan pola solusi (*fix pattern*) agar tidak terulang kembali.
+
+2. **Update Log Handover Sesi (`docs/knowledge/session-handover.md`)**:
+   - Perbarui *Active State* (tanggal, waktu, status tugas).
+   - Tambahkan daftar keputusan arsitektur & perbaikan terbaru di bagian *Recent Decisions*.
+
+3. **Sinkronisasi Web UI (`src/components/KnowledgeGraphViewer.tsx`)**:
+   - Lakukan pembaruan pada Tab 6 (*Gotchas & Layout Rules*) dan Tab 7 (*Session Handover Log*) agar antarmuka visual di rute `/knowledge-graph` selalu mencerminkan data pengetahuan terbaru.
+<!-- END:knowledge-graph-learning-documentation-rule -->
+
+<!-- BEGIN:cloudflare-translucent-pills -->
+# Cloudflare Translucent Pill Badges & Metrics Standard
+
+When rendering badges, tags, or count pills across dashboard widgets (`WorkloadWidget`, `ApprovedProfileOnlyWidget`, `LeaderboardWidget`, `QACard`):
+1. **Typography**: Always use `font-mono text-[10px] font-bold uppercase rounded-full px-2.5 py-0.5`.
+2. **Color Inversion**: Use 10% opacity background (`bg-color/10`), 20% opacity border (`border-color/20`), and solid text (`text-color dark:text-color-light`).
+3. **Property Pills (`QACard`)**: Use `rounded-[4px] border px-1.5 py-0.5 font-mono text-[10px] font-semibold` with dynamic tint (`tint18` background, `tint40` border).
+<!-- END:cloudflare-translucent-pills -->
+

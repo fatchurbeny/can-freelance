@@ -382,7 +382,7 @@ export default function SortableTaskLists({ tasks, selectedMonths }: Props) {
                     <span className={`size-2 shrink-0 rounded-full ${column.dot}`} />
                     <span className="truncate text-gray-700 dark:text-gray-300">{column.title}</span>
                   </div>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-200/70 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
+                  <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded-md border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] text-gray-700 dark:text-gray-300 shadow-none">
                     {column.tasks.length}
                   </span>
                 </div>

@@ -86,10 +86,10 @@ export default function PipelineWidget({ data, inQueue, brandName }: PipelineWid
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-[10px] font-bold px-3 py-1 rounded-full bg-blue-600 text-white uppercase shadow-sm whitespace-nowrap">
+          <span className="font-mono text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 uppercase whitespace-nowrap">
             {totalTasks} TASK
           </span>
-          <span className="text-[10px] font-bold px-3 py-1 rounded-full bg-[#F0A848] text-gray-900 uppercase shadow-sm whitespace-nowrap">
+          <span className="font-mono text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-[#ff5e1f]/10 text-[#ff5e1f] dark:text-[#ff7038] border border-[#ff5e1f]/20 uppercase whitespace-nowrap">
             {totalTemplates} TEMPLATE
           </span>
         </div>

@@ -56,7 +56,7 @@ export default function WorkloadWidget({ data, brandName }: WorkloadWidgetProps)
             Jumlah Task Ditangani Bulan Ini - {brandName}
           </p>
         </div>
-        <span className="text-[10px] font-bold px-3 py-1 rounded-full bg-blue-600 text-white uppercase shadow-sm whitespace-nowrap shrink-0">
+        <span className="font-mono text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 uppercase whitespace-nowrap shrink-0">
           AVG.{avgPages} PAGES
         </span>
       </div>

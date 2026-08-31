@@ -1,7 +1,10 @@
 'use client';
 
 import { useState, useTransition, useRef, useEffect } from 'react';
-import { Loader2, Check, ChevronDown, Search } from 'lucide-react';
+import {
+  Loader2, Check, ChevronDown, Search, SlidersHorizontal, ChevronLeft, X,
+  User, FileText, Building2, ArrowDown, ArrowUp,
+} from 'lucide-react';
 import {
   assignPayrollMonthAction,
   batchAssignPayrollMonthAction,
@@ -27,85 +30,15 @@ interface Props {
   allMonthOptions: string[];
 }
 
-interface FilterSelectProps {
-  id: string;
-  value: string;
-  placeholder: string;
-  options: Array<[string, string]>;
-  onChange: (value: string) => void;
-}
+type SortKey = 'last-edited' | 'az' | 'za';
 
-function FilterSelect({ id, value, placeholder, options, onChange }: FilterSelectProps) {
-  const [open, setOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+const SORT_LABELS: Record<SortKey, { label: string; icon: React.ReactNode }> = {
+  'last-edited': { label: 'Last edited', icon: <ArrowDown className="w-3.5 h-3.5 text-gray-400" /> },
+  'az': { label: 'A–Z', icon: <ArrowDown className="w-3.5 h-3.5 text-gray-400" /> },
+  'za': { label: 'Z–A', icon: <ArrowUp className="w-3.5 h-3.5 text-gray-400" /> },
+};
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const selectedLabel = options.find(([optionValue]) => optionValue === value)?.[1];
-
-  return (
-    <div ref={containerRef} className="relative">
-      <button
-        id={id}
-        type="button"
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        onClick={() => setOpen((current) => !current)}
-        className={`h-8 w-[140px] flex items-center justify-between gap-1.5 rounded-lg border bg-gray-50 dark:bg-[#16181d] px-3 text-xs font-mono font-medium transition-colors focus:outline-none ${
-          open
-            ? 'border-[#ff5e1f] text-[#ff5e1f]'
-            : 'border-[#f0f0f0] dark:border-[#272a34] text-gray-700 dark:text-gray-300 hover:border-[#ff5e1f]'
-        }`}
-      >
-        <span className="truncate">{selectedLabel || placeholder}</span>
-        <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`} />
-      </button>
-      {open && (
-        <div
-          role="listbox"
-          aria-labelledby={id}
-          className="absolute left-0 top-full z-50 mt-1.5 w-[180px] max-h-64 overflow-y-auto rounded-xl border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] p-1.5 shadow-xl font-mono text-xs"
-        >
-          <button
-            type="button"
-            role="option"
-            aria-selected={!value}
-            onClick={() => { onChange(''); setOpen(false); }}
-            className="w-full flex items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-xs font-mono text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-          >
-            {placeholder}
-            {!value && <Check className="h-3.5 w-3.5 text-[#ff5e1f]" />}
-          </button>
-          {options.map(([optionValue, label]) => (
-            <button
-              key={optionValue}
-              type="button"
-              role="option"
-              aria-selected={value === optionValue}
-              onClick={() => { onChange(optionValue); setOpen(false); }}
-              className={`w-full flex items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-mono transition-colors ${
-                value === optionValue
-                  ? 'bg-[#ff5e1f]/10 text-[#ff5e1f] font-bold'
-                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
-              }`}
-            >
-              <span className="truncate">{label}</span>
-              {value === optionValue && <Check className="h-3.5 w-3.5 shrink-0 text-[#ff5e1f]" />}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
+type FilterCategory = 'designers' | 'doctypes' | 'brands';
 
 export default function ApprovalPayrollTable({ tasks, allMonthOptions }: Props) {
   const router = useRouter();
@@ -115,17 +48,34 @@ export default function ApprovalPayrollTable({ tasks, allMonthOptions }: Props) 
   const [monthSelections, setMonthSelections] = useState<Record<string, string>>({});
   const [batchOpen, setBatchOpen] = useState(false);
   const [rowDropdown, setRowDropdown] = useState<string | null>(null);
+
+  // Filters & Sorting state
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState('last-edited');
+  const [sortKey, setSortKey] = useState<SortKey>('last-edited');
+  const [sortOpen, setSortOpen] = useState(false);
   const [doctypeFilter, setDoctypeFilter] = useState('');
   const [brandFilter, setBrandFilter] = useState('');
   const [designerFilter, setDesignerFilter] = useState('');
+
+  // Filter Popover state
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [activeCategory, setActiveCategory] = useState<FilterCategory | null>(null);
+
   const batchRef = useRef<HTMLDivElement>(null);
+  const sortRef = useRef<HTMLDivElement>(null);
+  const filterRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (batchRef.current && !batchRef.current.contains(e.target as Node)) {
         setBatchOpen(false);
+      }
+      if (sortRef.current && !sortRef.current.contains(e.target as Node)) {
+        setSortOpen(false);
+      }
+      if (filterRef.current && !filterRef.current.contains(e.target as Node)) {
+        setFilterOpen(false);
+        setActiveCategory(null);
       }
       if (rowDropdown) {
         const panel = document.querySelector(`[data-dropdown-id="${rowDropdown}"]`);
@@ -179,9 +129,12 @@ export default function ApprovalPayrollTable({ tasks, allMonthOptions }: Props) 
 
   const optionNames = (values: Array<string | undefined>) =>
     Array.from(new Set(values.filter((value): value is string => Boolean(value)))).sort((a, b) => a.localeCompare(b));
+
   const doctypeOptions = optionNames(tasks.map((task) => task.doctype?.displayName));
   const brandOptions = optionNames(tasks.map((task) => task.taskAccounts[0]?.account?.displayName));
   const designerOptions = optionNames(tasks.map((task) => task.designer?.displayName));
+
+  const activeFilterCount = (designerFilter ? 1 : 0) + (doctypeFilter ? 1 : 0) + (brandFilter ? 1 : 0);
 
   const filteredTasks = tasks
     .filter((task) => {
@@ -199,92 +152,277 @@ export default function ApprovalPayrollTable({ tasks, allMonthOptions }: Props) 
       );
     })
     .sort((a, b) => {
-      if (sortBy === 'az') return (a.name || '').localeCompare(b.name || '');
-      if (sortBy === 'za') return (b.name || '').localeCompare(a.name || '');
+      if (sortKey === 'az') return (a.name || '').localeCompare(b.name || '');
+      if (sortKey === 'za') return (b.name || '').localeCompare(a.name || '');
       return new Date(b.lastEditedTime).getTime() - new Date(a.lastEditedTime).getTime();
     });
 
   return (
     <div className="flex flex-col bg-white dark:bg-[#0d0e12] rounded-xl border border-[#f0f0f0] dark:border-[#272a34]">
-      {/* Table Toolbar Bar */}
-      <div className="p-4 border-b border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] flex flex-wrap items-center justify-between gap-3 font-mono text-xs">
-        <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-[280px]">
-          <div className="relative flex-1 max-w-[280px]">
+      {/* Production-Style Unified Toolbar */}
+      <div className="w-full min-h-11 p-2.5 border-b border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] flex flex-wrap items-center justify-between gap-3 font-mono text-xs select-none">
+        
+        {/* Left Side: Search Bar + Sort Dropdown + Filter Popover + Filter Chips */}
+        <div className="flex flex-wrap items-center gap-2">
+          
+          {/* Integrated Left-Aligned Search Input */}
+          <div className="relative w-48 sm:w-56">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 dark:text-gray-500 pointer-events-none" />
             <input
               id="approval-payroll-search"
               type="search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search tasks..."
-              className="w-full pl-9 pr-4 py-1.5 rounded-lg border border-[#f0f0f0] dark:border-[#272a34] bg-gray-50 dark:bg-[#16181d] text-xs font-mono text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:border-[#ff5e1f] transition-colors"
+              placeholder="Search..."
+              className="w-full h-8 pl-9 pr-3 rounded-lg border border-[#f0f0f0] dark:border-[#272a34] bg-gray-50 dark:bg-[#16181d] text-xs font-mono text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:border-[#ff5e1f] transition-colors"
             />
           </div>
-          {[
-            { id: 'approval-sort', placeholder: 'Sort by', value: sortBy, set: setSortBy, options: [['last-edited', 'Last edited'], ['az', 'A–Z'], ['za', 'Z–A']] as Array<[string, string]> },
-            { id: 'doctype-filter', placeholder: 'All doctypes', value: doctypeFilter, set: setDoctypeFilter, options: doctypeOptions.map((item) => [item, item] as [string, string]) },
-            { id: 'brand-filter', placeholder: 'All brands', value: brandFilter, set: setBrandFilter, options: brandOptions.map((item) => [item, item] as [string, string]) },
-            { id: 'designer-filter', placeholder: 'All designers', value: designerFilter, set: setDesignerFilter, options: designerOptions.map((item) => [item, item] as [string, string]) },
-          ].map((control) => (
-            <FilterSelect
-              key={control.id}
-              id={control.id}
-              value={control.value}
-              placeholder={control.placeholder}
-              options={control.options}
-              onChange={control.set}
-            />
-          ))}
-          <span className="text-xs font-mono text-gray-400 dark:text-gray-500 whitespace-nowrap">
-            {selectedIds.size} of {filteredTasks.length} selected
-          </span>
-        </div>
 
-        {/* Batch Actions */}
-        <div className="flex items-center gap-2 shrink-0">
-          <div className="relative flex justify-center" ref={batchRef}>
+          {/* Sort Dropdown */}
+          <div className="relative" ref={sortRef}>
             <button
-              onClick={() => setBatchOpen(!batchOpen)}
-              className="w-[130px] flex items-center justify-between px-3 py-1.5 rounded-lg border border-[#f0f0f0] dark:border-[#272a34] bg-gray-50 dark:bg-[#16181d] text-xs font-mono font-medium text-gray-700 dark:text-gray-200 hover:border-[#ff5e1f] focus:outline-none transition-colors cursor-pointer select-none whitespace-nowrap"
+              type="button"
+              onClick={() => setSortOpen(!sortOpen)}
+              className="h-8 px-3 rounded-lg border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] text-gray-700 dark:text-gray-300 hover:border-[#ff5e1f] flex items-center gap-1.5 transition-colors cursor-pointer"
             >
-              <span className="truncate">{batchMonth || 'Pilih bulan...'}</span>
-              <ChevronDown className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 shrink-0" />
+              {SORT_LABELS[sortKey].icon}
+              <span className="font-medium text-xs">{SORT_LABELS[sortKey].label}</span>
+              <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform ${sortOpen ? 'rotate-180' : ''}`} />
             </button>
-            {batchOpen && (
-              <div className="absolute right-0 mt-8 w-44 rounded-xl border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] shadow-xl z-50 py-1.5 max-h-60 overflow-y-auto font-mono text-xs">
-                <div className="space-y-0.5 px-1.5">
-                  {allMonthOptions.map((month) => {
-                    const isChecked = batchMonth === month;
-                    return (
-                      <button
-                        key={month}
-                        onClick={() => { setBatchMonth(month); setBatchOpen(false); }}
-                        className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left text-xs font-mono text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
-                      >
-                        <span>{month}</span>
-                        <div className={`w-3.5 h-3.5 rounded-[4px] border flex items-center justify-center transition-all ${
-                          isChecked
-                            ? 'bg-black border-black text-white dark:bg-white dark:border-white dark:text-black'
-                            : 'border-gray-300 dark:border-[#272a34] bg-white dark:bg-[#16181d]'
-                        }`}>
-                          {isChecked && <Check className="w-2.5 h-2.5 stroke-[3]" />}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
+            {sortOpen && (
+              <div className="absolute left-0 top-full z-50 mt-1 w-40 rounded-xl border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] p-1.5 shadow-xl">
+                {(['last-edited', 'az', 'za'] as SortKey[]).map((key) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => { setSortKey(key); setSortOpen(false); }}
+                    className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left text-xs transition-colors cursor-pointer ${
+                      sortKey === key ? 'bg-[#ff5e1f]/10 text-[#ff5e1f] font-bold' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+                    }`}
+                  >
+                    <span>{SORT_LABELS[key].label}</span>
+                    {sortKey === key && <Check className="w-3.5 h-3.5 text-[#ff5e1f]" />}
+                  </button>
+                ))}
               </div>
             )}
           </div>
 
-          <button
-            onClick={handleBatchAssign}
-            disabled={selectedIds.size === 0 || !batchMonth || isPending}
-            className="px-4 py-1.5 rounded-full bg-[#ff5e1f] hover:bg-[#ff7038] disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-mono font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap"
-          >
-            {isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-            Assign Selected
-          </button>
+          {/* Filter Popover Button */}
+          <div className="relative" ref={filterRef}>
+            <button
+              type="button"
+              onClick={() => { setFilterOpen(!filterOpen); setActiveCategory(null); }}
+              className={`h-8 px-3 rounded-lg border flex items-center gap-1.5 text-xs font-mono transition-colors cursor-pointer ${
+                activeFilterCount > 0
+                  ? 'border-[#ff5e1f] bg-[#ff5e1f]/10 text-[#ff5e1f] font-bold'
+                  : 'border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] text-gray-700 dark:text-gray-300 hover:border-[#ff5e1f]'
+              }`}
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+              <span>Filter</span>
+              {activeFilterCount > 0 && (
+                <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-[#ff5e1f] text-[10px] font-bold text-white">
+                  {activeFilterCount}
+                </span>
+              )}
+              <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform ${filterOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {/* Filter Popover Menu */}
+            {filterOpen && (
+              <div className="absolute left-0 top-full z-50 mt-1 min-w-[220px] max-h-72 overflow-y-auto rounded-xl border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] p-1.5 shadow-xl font-mono text-xs">
+                {!activeCategory ? (
+                  // Stage 1: Categories
+                  <div className="space-y-0.5">
+                    <button
+                      type="button"
+                      onClick={() => setActiveCategory('designers')}
+                      className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                    >
+                      <span className="flex items-center gap-2">
+                        <User className="w-4 h-4 text-gray-400" /> Designer
+                      </span>
+                      {designerFilter && <span className="px-1.5 py-0.5 rounded bg-[#ff5e1f]/10 text-[#ff5e1f] font-bold text-[10px]">1</span>}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveCategory('doctypes')}
+                      className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                    >
+                      <span className="flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-gray-400" /> Doctype
+                      </span>
+                      {doctypeFilter && <span className="px-1.5 py-0.5 rounded bg-[#ff5e1f]/10 text-[#ff5e1f] font-bold text-[10px]">1</span>}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveCategory('brands')}
+                      className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                    >
+                      <span className="flex items-center gap-2">
+                        <Building2 className="w-4 h-4 text-gray-400" /> Brand
+                      </span>
+                      {brandFilter && <span className="px-1.5 py-0.5 rounded bg-[#ff5e1f]/10 text-[#ff5e1f] font-bold text-[10px]">1</span>}
+                    </button>
+                  </div>
+                ) : (
+                  // Stage 2: Options
+                  <div>
+                    <div className="flex items-center justify-between border-b border-[#f0f0f0] dark:border-[#272a34] pb-1.5 mb-1.5 px-1">
+                      <button
+                        type="button"
+                        onClick={() => setActiveCategory(null)}
+                        className="inline-flex items-center gap-1 text-[11px] text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer"
+                      >
+                        <ChevronLeft className="w-3.5 h-3.5" /> Back
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (activeCategory === 'designers') setDesignerFilter('');
+                          if (activeCategory === 'doctypes') setDoctypeFilter('');
+                          if (activeCategory === 'brands') setBrandFilter('');
+                        }}
+                        className="text-[10px] text-gray-400 hover:text-[#ff5e1f] transition-colors cursor-pointer"
+                      >
+                        Reset
+                      </button>
+                    </div>
+
+                    <div className="space-y-0.5 max-h-52 overflow-y-auto">
+                      {activeCategory === 'designers' && designerOptions.map((opt) => (
+                        <button
+                          key={opt}
+                          type="button"
+                          onClick={() => { setDesignerFilter(designerFilter === opt ? '' : opt); }}
+                          className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition-colors cursor-pointer ${
+                            designerFilter === opt ? 'bg-[#ff5e1f]/10 text-[#ff5e1f] font-bold' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+                          }`}
+                        >
+                          <span className="truncate">{opt}</span>
+                          {designerFilter === opt && <Check className="w-3.5 h-3.5 text-[#ff5e1f]" />}
+                        </button>
+                      ))}
+
+                      {activeCategory === 'doctypes' && doctypeOptions.map((opt) => (
+                        <button
+                          key={opt}
+                          type="button"
+                          onClick={() => { setDoctypeFilter(doctypeFilter === opt ? '' : opt); }}
+                          className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition-colors cursor-pointer ${
+                            doctypeFilter === opt ? 'bg-[#ff5e1f]/10 text-[#ff5e1f] font-bold' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+                          }`}
+                        >
+                          <span className="truncate">{opt}</span>
+                          {doctypeFilter === opt && <Check className="w-3.5 h-3.5 text-[#ff5e1f]" />}
+                        </button>
+                      ))}
+
+                      {activeCategory === 'brands' && brandOptions.map((opt) => (
+                        <button
+                          key={opt}
+                          type="button"
+                          onClick={() => { setBrandFilter(brandFilter === opt ? '' : opt); }}
+                          className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition-colors cursor-pointer ${
+                            brandFilter === opt ? 'bg-[#ff5e1f]/10 text-[#ff5e1f] font-bold' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+                          }`}
+                        >
+                          <span className="truncate">{opt}</span>
+                          {brandFilter === opt && <Check className="w-3.5 h-3.5 text-[#ff5e1f]" />}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Active Filter Chips */}
+          {designerFilter && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-[#ff5e1f]/20 bg-[#ff5e1f]/10 text-[#ff5e1f] text-xs font-mono font-bold">
+              Designer: {designerFilter}
+              <button type="button" onClick={() => setDesignerFilter('')} className="hover:text-red-500 cursor-pointer">
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          )}
+          {doctypeFilter && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-[#ff5e1f]/20 bg-[#ff5e1f]/10 text-[#ff5e1f] text-xs font-mono font-bold">
+              Doctype: {doctypeFilter}
+              <button type="button" onClick={() => setDoctypeFilter('')} className="hover:text-red-500 cursor-pointer">
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          )}
+          {brandFilter && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-[#ff5e1f]/20 bg-[#ff5e1f]/10 text-[#ff5e1f] text-xs font-mono font-bold">
+              Brand: {brandFilter}
+              <button type="button" onClick={() => setBrandFilter('')} className="hover:text-red-500 cursor-pointer">
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          )}
+        </div>
+
+        {/* Right Side: Selection Status + Batch Actions + Search */}
+        <div className="flex flex-wrap items-center gap-3">
+          
+          <span className="text-xs font-mono text-gray-400 dark:text-gray-500 whitespace-nowrap">
+            {selectedIds.size} of {filteredTasks.length} selected
+          </span>
+
+          {/* Batch Month Assign Dropdown & Action Button */}
+          <div className="flex items-center gap-2">
+            <div className="relative" ref={batchRef}>
+              <button
+                type="button"
+                onClick={() => setBatchOpen(!batchOpen)}
+                className="w-[130px] h-8 flex items-center justify-between px-3 rounded-lg border border-[#f0f0f0] dark:border-[#272a34] bg-gray-50 dark:bg-[#16181d] text-xs font-mono font-medium text-gray-700 dark:text-gray-200 hover:border-[#ff5e1f] focus:outline-none transition-colors cursor-pointer select-none whitespace-nowrap"
+              >
+                <span className="truncate">{batchMonth || 'Pilih bulan...'}</span>
+                <ChevronDown className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 shrink-0" />
+              </button>
+              {batchOpen && (
+                <div className="absolute right-0 top-full z-50 mt-1 w-44 rounded-xl border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] p-1.5 shadow-xl max-h-60 overflow-y-auto font-mono text-xs">
+                  <div className="space-y-0.5 px-1">
+                    {allMonthOptions.map((month) => {
+                      const isChecked = batchMonth === month;
+                      return (
+                        <button
+                          key={month}
+                          type="button"
+                          onClick={() => { setBatchMonth(month); setBatchOpen(false); }}
+                          className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left text-xs font-mono text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                        >
+                          <span>{month}</span>
+                          <div className={`w-3.5 h-3.5 rounded-[4px] border flex items-center justify-center transition-all ${
+                            isChecked
+                              ? 'bg-black border-black text-white dark:bg-white dark:border-white dark:text-black'
+                              : 'border-gray-300 dark:border-[#272a34] bg-white dark:bg-[#16181d]'
+                          }`}>
+                            {isChecked && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={handleBatchAssign}
+              disabled={selectedIds.size === 0 || !batchMonth || isPending}
+              className="h-8 px-4 rounded-full bg-[#ff5e1f] hover:bg-[#ff7038] disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-mono font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap shadow-none"
+            >
+              {isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+              Assign Selected
+            </button>
+          </div>
+
         </div>
       </div>
 
