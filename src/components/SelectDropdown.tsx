@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { ChevronDown, Check } from 'lucide-react';
 
 interface DropdownProps {
   label: string;
@@ -32,32 +33,38 @@ export default function SelectDropdown({ label, options, value, onChange, disabl
         type="button"
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
-        className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border border-[#E8E0D8] dark:border-gray-800 bg-white dark:bg-[#111827] text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-[#F5F0EB] dark:hover:bg-[#1b2436] focus:outline-none transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed ${isOpen ? 'ring-2 ring-indigo-500' : ''}`}
+        className={`w-full flex items-center justify-between px-3.5 py-2 rounded-lg border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] text-xs font-mono font-bold text-gray-900 dark:text-gray-100 hover:border-[#ff5e1f] dark:hover:border-[#ff5e1f] focus:outline-none focus:border-[#ff5e1f] transition-all shadow-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+          isOpen ? 'border-[#ff5e1f] dark:border-[#ff5e1f]' : ''
+        }`}
       >
         <span>{selectedOption?.label || label}</span>
-        <div className={`w-2 h-2 border-r-2 border-b-2 border-gray-400 dark:border-gray-500 transform transition-transform ${isOpen ? '-mt-1 rotate-[-135deg]' : 'mt-[-4px] rotate-45'}`} />
+        <ChevronDown className={`w-4 h-4 text-gray-400 dark:text-gray-500 transition-transform duration-150 ${isOpen ? 'rotate-180 text-[#ff5e1f]' : ''}`} />
       </button>
 
       {isOpen && (
-        <div className="absolute left-0 right-0 mt-2 rounded-2xl border border-[#E8E0D8] dark:border-gray-800 bg-white dark:bg-[#0b1020] shadow-xl z-50 py-2.5 max-h-72 overflow-y-auto backdrop-blur-md">
+        <div className="absolute left-0 right-0 mt-1.5 rounded-xl border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] shadow-lg z-50 py-1.5 max-h-72 overflow-y-auto">
           <div className="space-y-0.5 px-1.5">
-            {options.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => {
-                  onChange(option.value);
-                  setIsOpen(false);
-                }}
-                className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold transition-colors ${
-                  value === option.value 
-                    ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-200' 
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-[#F5F0EB] dark:hover:bg-[#1b2436] dark:hover:text-white'
-                }`}
-              >
-                {option.label}
-              </button>
-            ))}
+            {options.map((option) => {
+              const isSelected = value === option.value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => {
+                    onChange(option.value);
+                    setIsOpen(false);
+                  }}
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left text-xs font-mono transition-colors cursor-pointer ${
+                    isSelected 
+                      ? 'bg-[#ff5e1f]/10 text-[#ff5e1f] dark:text-[#ff7038] font-bold' 
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#1e2028] dark:hover:text-white font-medium'
+                  }`}
+                >
+                  <span>{option.label}</span>
+                  {isSelected && <Check className="w-3.5 h-3.5 text-[#ff5e1f] shrink-0" />}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}

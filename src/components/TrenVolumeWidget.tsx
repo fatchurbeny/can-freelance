@@ -99,7 +99,7 @@ export default function TrenVolumeWidget({ data, brandName }: TrenVolumeWidgetPr
             Jumlah Task Tiap Bulan - {brandName === 'Semua Brand' ? 'Semua Brand (6)' : brandName}
           </p>
         </div>
-        <span className="text-[10px] font-bold px-3 py-1 rounded-full bg-blue-600 text-white uppercase shadow-sm whitespace-nowrap shrink-0">
+        <span className="font-mono text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 uppercase whitespace-nowrap shrink-0">
           AVG.{avgTasks} TASK
         </span>
       </div>

@@ -37,13 +37,17 @@ interface Props {
   onDragStateChange?: (taskId: string | null) => void;
 }
 
-/** Notion-ish property pill. Colors come from the DB, so tint them rather than fill. */
+/** Notion-ish property pill. Cloudflare style with subtle border and translucent fill. */
 function Pill({ label, color }: { label: string; color?: string | null }) {
-  const tint = color || '#6b7280';
+  const tint = color || '#666666';
   return (
     <span
-      className="rounded-[3px] px-1.5 py-0.5 text-[11px] font-medium leading-none"
-      style={{ backgroundColor: `${tint}33`, color: tint }}
+      className="inline-flex items-center rounded-[4px] border px-1.5 py-0.5 font-mono text-[10px] font-semibold leading-none tracking-tight transition-colors"
+      style={{
+        backgroundColor: `${tint}18`,
+        borderColor: `${tint}40`,
+        color: tint,
+      }}
     >
       {label}
     </span>
@@ -90,32 +94,37 @@ export default function QACard({ task, onOpen, dimmed = false, onDragStateChange
 
       {/* Properties */}
       <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-        <span className="px-1 text-[11px] font-mono text-gray-500 dark:text-gray-400 font-bold">
+        <span className="inline-flex items-center rounded-[4px] border border-[#f0f0f0] dark:border-[#272a34] bg-gray-50 dark:bg-[#16181d] px-1.5 py-0.5 font-mono text-[10px] font-bold text-gray-700 dark:text-gray-300 leading-none">
           {Number(task.qtySubmit || 0)}
         </span>
 
         {task.designer && <Pill label={task.designer.displayName} color={task.designer.avatarColor} />}
 
         {task.pages != null && (
-          <span className="px-1 text-[11px] font-mono text-gray-500 dark:text-gray-400 font-bold">
+          <span className="inline-flex items-center rounded-[4px] border border-[#f0f0f0] dark:border-[#272a34] bg-gray-50 dark:bg-[#16181d] px-1.5 py-0.5 font-mono text-[10px] font-bold text-gray-500 dark:text-gray-400 leading-none">
             @{Number(task.pages)}p
           </span>
         )}
 
         {task.taskAccounts.map((ta) => (
-          <Pill key={ta.account.id} label={ta.account.displayName} color={ta.account.color} />
+          <Pill key={ta.account.id} label={ta.account.displayName} color={ta.account.color || '#ff5e1f'} />
         ))}
 
         {task.languages?.map((language) => (
-          <Pill key={language} label={language} color="#7c3aed" />
+          <Pill key={language} label={language} color="#6366f1" />
         ))}
 
         {task.doctype && <Pill label={task.doctype.displayName} color="#ec4899" />}
 
-        {task.license && <Pill label={task.license} color="#22c55e" />}
+        {task.license && (
+          <Pill
+            label={task.license}
+            color={task.license.toLowerCase() === 'pro' ? '#10b981' : '#8b5cf6'}
+          />
+        )}
 
         {commentCount > 0 && (
-          <span className="ml-auto inline-flex items-center gap-1 text-[11px] font-mono text-gray-400 dark:text-gray-500">
+          <span className="ml-auto inline-flex items-center gap-1 font-mono text-[10px] font-medium text-gray-400 dark:text-gray-500">
             <MessageSquare className="w-3 h-3" />
             {commentCount}
           </span>
