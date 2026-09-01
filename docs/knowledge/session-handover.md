@@ -15,7 +15,12 @@ Dokumen ini mencatat **status pengerjaan aktif**, keputusan arsitektur terbaru, 
 
 ## 💡 Keputusan Arsitektur & Perubahan Terakhir (Recent Decisions)
 
-1. **Incremental-Only Auto Sync & Stale Log Auto-Clearing Engine**:
+1. **Vercel Hobby Daily Cron (00:00 WIB) & Clean Passive UI Architecture**:
+   - Mengatur `vercel.json` menggunakan jadwal harian `"schedule": "0 17 * * *"` (pukul 00:00 WIB / 17:00 UTC) yang 100% didukung Vercel Hobby Plan, menyelesaikan masalah penolakan build `❌ 0/1`.
+   - Menghapus client-side `setInterval` polling loops dari `SyncButton.tsx` agar browser tidak lagi memicu background fetch otomatis.
+   - Menyederhanakan antarmuka `/notion-config` dengan mengganti form interval menjadi kartu informasi **Daily Auto Sync Active (00:00 WIB)** serta mempertahankan tombol **Sync Now** manual.
+
+2. **Incremental-Only Auto Sync & Stale Log Auto-Clearing Engine**:
    - Mengharuskan `/api/sync/cron/route.ts` dan `syncNotionData` selalu menggunakan `mode: 'incremental'` yang memfilter query Notion API berdasarkan `last_edited_time: { on_or_after: lastSyncTime }` sehingga hanya menarik kartu yang di-update di Notion (durasi < 2 detik).
    - Menambahkan pembersihan otomatis stale log (`status: 'running'` > 2 menit) menjadi `failed` di database PostgreSQL untuk mencegah dashboard terkunci pada status `Sedang Berjalan...`.
    - Membuat file [`vercel.json`](file:///Users/fatchurbeny/Documents/Project/can-freelance/vercel.json) untuk mendaftarkan native Vercel Cron Job.

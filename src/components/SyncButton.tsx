@@ -107,31 +107,6 @@ export default function SyncButton({ initialSyncLog, isCollapsed = false }: Sync
     }
   }, [initialSyncLog]);
 
-  // Fetch cron status and update countdown
-  const refetchCronStatus = useCallback(async () => {
-    try {
-      const res = await fetch('/api/sync/cron');
-      const data = await res.json();
-      if (typeof data.nextSyncInMs === 'number') {
-        setCountdownMs(data.nextSyncInMs);
-      } else if (data.status === 'success') {
-        setCountdownMs(15 * 60 * 1000);
-      }
-      // Update sidebar sync log if sync was triggered
-      if (data.status === 'success' && data.recordsSynced !== undefined) {
-        setSyncLog({
-          startedAt: new Date(),
-          finishedAt: new Date(),
-          status: 'success',
-          recordsSynced: data.recordsSynced,
-          errorMessage: null,
-        });
-      }
-    } catch (err) {
-      console.error('Failed to fetch cron status:', err);
-    }
-  }, []);
-
   // Load config on mount and when updated
   useEffect(() => {
     async function init() {
@@ -139,11 +114,8 @@ export default function SyncButton({ initialSyncLog, isCollapsed = false }: Sync
         const config = await getNotionConfigAction();
         const isAuto = config.autoSync ?? false;
         setAutoSync(isAuto);
-        if (isAuto) {
-          await refetchCronStatus();
-        } else {
-          setCountdownMs(null);
-        }
+        const log = await getLatestSyncStatus();
+        if (log) setSyncLog(log);
       } catch (err) {
         console.error('Failed to init SyncButton:', err);
       }
@@ -153,54 +125,7 @@ export default function SyncButton({ initialSyncLog, isCollapsed = false }: Sync
 
     window.addEventListener('notion-config-updated', init);
     return () => window.removeEventListener('notion-config-updated', init);
-  }, [refetchCronStatus]);
-
-  // Tick every second when autoSync is active
-  useEffect(() => {
-    if (!autoSync) return;
-    const interval = setInterval(() => {
-      setCountdownMs(prev => {
-        if (prev === null) return null;
-        return Math.max(0, prev - 1000);
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [autoSync]);
-
-  // Trigger cron when countdown reaches 0
-  useEffect(() => {
-    if (!autoSync || countdownMs !== 0 || isCronRunningRef.current) return;
-
-    isCronRunningRef.current = true;
-    setIsSyncing(true);
-
-    fetch('/api/sync/cron')
-      .then(res => res.json())
-      .then(async data => {
-        if (data.status === 'success') {
-          toast.success(`Auto sync: ${data.recordsSynced ?? 0} records synced!`, {
-            style: {
-              background: '#0B0F19',
-              color: '#4ade80',
-              border: '1px solid #166534',
-            },
-            iconTheme: { primary: '#4ade80', secondary: '#0B0F19' },
-          });
-        }
-        // Always fetch the true DB sync log after cron fires
-        const latest = await getLatestSyncStatus();
-        if (latest) setSyncLog(latest);
-        return refetchCronStatus();
-      })
-      .catch(err => {
-        console.error('Cron auto-trigger failed:', err);
-        setCountdownMs(15 * 60 * 1000);
-      })
-      .finally(() => {
-        setIsSyncing(false);
-        isCronRunningRef.current = false;
-      });
-  }, [autoSync, countdownMs, refetchCronStatus]);
+  }, []);
 
   // Poll sync log every 30s while autoSync is on (keeps sidebar fresh)
   useEffect(() => {

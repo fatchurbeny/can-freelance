@@ -216,79 +216,27 @@ export default function NotionConfigClient({ initialSyncLog }: { initialSyncLog:
                     </div>
                   </div>
 
+                  {/* Row 2: Daily Auto Sync Information Card */}
                   {configExists && databases.length > 0 && (
-                    <div className="p-5 sm:p-6 space-y-6">
+                    <div className="p-5 sm:p-6 space-y-4">
                       <div>
                         <h2 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
                           <Timer className="w-4 h-4 text-[#ff5e1f]" />
                           Scheduled Sync Settings
                         </h2>
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 pl-6 font-mono">
-                          Configure automatic periodic syncs from Notion via external cron endpoints.
+                          Automatic daily periodic sync configured via Vercel Cron.
                         </p>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end mt-6">
-                        <div className="space-y-2.5">
-                          <label className="text-xs font-bold font-mono text-gray-900 dark:text-white flex items-center gap-2">
-                            <Zap className="w-3.5 h-3.5 text-[#ff5e1f]" />
-                            Auto Sync State
-                          </label>
-                          <div className="h-11 px-3.5 bg-gray-50 dark:bg-[#16181d] border border-[#f0f0f0] dark:border-[#272a34] rounded-lg flex items-center justify-between">
-                            <div className="flex items-center gap-2 min-w-0">
-                              <span className={`w-2 h-2 rounded-full shrink-0 ${autoSync ? 'bg-emerald-500 animate-pulse' : 'bg-gray-400'}`} />
-                              <span className="font-bold text-xs font-mono text-gray-900 dark:text-white truncate">
-                                {autoSync ? 'Enabled' : 'Disabled'}
-                              </span>
-                              <span className="text-[10px] font-mono text-gray-400 dark:text-gray-500 truncate hidden sm:inline">
-                                {autoSync ? '(Cron Active)' : '(Paused)'}
-                              </span>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => setAutoSync(!autoSync)}
-                              className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus:outline-none cursor-pointer ${
-                                autoSync ? 'bg-[#ff5e1f]' : 'bg-gray-300 dark:bg-gray-700'
-                              }`}
-                            >
-                              <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${autoSync ? 'translate-x-4.5' : 'translate-x-0.5'}`} />
-                            </button>
-                          </div>
+                      <div className="p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/10 flex items-start gap-3.5 text-xs font-mono">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                        <div className="space-y-1">
+                          <div className="font-bold text-emerald-600 dark:text-emerald-400">Daily Auto Sync Active</div>
+                          <p className="text-[11px] text-gray-600 dark:text-gray-300 leading-relaxed">
+                            Scheduled at <span className="font-bold text-gray-900 dark:text-white">00:00 WIB (17:00 UTC)</span> every day via Vercel Cron. Manual sync can be triggered anytime using the Sync button in the sidebar.
+                          </p>
                         </div>
-
-                        <div className="space-y-2.5">
-                          <label className="text-xs font-bold font-mono text-gray-900 dark:text-white flex items-center gap-2">
-                            <Compass className="w-3.5 h-3.5 text-[#ff5e1f]" />
-                            Sync Interval
-                          </label>
-                          <SelectDropdown
-                            label="Select Interval"
-                            options={SYNC_INTERVAL_OPTIONS}
-                            value={syncInterval}
-                            onChange={setSyncInterval}
-                            disabled={!autoSync}
-                            buttonClassName="h-11"
-                          />
-                        </div>
-                      </div>
-
-                      {scheduleFeedback && (
-                        <div className={`p-3.5 rounded-lg border flex items-center gap-2 text-xs font-mono ${scheduleFeedback.success ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 'bg-red-500/10 border-red-500/20 text-red-600 dark:text-red-400'}`}>
-                          {scheduleFeedback.success ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <AlertCircle className="w-4 h-4 shrink-0" />}
-                          {scheduleFeedback.message}
-                        </div>
-                      )}
-
-                      <div className="flex justify-end pt-2">
-                        <button
-                          type="button"
-                          onClick={handleSaveScheduling}
-                          disabled={isSavingSchedule}
-                          className="inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-mono font-bold text-white bg-[#ff5e1f] hover:bg-[#ff7038] rounded-lg transition-all shadow-none disabled:opacity-50 cursor-pointer"
-                        >
-                          {isSavingSchedule ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                          Save Schedule
-                        </button>
                       </div>
                     </div>
                   )}

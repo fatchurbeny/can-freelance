@@ -102,6 +102,14 @@ Dokumen ini mencatat histori bug, edge cases, serta aturan layout CSS/React untu
   2. **Stale Log Auto-Clearing**: Di `/api/sync/cron/route.ts`, otomatis ubah seluruh `SyncLog` berstatus `'running'` yang berumur **> 2 menit** menjadi `'failed'` (`Serverless Function Timeout`) sebelum pengecekan dimulai.
   3. **Native Vercel Cron**: Konfigurasikan file `vercel.json` untuk mendaftarkan cron job native Vercel.
 
+### 18. Vercel Hobby Daily Cron (00:00 WIB) & Clean Passive UI Protocol
+* **Masalah**: Vercel Hobby Plan menolak jadwal cron interval menit (misal `*/15 * * * *`) pada `vercel.json` dan membatalkan build (`❌ 0/1`). Selain itu, client-side polling interval di browser dapat memicu timeout/basic auth popup.
+* **Aturan Solusi**:
+  1. **Daily Cron Schedule**: `vercel.json` WAJIB menggunakan jadwal harian yang valid untuk Vercel Hobby: `"schedule": "0 17 * * *"` (pukul 17:00 UTC = 00:00 WIB pergantian hari Jakarta).
+  2. **No Client Polling Loops**: Menghapus seluruh `setInterval` auto-trigger `fetch('/api/sync/cron')` dari `SyncButton.tsx`. Browser hanya membaca status pasif dari DB via `getLatestSyncStatus()`.
+  3. **Clean UI Banner**: Di `/notion-config`, bentuk dropdown interval digantikan dengan kartu informasi bersih **"Daily Auto Sync Active (00:00 WIB)"**, serta tombol **Sync Now** untuk sync manual instan.
+
+
 
 
 
