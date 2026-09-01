@@ -21,6 +21,20 @@ export async function getSyncProgressAction() {
 
 export async function getLatestSyncStatus() {
   try {
+    // Auto-clean any stale 'running' sync logs older than 2 minutes
+    const TWO_MINUTES_AGO = new Date(Date.now() - 2 * 60 * 1000);
+    await prisma.syncLog.updateMany({
+      where: {
+        status: 'running',
+        startedAt: { lt: TWO_MINUTES_AGO },
+      },
+      data: {
+        status: 'failed',
+        errorMessage: 'Serverless Function Execution Timeout (Auto-cleaned)',
+        finishedAt: new Date(),
+      },
+    });
+
     const latestLog = await prisma.syncLog.findFirst({
       orderBy: { startedAt: 'desc' },
     });

@@ -63,13 +63,23 @@ export async function GET(request: Request) {
 
     const intervalMs = INTERVAL_MS[config.syncInterval] ?? INTERVAL_MS['15_mins'];
 
-    // 2. Prevent concurrent runs — check for a 'running' log started within the last 15 min
-    const STALE_THRESHOLD_MS = 15 * 60 * 1000;
-    const runningLog = await prisma.syncLog.findFirst({
+    // 2. Auto-clean any stale 'running' sync logs older than 2 minutes (120,000 ms)
+    const TWO_MINUTES_AGO = new Date(Date.now() - 2 * 60 * 1000);
+    await prisma.syncLog.updateMany({
       where: {
         status: 'running',
-        startedAt: { gte: new Date(Date.now() - STALE_THRESHOLD_MS) },
+        startedAt: { lt: TWO_MINUTES_AGO },
       },
+      data: {
+        status: 'failed',
+        errorMessage: 'Serverless Function Execution Timeout (Auto-cleaned)',
+        finishedAt: new Date(),
+      },
+    });
+
+    // Prevent concurrent runs — check for any active 'running' log
+    const runningLog = await prisma.syncLog.findFirst({
+      where: { status: 'running' },
     });
     if (runningLog) {
       return NextResponse.json({
@@ -88,10 +98,16 @@ export async function GET(request: Request) {
     const now = Date.now();
     const lastFinished = lastLog?.finishedAt ? new Date(lastLog.finishedAt).getTime() : 0;
     const configUpdatedAt = config.updatedAt ? new Date(config.updatedAt).getTime() : 0;
+
+    // If autoSync schedule was recently updated or enabled, ensure referenceStartTime triggers a full countdown
+    const isConfigNewerThanLastSync = configUpdatedAt > lastFinished;
+    const isConfigUpdatedWithinInterval = (now - configUpdatedAt) < intervalMs;
     
-    // The reference start time for countdown calculation is the LATEST of the last finished sync OR when auto sync schedule was configured.
-    // This ensures enabling or reconfiguring auto sync sets a countdown timer for the full interval rather than executing an instant sync.
-    const referenceStartTime = Math.max(lastFinished, configUpdatedAt);
+    // Choose reference start time: if config was just updated/enabled, count down from configUpdatedAt
+    const referenceStartTime = (isConfigNewerThanLastSync || isConfigUpdatedWithinInterval)
+      ? configUpdatedAt
+      : Math.max(lastFinished, configUpdatedAt);
+
     const elapsed = now - referenceStartTime;
 
     if (elapsed < intervalMs) {
@@ -105,23 +121,15 @@ export async function GET(request: Request) {
       });
     }
 
-    // 4. First eligible automatic run each Jakarta day performs full reconciliation.
-    const fullSyncToday = await prisma.syncLog.findFirst({
-      where: {
-        status: 'success',
-        mode: 'full',
-        startedAt: { gte: startOfJakartaDay() },
-      },
-      select: { id: true },
-    });
-    const mode = fullSyncToday ? 'incremental' : 'full';
-    const result = await syncNotionData(mode);
+    // 4. Background auto-sync ALWAYS uses fast incremental mode to sync updated data only
+    const result = await syncNotionData('incremental');
 
     return NextResponse.json({
       status: result.status,
-      mode,
+      mode: 'incremental',
       recordsSynced: result.status === 'success' ? (result as any).recordsSynced : undefined,
       error: result.status === 'failed' ? (result as any).errorMessage : undefined,
+      nextSyncInMs: intervalMs,
       triggeredAt: new Date().toISOString(),
     });
   } catch (error: any) {

@@ -49,9 +49,13 @@ Dokumen ini mencatat histori bug, edge cases, serta aturan layout CSS/React untu
 ### 8. Outer Container vs. Control Rounding Invariant
 * **Aturan Layout**: Kontainer utama luar (*continuous card*) menggunakan `rounded-none` tanpa gap. Namun, elemen kontrol interaktif di dalamnya (sakelar toggle, badge status, pill count, tombol aksi, dan tempat logo) WAJIB MEMPERTAHANKAN bentuk melengkungnya (`rounded-full`, `rounded-lg`, `rounded`) agar tidak tampil *boxy* (kotak kaku).
 
-### 9. Notion Auto Sync Countdown Reference Start Time
-* **Masalah**: Mengaktifkan atau menyimpan jadwal Auto Sync sebelumnya langsung memicu *instant sync* jika sync terakhir sudah lama terjadi.
-* **Aturan**: Gunakan `referenceStartTime = Math.max(lastFinishedSyncTimestamp, configUpdatedAtTimestamp)`. Hal ini menjamin bahwa pengubahan jadwal Auto Sync akan menginisialisasi timer hitung mundur (*countdown*) sebesar durasi interval penuh, bukan eksekusi langsung.
+### 9. Notion Auto Sync Countdown Protocol & Initial Delay Invariant
+* **Masalah**: Mengaktifkan atau menyimpan jadwal Auto Sync sebelumnya dapat memicu *instant sync* tidak terduga jika sync terakhir terjadi di masa lalu.
+* **Aturan Mutlak (Dilarang Terulang)**:
+  1. **Initial Countdown Guarantee**: Pengaktifan atau pengubahan jadwal Auto Sync (`autoSync` & `syncInterval`) WAJIB memicu hitung mundur (*countdown*) interval penuh terlebih dahulu (misal: `15:00` $\rightarrow$ `14:59` $\rightarrow$ ... $\rightarrow$ `00:00`). TIDAK BOLEH memicu sync instan saat tombol simpan diklik.
+  2. **Timestamp Reference**: `referenceStartTime` di `/api/sync/cron/route.ts` WAJIB memprioritaskan `config.updatedAt` saat jadwal diaktifkan/diubah agar sisa waktu dihitung dari durasi interval penuh.
+  3. **Return `nextSyncInMs`**: `/api/sync/cron/route.ts` WAJIB mengembalikan field `nextSyncInMs: intervalMs` pada respon eksekusi sukses.
+  4. **Guarding `SyncButton.tsx`**: Dilarang melakukan fallback `setCountdownMs(0)` saat refetch status cron. setCountdownMs hanya bernilai 0 jika timer hitung mundur alami telah habis.
 
 ### 11. Force Graph Simulation Hover Isolation & State Ref Binding
 * **Masalah**: Pada komponen canvas 2D Force Graph (`GraphifyVisualizer.tsx`), memasukkan state `hoveredNode`, `selectedNode`, atau `isDark` ke dalam dependency array `useEffect` simulasi fisik menyebabkan efek dibersihkan (*cleanup*) dan dieksekusi ulang dari awal setiap kali kursor tetikus menyentuh node (`setHoveredNode`). Hal ini mereset koordinat `x, y` secara acak (`Math.random()`) dan mereset energi simulasi (`alpha = 1`), sehingga grafik bergetar/melompat hebat saat di-hover.
@@ -83,6 +87,22 @@ Dokumen ini mencatat histori bug, edge cases, serta aturan layout CSS/React untu
 * **Aturan Solusi**:
   1. Skrip parser (`scripts/graphify-parser.ts`) WAJIB memparsing dokumen `docs/knowledge/*.md` menjadi **Nodes** & **Edges inter-cluster** (`enforces`, `queries`, `invokes`, `renders`).
   2. Kelompokkan ke dalam **8 Kluster Komunitas Berwarna** dengan dukungan penyaringan interaktif pada canvas 2D force graph (`GraphifyVisualizer.tsx`).
+
+### 16. Prevensi Native Basic Auth Login Popup pada RSC & Auto Sync di Vercel
+* **Penyebab**: Saat Auto Sync aktif dan pengguna berpindah halaman, browser mengirimkan background request RSC (`rsc: 1`, `next-action`) dan background fetch tanpa menyertakan header `Authorization: Basic`. Jika middleware `proxy.ts` mengembalikan respon 401 beserta header `WWW-Authenticate: Basic realm="..."`, browser secara otomatis mencegat respon dan menampilkan popup dialog login native (`Sign in https://can-freelance.vercel.app`).
+* **Aturan Solusi**:
+  1. Di `src/proxy.ts`, deteksi request RSC / Server Action (`isRsc`).
+  2. Jika request bersifat RSC / background fetch dan autentikasi gagal, kembalikan `401 Unauthorized` **TANPA HEADER `WWW-Authenticate`**. Hal ini mencegah browser menampilkan dialog pop-up login native pada transisi halaman/auto sync.
+  3. Jika `BASIC_AUTH_USER` / `BASIC_AUTH_PASSWORD` tidak terkonfigurasi di Vercel Environment Variables, bypass middleware (`NextResponse.next()`).
+
+### 17. Incremental-Only Auto Sync & Stale Log Auto-Clearing Protocol
+* **Masalah**: Menarik seluruh database Notion (400+ kartu) saat auto sync berjalan menyebabkan Vercel Serverless Function mati karena timeout (10-15 detik), meninggalkan log `status: 'running'` yang mengunci dashboard selamanya di status `Sedang Berjalan...`.
+* **Aturan Solusi**:
+  1. **Incremental-Only Sync**: Auto sync / cron WAJIB menggunakan `mode: 'incremental'` dengan filter `last_edited_time: { on_or_after: lastSyncTime }` agar hanya menarik kartu yang di-update di Notion. Durasi eksekusi selesai cepat dalam < 2 detik.
+  2. **Stale Log Auto-Clearing**: Di `/api/sync/cron/route.ts`, otomatis ubah seluruh `SyncLog` berstatus `'running'` yang berumur **> 2 menit** menjadi `'failed'` (`Serverless Function Timeout`) sebelum pengecekan dimulai.
+  3. **Native Vercel Cron**: Konfigurasikan file `vercel.json` untuk mendaftarkan cron job native Vercel.
+
+
 
 
 

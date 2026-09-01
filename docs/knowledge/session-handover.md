@@ -15,7 +15,21 @@ Dokumen ini mencatat **status pengerjaan aktif**, keputusan arsitektur terbaru, 
 
 ## 💡 Keputusan Arsitektur & Perubahan Terakhir (Recent Decisions)
 
-1. **Dynamic Knowledge Graph Community Mapping Across All 7 Domains**:
+1. **Incremental-Only Auto Sync & Stale Log Auto-Clearing Engine**:
+   - Mengharuskan `/api/sync/cron/route.ts` dan `syncNotionData` selalu menggunakan `mode: 'incremental'` yang memfilter query Notion API berdasarkan `last_edited_time: { on_or_after: lastSyncTime }` sehingga hanya menarik kartu yang di-update di Notion (durasi < 2 detik).
+   - Menambahkan pembersihan otomatis stale log (`status: 'running'` > 2 menit) menjadi `failed` di database PostgreSQL untuk mencegah dashboard terkunci pada status `Sedang Berjalan...`.
+   - Membuat file [`vercel.json`](file:///Users/fatchurbeny/Documents/Project/can-freelance/vercel.json) untuk mendaftarkan native Vercel Cron Job.
+
+2. **Auto Sync Initial Countdown Protocol Guarantee**:
+   - Memperbarui `/api/sync/cron/route.ts` dan `SyncButton.tsx` untuk menjamin pengaktifan atau pengubahan jadwal Auto Sync **SELALU memicu hitung mundur (*countdown*) interval penuh terlebih dahulu** sebelum sync dijalankan.
+   - Menghapus fallback `setCountdownMs(0)` pada `SyncButton.tsx` dan memastikan respon sukses eksekusi cron menyertakan `nextSyncInMs: intervalMs` untuk siklus berikutnya.
+
+2. **Vercel Basic Auth RSC & Auto Sync Login Popup Fix**:
+   - Memperbarui middleware [`src/proxy.ts`](file:///Users/fatchurbeny/Documents/Project/can-freelance/src/proxy.ts) untuk mendeteksi request internal Next.js RSC (`rsc: 1`, `next-action`, `next-router-state-tree`).
+   - Mencegah pengiriman header `WWW-Authenticate: Basic realm="..."` pada respon 401 saat request bersifat RSC / background fetch sehingga browser tidak pernah mencegat dan menampilkan dialog login native (`Sign in https://can-freelance.vercel.app`) saat auto sync aktif dan pengguna berpindah halaman di Vercel.
+   - Mengatur bypass otomatis jika `BASIC_AUTH_USER` / `BASIC_AUTH_PASSWORD` belum diatur di Vercel Environment Variables.
+
+2. **Dynamic Knowledge Graph Community Mapping Across All 7 Domains**:
    - Memperluas [`scripts/graphify-parser.ts`](file:///Users/fatchurbeny/Documents/Project/can-freelance/scripts/graphify-parser.ts) untuk memparsing seluruh domain pengetahuan (`entities.md`, `business-rules.md`, `data-flows.md`, `issues-and-fixes.md`, `session-handover.md`) ke dalam **92 Nodes & 87 Edges terstruktur**.
    - Menambahkan 8 kluster komunitas utama pada [`GraphifyVisualizer.tsx`](file:///Users/fatchurbeny/Documents/Project/can-freelance/src/components/GraphifyVisualizer.tsx): `App Router Pages`, `React Components`, `Server Actions & Lib`, `Prisma DB Models`, `SaaS Business Rules`, `Notion Sync Engine`, `Gotchas & Layout Rules`, `Session Handover & Log`.
    - Mengaktifkan pemicu klik filter komunitas interaktif pada tabel `COMMUNITIES` dengan indikator badge aktif di sudut kiri atas canvas 2D force graph.

@@ -114,8 +114,8 @@ export default function SyncButton({ initialSyncLog, isCollapsed = false }: Sync
       const data = await res.json();
       if (typeof data.nextSyncInMs === 'number') {
         setCountdownMs(data.nextSyncInMs);
-      } else if (data.status === 'success' || (data.status === 'skipped' && !data.nextSyncInMs)) {
-        setCountdownMs(0);
+      } else if (data.status === 'success') {
+        setCountdownMs(15 * 60 * 1000);
       }
       // Update sidebar sync log if sync was triggered
       if (data.status === 'success' && data.recordsSynced !== undefined) {

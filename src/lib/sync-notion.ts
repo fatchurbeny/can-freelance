@@ -100,8 +100,10 @@ export async function syncNotionData(mode: NotionSyncMode = 'incremental') {
             orderBy: { startedAt: 'desc' },
           })
         : null;
-      const lastSyncTime = lastSync
-        ? new Date(lastSync.startedAt.getTime() - INCREMENTAL_OVERLAP_MS).toISOString()
+      const lastSyncTime = mode === 'incremental'
+        ? (lastSync
+            ? new Date(lastSync.startedAt.getTime() - INCREMENTAL_OVERLAP_MS).toISOString()
+            : new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
         : undefined;
 
       // Ensure reference metadata exists (designers, doctypes, accounts, statuses)

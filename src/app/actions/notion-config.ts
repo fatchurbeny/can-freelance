@@ -119,8 +119,12 @@ export async function saveSchedulingConfigAction(autoSync: boolean, syncInterval
       where: { id: existingConfig.id },
       data: { autoSync, syncInterval, updatedAt: new Date() }
     });
-    revalidatePath('/');
-    revalidatePath('/notion-config');
+    try {
+      revalidatePath('/');
+      revalidatePath('/notion-config');
+    } catch (revErr) {
+      console.warn('Revalidation warning:', revErr);
+    }
     return { success: true };
   } catch (error: any) {
     console.error('Error saving scheduling config:', error);
