@@ -141,9 +141,8 @@ export default function SyncButton({ initialSyncLog, isCollapsed = false }: Sync
     return () => clearInterval(interval);
   }, [autoSync]);
 
-  // Manual sync (only when autoSync is off)
+  // Manual sync (allows trigger anytime)
   const handleSync = async () => {
-    if (autoSync) return;
     if (isSyncing) {
       // Re-open modal if user clicks button while sync is running in background
       setModalState(syncMetrics ? 'success' : 'syncing');
@@ -228,7 +227,7 @@ export default function SyncButton({ initialSyncLog, isCollapsed = false }: Sync
   return (
     <>
       {/* Cloudflare Table Simetris Sync Modal */}
-      {mounted && !autoSync && modalState !== 'idle' && createPortal(
+      {mounted && modalState !== 'idle' && createPortal(
         <div
           onClick={(e) => {
             if (e.target === e.currentTarget) {

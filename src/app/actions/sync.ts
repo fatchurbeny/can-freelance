@@ -38,6 +38,21 @@ export async function getLatestSyncStatus() {
     const latestLog = await prisma.syncLog.findFirst({
       orderBy: { startedAt: 'desc' },
     });
+
+    if (latestLog && latestLog.status === 'failed') {
+      const lastSuccess = await prisma.syncLog.findFirst({
+        where: { status: 'success' },
+        orderBy: { finishedAt: 'desc' },
+      });
+      if (lastSuccess) {
+        return {
+          ...lastSuccess,
+          hasFailedAttempt: true,
+          failedAt: latestLog.startedAt,
+        };
+      }
+    }
+
     return latestLog;
   } catch (error) {
     console.error('Error fetching sync status:', error);
