@@ -391,34 +391,23 @@ export default function SyncButton({ initialSyncLog, isCollapsed = false }: Sync
         ) : (
           <div className="w-full rounded-none divide-y divide-[#f0f0f0] dark:divide-[#272a34] bg-white dark:bg-[#0d0e12] border-t border-[#f0f0f0] dark:border-[#272a34] font-mono text-xs select-none">
             
-            {/* Row 1: Sync Button / Auto Sync Countdown */}
-            {autoSync ? (
-              <div
-                className={`flex items-center justify-center px-4 py-2.5 transition-all font-mono font-bold text-xs select-none bg-gray-50 dark:bg-[#16181d] ${
-                  isSyncing ? 'text-amber-500 animate-pulse' : 'text-[#ff5e1f]'
-                } w-full gap-2`}
-              >
-                <Timer className={`w-3.5 h-3.5 shrink-0 ${isSyncing ? 'animate-spin' : ''}`} />
-                <span className="font-mono tracking-wider text-xs">
-                  {isSyncing
-                    ? `Syncing ${liveProgress.percent}%...`
-                    : countdownMs === null
-                    ? 'Loading...'
-                    : formatCountdown(countdownMs)}
-                </span>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={handleSync}
-                className={`flex items-center justify-center px-4 py-2.5 transition-all font-mono text-xs font-bold cursor-pointer group bg-gray-50 dark:bg-[#16181d] text-gray-900 dark:text-gray-100 hover:bg-[#ff5e1f]/10 hover:text-[#ff5e1f] dark:hover:text-[#ff5e1f] w-full gap-2 ${
-                  isSyncing ? 'text-[#ff5e1f] animate-pulse' : ''
-                }`}
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'text-[#ff5e1f] animate-spin' : 'text-gray-500 dark:text-gray-400 group-hover:text-[#ff5e1f] group-hover:rotate-180 transition-transform duration-500'}`} />
-                <span>{isSyncing ? `Syncing ${liveProgress.percent}%...` : 'Notion Sync'}</span>
-              </button>
-            )}
+            {/* Row 1: Interactive Sync Button */}
+            <button
+              type="button"
+              onClick={handleSync}
+              className={`flex items-center justify-center px-4 py-2.5 transition-all font-mono text-xs font-bold cursor-pointer group bg-gray-50 dark:bg-[#16181d] text-gray-900 dark:text-gray-100 hover:bg-[#ff5e1f]/10 hover:text-[#ff5e1f] dark:hover:text-[#ff5e1f] w-full gap-2 ${
+                isSyncing ? 'text-[#ff5e1f] animate-pulse' : ''
+              }`}
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'text-[#ff5e1f] animate-spin' : 'text-gray-500 dark:text-gray-400 group-hover:text-[#ff5e1f] group-hover:rotate-180 transition-transform duration-500'}`} />
+              <span>
+                {isSyncing
+                  ? `Syncing ${liveProgress.percent}%...`
+                  : autoSync
+                  ? 'Sync Now (Daily 00:00)'
+                  : 'Notion Sync'}
+              </span>
+            </button>
 
             {/* Row 2: Status */}
             <div className="flex items-center justify-between px-4 py-2 bg-white dark:bg-[#0d0e12] text-[11px]">
