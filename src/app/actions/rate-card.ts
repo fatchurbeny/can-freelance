@@ -35,13 +35,38 @@ async function buildUniqueDoctypeName(baseName: string) {
 
 export async function updateDoctypeRateCardAction(
   doctypeId: string,
-  values: { poolRate: number; pages: number }
+  values: {
+    poolRate?: number;
+    pages?: number;
+    name?: string;
+    notionKey?: string;
+    category?: string;
+    dimensions?: string;
+    aspectRatio?: string;
+    notes?: string;
+    isActive?: boolean;
+  }
 ) {
   try {
+    const dataToUpdate: any = {};
+    if (typeof values.poolRate === 'number') dataToUpdate.poolRate = values.poolRate;
+    if (typeof values.pages === 'number') dataToUpdate.pages = values.pages;
+    if (values.name) dataToUpdate.displayName = values.name.trim();
+    if (values.notionKey) dataToUpdate.notionKey = values.notionKey.trim();
+    if (values.category !== undefined) dataToUpdate.category = values.category;
+    if (values.dimensions !== undefined) dataToUpdate.dimensions = values.dimensions;
+    if (values.aspectRatio !== undefined) dataToUpdate.aspectRatio = values.aspectRatio;
+    if (values.notes !== undefined) dataToUpdate.notes = values.notes;
+    if (typeof values.isActive === 'boolean') dataToUpdate.isActive = values.isActive;
+
     const updated = await prisma.doctype.update({
       where: { id: doctypeId },
-      data: { poolRate: values.poolRate, pages: values.pages },
+      data: dataToUpdate,
     });
+
+    if (values.notionKey || values.name) {
+      await syncDoctypeOptionToNotion(updated.notionKey);
+    }
 
     revalidatePath('/rate-card');
     return { success: true, doctype: updated };
@@ -50,20 +75,38 @@ export async function updateDoctypeRateCardAction(
   }
 }
 
-export async function createDoctypeAction(values: { name: string; poolRate: number; pages: number }) {
+export async function createDoctypeAction(values: {
+  name: string;
+  notionKey?: string;
+  category?: string;
+  dimensions?: string;
+  aspectRatio?: string;
+  poolRate: number;
+  pages: number;
+  notes?: string;
+  isActive?: boolean;
+}) {
   try {
     const baseName = normalizeName(values.name);
     if (!baseName) {
       return { success: false, error: 'Doctype name is required.' };
     }
 
-    const uniqueName = await buildUniqueDoctypeName(baseName);
+    const uniqueName = values.notionKey && values.notionKey.trim()
+      ? values.notionKey.trim()
+      : await buildUniqueDoctypeName(baseName);
+
     const created = await prisma.doctype.create({
       data: {
         notionKey: uniqueName,
-        displayName: uniqueName,
+        displayName: baseName,
+        category: values.category || 'Infografis',
+        dimensions: values.dimensions || '1920x1080 px',
+        aspectRatio: values.aspectRatio || '16:9',
         poolRate: values.poolRate,
         pages: values.pages,
+        notes: values.notes || null,
+        isActive: values.isActive ?? true,
       },
     });
 

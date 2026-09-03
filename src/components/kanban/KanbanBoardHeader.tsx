@@ -23,13 +23,13 @@ export default function KanbanBoardHeader({
         {columns.map((column) => (
           <div
             key={column.id}
-            className="w-[260px] shrink-0 px-4 py-2.5 flex items-center justify-between text-xs font-mono font-bold"
+            className="w-[260px] shrink-0 px-4 py-2.5 flex items-center justify-between text-xs font-sans font-bold"
           >
             <div className="flex items-center gap-2 min-w-0">
               <span className={`size-2 shrink-0 rounded-full ${column.dot}`} />
               <span className="truncate text-gray-700 dark:text-gray-300">{column.title}</span>
             </div>
-            <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] text-gray-700 dark:text-gray-300 shadow-none">
+            <span className="font-sans text-[10px] font-bold px-2 py-0.5 rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] text-gray-700 dark:text-gray-300 shadow-none">
               {column.tasks.length}
             </span>
           </div>

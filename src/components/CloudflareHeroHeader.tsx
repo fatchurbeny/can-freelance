@@ -32,7 +32,7 @@ export default function CloudflareHeroHeader({
     <div className="w-full pt-4 pb-6 space-y-6">
       {/* Big Hero Title & Description */}
       <div className="space-y-3 max-w-4xl">
-        <h1 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-[#262626] dark:text-white leading-tight">
+        <h1 className="font-sans text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-[#262626] dark:text-white leading-tight">
           {title}
         </h1>
         <p className="text-base sm:text-lg text-gray-600 dark:text-gray-400 font-normal max-w-2xl leading-relaxed">

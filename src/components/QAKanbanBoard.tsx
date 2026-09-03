@@ -70,7 +70,7 @@ export default function QAKanbanBoard({
         }`}
       >
         {tasks.length === 0 ? (
-          <p className="px-4 py-6 text-center text-xs text-gray-400 dark:text-gray-500 font-mono">{emptyMessage}</p>
+          <p className="px-4 py-6 text-center text-xs text-gray-400 dark:text-gray-500 font-sans font-medium">{emptyMessage}</p>
         ) : (
           <>
             {visibleTasks.map((task) => (
@@ -86,7 +86,7 @@ export default function QAKanbanBoard({
               <button
                 type="button"
                 onClick={() => setShowAll(true)}
-                className="p-3 text-center text-xs font-mono font-bold text-[#ff5e1f] hover:bg-gray-50 dark:hover:bg-[#16181d]/50 transition-colors cursor-pointer"
+                className="p-3 text-center text-xs font-sans font-bold text-[#ff5e1f] hover:bg-gray-50 dark:hover:bg-[#16181d]/50 transition-colors cursor-pointer"
               >
                 Show all {tasks.length} tasks
               </button>

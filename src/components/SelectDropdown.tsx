@@ -34,7 +34,7 @@ export default function SelectDropdown({ label, options, value, onChange, disabl
         type="button"
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
-        className={`w-full h-11 flex items-center justify-between px-3.5 rounded-lg border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] text-xs font-mono font-bold text-gray-900 dark:text-gray-100 hover:border-gray-300 dark:hover:border-gray-700 focus:outline-none transition-colors shadow-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+        className={`w-full h-11 flex items-center justify-between px-3.5 rounded-lg border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] text-xs font-sans font-bold text-gray-900 dark:text-gray-100 hover:border-gray-300 dark:hover:border-gray-700 focus:outline-none transition-colors shadow-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
           isOpen ? 'border-gray-400 dark:border-gray-600' : ''
         } ${buttonClassName || ''}`}
       >
@@ -43,7 +43,7 @@ export default function SelectDropdown({ label, options, value, onChange, disabl
       </button>
 
       {isOpen && (
-        <div className="absolute left-0 right-0 mt-1.5 rounded-xl border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] p-1.5 shadow-xl z-50 max-h-72 overflow-y-auto font-mono text-xs">
+        <div className="absolute left-0 right-0 mt-1.5 rounded-xl border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] p-1.5 shadow-xl z-50 max-h-72 overflow-y-auto font-sans text-xs">
           <div className="space-y-0.5">
             {options.map((option) => {
               const isSelected = value === option.value;
@@ -55,7 +55,7 @@ export default function SelectDropdown({ label, options, value, onChange, disabl
                     onChange(option.value);
                     setIsOpen(false);
                   }}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left text-xs font-mono transition-colors cursor-pointer ${
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left text-xs font-sans transition-colors cursor-pointer ${
                     isSelected 
                       ? 'bg-gray-100 dark:bg-[#20232b] text-gray-900 dark:text-white font-bold' 
                       : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#20232b] dark:hover:text-white'

@@ -19,15 +19,42 @@ model User {
 }
 
 model Designer {
-  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  notionKey       String          @unique @map("notion_key")
-  displayName     String          @map("display_name")
-  avatarColor     String?         @map("avatar_color")
-  status          String          @default("Active")
-  payrollStatuses PayrollStatus[]
-  tasks           Task[]
+  id                String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  notionKey         String          @unique @map("notion_key")
+  displayName       String          @map("display_name")
+  avatarColor       String?         @map("avatar_color")
+  status            String          @default("Active")
+  role              String?         @default("Junior Designer")
+  contractType      String?         @default("Freelance") @map("contract_type")
+  contractStartDate DateTime?       @map("contract_start_date") @db.Date
+  probationEndDate  DateTime?       @map("probation_end_date") @db.Date
+  inactiveStartDate DateTime?       @map("inactive_start_date") @db.Date
+  inactiveNote      String?         @map("inactive_note")
+  resignDate        DateTime?       @map("resign_date") @db.Date
+  promotionDate     DateTime?       @map("promotion_date") @db.Date
+  email             String?
+  phone             String?
+  bankName          String?         @map("bank_name")
+  bankAccount       String?         @map("bank_account")
+  payrollStatuses   PayrollStatus[]
+  tasks             Task[]
+  careerLogs        DesignerCareerLog[]
 
   @@map("designers")
+}
+
+model DesignerCareerLog {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  designerId  String   @map("designer_id") @db.Uuid
+  eventType   String   @map("event_type")
+  title       String
+  description String?
+  eventDate   DateTime @map("event_date") @db.Date
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  designer    Designer @relation(fields: [designerId], references: [id], onDelete: Cascade)
+
+  @@map("designer_career_logs")
 }
 
 model Doctype {
@@ -38,6 +65,11 @@ model Doctype {
   sortOrder       Int      @default(0) @map("sort_order")
   poolRate        Float    @default(1.0) @map("pool_rate")
   pages           Float?
+  category        String?  @default("Infografis")
+  dimensions      String?  @default("1920x1080 px")
+  aspectRatio     String?  @default("16:9") @map("aspect_ratio")
+  notes           String?
+  isActive        Boolean  @default(true) @map("is_active")
   updatedAt       DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   tasks           Task[]
 
@@ -91,6 +123,7 @@ model Task {
   dateStarted    DateTime?       @map("date_started") @db.Date
   lastEditedTime DateTime        @default(now()) @map("last_edited_time") @db.Timestamptz(6)
   poolScore      Decimal?        @map("pool_score") @db.Decimal
+  bodyText       String?         @map("body_text")
   taskAccounts   TaskAccount[]
   canvaLinks     TaskCanvaLink[]
   comments       TaskComment[]

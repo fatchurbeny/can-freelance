@@ -39,7 +39,7 @@ export default function MonthFilter({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full h-full py-3.5 px-4 flex items-center justify-between gap-2 bg-white dark:bg-[#0d0e12] hover:bg-gray-50 dark:hover:bg-[#16181d] text-xs font-mono font-bold text-gray-900 dark:text-gray-100 focus:outline-none transition-colors cursor-pointer select-none rounded-none whitespace-nowrap"
+        className="w-full h-full py-3.5 px-4 flex items-center justify-between gap-2 bg-white dark:bg-[#0d0e12] hover:bg-gray-50 dark:hover:bg-[#16181d] text-xs font-sans font-bold text-gray-900 dark:text-gray-100 focus:outline-none transition-colors cursor-pointer select-none rounded-none whitespace-nowrap"
       >
         <Calendar className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 shrink-0 pointer-events-none" />
         <span>{selectedMonth || 'Pilih Bulan'}</span>
@@ -48,8 +48,8 @@ export default function MonthFilter({
 
       {/* Checkbox Dropdown Overlay (Flat Table Style) */}
       {isOpen && (
-        <div className="absolute right-0 top-full mt-0 w-56 rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] p-1.5 shadow-xl z-50 max-h-72 overflow-y-auto font-mono text-xs">
-          <div className="px-2.5 py-1.5 mb-1 border-b border-[#f0f0f0] dark:border-[#272a34] text-[10px] font-mono font-bold text-gray-400 dark:text-gray-500 tracking-wider uppercase">
+        <div className="absolute right-0 top-full mt-0 w-56 rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] p-1.5 shadow-xl z-50 max-h-72 overflow-y-auto font-sans text-xs">
+          <div className="px-2.5 py-1.5 mb-1 border-b border-[#f0f0f0] dark:border-[#272a34] text-[10px] font-sans font-bold text-gray-400 dark:text-gray-500 tracking-wider uppercase">
             PILIH PERIODE BULAN
           </div>
           <div className="space-y-0.5">
@@ -60,7 +60,7 @@ export default function MonthFilter({
                   key={month}
                   type="button"
                   onClick={() => handleMonthChange(month)}
-                  className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-none text-left text-xs font-mono transition-colors cursor-pointer ${
+                  className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-none text-left text-xs font-sans transition-colors cursor-pointer ${
                     isChecked
                       ? 'bg-gray-100 dark:bg-[#20232b] text-gray-900 dark:text-white font-bold'
                       : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#20232b] dark:hover:text-white'

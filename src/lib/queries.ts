@@ -49,11 +49,14 @@ export async function getDashboardData(filters: DashboardFilters) {
   // 1. Resolve selected periods array
   let periods: string[] = [];
   if (filters.selectedPeriod) {
-    periods = filters.selectedPeriod.split(',').filter(Boolean);
+    if (filters.selectedPeriod === 'all') {
+      periods = await getAvailablePeriods();
+    } else {
+      periods = filters.selectedPeriod.split(',').filter(Boolean);
+    }
   }
-  if (periods.length === 0) {
-    const available = await getAvailablePeriods();
-    periods = [available[0] || new Date().toISOString().substring(0, 7)];
+  if (filters.selectedPeriod === 'all' || periods.length === 0) {
+    periods = await getAvailablePeriods();
   }
 
   // 2. Resolve account/brand ID

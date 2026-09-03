@@ -35,7 +35,7 @@ export default function BrandTabs({ brands, currentBrand }: BrandTabsProps) {
         }`}
       >
         <span>Semua Brand</span>
-        <span className={`rounded px-1.5 py-0.5 text-[10px] font-mono font-bold ${
+        <span className={`rounded px-1.5 py-0.5 text-[10px] font-sans font-bold ${
           currentBrand === 'Semua Brand'
             ? 'bg-[#ff5e1f]/10 text-[#ff5e1f]'
             : 'bg-gray-200/60 dark:bg-gray-800 text-gray-600 dark:text-gray-400'

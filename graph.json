@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-08-31T18:08:04.967Z",
+  "generatedAt": "2026-09-03T07:11:42.771Z",
   "nodes": [
     {
       "id": "page:/",
@@ -59,6 +59,14 @@
       "details": "Next.js 16 App Router Page (/notion-config)"
     },
     {
+      "id": "component:AccountDetailSlideModal",
+      "label": "AccountDetailSlideModal",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/AccountDetailSlideModal.tsx",
+      "details": "React UI Component in src/components/AccountDetailSlideModal.tsx"
+    },
+    {
       "id": "component:AccountSwitcher",
       "label": "AccountSwitcher",
       "type": "component",
@@ -67,12 +75,36 @@
       "details": "React UI Component in src/components/AccountSwitcher.tsx"
     },
     {
+      "id": "component:AccountTeamSection",
+      "label": "AccountTeamSection",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/AccountTeamSection.tsx",
+      "details": "React UI Component in src/components/AccountTeamSection.tsx"
+    },
+    {
       "id": "component:AddDoctypeButton",
       "label": "AddDoctypeButton",
       "type": "component",
       "group": "React Components",
       "filepath": "src/components/AddDoctypeButton.tsx",
       "details": "React UI Component in src/components/AddDoctypeButton.tsx"
+    },
+    {
+      "id": "component:AddTeamAccountButton",
+      "label": "AddTeamAccountButton",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/AddTeamAccountButton.tsx",
+      "details": "React UI Component in src/components/AddTeamAccountButton.tsx"
+    },
+    {
+      "id": "component:AddTeamAccountSlideModal",
+      "label": "AddTeamAccountSlideModal",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/AddTeamAccountSlideModal.tsx",
+      "details": "React UI Component in src/components/AddTeamAccountSlideModal.tsx"
     },
     {
       "id": "component:ApprovalPayrollTable",
@@ -99,12 +131,28 @@
       "details": "React UI Component in src/components/AutoPrint.tsx"
     },
     {
+      "id": "component:BankSelectCell",
+      "label": "BankSelectCell",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/BankSelectCell.tsx",
+      "details": "React UI Component in src/components/BankSelectCell.tsx"
+    },
+    {
       "id": "component:BrandTabs",
       "label": "BrandTabs",
       "type": "component",
       "group": "React Components",
       "filepath": "src/components/BrandTabs.tsx",
       "details": "React UI Component in src/components/BrandTabs.tsx"
+    },
+    {
+      "id": "component:CategorySelectCell",
+      "label": "CategorySelectCell",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/CategorySelectCell.tsx",
+      "details": "React UI Component in src/components/CategorySelectCell.tsx"
     },
     {
       "id": "component:CloudflareGridCards",
@@ -147,6 +195,62 @@
       "details": "React UI Component in src/components/ContractRateEditor.tsx"
     },
     {
+      "id": "component:CreateTaskSlideModal",
+      "label": "CreateTaskSlideModal",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/CreateTaskSlideModal.tsx",
+      "details": "React UI Component in src/components/CreateTaskSlideModal.tsx"
+    },
+    {
+      "id": "component:CustomSelectCell",
+      "label": "CustomSelectCell",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/CustomSelectCell.tsx",
+      "details": "React UI Component in src/components/CustomSelectCell.tsx"
+    },
+    {
+      "id": "component:DatePickerCell",
+      "label": "DatePickerCell",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/DatePickerCell.tsx",
+      "details": "React UI Component in src/components/DatePickerCell.tsx"
+    },
+    {
+      "id": "component:DesignerCareerTimeline",
+      "label": "DesignerCareerTimeline",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/DesignerCareerTimeline.tsx",
+      "details": "React UI Component in src/components/DesignerCareerTimeline.tsx"
+    },
+    {
+      "id": "component:DesignerDetailSlideModal",
+      "label": "DesignerDetailSlideModal",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/DesignerDetailSlideModal.tsx",
+      "details": "React UI Component in src/components/DesignerDetailSlideModal.tsx"
+    },
+    {
+      "id": "component:DesignerSpecializationFilterDropdown",
+      "label": "DesignerSpecializationFilterDropdown",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/DesignerSpecializationFilterDropdown.tsx",
+      "details": "React UI Component in src/components/DesignerSpecializationFilterDropdown.tsx"
+    },
+    {
+      "id": "component:DesignerStatusFilterDropdown",
+      "label": "DesignerStatusFilterDropdown",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/DesignerStatusFilterDropdown.tsx",
+      "details": "React UI Component in src/components/DesignerStatusFilterDropdown.tsx"
+    },
+    {
       "id": "component:DesignerStatusSelect",
       "label": "DesignerStatusSelect",
       "type": "component",
@@ -155,12 +259,36 @@
       "details": "React UI Component in src/components/DesignerStatusSelect.tsx"
     },
     {
+      "id": "component:DesignerTableBody",
+      "label": "DesignerTableBody",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/DesignerTableBody.tsx",
+      "details": "React UI Component in src/components/DesignerTableBody.tsx"
+    },
+    {
+      "id": "component:DesignerTableRowActions",
+      "label": "DesignerTableRowActions",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/DesignerTableRowActions.tsx",
+      "details": "React UI Component in src/components/DesignerTableRowActions.tsx"
+    },
+    {
       "id": "component:DistribusiWidget",
       "label": "DistribusiWidget",
       "type": "component",
       "group": "React Components",
       "filepath": "src/components/DistribusiWidget.tsx",
       "details": "React UI Component in src/components/DistribusiWidget.tsx"
+    },
+    {
+      "id": "component:DoctypeSlideModal",
+      "label": "DoctypeSlideModal",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/DoctypeSlideModal.tsx",
+      "details": "React UI Component in src/components/DoctypeSlideModal.tsx"
     },
     {
       "id": "component:DoctypeTable",
@@ -177,6 +305,14 @@
       "group": "React Components",
       "filepath": "src/components/DoctypeWidget.tsx",
       "details": "React UI Component in src/components/DoctypeWidget.tsx"
+    },
+    {
+      "id": "component:EventTypeSelectCell",
+      "label": "EventTypeSelectCell",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/EventTypeSelectCell.tsx",
+      "details": "React UI Component in src/components/EventTypeSelectCell.tsx"
     },
     {
       "id": "component:GaugesWidget",
@@ -227,6 +363,30 @@
       "details": "React UI Component in src/components/LeaderboardWidget.tsx"
     },
     {
+      "id": "component:MonthCalendarPicker",
+      "label": "MonthCalendarPicker",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/MonthCalendarPicker.tsx",
+      "details": "React UI Component in src/components/MonthCalendarPicker.tsx"
+    },
+    {
+      "id": "component:NotionConfigClient",
+      "label": "NotionConfigClient",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/NotionConfigClient.tsx",
+      "details": "React UI Component in src/components/NotionConfigClient.tsx"
+    },
+    {
+      "id": "component:NotionDatabasesClient",
+      "label": "NotionDatabasesClient",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/NotionDatabasesClient.tsx",
+      "details": "React UI Component in src/components/NotionDatabasesClient.tsx"
+    },
+    {
       "id": "component:ParameterIssueTable",
       "label": "ParameterIssueTable",
       "type": "component",
@@ -267,6 +427,14 @@
       "details": "React UI Component in src/components/ProductionOverview.tsx"
     },
     {
+      "id": "component:ProductionPageClient",
+      "label": "ProductionPageClient",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/ProductionPageClient.tsx",
+      "details": "React UI Component in src/components/ProductionPageClient.tsx"
+    },
+    {
       "id": "component:ProductionTabNav",
       "label": "ProductionTabNav",
       "type": "component",
@@ -291,6 +459,14 @@
       "details": "React UI Component in src/components/ProductionView.tsx"
     },
     {
+      "id": "component:PromoteDesignerModal",
+      "label": "PromoteDesignerModal",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/PromoteDesignerModal.tsx",
+      "details": "React UI Component in src/components/PromoteDesignerModal.tsx"
+    },
+    {
       "id": "component:QACard",
       "label": "QACard",
       "type": "component",
@@ -313,6 +489,14 @@
       "group": "React Components",
       "filepath": "src/components/RateCardRow.tsx",
       "details": "React UI Component in src/components/RateCardRow.tsx"
+    },
+    {
+      "id": "component:RoleSelectCell",
+      "label": "RoleSelectCell",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/RoleSelectCell.tsx",
+      "details": "React UI Component in src/components/RoleSelectCell.tsx"
     },
     {
       "id": "component:SelectDropdown",
@@ -355,6 +539,14 @@
       "details": "React UI Component in src/components/SyncButton.tsx"
     },
     {
+      "id": "component:TaskBodyEditor",
+      "label": "TaskBodyEditor",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/TaskBodyEditor.tsx",
+      "details": "React UI Component in src/components/TaskBodyEditor.tsx"
+    },
+    {
       "id": "component:TaskDetailSheet",
       "label": "TaskDetailSheet",
       "type": "component",
@@ -369,6 +561,14 @@
       "group": "React Components",
       "filepath": "src/components/ThemeToggle.tsx",
       "details": "React UI Component in src/components/ThemeToggle.tsx"
+    },
+    {
+      "id": "component:TopBar",
+      "label": "TopBar",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/TopBar.tsx",
+      "details": "React UI Component in src/components/TopBar.tsx"
     },
     {
       "id": "component:TrenVolumeWidget",
@@ -393,6 +593,14 @@
       "group": "React Components",
       "filepath": "src/components/board-filters.ts",
       "details": "React UI Component in src/components/board-filters.ts"
+    },
+    {
+      "id": "component:task-form-utils",
+      "label": "task-form-utils",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/task-form-utils.ts",
+      "details": "React UI Component in src/components/task-form-utils.ts"
     },
     {
       "id": "action:approval-payroll",
@@ -603,6 +811,54 @@
       "details": "Knowledge Graph fully synchronized across all 7 domains"
     },
     {
+      "id": "role:frontend",
+      "label": "Frontend & UI/UX Role",
+      "type": "doc",
+      "group": "Engineering Roles & Ops",
+      "filepath": "docs/knowledge/roles.md",
+      "details": "Owns src/components/**, globals.css, Inter typography, and UI accessibility"
+    },
+    {
+      "id": "role:backend",
+      "label": "Backend & Database Role",
+      "type": "doc",
+      "group": "Engineering Roles & Ops",
+      "filepath": "docs/knowledge/roles.md",
+      "details": "Owns prisma/schema.prisma, PostgreSQL pool, Decimal/Date serialization"
+    },
+    {
+      "id": "role:api",
+      "label": "API & Notion Sync Role",
+      "type": "doc",
+      "group": "Engineering Roles & Ops",
+      "filepath": "docs/knowledge/roles.md",
+      "details": "Owns Notion client, server actions, incremental cron sync, Vercel proxy auth"
+    },
+    {
+      "id": "role:business",
+      "label": "Business & Domain Role",
+      "type": "doc",
+      "group": "Engineering Roles & Ops",
+      "filepath": "docs/knowledge/roles.md",
+      "details": "Owns SaaS formulas (QTY pages = qtySubmit * pages), Resign status logic"
+    },
+    {
+      "id": "role:architecture",
+      "label": "Architecture & Knowledge Ops",
+      "type": "doc",
+      "group": "Engineering Roles & Ops",
+      "filepath": "docs/knowledge/roles.md",
+      "details": "Owns docs/knowledge/**, session handover, AST graphify, and multi-LLM sync"
+    },
+    {
+      "id": "role:devops",
+      "label": "DevOps & Release Role",
+      "type": "doc",
+      "group": "Engineering Roles & Ops",
+      "filepath": "docs/knowledge/roles.md",
+      "details": "Owns vercel.json cron configuration, build scripts, and environment deployment"
+    },
+    {
       "id": "page:/actions/approval-payroll.ts",
       "label": "approval-payroll.ts Page",
       "type": "page",
@@ -748,13 +1004,37 @@
     },
     {
       "source": "page:/account-team",
-      "target": "component:CloudflareTopBar",
+      "target": "component:TopBar",
       "relation": "renders",
       "confidence": "EXTRACTED"
     },
     {
       "source": "page:/account-team",
       "target": "component:DesignerStatusSelect",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/account-team",
+      "target": "component:AddTeamAccountButton",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/account-team",
+      "target": "component:DesignerTableRowActions",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/account-team",
+      "target": "component:DesignerTableBody",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/account-team",
+      "target": "component:AccountTeamSection",
       "relation": "renders",
       "confidence": "EXTRACTED"
     },
@@ -766,7 +1046,7 @@
     },
     {
       "source": "page:/billing-statement",
-      "target": "component:CloudflareTopBar",
+      "target": "component:TopBar",
       "relation": "renders",
       "confidence": "EXTRACTED"
     },
@@ -796,7 +1076,7 @@
     },
     {
       "source": "page:/content-access",
-      "target": "component:CloudflareTopBar",
+      "target": "component:TopBar",
       "relation": "renders",
       "confidence": "EXTRACTED"
     },
@@ -808,7 +1088,7 @@
     },
     {
       "source": "page:/knowledge-graph",
-      "target": "component:CloudflareTopBar",
+      "target": "component:TopBar",
       "relation": "renders",
       "confidence": "EXTRACTED"
     },
@@ -820,31 +1100,13 @@
     },
     {
       "source": "page:/notion-config/databases",
-      "target": "component:Sidebar",
-      "relation": "renders",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "page:/notion-config/databases",
-      "target": "component:CloudflareTopBar",
+      "target": "component:NotionDatabasesClient",
       "relation": "renders",
       "confidence": "EXTRACTED"
     },
     {
       "source": "page:/notion-config",
-      "target": "component:Sidebar",
-      "relation": "renders",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "page:/notion-config",
-      "target": "component:CloudflareTopBar",
-      "relation": "renders",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "page:/notion-config",
-      "target": "component:SelectDropdown",
+      "target": "component:NotionConfigClient",
       "relation": "renders",
       "confidence": "EXTRACTED"
     },
@@ -868,7 +1130,7 @@
     },
     {
       "source": "page:/",
-      "target": "component:CloudflareTopBar",
+      "target": "component:TopBar",
       "relation": "renders",
       "confidence": "EXTRACTED"
     },
@@ -934,19 +1196,7 @@
     },
     {
       "source": "page:/production",
-      "target": "component:Sidebar",
-      "relation": "renders",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "page:/production",
-      "target": "component:CloudflareTopBar",
-      "relation": "renders",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "page:/production",
-      "target": "component:ProductionView",
+      "target": "component:ProductionPageClient",
       "relation": "renders",
       "confidence": "EXTRACTED"
     },
@@ -958,7 +1208,7 @@
     },
     {
       "source": "page:/rate-card",
-      "target": "component:CloudflareTopBar",
+      "target": "component:TopBar",
       "relation": "renders",
       "confidence": "EXTRACTED"
     },
@@ -975,8 +1225,68 @@
       "confidence": "EXTRACTED"
     },
     {
-      "source": "page:/rate-card",
-      "target": "component:AddDoctypeButton",
+      "source": "component:AccountTeamSection",
+      "target": "component:DesignerTableBody",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:AccountTeamSection",
+      "target": "component:AccountDetailSlideModal",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:AccountTeamSection",
+      "target": "component:DesignerDetailSlideModal",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:AccountTeamSection",
+      "target": "component:AddTeamAccountButton",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:AccountTeamSection",
+      "target": "component:DesignerStatusFilterDropdown",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:AccountTeamSection",
+      "target": "component:DesignerSpecializationFilterDropdown",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:AddDoctypeButton",
+      "target": "component:DoctypeSlideModal",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:AddTeamAccountButton",
+      "target": "component:AddTeamAccountSlideModal",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:AddTeamAccountSlideModal",
+      "target": "component:DatePickerCell",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:AddTeamAccountSlideModal",
+      "target": "component:RoleSelectCell",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:AddTeamAccountSlideModal",
+      "target": "component:BankSelectCell",
       "relation": "renders",
       "confidence": "EXTRACTED"
     },
@@ -993,14 +1303,98 @@
       "confidence": "EXTRACTED"
     },
     {
-      "source": "component:CloudflareTopBar",
-      "target": "component:PeriodPicker",
+      "source": "component:CreateTaskSlideModal",
+      "target": "component:CustomSelectCell",
       "relation": "renders",
       "confidence": "EXTRACTED"
     },
     {
-      "source": "component:CloudflareTopBar",
-      "target": "component:AccountSwitcher",
+      "source": "component:CreateTaskSlideModal",
+      "target": "component:MonthCalendarPicker",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:CreateTaskSlideModal",
+      "target": "component:TaskBodyEditor",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:CreateTaskSlideModal",
+      "target": "component:task-form-utils",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:DesignerCareerTimeline",
+      "target": "component:DatePickerCell",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:DesignerCareerTimeline",
+      "target": "component:RoleSelectCell",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:DesignerCareerTimeline",
+      "target": "component:EventTypeSelectCell",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:DesignerDetailSlideModal",
+      "target": "component:DatePickerCell",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:DesignerDetailSlideModal",
+      "target": "component:RoleSelectCell",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:DesignerDetailSlideModal",
+      "target": "component:BankSelectCell",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:DesignerDetailSlideModal",
+      "target": "component:DesignerCareerTimeline",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:DesignerTableBody",
+      "target": "component:DesignerStatusSelect",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:DesignerTableBody",
+      "target": "component:DesignerDetailSlideModal",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:DesignerTableRowActions",
+      "target": "component:DesignerStatusSelect",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:DesignerTableRowActions",
+      "target": "component:PromoteDesignerModal",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:DoctypeSlideModal",
+      "target": "component:CategorySelectCell",
       "relation": "renders",
       "confidence": "EXTRACTED"
     },
@@ -1012,13 +1406,19 @@
     },
     {
       "source": "component:DoctypeTable",
+      "target": "component:AddDoctypeButton",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:DoctypeTable",
       "target": "component:ContractRateEditor",
       "relation": "renders",
       "confidence": "EXTRACTED"
     },
     {
       "source": "component:DoctypeTable",
-      "target": "component:AddDoctypeButton",
+      "target": "component:DoctypeSlideModal",
       "relation": "renders",
       "confidence": "EXTRACTED"
     },
@@ -1031,6 +1431,60 @@
     {
       "source": "component:KnowledgeGraphViewer",
       "target": "component:GraphifyVisualizer",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:NotionConfigClient",
+      "target": "component:Sidebar",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:NotionConfigClient",
+      "target": "component:TopBar",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:NotionConfigClient",
+      "target": "component:SelectDropdown",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:NotionDatabasesClient",
+      "target": "component:Sidebar",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:NotionDatabasesClient",
+      "target": "component:TopBar",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:ParameterIssueTable",
+      "target": "component:MonthCalendarPicker",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:ProductionPageClient",
+      "target": "component:TopBar",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:ProductionPageClient",
+      "target": "component:Sidebar",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:ProductionPageClient",
+      "target": "component:ProductionView",
       "relation": "renders",
       "confidence": "EXTRACTED"
     },
@@ -1071,8 +1525,38 @@
       "confidence": "EXTRACTED"
     },
     {
+      "source": "component:ProductionView",
+      "target": "component:CreateTaskSlideModal",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:PromoteDesignerModal",
+      "target": "component:DatePickerCell",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:PromoteDesignerModal",
+      "target": "component:RoleSelectCell",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:PromoteDesignerModal",
+      "target": "component:BankSelectCell",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
       "source": "component:QAKanbanBoard",
       "target": "component:QACard",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:RateCardRow",
+      "target": "component:DoctypeSlideModal",
       "relation": "renders",
       "confidence": "EXTRACTED"
     },
@@ -1127,6 +1611,42 @@
     {
       "source": "component:TaskDetailSheet",
       "target": "component:QACard",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:TaskDetailSheet",
+      "target": "component:CustomSelectCell",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:TaskDetailSheet",
+      "target": "component:MonthCalendarPicker",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:TaskDetailSheet",
+      "target": "component:TaskBodyEditor",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:TaskDetailSheet",
+      "target": "component:task-form-utils",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:TopBar",
+      "target": "component:PeriodPicker",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:TopBar",
+      "target": "component:AccountSwitcher",
       "relation": "renders",
       "confidence": "EXTRACTED"
     },
@@ -1259,6 +1779,84 @@
     {
       "source": "handover:active-state",
       "target": "component:KnowledgeGraphViewer",
+      "relation": "enforces",
+      "confidence": "INFERRED"
+    },
+    {
+      "source": "role:frontend",
+      "target": "component:Sidebar",
+      "relation": "enforces",
+      "confidence": "INFERRED"
+    },
+    {
+      "source": "role:frontend",
+      "target": "component:KnowledgeGraphViewer",
+      "relation": "enforces",
+      "confidence": "INFERRED"
+    },
+    {
+      "source": "role:frontend",
+      "target": "component:SortableTaskLists",
+      "relation": "enforces",
+      "confidence": "INFERRED"
+    },
+    {
+      "source": "role:backend",
+      "target": "model:Task",
+      "relation": "queries",
+      "confidence": "INFERRED"
+    },
+    {
+      "source": "role:backend",
+      "target": "model:Designer",
+      "relation": "queries",
+      "confidence": "INFERRED"
+    },
+    {
+      "source": "role:backend",
+      "target": "model:BillingStatement",
+      "relation": "queries",
+      "confidence": "INFERRED"
+    },
+    {
+      "source": "role:api",
+      "target": "action:sync-notion",
+      "relation": "invokes",
+      "confidence": "INFERRED"
+    },
+    {
+      "source": "role:api",
+      "target": "sync:cron-mode",
+      "relation": "invokes",
+      "confidence": "INFERRED"
+    },
+    {
+      "source": "role:business",
+      "target": "rule:qty-pages",
+      "relation": "enforces",
+      "confidence": "INFERRED"
+    },
+    {
+      "source": "role:business",
+      "target": "rule:designer-resign",
+      "relation": "enforces",
+      "confidence": "INFERRED"
+    },
+    {
+      "source": "role:architecture",
+      "target": "handover:active-state",
+      "relation": "enforces",
+      "confidence": "INFERRED"
+    },
+    {
+      "source": "role:architecture",
+      "target": "gotcha:directive-preservation",
+      "relation": "enforces",
+      "confidence": "INFERRED"
+    },
+    {
+      "source": "role:devops",
+      "target": "page:/notion-config",
       "relation": "enforces",
       "confidence": "INFERRED"
     }

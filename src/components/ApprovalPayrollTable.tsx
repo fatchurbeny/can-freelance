@@ -150,9 +150,9 @@ export default function ApprovalPayrollTable({ tasks, allMonthOptions }: Props) 
         />
 
         <div className="overflow-x-auto bg-gray-50/50 dark:bg-[#0d0e12]">
-          <table className="w-full border-collapse text-left font-mono text-xs min-w-[950px]">
+          <table className="w-full border-collapse text-left font-sans text-xs min-w-[950px]">
             <thead>
-              <tr className="border-b border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#0d0e12] text-[11px] font-mono font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+              <tr className="border-b border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#0d0e12] text-[11px] font-sans font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                 <th className="py-3 pl-5 pr-2 w-10">
                   <input
                     type="checkbox"
@@ -179,7 +179,7 @@ export default function ApprovalPayrollTable({ tasks, allMonthOptions }: Props) 
 
       {/* Table Body (Scrolls smoothly under sticky header group) */}
       <div className="overflow-x-auto rounded-none">
-        <table className="w-full border-collapse text-left font-mono text-xs min-w-[950px] rounded-none">
+        <table className="w-full border-collapse text-left font-sans text-xs min-w-[950px] rounded-none">
           <tbody className="divide-y divide-[#f0f0f0] dark:divide-[#272a34] bg-white dark:bg-[#0d0e12]">
             {filteredTasks.map((task) => (
               <PayrollTableRow

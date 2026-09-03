@@ -4,9 +4,13 @@ import { getContractRateAction } from '@/app/actions/notion-config';
 
 export const dynamic = 'force-dynamic';
 import Sidebar from '@/components/Sidebar';
-import CloudflareTopBar from '@/components/CloudflareTopBar';
+import TopBar from '@/components/TopBar';
 import DesignerStatusSelect from '@/components/DesignerStatusSelect';
-import { Gavel, Trophy, CircleDot, Plus } from 'lucide-react';
+import AddTeamAccountButton from '@/components/AddTeamAccountButton';
+import DesignerTableRowActions from '@/components/DesignerTableRowActions';
+import DesignerTableBody from '@/components/DesignerTableBody';
+import AccountTeamSection from '@/components/AccountTeamSection';
+import { Gavel, Trophy, CircleDot, Plus, Award } from 'lucide-react';
 
 function getInitials(name: string) {
   return name.substring(0, 2).toUpperCase();
@@ -31,16 +35,39 @@ export default async function AccountTeamPage() {
   const designersData = await prisma.designer.findMany({
     include: {
       tasks: {
-        include: { designStatus: true }
+        include: { designStatus: true, doctype: true }
       }
     }
   });
 
   const designers = designersData.map(d => {
-    const approved = d.tasks.filter(t => t.designStatus?.countsAsApproved).length;
+    const approvedTasks = d.tasks.filter(t => t.designStatus?.countsAsApproved);
+    const approved = approvedTasks.length;
     const templates = d.tasks.reduce((acc, t) => acc + Number(t.qtySubmit || 0), 0);
     const pages = d.tasks.reduce((acc, t) => acc + (Number(t.qtySubmit || 0) * Number(t.pages || 0)), 0);
-    return { ...d, approved, templates, pages };
+
+    // Calculate Top 3 Doctypes (Specializations) based on approved tasks count
+    const doctypeCounts: Record<string, number> = {};
+    approvedTasks.forEach(t => {
+      const name = t.doctype?.displayName || 'Other';
+      doctypeCounts[name] = (doctypeCounts[name] || 0) + 1;
+    });
+
+    const topDoctypes = Object.entries(doctypeCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([name]) => name);
+
+    const specializationText = topDoctypes.length > 0 ? topDoctypes.join(', ') : '—';
+
+    return {
+      ...d,
+      approved,
+      templates,
+      pages,
+      specializations: topDoctypes,
+      specializationText,
+    };
   }).sort((a, b) => {
     if (a.status !== 'Active' && b.status === 'Active') return 1;
     if (a.status === 'Active' && b.status !== 'Active') return -1;
@@ -67,17 +94,15 @@ export default async function AccountTeamPage() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#0d0e12] text-[#262626] dark:text-[#f4f4f5] transition-colors">
-      <CloudflareTopBar badgeLabel="ACCOUNT & TEAM" />
+      <TopBar badgeLabel="ACCOUNT & TEAM" />
       <div className="flex min-h-[calc(100vh-56px)] flex-col md:flex-row">
         <Sidebar currentSyncLog={latestSyncLog} />
 
         <main className="flex-1 md:ml-56 p-6 md:p-8 space-y-8 overflow-x-hidden bg-grid-pattern">
 
 
-        {/* Single Continuous Container */}
-        <div className="w-full rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] divide-y divide-[#f0f0f0] dark:divide-[#272a34] shadow-none">
-
-          {/* Contract Rules Banner (Symmetrical 50/50 2-Column Grid Aligned with Tables Below) */}
+        {/* Separate Container 1: Contract Rules Banner */}
+        <div className="w-full rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] shadow-none">
           <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-[#f0f0f0] dark:divide-[#272a34] bg-gray-50/50 dark:bg-[#0d0e12]">
             {/* Left Title Cell (Column 1 - 50%) */}
             <div className="flex items-center gap-3 p-4 sm:p-5 min-w-0">
@@ -88,171 +113,61 @@ export default async function AccountTeamPage() {
                 <h2 className="font-bold text-sm text-gray-900 dark:text-white capitalize truncate">
                   Ketentuan & Aturan Kontrak Freelance
                 </h2>
-                <p className="text-xs text-gray-400 dark:text-gray-500 font-mono mt-0.5 truncate">
+                <p className="text-xs text-gray-400 dark:text-gray-500 font-sans mt-0.5 truncate">
                   Kontrak dimulai sejak 26 Januari 2026
                 </p>
               </div>
             </div>
 
             {/* Right Full-Height Table Cells (Column 2 - 50%) */}
-            <div className="flex items-stretch divide-x divide-[#f0f0f0] dark:divide-[#272a34] font-mono text-xs min-w-0">
-              <div className="flex-1 flex items-center justify-center gap-2 px-3 sm:px-4 py-4 bg-white dark:bg-[#0d0e12] text-gray-700 dark:text-gray-300">
+            <div className="flex items-stretch divide-x divide-[#f0f0f0] dark:divide-[#272a34] font-sans text-xs min-w-0">
+              <div className="flex-1 flex items-center justify-center gap-2 px-4 py-4 bg-white dark:bg-[#0d0e12] text-gray-700 dark:text-gray-300">
                 <CircleDot className="w-3.5 h-3.5 text-[#ff5e1f] shrink-0" />
                 <span className="whitespace-nowrap">Kalender: <strong className="font-bold text-gray-900 dark:text-white">25 Hari Kerja/Bulan</strong></span>
               </div>
-              <div className="flex-1 flex items-center justify-center gap-2 px-3 sm:px-4 py-4 bg-white dark:bg-[#0d0e12] text-gray-700 dark:text-gray-300">
+              <div className="flex-1 flex items-center justify-center gap-2 px-4 py-4 bg-white dark:bg-[#0d0e12] text-gray-700 dark:text-gray-300">
                 <CircleDot className="w-3.5 h-3.5 text-[#ff5e1f] shrink-0" />
                 <span className="whitespace-nowrap">Rate/Pool: <strong className="font-bold text-gray-900 dark:text-white">IDR {contractRate!.toLocaleString('id-ID')}</strong></span>
               </div>
-              <button
-                type="button"
-                className="flex items-center gap-2 px-4 sm:px-5 py-4 bg-[#ff5e1f] hover:bg-[#ff7038] text-white font-mono text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer whitespace-nowrap shrink-0"
-              >
-                <Plus className="w-4 h-4 stroke-[3]" />
-                <span>Add Team/Account</span>
-              </button>
             </div>
           </div>
+        </div>
 
-          {/* 2 Columns Side-by-Side Table Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-[#f0f0f0] dark:divide-[#272a34] bg-white dark:bg-[#0d0e12]">
-            
-            {/* Left: Designer Table */}
-            <div className="flex flex-col">
-              <div className="p-5 flex items-center justify-between border-b border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12]">
-                <div>
-                  <h3 className="font-bold text-sm text-gray-900 dark:text-white">Designer ({designers.length})</h3>
-                  <p className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">Designer Leaderboard All Time</p>
-                </div>
-                {designers.length > 0 && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-mono font-bold border border-amber-500/20">
-                    <Trophy className="w-3 h-3 text-amber-500" />
-                    <span className="uppercase">{designers[0].displayName}</span>
-                  </span>
-                )}
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs font-mono border-collapse">
-                  <thead>
-                    <tr className="border-b border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#0d0e12] text-[11px] font-mono font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-                      <th className="pl-5 pr-3 py-3 font-semibold">NAME / ROLE</th>
-                      <th className="px-3 py-3 text-center font-semibold">STATUS</th>
-                      <th className="px-2 py-3 text-center font-semibold">APPROVED</th>
-                      <th className="px-2 py-3 text-center font-semibold">TEMPLATES</th>
-                      <th className="pr-5 pl-2 py-3 text-center font-semibold">PAGES</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#f0f0f0] dark:divide-[#272a34] bg-white dark:bg-[#0d0e12]">
-                    {designers.map((d, i) => {
-                      const isTop = i === 0;
-                      const isInactive = d.status !== 'Active';
-                      return (
-                        <tr
-                          key={d.id}
-                          className={`hover:bg-gray-50/60 dark:hover:bg-[#16181d]/60 transition-colors ${
-                            isTop ? 'bg-amber-500/5 dark:bg-amber-500/10' : ''
-                          }`}
-                        >
-                          <td className="pl-5 pr-3 py-3">
-                            <div className={`flex items-center gap-3 ${isInactive ? 'opacity-50 grayscale' : ''}`}>
-                              <div className="w-8 h-8 rounded-full border border-[#f0f0f0] dark:border-[#272a34] bg-gray-100 dark:bg-gray-800 flex items-center justify-center font-bold text-xs text-gray-700 dark:text-gray-200 shrink-0">
-                                {getInitials(d.displayName)}
-                              </div>
-                              <div className="flex flex-col min-w-0">
-                                <span className="font-bold text-gray-900 dark:text-white truncate">{d.displayName}</span>
-                                <span className="text-[10px] text-gray-400 truncate font-sans">
-                                  {d.displayName.toLowerCase().replace(/\s+/g, '')}@improstd.com
-                                </span>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-3 py-3 text-center whitespace-nowrap">
-                            <DesignerStatusSelect designerId={d.id} initialStatus={d.status} />
-                          </td>
-                          <td className="px-2 py-3 text-center whitespace-nowrap font-bold text-indigo-600 dark:text-[#ff5e1f]">
-                            {d.approved}
-                          </td>
-                          <td className="px-2 py-3 text-center whitespace-nowrap font-bold text-amber-600 dark:text-amber-400">
-                            {d.templates}
-                          </td>
-                          <td className="pr-5 pl-2 py-3 text-center whitespace-nowrap font-bold text-blue-600 dark:text-blue-400">
-                            {d.pages}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Right: Canva Account Table */}
-            <div className="flex flex-col">
-              <div className="p-5 flex items-center justify-between border-b border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12]">
-                <div>
-                  <h3 className="font-bold text-sm text-gray-900 dark:text-white">Canva Account ({accounts.length})</h3>
-                  <p className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">Brand Leaderboard All Time</p>
-                </div>
-                {accounts.length > 0 && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-mono font-bold border border-amber-500/20">
-                    <Trophy className="w-3 h-3 text-amber-500" />
-                    <span className="uppercase">{accounts[0].displayName}</span>
-                  </span>
-                )}
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs font-mono border-collapse">
-                  <thead>
-                    <tr className="border-b border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#0d0e12] text-[11px] font-mono font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-                      <th className="pl-5 pr-3 py-3 font-semibold">BRAND ACCOUNT</th>
-                      <th className="px-3 py-3 text-center font-semibold">DOCTYPE</th>
-                      <th className="px-3 py-3 text-center font-semibold">TEMPLATES</th>
-                      <th className="pr-5 pl-3 py-3 text-center font-semibold">PAGES</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#f0f0f0] dark:divide-[#272a34] bg-white dark:bg-[#0d0e12]">
-                    {accounts.map((a, i) => {
-                      const isTop = i === 0;
-                      return (
-                        <tr
-                          key={a.id}
-                          className={`hover:bg-gray-50/60 dark:hover:bg-[#16181d]/60 transition-colors ${
-                            isTop ? 'bg-amber-500/5 dark:bg-amber-500/10' : ''
-                          }`}
-                        >
-                          <td className="pl-5 pr-3 py-3">
-                            <div className="flex items-center gap-3">
-                              <div className={`w-8 h-8 rounded-full border border-[#f0f0f0] dark:border-[#272a34] bg-gray-100 dark:bg-gray-800 flex items-center justify-center font-bold text-xs shrink-0 ${getBrandColor(a.displayName)}`}>
-                                {getInitials(a.displayName)}
-                              </div>
-                              <div className="flex flex-col min-w-0">
-                                <span className="font-bold text-gray-900 dark:text-white truncate">{a.displayName}</span>
-                                <span className="text-[10px] text-gray-400 truncate font-sans">
-                                  {a.displayName.toLowerCase().replace(/\s+/g, '')}@improstd.com
-                                </span>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-3 py-3 text-center whitespace-nowrap font-bold text-pink-600 dark:text-pink-400">
-                            {a.doctypes}
-                          </td>
-                          <td className="px-3 py-3 text-center whitespace-nowrap font-bold text-amber-600 dark:text-amber-400">
-                            {a.templates}
-                          </td>
-                          <td className="pr-5 pl-3 py-3 text-center whitespace-nowrap font-bold text-blue-600 dark:text-blue-400">
-                            {a.pages}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-          </div>
+        {/* Separate Container 2: 2 Tabs Layout Container (Designer Team vs Canva Accounts) */}
+        <div className="w-full rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] divide-y divide-[#f0f0f0] dark:divide-[#272a34] shadow-none">
+          <AccountTeamSection
+            designers={designers.map((d) => ({
+              id: d.id,
+              displayName: d.displayName,
+              role: d.role,
+              status: d.status,
+              contractType: d.contractType,
+              contractStartDate: d.contractStartDate ? new Date(d.contractStartDate).toISOString() : null,
+              probationEndDate: d.probationEndDate ? new Date(d.probationEndDate).toISOString() : null,
+              inactiveStartDate: d.inactiveStartDate ? new Date(d.inactiveStartDate).toISOString() : null,
+              inactiveNote: d.inactiveNote,
+              resignDate: d.resignDate ? new Date(d.resignDate).toISOString() : null,
+              promotionDate: d.promotionDate ? new Date(d.promotionDate).toISOString() : null,
+              email: d.email,
+              phone: d.phone,
+              bankName: d.bankName,
+              bankAccount: d.bankAccount,
+              approved: d.approved,
+              templates: d.templates,
+              pages: d.pages,
+              specializations: d.specializations,
+              specializationText: d.specializationText,
+            }))}
+            accounts={accounts.map((a) => ({
+              id: a.id,
+              displayName: a.displayName,
+              color: a.color,
+              notionKey: a.notionKey,
+              doctypes: a.doctypes,
+              templates: a.templates,
+              pages: a.pages,
+            }))}
+          />
         </div>
       </main>
     </div>

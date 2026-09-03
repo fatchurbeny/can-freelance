@@ -56,14 +56,14 @@ export default function DoctypeWidget({ data, totalDoctypes, brandName }: Doctyp
       {/* Title & Badge */}
       <div className="flex items-center justify-between pb-4">
         <div>
-          <h3 className="font-display font-bold text-sm text-gray-900 dark:text-white">
+          <h3 className="font-sans font-bold text-sm text-gray-900 dark:text-white">
             Kategori Doctype
           </h3>
           <p className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">
             Doctype Yang Dikerjakan - {brandName}
           </p>
         </div>
-        <span className="font-mono text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 uppercase whitespace-nowrap">
+        <span className="font-sans text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 uppercase whitespace-nowrap">
           {totalDoctypes} DOCTYPE
         </span>
       </div>

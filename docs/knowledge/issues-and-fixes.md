@@ -19,6 +19,18 @@ Dokumen ini mencatat histori bug, edge cases, serta aturan layout CSS/React untu
   return getTime(b.lastEditedTime) - getTime(a.lastEditedTime);
   ```
 
+### 3. Formulasi Pool Score & Harmonisasi Penamaan Notion
+* **Masalah**: Istilah "Pool Rate" di UI (Rate Card & Modal Edit) tidak selaras dengan nama properti Notion "Pool Score", dan kalkulasi `poolScore` keliru mengalikan dengan `pages` (`pages * poolRate * qtySubmit`), menyebabkan task 12 halaman ber-score 12 padahal seharusnya 1.
+* **Solusi & Aturan**:
+  1. Istilah UI di Rate Card & Modal WAJIB menggunakan **`Pool Score`** (atau `Pool Score (Bobot)`).
+  2. Perhitungan `poolScore` pada Server Actions (`qa.ts`) WAJIB menggunakan `poolRate * qtySubmit` tanpa mengalikan dengan `pages`.
+
+### 4. Task Card Hover Actions & Event Propagation Guarding
+* **Masalah**: Menambahkan tombol aksi interaktif (seperti 3-dots `MoreHorizontal`, `Duplicate`, atau `Delete`) di dalam elemen kartu yang memiliki handler `onClick` dan `onDragStart` (seperti `QACard.tsx`) berisiko memicu pembukaan drawer detail secara tidak sengaja atau memicu dragging saat tombol aksi diklik.
+* **Aturan**:
+  1. Seluruh handler klik pada tombol aksi hover dan dropdown menu WAJIB menggunakan `e.stopPropagation()` dan `e.preventDefault()`.
+  2. Gunakan `relative group` pada container kartu dan `absolute right-2 top-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity` untuk menyajikan tombol 3 titik yang bersih dan muncul saat hover.
+
 ---
 
 ## 🎨 Tailwind & UI Layout Rules
@@ -38,7 +50,21 @@ Dokumen ini mencatat histori bug, edge cases, serta aturan layout CSS/React untu
 * **Aturan**: Saat menggabungkan header (seperti Tab Bar) dan panel konten ke dalam 1 continuous card (`border border-[#f0f0f0] dark:border-[#272a34] divide-y`), hapus border luar ganda (`border`) dari komponen visualizer anak agar menyatu rapi tanpa tepi berlipat.
 
 ### 5. Dynamic 2D Canvas Light/Dark Theme Rendering
-* **Aturan**: Komponen canvas HTML5 2D yang berada di luar React DOM tree standar wajib memanfaatkan `MutationObserver` pada `document.documentElement` (filter kelas `dark`) untuk memperbarui warna latar belakang canvas (`#F8FAFC` vs `#0d0e12`), garis link, dan badge overlay secara real-time saat tema berubah.
+
+### 6. Standardisasi Typography & Ukuran Teks Tab Navigation Bar (`text-xs`)
+* **Masalah**: Penggunaan `text-sm` (14px) atau `uppercase` pada bilah navigasi tab membuat teks judul tab ("DESIGNER TEAM") terlihat terlalu besar, tidak proporsional, dan berbeda dengan bilah navigasi referensi (`ProductionTabNav.tsx`).
+* **Aturan**:
+  - Ukuran teks tab navigasi WAJIB konsisten **`text-xs font-sans`** (12px) dengan format **Title Case** (`Designer Team (6)`, `Canva Accounts / Brands (6)`).
+  - Padded height: `px-4 py-2.5` (atau `px-5 py-3 text-xs`).
+  - Casing `uppercase` HANYA diperbolehkan pada tombol aksi CTA berwarna oranye di sudut paling kanan (`+ ADD TEAM/ACCOUNT`).
+  - Aturan ini telah didokumentasikan permanen di `.agents/AGENTS.md` agar seluruh AI agent dan developer tidak membuat variasi ukuran teks near-miss.
+
+### 7. Flat Continuous Table Toolbar & Dropdown Sort/Filter Protocol
+* **Masalah**: Tombol filter status melayang atau tombol segment horizontal membuat antarmuka toolbar tidak konsisten dengan komponen sorting tabel lain (`SortControl.tsx`).
+* **Aturan**:
+  - Input pencarian WAJIB disusun sebagai sel header flat (`h-11 px-3.5 flex items-center border-b border-[#272a34] bg-white dark:bg-[#0d0e12]`) tanpa margin padding internal.
+  - Filter status desainer (`ALL Status`, `Active Only`, `Inactive Only`, `Resign Only`) dan sorting disajikan sebagai **Dropdown Menu Terintegrasi Sel Header Flat** (`h-full px-4 flex items-center gap-2 text-xs font-sans font-medium border-r border-[#272a34]`). Panel dropdown melayang (`bg-white dark:bg-[#16181d] p-1.5 shadow-xl border-[#272a34]`) dilengkapi **Cloudflare Checkbox** di sebelah kanan (`w-4 h-4 rounded-[5px] border flex items-center justify-center`).
+  - Badge informasi non-interaktif (seperti `LEADERBOARD #1: Putery`) adalah label tag independen (`px-3 py-1 rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/20`), TIDAK PERLU dipaksakan menjadi sel tabel simetris.
 
 ### 6. Cloudflare Checkbox Contrast Inversion Rule
 * **Aturan**: Native & custom checkboxes mengikuti kontras Cloudflare. Mode Terang: `bg-black border-black text-white`. Mode Gelap: `bg-white border-white text-black`. Native inputs diatur otomatis di `src/app/globals.css`.
@@ -109,8 +135,63 @@ Dokumen ini mencatat histori bug, edge cases, serta aturan layout CSS/React untu
   2. **No Client Polling Loops**: Menghapus seluruh `setInterval` auto-trigger `fetch('/api/sync/cron')` dari `SyncButton.tsx`. Browser hanya membaca status pasif dari DB via `getLatestSyncStatus()`.
   3. **Clean UI Banner**: Di `/notion-config`, bentuk dropdown interval digantikan dengan kartu informasi bersih **"Daily Auto Sync Active (00:00 WIB)"**, serta tombol **Sync Now** untuk sync manual instan.
 
+### 19. Universal Inter Typography Standardization & Monospace Quarantine Protocol
+* **Masalah**: Inkonsistensi font visual di mana headings menggunakan Google Font Outfit (`font-display`), elemen UI umum dan badge memakai `font-mono`, dan body memakai `font-sans`, sehingga aplikasi terasa berantakan dan memiliki lebih dari 2 kombinasi font.
+* **Aturan Solusi**:
+  1. **Universal Primary Font (`Inter`)**: Seluruh elemen UI (headings, KPI metrics, buttons, tabs, tables, toolbars, badges, modals, form controls) WAJIB menggunakan **`Inter`** (`font-sans`).
+  2. **Eliminasi Outfit**: Google Font `Outfit` dihapus sepenuhnya dari `layout.tsx`, dan token `--font-display` dialiaskan ke `var(--font-inter)`.
+  3. **Isolasi Monospace (`font-mono`)**: `font-mono` HANYA diizinkan untuk **technical quote fields & code snippets**:
+     - Blok kutipan URL/Database ID Notion (contoh: `notion.so/workspace/2f40e19aa1358026a0e1d9caab5cdbb7?v=...`).
+     - Secret tokens, API keys, dan hash string.
+     - Inline `<code>` tags dan block `<pre><code>`.
+     - Terminal output console dan sync process logs.
+  4. Komponen UI standar (tabel, badge, pill, dropdown, modal) DILARANG menggunakan `font-mono`.
+  5. **Audit Wajib Pasca-Migrasi**: Setelah menerapkan aturan tipografi ini pada satu file, WAJIB menjalankan `grep_search` untuk pola `font-mono` di seluruh direktori `src/` guna memastikan tidak ada sisa penggunaan yang lolos di file lain (contoh kasus lolos: `account-team/page.tsx`, `billing-statement/page.tsx`, `DesignerStatusSelect.tsx`). Jangan mengandalkan ingatan file yang "sudah pernah diubah" saja.
 
+### 20. Prohibition of Native Select Controls & Dedicated Far-Right Action Column Protocol
+* **Masalah 1 (Native Select)**: Penggunaan tag HTML `<select>` native pada form atau filter menghasilkan menu popover bawaan OS dengan highlight biru dan gaya visual yang merusak estetika *dark mode* dan *Cloudflare Design Tokens*.
+* **Masalah 2 (Mixed Status & Actions)**: Menempatkan tombol aksi (seperti `Edit` atau `Promote`) di dalam sel badge status membuat sel tabel padat dan tidak simetris.
+* **Aturan Solusi**:
+  1. **Custom Cloudflare Dropdown Panel**: Seluruh dropdown pilihan di dalam form, modal, maupun filter WAJIB menggunakan komponen custom *Cloudflare Dropdown Panel* (`bg-white dark:bg-[#16181d] border-[#272a34] shadow-xl p-1.5`) yang dilengkapi dengan **Cloudflare Contrast Checkbox** di sebelah kanan (`w-4 h-4 rounded-[5px] border flex items-center justify-center`). Dilarang keras menggunakan tag HTML `<select>` native.
+  2. **Dedicated Far-Right Action Column**: Sel status (`STATUS`) hanya berisi *status badge select dropdown*. Tombol aksi baris (seperti `PROMOTE` atau `EDIT`) WAJIB berada di kolom dedicated paling kanan (**`ACTION`**) dengan format *full-height table cell* (`w-[120px] p-0 h-full min-h-[44px] align-stretch border-l border-[#272a34]`).
 
+### 21. Mandatory Post-Execution UI Grep Audit Protocol (Zero Open Question Invariant)
+* **Aturan Persistence & Consistency Mutlak**:
+  1. **Otomatis Tanpa Open Question**: Saat membuat atau mengedit halaman/form/tabel baru (CRUD), LLM **DILARANG KERAS** menanyakan *open question* tentang pilihan dropdown atau font. LLM WAJIB langsung menerapkan custom Cloudflare Dropdown dan Inter `font-sans` secara mandiri.
+  2. **Mandatory Post-Execution Grep Audit**: Sebelum mengakhiri tugas pembuatan/pengeditan UI, LLM WAJIB menjalankan perintah `grep_search` untuk memeriksa file yang diubah:
+     - Pastikan **0 tag `<select>` native** (gunakan komponen custom `CategorySelectCell`, `RoleSelectCell`, atau dropdown panel custom).
+     - Pastikan **0 `font-mono`** pada teks tabel, handle nama, subtitle identifier, aspek rasio, currency numbers (`Rp 15.000`), dan input form standar.
 
+### 22. Notion Status Case-Insensitive Matching & Real-Time Direct Write-Through Protocol
+* **Masalah 1 (Case Sensitivity Mismatch)**:
+  - Database Notion menggunakan opsi status dengan variasi huruf besar/kecil alami (`"In progress"`, `"Not started"`, `"Aproved"`).
+  - Ketika kartu digeser di Kanban, sistem mencari opsi menggunakan strict case-sensitive equality (`option.name === statusNotionKey`), yang menyebabkan error `Notion status "In Progress" not found` dan membatalkan pemindahan kartu.
+* **Masalah 2 (Omitted Status in Slide-over Editor)**:
+  - Pengeditan field task via slide-over drawer modal (`TaskDetailSheet`) memanggil `updateTaskFieldsAction`.
+  - Fungsi tersebut berhasil mengupdate PostgreSQL lokal, namun properti `'Design Status'` (serta Designer, Doctype, Brand, Template Link) tertinggal dan tidak dimasukkan ke dalam payload `notionProperties`. Akibatnya, status berpindah di aplikasi tapi di Notion tidak pernah berubah.
+* **Aturan Solusi**:
+  1. **Flexible Status Option Resolver (`findNotionStatusOption`)**:
+     Pencarian opsi status Notion WAJIB mendukung:
+     - Case-insensitive exact name match (`opt.name.toLowerCase() === targetKey.toLowerCase()`).
+     - Alphanumeric normalized match (`"in progress"` ↔ `"inprogress"`).
+     - Alias-aware rules (`qa` / `q&a`, `approved` / `aproved`, `in progress`, `not started`).
+     - Selalu kirim opsi status ke Notion menggunakan option ID resmi (`{ status: { id: opt.id } }`).
+  2. **Comprehensive Direct Write-Through**:
+     Setiap perubahan task via `updateTaskFieldsAction` di slide-over editor WAJIB memetakan seluruh field ke `notionProperties` (`Design Status`, `Designer`, `Doctype`, `Brand/Account`, `Template Link`, `Pool Score`, `Pages`, `QTY Submit`, `Task Month`, `Priority`, `License`), sehingga pengeditan apapun dari aplikasi langsung tembus dan tersinkronisasi ke Notion secara *real-time*.
+
+### 23. Notion API Property Schema Validation Error & Dynamic Property Mapping Protocol
+* **Masalah**: Task baru yang dibuat dari tombol `+ ADD NEW TASK` (`createTaskAction`) berhasil tersimpan di database lokal (PostgreSQL) dan langsung muncul di papan Kanban (misal kolom Draft/Not Started), namun **tidak muncul di Notion**.
+* **Penyebab (Root Cause)**:
+  1. Payload create sebelumnya mengirimkan *dual alias properties* secara bersamaan tanpa memeriksa skema asli Notion: `'QTY-Submit'` DAN `'QTY Submit'`. Di database Notion, hanya ada satu nama properti yang terdaftar (`'QTY-Submit'`). Notion API melempar error validasi: `validation_error: QTY Submit is not a property that exists.` yang menggagalkan eksekusi `pages.create`.
+  2. Properti `'Template Link'` di Notion berjenis `files`, bukan `url`. Format `{ url: link }` ditolak oleh Notion API.
+  3. Properti `'Brand'` dikirim bersamaan dengan alias `'Account'`.
+* **Aturan Solusi**:
+  1. **Dynamic Schema Introspection (`getNotionDatabaseSchemaProperties`)**:
+     Sebelum membuat page baru di Notion, lakukan introspeksi properti skema database Notion secara dinamis (mendukung database langsung maupun Notion Data Sources via `data_sources[0].id`).
+  2. **Safe Property Mapping**:
+     Hanya masukkan properti yang benar-benar eksis pada skema Notion (`schemaProps['QTY-Submit']` vs `schemaProps['QTY Submit']`, `schemaProps['Brand']` vs `schemaProps['Account']`).
+  3. **Files Type Property Formatting**:
+     Jika properti `Template Link` bertipe `files`, format payload menggunakan:
+     `{ files: [{ name: 'Template Link', external: { url: templateLinkUrl } }] }`.
 
 

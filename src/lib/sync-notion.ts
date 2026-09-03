@@ -1,6 +1,7 @@
 import prisma from '@/lib/prisma';
 import { Client } from '@notionhq/client';
 import { decrypt } from '@/lib/encryption';
+import { formatDateStringToTaskMonth } from '@/lib/period-utils';
 
 export type NotionSyncMode = 'incremental' | 'full';
 
@@ -111,28 +112,6 @@ export async function syncNotionData(mode: NotionSyncMode = 'incremental') {
       const doctypes = await prisma.doctype.findMany();
       const accounts = await prisma.account.findMany();
       const statuses = await prisma.designStatus.findMany();
-
-      console.log('Clearing old mock tasks from database...');
-      // Clear relations first
-      await prisma.taskAccount.deleteMany({
-        where: {
-          task: {
-            OR: [
-              { notionPageId: { startsWith: 'notion_page_' } },
-              { notionPageId: { startsWith: 'sync_mock_page_' } },
-            ]
-          }
-        }
-      });
-      // Clear tasks
-      await prisma.task.deleteMany({
-        where: {
-          OR: [
-            { notionPageId: { startsWith: 'notion_page_' } },
-            { notionPageId: { startsWith: 'sync_mock_page_' } },
-          ]
-        }
-      });
 
       const allSyncedNotionIds: string[] = [];
 
@@ -296,8 +275,16 @@ export async function syncNotionData(mode: NotionSyncMode = 'incremental') {
           const dateApprovedVal = properties['Date Aproved']?.date?.start;
           const dateApproved = dateApprovedVal ? new Date(dateApprovedVal) : null;
           
-          const taskMonth = properties['Task Month']?.select?.name || null;
-          const payrollMonth = properties['Payroll Month']?.select?.name || null;
+          const rawTaskMonth = properties['Task Month']?.select?.name ||
+            properties['Task Month']?.date?.start ||
+            (properties['Task Month']?.rich_text ? properties['Task Month']?.rich_text.map((t: any) => t.plain_text).join('') : null);
+          const taskMonth = formatDateStringToTaskMonth(rawTaskMonth);
+
+          const rawPayrollMonth = properties['Payroll Month']?.select?.name ||
+            properties['Payroll Month']?.date?.start ||
+            (properties['Payroll Month']?.rich_text ? properties['Payroll Month']?.rich_text.map((t: any) => t.plain_text).join('') : null);
+          const payrollMonth = formatDateStringToTaskMonth(rawPayrollMonth);
+
           const priority = properties.Priority?.select?.name || 'Medium';
           
           // Get card created date from Notion (check custom properties or standard metadata)
@@ -460,6 +447,35 @@ export async function syncNotionData(mode: NotionSyncMode = 'incremental') {
                 }
               }
             }
+              let bodyTextLines: string[] = [];
+              for (const block of allBlocks) {
+                if (block.heading_1?.rich_text?.length) {
+                  const text = block.heading_1.rich_text.map((t: any) => t.plain_text).join('');
+                  if (text) bodyTextLines.push(`# ${text}`);
+                } else if (block.heading_2?.rich_text?.length) {
+                  const text = block.heading_2.rich_text.map((t: any) => t.plain_text).join('');
+                  if (text) bodyTextLines.push(`## ${text}`);
+                } else if (block.heading_3?.rich_text?.length) {
+                  const text = block.heading_3.rich_text.map((t: any) => t.plain_text).join('');
+                  if (text) bodyTextLines.push(`### ${text}`);
+                } else if (block.bulleted_list_item?.rich_text?.length) {
+                  const text = block.bulleted_list_item.rich_text.map((t: any) => t.plain_text).join('');
+                  if (text) bodyTextLines.push(`- ${text}`);
+                } else if (block.numbered_list_item?.rich_text?.length) {
+                  const text = block.numbered_list_item.rich_text.map((t: any) => t.plain_text).join('');
+                  if (text) bodyTextLines.push(`- ${text}`);
+                } else if (block.paragraph?.rich_text?.length) {
+                  const text = block.paragraph.rich_text.map((t: any) => t.plain_text).join('');
+                  if (text) bodyTextLines.push(text);
+                }
+              }
+
+              if (bodyTextLines.length > 0) {
+                await prisma.task.update({
+                  where: { id: task.id },
+                  data: { bodyText: bodyTextLines.join('\n') },
+                });
+              }
             } // END if (canvaUrls.length === 0)
 
             const uniqueCanvaUrls = Array.from(new Set(canvaUrls));

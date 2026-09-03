@@ -6,18 +6,26 @@ import ProductionOverview from './ProductionOverview';
 import SortableTaskLists from './SortableTaskLists';
 import ParameterIssueTable from './ParameterIssueTable';
 import { useRouter } from 'next/navigation';
+import CreateTaskSlideModal from './CreateTaskSlideModal';
 
 interface Props {
   kanbanTasks: any[];
   issueTasks: any[];
   selectedMonths?: string[];
+  onCreateTask?: () => void;
 }
 
 export default function ProductionView({ kanbanTasks, issueTasks, selectedMonths }: Props) {
   const [activeTab, setActiveTab] = useState<ProductionTab>('overview');
+  const [createOpen, setCreateOpen] = useState(false);
   const router = useRouter();
 
   const handleRefresh = () => {
+    router.refresh();
+  };
+
+  const handleTaskCreated = () => {
+    setActiveTab('kanban');
     router.refresh();
   };
 
@@ -27,7 +35,10 @@ export default function ProductionView({ kanbanTasks, issueTasks, selectedMonths
         activeTab={activeTab}
         onTabChange={setActiveTab}
         issueCount={issueTasks.length}
+        onCreateTask={() => setCreateOpen(true)}
       />
+
+
 
       {activeTab === 'overview' && (
         <ProductionOverview tasks={kanbanTasks} selectedMonths={selectedMonths} />
@@ -40,6 +51,8 @@ export default function ProductionView({ kanbanTasks, issueTasks, selectedMonths
       {activeTab === 'parameterIssue' && (
         <ParameterIssueTable initialTasks={issueTasks} onParametersUpdated={handleRefresh} />
       )}
+
+      <CreateTaskSlideModal open={createOpen} onClose={() => setCreateOpen(false)} onCreated={handleTaskCreated} />
     </div>
   );
 }

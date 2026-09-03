@@ -1,6 +1,7 @@
+import { Suspense } from 'react';
 import { getLatestSyncStatus } from '@/app/actions/sync';
 import Sidebar from '@/components/Sidebar';
-import CloudflareTopBar from '@/components/CloudflareTopBar';
+import TopBar from '@/components/TopBar';
 import KnowledgeGraphViewer from '@/components/KnowledgeGraphViewer';
 
 export const metadata = {
@@ -13,14 +14,18 @@ export default async function KnowledgeGraphPage() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#0d0e12] text-[#262626] dark:text-[#f4f4f5] transition-colors">
-      <CloudflareTopBar badgeLabel="KNOWLEDGE GRAPH" />
+      <TopBar badgeLabel="KNOWLEDGE GRAPH" />
       <div className="flex min-h-[calc(100vh-56px)] flex-col md:flex-row">
         {/* Sidebar navigation */}
-        <Sidebar currentSyncLog={latestSyncLog} />
+        <Suspense fallback={<div className="w-56 shrink-0 bg-white dark:bg-[#0d0e12]" />}>
+          <Sidebar currentSyncLog={latestSyncLog} />
+        </Suspense>
 
         {/* Main content */}
         <main className="flex-1 md:ml-56 p-6 md:p-8 space-y-6 overflow-x-hidden bg-grid-pattern">
-          <KnowledgeGraphViewer />
+          <Suspense fallback={<div className="p-6 font-mono text-xs text-gray-500">Loading Knowledge Graph...</div>}>
+            <KnowledgeGraphViewer />
+          </Suspense>
         </main>
       </div>
     </div>

@@ -57,14 +57,14 @@ export default function CloudflareGridCards({
                     <span className="w-2 h-2 rounded-full bg-[#ff5e1f] animate-pulse" />
                   )}
                   {card.date && (
-                    <span className="font-mono text-[11px] text-gray-500 dark:text-gray-400">
+                    <span className="font-sans text-[11px] text-gray-500 dark:text-gray-400">
                       {card.date}
                     </span>
                   )}
                 </div>
 
                 {card.category && (
-                  <span className="font-mono text-[11px] font-semibold text-[#ff5e1f] tracking-wider uppercase">
+                  <span className="font-sans text-[11px] font-semibold text-[#ff5e1f] tracking-wider uppercase">
                     {card.category}
                   </span>
                 )}
@@ -73,11 +73,11 @@ export default function CloudflareGridCards({
               {/* Metric Value if present */}
               {card.value !== undefined && (
                 <div className="mb-2 flex items-baseline gap-2">
-                  <span className="font-display text-3xl font-bold text-[#262626] dark:text-white">
+                  <span className="font-sans text-3xl font-bold text-[#262626] dark:text-white">
                     {card.value}
                   </span>
                   {card.subValue && (
-                    <span className="text-xs font-mono text-gray-500 dark:text-gray-400">
+                    <span className="text-xs font-sans text-gray-500 dark:text-gray-400">
                       {card.subValue}
                     </span>
                   )}

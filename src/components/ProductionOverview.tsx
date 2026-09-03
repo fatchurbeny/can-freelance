@@ -71,7 +71,7 @@ export default function ProductionOverview({ tasks, selectedMonths }: Props) {
       {/* 8 Status Summary KPI Cards (4 Column Grid with 1px dividers) */}
       <div className="flex flex-col">
         <div className="px-6 pt-5 pb-3 bg-white dark:bg-[#0d0e12] border-b border-[#f0f0f0] dark:border-[#272a34]">
-          <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+          <h3 className="text-xs font-sans font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
             STATUS SUMMARY OVERVIEW ({monthDisplayLabel})
           </h3>
         </div>
@@ -91,7 +91,7 @@ export default function ProductionOverview({ tasks, selectedMonths }: Props) {
                 </div>
               </div>
               <div className="mt-3">
-                <span className="font-display font-bold text-3xl text-gray-900 dark:text-white">{count}</span>
+                <span className="font-sans font-bold text-3xl text-gray-900 dark:text-white">{count}</span>
               </div>
             </div>
           ))}
@@ -102,12 +102,12 @@ export default function ProductionOverview({ tasks, selectedMonths }: Props) {
       <div className="flex flex-col bg-white dark:bg-[#0d0e12]">
         <div className="p-6 pb-3 flex items-center justify-between border-b border-[#f0f0f0] dark:border-[#272a34]">
           <div>
-            <h3 className="font-display font-bold text-sm text-gray-900 dark:text-white">Top Doctypes</h3>
+            <h3 className="font-sans font-bold text-sm text-gray-900 dark:text-white">Top Doctypes</h3>
             <p className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">
               Doctype Terbanyak Dikerjakan ({monthDisplayLabel})
             </p>
           </div>
-          <span className="text-[10px] font-bold font-mono px-2.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+          <span className="text-[10px] font-bold font-sans px-2.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
             {doctypeStats.length} DOCTYPE
           </span>
         </div>
@@ -119,7 +119,7 @@ export default function ProductionOverview({ tasks, selectedMonths }: Props) {
                 <div key={row.name} className="flex flex-col gap-1.5">
                   <div className="flex items-center justify-between text-xs font-semibold text-gray-700 dark:text-gray-300">
                     <span className="truncate capitalize">{row.name}</span>
-                    <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">{row.count}</span>
+                    <span className="font-sans font-bold text-indigo-600 dark:text-indigo-400">{row.count}</span>
                   </div>
                   <div className="h-1.5 w-full rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
                     <div

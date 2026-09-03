@@ -27,7 +27,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { NotionLogo } from '@/logo/NotionLogo';
-import CloudflareTopBar from '@/components/CloudflareTopBar';
+import TopBar from '@/components/TopBar';
 
 export default function NotionDatabasesClient({ initialSyncLog }: { initialSyncLog: any }) {
   const router = useRouter();
@@ -139,7 +139,7 @@ export default function NotionDatabasesClient({ initialSyncLog }: { initialSyncL
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#0d0e12] text-[#262626] dark:text-[#f4f4f5] transition-colors">
-      <CloudflareTopBar badgeLabel="NOTION CONFIG" />
+      <TopBar badgeLabel="NOTION CONFIG" />
       <div className="flex min-h-[calc(100vh-56px)] flex-col md:flex-row">
         <Sidebar currentSyncLog={latestSyncLog} />
 
@@ -147,7 +147,7 @@ export default function NotionDatabasesClient({ initialSyncLog }: { initialSyncL
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
             <RefreshCw className="w-8 h-8 text-[#ff5e1f] animate-spin" />
-            <p className="text-xs font-mono text-gray-500 dark:text-gray-400">Loading databases...</p>
+            <p className="text-xs font-sans text-gray-500 dark:text-gray-400">Loading databases...</p>
           </div>
         ) : (
           <div className="space-y-6">
@@ -175,28 +175,28 @@ export default function NotionDatabasesClient({ initialSyncLog }: { initialSyncL
                     <h2 className="text-base font-bold font-sans text-gray-900 dark:text-white">Notion Workspace</h2>
                     <div className="flex items-center gap-2 mt-1">
                       <span className={`w-1.5 h-1.5 rounded-full ${databases.length > 0 ? 'bg-emerald-500' : 'bg-gray-500'}`}></span>
-                      <span className="text-xs font-mono text-emerald-600 dark:text-emerald-400 font-bold">
+                      <span className="text-xs font-sans text-emerald-600 dark:text-emerald-400 font-bold">
                         {databases.length > 0 ? `${databases.length} Database Connected` : 'No Database Connected'}
                       </span>
                     </div>
                   </div>
                 </div>
                 
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-sans font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
                   <CheckCircle2 className="w-3.5 h-3.5" />
-                  API Key : {maskedApiKey}
+                  API Key : <code className="font-mono">{maskedApiKey}</code>
                 </div>
               </div>
 
               <div className="p-5 sm:p-6 space-y-6">
                 <div>
                   <h3 className="text-base font-bold font-sans text-gray-900 dark:text-white mb-1">Database Connection</h3>
-                  <p className="text-xs font-mono text-gray-500 dark:text-gray-400">Credentials are encrypted symmetrically using AES-256-CBC before database storage.</p>
+                  <p className="text-xs font-sans text-gray-500 dark:text-gray-400">Credentials are encrypted symmetrically using AES-256-CBC before database storage.</p>
                 </div>
 
                 <div className="border-t border-[#f0f0f0] dark:border-[#272a34] pt-6 space-y-6">
                   {databases.length > 0 ? (
-                    <div className="flex items-center gap-3 text-xs font-mono text-gray-500 dark:text-gray-400 px-1">
+                    <div className="flex items-center gap-3 text-xs font-sans text-gray-500 dark:text-gray-400 px-1">
                       <input type="checkbox" className="w-4 h-4 rounded border-gray-300 dark:border-gray-700 text-[#ff5e1f] focus:ring-[#ff5e1f] cursor-pointer" />
                       <span className="font-bold">Select All</span>
                     </div>
@@ -214,21 +214,21 @@ export default function NotionDatabasesClient({ initialSyncLog }: { initialSyncL
                             <div>
                               <div className="font-bold font-sans text-sm text-gray-900 dark:text-white mb-1.5">{db.name}</div>
                               <div className="flex flex-wrap items-center gap-2.5">
-                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] text-emerald-600 dark:text-emerald-400 font-mono font-bold">
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] text-emerald-600 dark:text-emerald-400 font-sans font-bold">
                                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Active
                                 </span>
-                                <span className="text-[10px] font-mono text-gray-500 dark:text-gray-400">#Read-Content</span>
-                                <span className="text-[10px] font-mono text-gray-500 dark:text-gray-400">#Update-Content</span>
-                                <span className="text-[10px] font-mono text-gray-500 dark:text-gray-400">#Insert-Content</span>
+                                <span className="text-[10px] font-sans text-gray-500 dark:text-gray-400">#Read-Content</span>
+                                <span className="text-[10px] font-sans text-gray-500 dark:text-gray-400">#Update-Content</span>
+                                <span className="text-[10px] font-sans text-gray-500 dark:text-gray-400">#Insert-Content</span>
                               </div>
                             </div>
                           </div>
 
                           <div className="flex items-center gap-5 text-sm ml-8 sm:ml-0">
-                            <button className="flex items-center gap-1.5 text-xs font-mono text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors cursor-pointer">
+                            <button className="flex items-center gap-1.5 text-xs font-sans text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors cursor-pointer">
                               <Edit2 className="w-3.5 h-3.5" /> Edit
                             </button>
-                            <button onClick={() => handleDeleteDatabase(db.id)} className="flex items-center gap-1.5 text-xs font-mono text-red-500/70 hover:text-red-500 transition-colors cursor-pointer">
+                            <button onClick={() => handleDeleteDatabase(db.id)} className="flex items-center gap-1.5 text-xs font-sans text-red-500/70 hover:text-red-500 transition-colors cursor-pointer">
                               <Trash2 className="w-3.5 h-3.5" /> Delete
                             </button>
                             
@@ -241,13 +241,13 @@ export default function NotionDatabasesClient({ initialSyncLog }: { initialSyncL
                       ))}
                     </div>
                   ) : (
-                    <div className="text-xs font-mono text-gray-500 italic py-4">No databases connected yet. Click the button below to add one.</div>
+                    <div className="text-xs font-sans text-gray-500 italic py-4">No databases connected yet. Click the button below to add one.</div>
                   )}
 
                   <div className="pt-2">
                     <button
                       onClick={() => setShowDbModal(true)}
-                      className="inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-mono font-bold text-white bg-[#ff5e1f] hover:bg-[#ff7038] rounded-lg transition-all shadow-none cursor-pointer"
+                      className="inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-sans font-bold text-white bg-[#ff5e1f] hover:bg-[#ff7038] rounded-lg transition-all shadow-none cursor-pointer"
                     >
                       <span className="text-sm leading-none">+</span> Add Database
                     </button>
@@ -276,10 +276,10 @@ export default function NotionDatabasesClient({ initialSyncLog }: { initialSyncL
             
             <div className="p-4 sm:p-5 bg-gray-50/50 dark:bg-[#16181d]/50 flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-xs font-bold font-mono uppercase tracking-wider text-gray-900 dark:text-white">
+                <h2 className="text-xs font-bold font-sans uppercase tracking-wider text-gray-900 dark:text-white">
                   Add Notion Database
                 </h2>
-                <p className="mt-1 text-xs font-mono text-gray-500 dark:text-gray-400">
+                <p className="mt-1 text-xs font-sans text-gray-500 dark:text-gray-400">
                   Connect a new Notion database and verify schema mapping.
                 </p>
               </div>
@@ -300,7 +300,7 @@ export default function NotionDatabasesClient({ initialSyncLog }: { initialSyncL
             <div className="p-4 sm:p-5 overflow-y-auto max-h-[70vh] space-y-5 bg-white dark:bg-[#0d0e12]">
               
               <form id="add-db-form" onSubmit={handleTestDatabase} className="space-y-4">
-                <label className="flex flex-col gap-2.5 text-xs font-mono font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">
+                <label className="flex flex-col gap-2.5 text-xs font-sans font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">
                   <span>Database Name</span>
                   <div className="relative">
                     <input
@@ -308,7 +308,7 @@ export default function NotionDatabasesClient({ initialSyncLog }: { initialSyncL
                       value={inputDbName}
                       onChange={(e) => setInputDbName(e.target.value)}
                       placeholder="Database Name"
-                      className="w-full bg-gray-50 dark:bg-[#16181d] border border-[#f0f0f0] dark:border-[#272a34] rounded-lg px-3.5 py-2.5 text-xs text-gray-900 dark:text-white font-mono font-bold outline-none focus:border-[#ff5e1f] transition-colors"
+                      className="w-full bg-gray-50 dark:bg-[#16181d] border border-[#f0f0f0] dark:border-[#272a34] rounded-lg px-3.5 py-2.5 text-xs text-gray-900 dark:text-white font-sans font-bold outline-none focus:border-[#ff5e1f] transition-colors"
                     />
                     <div className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 pointer-events-none">
                       <Eye className="w-3.5 h-3.5" />
@@ -316,7 +316,7 @@ export default function NotionDatabasesClient({ initialSyncLog }: { initialSyncL
                   </div>
                 </label>
 
-                <label className="flex flex-col gap-2.5 text-xs font-mono font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">
+                <label className="flex flex-col gap-2.5 text-xs font-sans font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">
                   <span>Database ID</span>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
@@ -354,7 +354,7 @@ export default function NotionDatabasesClient({ initialSyncLog }: { initialSyncL
                           <CheckCircle2 className="w-5 h-5 text-emerald-500" />
                           <div>
                             <div className="font-bold text-gray-900 dark:text-white text-xs">{dbTestResult.dbTitle}</div>
-                            <div className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-0.5">Database Found & Connected</div>
+                            <div className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-0.5 font-sans">Database Found & Connected</div>
                           </div>
                         </div>
                         <div className="px-2.5 py-1 rounded bg-white dark:bg-[#0d0e12] text-[10px] text-gray-500 dark:text-gray-400 font-mono border border-[#f0f0f0] dark:border-[#272a34] flex items-center gap-2">
@@ -362,14 +362,14 @@ export default function NotionDatabasesClient({ initialSyncLog }: { initialSyncL
                         </div>
                       </div>
 
-                      <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-xs text-emerald-600 dark:text-emerald-400 flex gap-2">
+                      <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-xs text-emerald-600 dark:text-emerald-400 flex gap-2 font-sans">
                         <CheckCircle2 className="w-4 h-4 shrink-0" />
                         <div>Structured Match: All Required Columns Are Present And Typed Correctly. The Database Is Fully Ready To Sync Data!</div>
                       </div>
 
                       <div className="pt-2">
-                        <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">Notion Column Schema Mapping</h4>
-                        <div className="space-y-2">
+                        <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3 font-sans">Notion Column Schema Mapping</h4>
+                        <div className="space-y-2 font-sans">
                           {dbTestResult.schemaComparison.map((field: any, idx: number) => (
                             <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-[#16181d] border border-[#f0f0f0] dark:border-[#272a34]">
                               <div className="flex items-center gap-3">
@@ -398,7 +398,7 @@ export default function NotionDatabasesClient({ initialSyncLog }: { initialSyncL
 
                     </div>
                   ) : (
-                    <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-xs text-red-600 dark:text-red-400 flex gap-2">
+                    <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-xs text-red-600 dark:text-red-400 flex gap-2 font-sans">
                       <XCircle className="w-4 h-4 shrink-0 mt-0.5" />
                       <div>{dbTestResult.error}</div>
                     </div>
@@ -407,7 +407,7 @@ export default function NotionDatabasesClient({ initialSyncLog }: { initialSyncL
               )}
 
               {dbFeedback && (
-                <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-xs font-mono flex gap-2 mt-4">
+                <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-xs font-sans flex gap-2 mt-4">
                   <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                   <span>{dbFeedback.message}</span>
                 </div>
@@ -420,7 +420,7 @@ export default function NotionDatabasesClient({ initialSyncLog }: { initialSyncL
                 type="submit"
                 form="add-db-form"
                 disabled={isTestingDb || !inputDbId}
-                className="w-full py-3.5 px-4 bg-gray-50/50 dark:bg-[#16181d]/50 hover:bg-gray-100 dark:hover:bg-[#16181d] font-mono text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 transition-colors disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+                className="w-full py-3.5 px-4 bg-gray-50/50 dark:bg-[#16181d]/50 hover:bg-gray-100 dark:hover:bg-[#16181d] font-sans text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 transition-colors disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
               >
                 {isTestingDb ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Activity className="w-3.5 h-3.5" />}
                 <span>Test Connection</span>
@@ -429,7 +429,7 @@ export default function NotionDatabasesClient({ initialSyncLog }: { initialSyncL
                 type="button"
                 onClick={handleSaveDatabase}
                 disabled={isSavingDb || !dbTestResult?.success || !inputDbName}
-                className="w-full py-3.5 px-4 bg-[#ff5e1f] hover:bg-[#ff7038] font-mono text-xs font-bold uppercase tracking-wider text-white transition-colors disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+                className="w-full py-3.5 px-4 bg-[#ff5e1f] hover:bg-[#ff7038] font-sans text-xs font-bold uppercase tracking-wider text-white transition-colors disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
               >
                 {isSavingDb ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
                 <span>Save Database</span>

@@ -53,7 +53,7 @@ export default function PayrollToolbar({
   batchMonth, setBatchMonth, batchOpen, setBatchOpen, batchRef, allMonthOptions, handleBatchAssign, isPending,
 }: PayrollToolbarProps) {
   return (
-    <div className="w-full h-10 border-b border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] flex items-stretch justify-between divide-x divide-[#f0f0f0] dark:divide-[#272a34] font-mono text-xs select-none p-0 overflow-visible">
+    <div className="w-full h-10 border-b border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] flex items-stretch justify-between divide-x divide-[#f0f0f0] dark:divide-[#272a34] font-sans text-xs select-none p-0 overflow-visible">
       {/* Left Tools Group: Search + Sort + Filter */}
       <div className="flex items-stretch divide-x divide-[#f0f0f0] dark:divide-[#272a34] min-w-0">
         {/* Search Cell */}
@@ -65,7 +65,7 @@ export default function PayrollToolbar({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search..."
-            className="w-full h-full pl-8 pr-3 bg-transparent text-xs font-mono text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none border-none"
+            className="w-full h-full pl-8 pr-3 bg-transparent text-xs font-sans text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none border-none"
           />
         </div>
 
@@ -115,7 +115,7 @@ export default function PayrollToolbar({
           <button
             type="button"
             onClick={() => { setFilterOpen(!filterOpen); setActiveCategory(null); }}
-            className={`h-full px-3.5 flex items-center gap-1.5 text-xs font-mono transition-colors cursor-pointer whitespace-nowrap ${
+            className={`h-full px-3.5 flex items-center gap-1.5 text-xs font-sans transition-colors cursor-pointer whitespace-nowrap ${
               activeFilterCount > 0
                 ? 'bg-gray-100 dark:bg-[#1f222b] text-gray-900 dark:text-white font-bold'
                 : 'bg-white dark:bg-[#0d0e12] text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#16181d]'
@@ -132,7 +132,7 @@ export default function PayrollToolbar({
           </button>
 
           {filterOpen && (
-            <div className="absolute left-0 top-full z-50 mt-0 min-w-[220px] max-h-72 overflow-y-auto rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] p-1.5 shadow-xl font-mono text-xs">
+            <div className="absolute left-0 top-full z-50 mt-0 min-w-[220px] max-h-72 overflow-y-auto rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] p-1.5 shadow-xl font-sans text-xs">
               {!activeCategory ? (
                 <div className="space-y-0.5">
                   <button
@@ -278,7 +278,7 @@ export default function PayrollToolbar({
         </div>
 
         {designerFilter && (
-          <div className="flex items-center px-3.5 h-full bg-gray-100 dark:bg-[#1f222b] text-gray-900 dark:text-white text-xs font-mono font-bold gap-1.5">
+          <div className="flex items-center px-3.5 h-full bg-gray-100 dark:bg-[#1f222b] text-gray-900 dark:text-white text-xs font-sans font-bold gap-1.5">
             <span>Designer: {designerFilter}</span>
             <button type="button" onClick={() => setDesignerFilter('')} className="text-gray-400 hover:text-red-500 transition-colors cursor-pointer">
               <X className="w-3 h-3" />
@@ -286,7 +286,7 @@ export default function PayrollToolbar({
           </div>
         )}
         {doctypeFilter && (
-          <div className="flex items-center px-3.5 h-full bg-gray-100 dark:bg-[#1f222b] text-gray-900 dark:text-white text-xs font-mono font-bold gap-1.5">
+          <div className="flex items-center px-3.5 h-full bg-gray-100 dark:bg-[#1f222b] text-gray-900 dark:text-white text-xs font-sans font-bold gap-1.5">
             <span>Doctype: {doctypeFilter}</span>
             <button type="button" onClick={() => setDoctypeFilter('')} className="text-gray-400 hover:text-red-500 transition-colors cursor-pointer">
               <X className="w-3 h-3" />
@@ -294,7 +294,7 @@ export default function PayrollToolbar({
           </div>
         )}
         {brandFilter && (
-          <div className="flex items-center px-3.5 h-full bg-gray-100 dark:bg-[#1f222b] text-gray-900 dark:text-white text-xs font-mono font-bold gap-1.5">
+          <div className="flex items-center px-3.5 h-full bg-gray-100 dark:bg-[#1f222b] text-gray-900 dark:text-white text-xs font-sans font-bold gap-1.5">
             <span>Brand: {brandFilter}</span>
             <button type="button" onClick={() => setBrandFilter('')} className="text-gray-400 hover:text-red-500 transition-colors cursor-pointer">
               <X className="w-3 h-3" />
@@ -305,7 +305,7 @@ export default function PayrollToolbar({
 
       {/* Right Tools Group: Count + Batch Month Picker + Assign Selected Button */}
       <div className="flex items-stretch divide-x divide-[#f0f0f0] dark:divide-[#272a34]">
-        <div className="flex items-center px-3.5 text-xs font-mono text-gray-400 dark:text-gray-500 whitespace-nowrap">
+        <div className="flex items-center px-3.5 text-xs font-sans text-gray-400 dark:text-gray-500 whitespace-nowrap">
           <span>{selectedIdsCount} of {totalFilteredCount} selected</span>
         </div>
 
@@ -314,13 +314,13 @@ export default function PayrollToolbar({
           <button
             type="button"
             onClick={() => setBatchOpen(!batchOpen)}
-            className="w-[140px] h-full flex items-center justify-between px-3.5 bg-white dark:bg-[#0d0e12] hover:bg-gray-50 dark:hover:bg-[#16181d] text-xs font-mono font-medium text-gray-700 dark:text-gray-200 focus:outline-none transition-colors cursor-pointer select-none whitespace-nowrap"
+            className="w-[140px] h-full flex items-center justify-between px-3.5 bg-white dark:bg-[#0d0e12] hover:bg-gray-50 dark:hover:bg-[#16181d] text-xs font-sans font-medium text-gray-700 dark:text-gray-200 focus:outline-none transition-colors cursor-pointer select-none whitespace-nowrap"
           >
             <span className="truncate">{batchMonth || 'Pilih bulan...'}</span>
             <ChevronDown className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 shrink-0" />
           </button>
           {batchOpen && (
-            <div className="absolute right-0 top-full z-50 mt-0 w-44 rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] p-1.5 shadow-xl max-h-60 overflow-y-auto font-mono text-xs">
+            <div className="absolute right-0 top-full z-50 mt-0 w-44 rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] p-1.5 shadow-xl max-h-60 overflow-y-auto font-sans text-xs">
               <div className="space-y-0.5 px-1">
                 {allMonthOptions.map((month) => {
                   const isChecked = batchMonth === month;
@@ -329,7 +329,7 @@ export default function PayrollToolbar({
                       key={month}
                       type="button"
                       onClick={() => { setBatchMonth(batchMonth === month ? '' : month); setBatchOpen(false); }}
-                      className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-none text-left text-xs font-mono text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                      className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-none text-left text-xs font-sans text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
                     >
                       <span>{month}</span>
                       <div className={`w-4 h-4 rounded-[5px] border flex items-center justify-center transition-all ${
@@ -352,7 +352,7 @@ export default function PayrollToolbar({
           type="button"
           onClick={handleBatchAssign}
           disabled={selectedIdsCount === 0 || !batchMonth || isPending}
-          className="h-full px-4 bg-[#ff5e1f] hover:bg-[#ff7038] disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-mono font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap shadow-none"
+          className="h-full px-4 bg-[#ff5e1f] hover:bg-[#ff7038] disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-sans font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap shadow-none"
         >
           {isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
           <span>Assign Selected</span>

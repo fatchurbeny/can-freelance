@@ -92,12 +92,12 @@ export default function KPISection({ kpi, selectedPeriod }: KPISectionProps) {
         </div>
         <div className="mt-3">
           <div className="flex items-baseline justify-between gap-2">
-            <span className="font-display font-bold text-3xl text-[#262626] dark:text-white">
+            <span className="font-sans font-bold text-3xl text-[#262626] dark:text-white">
               {formatNumber(kpi.totalTasks)}
             </span>
             {getTrendBadge(kpi.tasksChangePct)}
           </div>
-          <p className="text-[11px] font-mono text-gray-400 dark:text-gray-500 mt-2">
+          <p className="text-[11px] font-sans text-gray-400 dark:text-gray-500 mt-2">
             Bulan Lalu : {formatNumber(priorTasks)}
           </p>
         </div>
@@ -115,12 +115,12 @@ export default function KPISection({ kpi, selectedPeriod }: KPISectionProps) {
         </div>
         <div className="mt-3">
           <div className="flex items-baseline justify-between gap-2">
-            <span className="font-display font-bold text-3xl text-[#262626] dark:text-white">
+            <span className="font-sans font-bold text-3xl text-[#262626] dark:text-white">
               {formatNumber(kpi.totalTemplates)}
             </span>
             {getTrendBadge(kpi.templatesChangePct)}
           </div>
-          <p className="text-[11px] font-mono text-gray-400 dark:text-gray-500 mt-2">
+          <p className="text-[11px] font-sans text-gray-400 dark:text-gray-500 mt-2">
             Bulan Lalu : {formatNumber(priorTemplates)}
           </p>
         </div>
@@ -138,12 +138,12 @@ export default function KPISection({ kpi, selectedPeriod }: KPISectionProps) {
         </div>
         <div className="mt-3">
           <div className="flex items-baseline justify-between gap-2">
-            <span className="font-display font-bold text-3xl text-[#262626] dark:text-white">
+            <span className="font-sans font-bold text-3xl text-[#262626] dark:text-white">
               {formatNumber(kpi.totalPages)}
             </span>
             {getTrendBadge(kpi.pagesChangePct)}
           </div>
-          <p className="text-[11px] font-mono text-gray-400 dark:text-gray-500 mt-2">
+          <p className="text-[11px] font-sans text-gray-400 dark:text-gray-500 mt-2">
             {periodLabel}
           </p>
         </div>
@@ -161,12 +161,12 @@ export default function KPISection({ kpi, selectedPeriod }: KPISectionProps) {
         </div>
         <div className="mt-3">
           <div className="flex items-baseline justify-between gap-2">
-            <span className="font-display font-bold text-3xl text-[#262626] dark:text-white">
+            <span className="font-sans font-bold text-3xl text-[#262626] dark:text-white">
               {kpi.approvalRate}%
             </span>
             {getTrendBadge(kpi.approvalChangePct, true)}
           </div>
-          <p className="text-[11px] font-mono text-gray-400 dark:text-gray-500 mt-2">
+          <p className="text-[11px] font-sans text-gray-400 dark:text-gray-500 mt-2">
             {formatNumber(Math.round(kpi.totalTemplates * (kpi.approvalRate / 100)))} Template / {formatNumber(kpi.totalTemplates)} Submited
           </p>
         </div>
@@ -184,12 +184,12 @@ export default function KPISection({ kpi, selectedPeriod }: KPISectionProps) {
         </div>
         <div className="mt-3">
           <div className="flex items-baseline justify-between gap-2">
-            <span className="font-display font-bold text-3xl text-[#262626] dark:text-white">
+            <span className="font-sans font-bold text-3xl text-[#262626] dark:text-white">
               {kpi.profileOnlyRate}%
             </span>
             {getTrendBadge(kpi.profileOnlyChangePct, true)}
           </div>
-          <p className="text-[11px] font-mono text-gray-400 dark:text-gray-500 mt-2">
+          <p className="text-[11px] font-sans text-gray-400 dark:text-gray-500 mt-2">
             {formatNumber(Math.round(kpi.totalTemplates * (kpi.profileOnlyRate / 100)))} Template / {formatNumber(kpi.totalTemplates)} Submited
           </p>
         </div>
@@ -207,12 +207,12 @@ export default function KPISection({ kpi, selectedPeriod }: KPISectionProps) {
         </div>
         <div className="mt-3">
           <div className="flex items-baseline justify-between gap-2">
-            <span className="font-display font-bold text-3xl text-[#262626] dark:text-white">
+            <span className="font-sans font-bold text-3xl text-[#262626] dark:text-white">
               {kpi.totalDoctypes}
             </span>
             {getTrendBadge(0)}
           </div>
-          <p className="text-[11px] font-mono text-gray-400 dark:text-gray-500 mt-2">
+          <p className="text-[11px] font-sans text-gray-400 dark:text-gray-500 mt-2">
             {periodLabel}
           </p>
         </div>

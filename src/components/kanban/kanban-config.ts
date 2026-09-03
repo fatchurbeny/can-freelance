@@ -24,14 +24,14 @@ export const COLUMNS: ColumnConfig[] = [
   {
     id: 'notStarted',
     title: 'Not Started',
-    statuses: ['Not Started', 'Not started'],
+    statuses: ['Not started', 'Not Started', 'not started'],
     dot: 'bg-indigo-300',
     emptyMessage: 'No Not Started tasks.',
   },
   {
     id: 'inProgress',
     title: 'In Progress',
-    statuses: ['In Progress', 'In progress'],
+    statuses: ['In progress', 'In Progress', 'in progress'],
     dot: 'bg-indigo-400',
     emptyMessage: 'No In Progress tasks.',
   },

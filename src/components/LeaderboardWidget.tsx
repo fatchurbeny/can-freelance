@@ -57,13 +57,13 @@ export default function LeaderboardWidget({ data, columns, topPerformer, brandNa
     <div className="p-6 flex flex-col h-full bg-white dark:bg-[#0d0e12] overflow-visible">
       <div className="flex items-center justify-between pb-4">
         <div>
-          <h3 className="font-display font-bold text-sm text-gray-900 dark:text-white">Designer Leaderboard</h3>
+          <h3 className="font-sans font-bold text-sm text-gray-900 dark:text-white">Designer Leaderboard</h3>
           <p className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">
             Output Top 5 Doctype Spesialis Designer - {brandName === 'Semua Brand' ? 'Semua Brand (6)' : brandName}
           </p>
         </div>
         {topPerformer && (
-          <span className="font-mono text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center gap-1 uppercase whitespace-nowrap">
+          <span className="font-sans text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center gap-1 uppercase whitespace-nowrap">
             🏆 {topPerformer}
           </span>
         )}
@@ -116,22 +116,22 @@ export default function LeaderboardWidget({ data, columns, topPerformer, brandNa
                         </div>
                       </div>
                     </td>
-                    <td className="py-3 px-2 text-center font-mono font-bold text-emerald-600 dark:text-emerald-400">{row.col1Count}</td>
-                    <td className="py-3 px-2 text-center font-mono font-bold text-pink-600 dark:text-pink-400">{row.col2Count}</td>
-                    <td className="py-3 px-2 text-center font-mono font-bold text-orange-600 dark:text-orange-400">{row.col3Count}</td>
-                    <td className="py-3 px-2 text-center font-mono font-bold text-purple-600 dark:text-purple-400">{row.col4Count || 0}</td>
-                    <td className="py-3 px-2 text-center font-mono font-bold text-cyan-600 dark:text-cyan-400">{row.col5Count || 0}</td>
+                    <td className="py-3 px-2 text-center font-sans font-bold text-emerald-600 dark:text-emerald-400">{row.col1Count}</td>
+                    <td className="py-3 px-2 text-center font-sans font-bold text-pink-600 dark:text-pink-400">{row.col2Count}</td>
+                    <td className="py-3 px-2 text-center font-sans font-bold text-orange-600 dark:text-orange-400">{row.col3Count}</td>
+                    <td className="py-3 px-2 text-center font-sans font-bold text-purple-600 dark:text-purple-400">{row.col4Count || 0}</td>
+                    <td className="py-3 px-2 text-center font-sans font-bold text-cyan-600 dark:text-cyan-400">{row.col5Count || 0}</td>
                     <td className="py-3 pl-2 pr-4 text-center">
                       {row.otherCount > 0 ? (
                         <button
                           type="button"
                           onMouseEnter={() => setHoveredRowIndex(index)}
-                          className="font-mono font-bold underline decoration-dotted decoration-gray-400 hover:text-gray-950 dark:hover:text-white"
+                          className="font-sans font-bold underline decoration-dotted decoration-gray-400 hover:text-gray-950 dark:hover:text-white"
                         >
                           {row.otherCount}
                         </button>
                       ) : (
-                        <span className="font-mono text-gray-400 dark:text-gray-600">0</span>
+                        <span className="font-sans text-gray-400 dark:text-gray-600">0</span>
                       )}
                     </td>
                   </tr>

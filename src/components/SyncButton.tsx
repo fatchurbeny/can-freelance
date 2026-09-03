@@ -141,13 +141,16 @@ export default function SyncButton({ initialSyncLog, isCollapsed = false }: Sync
     return () => clearInterval(interval);
   }, [autoSync]);
 
+  const [syncModeUsed, setSyncModeUsed] = useState<'incremental' | 'full'>('incremental');
+
   // Manual sync (allows trigger anytime)
-  const handleSync = async () => {
+  const handleSync = async (mode: 'incremental' | 'full' = 'incremental') => {
     if (isSyncing) {
       // Re-open modal if user clicks button while sync is running in background
       setModalState(syncMetrics ? 'success' : 'syncing');
       return;
     }
+    setSyncModeUsed(mode);
     setIsSyncing(true);
     setModalState('syncing');
 
@@ -167,7 +170,7 @@ export default function SyncButton({ initialSyncLog, isCollapsed = false }: Sync
     }, 60_000);
 
     try {
-      const res = await triggerSyncAction();
+      const res = await triggerSyncAction(mode);
       clearTimeout(autoCloseTimer);
       if (res.status === 'success') {
         const recordsSynced = res.recordsSynced || 0;
@@ -254,24 +257,33 @@ export default function SyncButton({ initialSyncLog, isCollapsed = false }: Sync
                   <RefreshCw className={`w-4 h-4 text-[#ff5e1f] ${modalState === 'syncing' ? 'animate-spin' : ''}`} />
                 </div>
                 <div>
-                  <h2 className="font-mono text-xs font-bold uppercase tracking-wider text-gray-900 dark:text-white">
-                    Notion Database Sync
+                  <h2 className="font-sans text-xs font-bold uppercase tracking-wider text-gray-900 dark:text-white">
+                    Notion Database Sync ({syncModeUsed === 'incremental' ? 'Incremental' : 'Full'})
                   </h2>
-                  <p className="text-[11px] font-mono text-gray-500 dark:text-gray-400">
-                    {modalState === 'syncing' ? 'Connecting to Notion API & downloading live data...' : 'Notion database reconciliation complete'}
+                  <p className="text-[11px] font-sans text-gray-500 dark:text-gray-400">
+                    {modalState === 'syncing'
+                      ? syncModeUsed === 'incremental'
+                        ? 'Fetching only recently edited Notion records...'
+                        : 'Full reconciliation: downloading all live Notion records...'
+                      : 'Notion database synchronization complete'}
                   </p>
                 </div>
               </div>
-              <span className="font-mono text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-[#ff5e1f]/10 text-[#ff5e1f] border border-[#ff5e1f]/20 uppercase">
-                {modalState === 'syncing' ? 'SYNCING' : 'FINISHED'}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="font-sans text-[10px] font-bold px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 uppercase">
+                  {syncModeUsed.toUpperCase()}
+                </span>
+                <span className="font-sans text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-[#ff5e1f]/10 text-[#ff5e1f] border border-[#ff5e1f]/20 uppercase">
+                  {modalState === 'syncing' ? 'SYNCING' : 'FINISHED'}
+                </span>
+              </div>
             </div>
 
             {/* Live Progress Bar Section */}
             <div className="px-5 py-3.5 bg-white dark:bg-[#0d0e12] space-y-2 border-b border-[#f0f0f0] dark:border-[#272a34]">
-              <div className="flex items-center justify-between font-mono text-xs">
+              <div className="flex items-center justify-between font-sans text-xs">
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-[#ff5e1f] px-2 py-0.5 rounded bg-[#ff5e1f]/10 border border-[#ff5e1f]/20">
+                  <span className="font-bold text-[#ff5e1f] px-2 py-0.5 rounded bg-[#ff5e1f]/10 border border-[#ff5e1f]/20 font-sans">
                     {modalState === 'syncing' ? `${liveProgress.percent}%` : '100%'}
                   </span>
                   <span className="text-gray-600 dark:text-gray-300 font-medium text-[11px]">
@@ -301,39 +313,39 @@ export default function SyncButton({ initialSyncLog, isCollapsed = false }: Sync
             <div className="p-4 bg-gray-50/50 dark:bg-[#16181d]/50 grid grid-cols-3 gap-3">
               {/* Total Synced Card */}
               <div className="p-3 rounded-lg border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] flex flex-col justify-between">
-                <span className="font-mono text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">Total Data</span>
+                <span className="font-sans text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">Total Data</span>
                 <div className="my-1">
-                  <span className="font-display text-2xl font-bold text-gray-900 dark:text-white">
+                  <span className="font-sans text-2xl font-bold text-gray-900 dark:text-white">
                     {syncMetrics?.recordsSynced ?? (syncLog?.recordsSynced ?? 0)}
                   </span>
                 </div>
-                <span className="font-mono text-[9px] font-bold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 uppercase w-max">
+                <span className="font-sans text-[9px] font-bold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 uppercase w-max">
                   Synced
                 </span>
               </div>
 
               {/* New Data Card */}
               <div className="p-3 rounded-lg border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] flex flex-col justify-between">
-                <span className="font-mono text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">Data Baru</span>
+                <span className="font-sans text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">Data Baru</span>
                 <div className="my-1">
-                  <span className="font-display text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                  <span className="font-sans text-2xl font-bold text-emerald-600 dark:text-emerald-400">
                     {syncMetrics?.newRecords ?? 0}
                   </span>
                 </div>
-                <span className="font-mono text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 uppercase w-max">
+                <span className="font-sans text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 uppercase w-max">
                   Baru
                 </span>
               </div>
 
               {/* Failed Data Card */}
               <div className="p-3 rounded-lg border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] flex flex-col justify-between">
-                <span className="font-mono text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">Gagal Sync</span>
+                <span className="font-sans text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">Gagal Sync</span>
                 <div className="my-1">
-                  <span className="font-display text-2xl font-bold text-amber-600 dark:text-amber-400">
+                  <span className="font-sans text-2xl font-bold text-amber-600 dark:text-amber-400">
                     {syncMetrics?.failedRecords ?? 0}
                   </span>
                 </div>
-                <span className="font-mono text-[9px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 uppercase w-max">
+                <span className="font-sans text-[9px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 uppercase w-max">
                   {(syncMetrics?.failedRecords ?? 0) > 0 ? 'Error' : 'Clean'}
                 </span>
               </div>
@@ -359,19 +371,30 @@ export default function SyncButton({ initialSyncLog, isCollapsed = false }: Sync
 
             {/* Action Footer */}
             <div className="px-5 py-3 flex items-center justify-between bg-gray-50/50 dark:bg-[#16181d]/50 rounded-none">
-              <div className="flex items-center gap-1.5 font-mono text-xs text-gray-500 dark:text-gray-400">
+              <div className="flex items-center gap-1.5 font-sans text-xs text-gray-500 dark:text-gray-400">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
                 <span>Postgres Cache Active</span>
               </div>
               {modalState === 'success' ? (
-                <button
-                  onClick={() => setModalState('idle')}
-                  className="px-5 py-1.5 rounded-lg bg-[#ff5e1f] text-white hover:bg-[#ff7038] font-mono text-xs font-bold transition-all shadow-sm cursor-pointer"
-                >
-                  Tutup Panel
-                </button>
+                <div className="flex items-center gap-2">
+                  {syncModeUsed === 'incremental' && (
+                    <button
+                      type="button"
+                      onClick={() => handleSync('full')}
+                      className="px-3 py-1.5 rounded-lg border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#16181d] font-sans text-xs font-bold transition-all cursor-pointer"
+                    >
+                      Jalankan Full Sync
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setModalState('idle')}
+                    className="px-5 py-1.5 rounded-lg bg-[#ff5e1f] text-white hover:bg-[#ff7038] font-sans text-xs font-bold transition-all shadow-sm cursor-pointer"
+                  >
+                    Tutup Panel
+                  </button>
+                </div>
               ) : (
-                <div className="flex items-center gap-1.5 font-mono text-xs text-[#ff5e1f]">
+                <div className="flex items-center gap-1.5 font-sans text-xs text-[#ff5e1f]">
                   <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                   <span>Proses Berjalan ({liveProgress.percent}%)...</span>
                 </div>
@@ -389,13 +412,13 @@ export default function SyncButton({ initialSyncLog, isCollapsed = false }: Sync
             <span className={`w-2 h-2 rounded-full ${isSyncing ? 'bg-[#ff5e1f] animate-ping' : 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]'}`}></span>
           </div>
         ) : (
-          <div className="w-full rounded-none divide-y divide-[#f0f0f0] dark:divide-[#272a34] bg-white dark:bg-[#0d0e12] border-t border-[#f0f0f0] dark:border-[#272a34] font-mono text-xs select-none">
+          <div className="w-full rounded-none divide-y divide-[#f0f0f0] dark:divide-[#272a34] bg-white dark:bg-[#0d0e12] border-t border-[#f0f0f0] dark:border-[#272a34] font-sans text-xs select-none">
             
             {/* Row 1: Interactive Sync Button */}
             <button
               type="button"
-              onClick={handleSync}
-              className={`flex items-center justify-center px-4 py-2.5 transition-all font-mono text-xs font-bold cursor-pointer group bg-gray-50 dark:bg-[#16181d] text-gray-900 dark:text-gray-100 hover:bg-[#ff5e1f]/10 hover:text-[#ff5e1f] dark:hover:text-[#ff5e1f] w-full gap-2 ${
+              onClick={() => handleSync('incremental')}
+              className={`flex items-center justify-center px-4 py-2.5 transition-all font-sans text-xs font-bold cursor-pointer group bg-gray-50 dark:bg-[#16181d] text-gray-900 dark:text-gray-100 hover:bg-[#ff5e1f]/10 hover:text-[#ff5e1f] dark:hover:text-[#ff5e1f] w-full gap-2 ${
                 isSyncing ? 'text-[#ff5e1f] animate-pulse' : ''
               }`}
             >
@@ -420,7 +443,7 @@ export default function SyncButton({ initialSyncLog, isCollapsed = false }: Sync
 
             {/* Row 3: Live sync progress indicator if syncing */}
             {isSyncing && (
-              <div className="flex items-center gap-1.5 px-4 py-1.5 bg-amber-500/5 text-[#ff5e1f] font-mono text-[10px] font-bold animate-pulse">
+              <div className="flex items-center gap-1.5 px-4 py-1.5 bg-amber-500/5 text-[#ff5e1f] font-sans text-[10px] font-bold animate-pulse">
                 <RefreshCw className="w-3 h-3 animate-spin shrink-0" />
                 <span>Sync Sedang Berjalan...</span>
               </div>

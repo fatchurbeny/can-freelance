@@ -23,8 +23,8 @@ Entitas utama yang merepresentasikan Notion Card / Tugas Pekerjaan Desain.
 
 ### 2. `Designer` (Tabel `designers`)
 Entitas desainer / freelancer.
-* **Kolom Utama**: `id`, `name`, `notionId`, `status` (`'Active'` | `'Resign'` | `'Hold'`), `email`, `role`.
-* **Kaidah Bisnis**: Designer dengan `status === 'Resign'` memiliki total kalkulasi payroll = 0 dan badge UI merah coret.
+* **Kolom Utama**: `id`, `displayName`, `notionKey`, `status` (`'Active'` | `'Inactive'` | `'Resign'`), `role` (Jabatan), `contractType` (`Probation` | `Freelance` | `Fulltime`), `contractStartDate` (DateTime/Date), `inactiveStartDate` (DateTime/Date), `inactiveNote` (String), `resignDate` (DateTime/Date), `promotionDate` (DateTime/Date), `email`, `phone`, `bankName`, `bankAccount`.
+* **Kaidah Bisnis**: Designer dengan `status === 'Resign'` memiliki total kalkulasi payroll = 0 dan badge UI merah coret. Status `Inactive` mencatat tanggal tidak aktif & alasan catatan inactive. Promosi jabatan mencatat `role` baru dan `promotionDate`.
 
 ### 3. `Doctype` (Tabel `doctypes`)
 Entitas tipe dokumen (misal: `Regular-Presentation`, `Infographic`, `Social Media`).

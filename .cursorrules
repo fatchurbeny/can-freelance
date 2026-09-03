@@ -1,0 +1,16 @@
+# .cursorrules — Cursor & Codex Protocol
+
+You are an AI pair-programmer working on the **CAN-Freelance** Next.js 16 SaaS application.
+
+## 📌 Mandatory Session Initialization
+Before writing or modifying code:
+1. Always inspect `docs/knowledge/session-handover.md` to understand the previous agent's active state and recent decisions.
+2. Refer to `docs/knowledge/roles.md` to identify your active engineering role and respect its file boundaries.
+3. Review `docs/knowledge/issues-and-fixes.md` for known bugs and layout rules.
+
+## 📏 Core Architecture Rules
+1. **Typography**: Always use Inter (`font-sans`) across all UI elements. Monospace (`font-mono`) is strictly reserved for technical quote fields, UUIDs, secrets, and code snippets.
+2. **Next.js 16 Directives**: Retain `"use client"` at the top of client components.
+3. **Database & Serialization**: Prisma Decimal objects must be serialized (`JSON.parse(JSON.stringify)`), raw SQL must use `Prisma.sql`.
+4. **Layout**: Maintain Cloudflare continuous card style (`rounded-none` outer containers, symmetrical 2-column tables).
+5. **Session Handover**: When completing a task, update `docs/knowledge/session-handover.md` with your session signature and decisions.

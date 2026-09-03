@@ -53,7 +53,7 @@ const CustomTooltip = ({ active, payload }: any) => {
                           <span className="w-1 h-1 rounded-full shrink-0" style={{ backgroundColor: BRAND_COLORS[entry.name] || '#6366F1', opacity: 0.6 }} />
                           {doctype}
                         </span>
-                        <span className="text-gray-400 font-mono font-medium pl-2.5 text-[9px]">({taskCount}/{templateCount}Template @{pageCount}Pages)</span>
+                        <span className="text-gray-400 font-sans font-medium pl-2.5 text-[9px]">({taskCount}/{templateCount}Template @{pageCount}Pages)</span>
                       </li>
                     );
                   }
@@ -112,14 +112,14 @@ export default function DistribusiWidget({ data, brandName }: DistribusiWidgetPr
       {/* Title & Badge */}
       <div className="flex items-center justify-between pb-2">
         <div>
-          <h3 className="font-display font-bold text-sm text-gray-900 dark:text-white">
+          <h3 className="font-sans font-bold text-sm text-gray-900 dark:text-white">
             Distribusi Template
           </h3>
           <p className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">
             Jumlah Task Tiap Bulan - {brandName === 'Semua Brand' ? 'Semua Brand (6)' : brandName}
           </p>
         </div>
-        <span className="font-mono text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-[#ff5e1f]/10 text-[#ff5e1f] dark:text-[#ff7038] border border-[#ff5e1f]/20 uppercase whitespace-nowrap shrink-0">
+        <span className="font-sans text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-[#ff5e1f]/10 text-[#ff5e1f] dark:text-[#ff7038] border border-[#ff5e1f]/20 uppercase whitespace-nowrap shrink-0">
           AVG.{avgTemplates} TEMPLATE
         </span>
       </div>
@@ -159,7 +159,7 @@ export default function DistribusiWidget({ data, brandName }: DistribusiWidgetPr
               className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none select-none transition-opacity duration-200"
               style={{ opacity: hoveredIndex !== null ? 0 : 1 }}
             >
-              <span className="font-display font-bold text-2xl text-gray-900 dark:text-white leading-none">
+              <span className="font-sans font-bold text-2xl text-gray-900 dark:text-white leading-none">
                 {formatNumber(totalTemplates)}
               </span>
               <span className="text-[9px] text-gray-400 dark:text-gray-500 font-medium mt-1">
@@ -191,7 +191,7 @@ export default function DistribusiWidget({ data, brandName }: DistribusiWidgetPr
                   >
                     <span className="truncate">{d.name}</span>
                     <div className="flex items-center gap-3">
-                      <span className="text-gray-500 font-mono text-[11px] font-semibold">{formatNumber(d.value)} Template</span>
+                      <span className="text-gray-500 font-sans text-[11px] font-semibold">{formatNumber(d.value)} Template</span>
                       <svg 
                         className={`w-3.5 h-3.5 text-gray-500 transition-transform ${isExpanded ? 'rotate-180' : ''}`} 
                         fill="none" 

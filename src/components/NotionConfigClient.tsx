@@ -9,7 +9,7 @@ import {
 } from '@/app/actions/notion-config';
 import { getLatestSyncStatus } from '@/app/actions/sync';
 import Sidebar from '@/components/Sidebar';
-import CloudflareTopBar from '@/components/CloudflareTopBar';
+import TopBar from '@/components/TopBar';
 import { 
   Key, 
   CheckCircle2, 
@@ -132,7 +132,7 @@ export default function NotionConfigClient({ initialSyncLog }: { initialSyncLog:
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#0d0e12] text-[#262626] dark:text-[#f4f4f5] transition-colors">
-      <CloudflareTopBar badgeLabel="NOTION CONFIG" />
+      <TopBar badgeLabel="NOTION CONFIG" />
       <div className="flex min-h-[calc(100vh-56px)] flex-col md:flex-row">
         <Sidebar currentSyncLog={latestSyncLog} />
 
@@ -141,7 +141,7 @@ export default function NotionConfigClient({ initialSyncLog }: { initialSyncLog:
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
             <RefreshCw className="w-8 h-8 text-[#ff5e1f] animate-spin" />
-            <p className="text-xs font-mono text-gray-500 dark:text-gray-400">Loading configurations...</p>
+            <p className="text-xs font-sans text-gray-500 dark:text-gray-400">Loading configurations...</p>
           </div>
         ) : (
           <div className="space-y-6">
@@ -163,7 +163,7 @@ export default function NotionConfigClient({ initialSyncLog }: { initialSyncLog:
                         <h3 className="text-base font-bold text-gray-900 dark:text-white">
                           {configExists && workspaceName ? workspaceName : 'Notion Workspace'}
                         </h3>
-                        <p className="text-xs font-mono text-gray-500 dark:text-gray-400 mt-0.5">
+                        <p className="text-xs font-sans text-gray-500 dark:text-gray-400 mt-0.5">
                           {databases.length > 0 ? databases.map(db => db.name).join(', ') : 'No databases connected'}
                         </p>
                       </div>
@@ -176,7 +176,7 @@ export default function NotionConfigClient({ initialSyncLog }: { initialSyncLog:
                           e.stopPropagation();
                           if (configExists) router.push('/notion-config/databases');
                         }}
-                        className={`inline-flex items-center gap-2 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-wider rounded-full transition-colors ${
+                        className={`inline-flex items-center gap-2 px-3 py-1.5 font-sans text-[10px] font-bold uppercase tracking-wider rounded-full transition-colors ${
                           configExists 
                             ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 cursor-pointer' 
                             : 'text-gray-500 bg-gray-100 dark:bg-[#16181d] border border-[#f0f0f0] dark:border-[#272a34] cursor-default'
@@ -224,12 +224,12 @@ export default function NotionConfigClient({ initialSyncLog }: { initialSyncLog:
                           <Timer className="w-4 h-4 text-[#ff5e1f]" />
                           Scheduled Sync Settings
                         </h2>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 pl-6 font-mono">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 pl-6 font-sans">
                           Automatic daily periodic sync configured via Vercel Cron.
                         </p>
                       </div>
 
-                      <div className="p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/10 flex items-start gap-3.5 text-xs font-mono">
+                      <div className="p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/10 flex items-start gap-3.5 text-xs font-sans">
                         <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
                         <div className="space-y-1">
                           <div className="font-bold text-emerald-600 dark:text-emerald-400">Daily Auto Sync Active</div>
@@ -251,20 +251,20 @@ export default function NotionConfigClient({ initialSyncLog }: { initialSyncLog:
                       </h2>
                     </div>
 
-                    <div className="space-y-5 text-xs font-mono">
+                    <div className="space-y-5 text-xs font-sans">
                       <div className="space-y-1.5">
                         <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2 text-xs">
-                          <span className="w-5 h-5 rounded bg-[#ff5e1f]/10 text-[#ff5e1f] border border-[#ff5e1f]/20 flex items-center justify-center font-mono text-[10px] font-bold shrink-0">1</span>
+                          <span className="w-5 h-5 rounded bg-[#ff5e1f]/10 text-[#ff5e1f] border border-[#ff5e1f]/20 flex items-center justify-center font-sans text-[10px] font-bold shrink-0">1</span>
                           Create Integration
                         </h3>
                         <p className="pl-7 text-[11px] leading-relaxed text-gray-500 dark:text-gray-400">
-                          Go to <span className="text-[#ff5e1f] font-semibold">notion.so/my-integrations</span>, create an internal integration, and copy the **Internal Integration Secret** (starts with <code className="text-gray-800 dark:text-gray-200">secret_</code>).
+                          Go to <span className="text-[#ff5e1f] font-semibold">notion.so/my-integrations</span>, create an internal integration, and copy the **Internal Integration Secret** (starts with <code className="font-mono text-gray-800 dark:text-gray-200">secret_</code>).
                         </p>
                       </div>
 
                       <div className="space-y-1.5">
                         <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2 text-xs">
-                          <span className="w-5 h-5 rounded bg-[#ff5e1f]/10 text-[#ff5e1f] border border-[#ff5e1f]/20 flex items-center justify-center font-mono text-[10px] font-bold shrink-0">2</span>
+                          <span className="w-5 h-5 rounded bg-[#ff5e1f]/10 text-[#ff5e1f] border border-[#ff5e1f]/20 flex items-center justify-center font-sans text-[10px] font-bold shrink-0">2</span>
                           Find Database ID
                         </h3>
                         <p className="pl-7 text-[11px] leading-relaxed text-gray-500 dark:text-gray-400">
@@ -277,11 +277,11 @@ export default function NotionConfigClient({ initialSyncLog }: { initialSyncLog:
 
                       <div className="space-y-1.5">
                         <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2 text-xs">
-                          <span className="w-5 h-5 rounded bg-[#ff5e1f]/10 text-[#ff5e1f] border border-[#ff5e1f]/20 flex items-center justify-center font-mono text-[10px] font-bold shrink-0">3</span>
+                          <span className="w-5 h-5 rounded bg-[#ff5e1f]/10 text-[#ff5e1f] border border-[#ff5e1f]/20 flex items-center justify-center font-sans text-[10px] font-bold shrink-0">3</span>
                           Grant Connections
                         </h3>
                         <p className="pl-7 text-[11px] leading-relaxed text-gray-500 dark:text-gray-400">
-                          Inside Notion, click the three dots <code className="text-gray-800 dark:text-gray-200">...</code> at top right of database. Click **Add Connections** and search for the integration created in step 1.
+                          Inside Notion, click the three dots <code className="font-mono text-gray-800 dark:text-gray-200">...</code> at top right of database. Click **Add Connections** and search for the integration created in step 1.
                         </p>
                       </div>
                     </div>
@@ -291,10 +291,10 @@ export default function NotionConfigClient({ initialSyncLog }: { initialSyncLog:
                     <div className="p-5 sm:p-6 space-y-4">
                       <div className="flex items-start justify-between gap-4">
                         <div>
-                          <p className="text-[10px] uppercase tracking-[0.2em] font-mono text-gray-500 dark:text-gray-400 font-bold">Sync Status</p>
+                          <p className="text-[10px] uppercase tracking-[0.2em] font-sans text-gray-500 dark:text-gray-400 font-bold">Sync Status</p>
                           <h3 className="mt-1 text-base font-bold text-gray-900 dark:text-white">Current Sync Summary</h3>
                         </div>
-                        <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider ${
+                        <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 font-sans text-[10px] font-bold uppercase tracking-wider ${
                           latestSyncLog?.status === 'success'
                             ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
                             : latestSyncLog?.status === 'running'
@@ -307,7 +307,7 @@ export default function NotionConfigClient({ initialSyncLog }: { initialSyncLog:
                         </span>
                       </div>
 
-                      <div className="space-y-3 border-t border-[#f0f0f0] dark:border-[#272a34] pt-4 text-xs font-mono">
+                      <div className="space-y-3 border-t border-[#f0f0f0] dark:border-[#272a34] pt-4 text-xs font-sans">
                         <div className="flex items-center justify-between gap-4 py-1">
                           <span className="text-gray-500 dark:text-gray-400">Sync Method</span>
                           <span className="font-bold text-gray-900 dark:text-white uppercase tracking-wider">
@@ -324,7 +324,7 @@ export default function NotionConfigClient({ initialSyncLog }: { initialSyncLog:
                         </div>
                         <div className="flex items-center justify-between gap-4 py-1">
                           <span className="text-gray-500 dark:text-gray-400">Status</span>
-                          <span className={`inline-flex items-center rounded-full border px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider ${
+                          <span className={`inline-flex items-center rounded-full border px-2 py-0.5 font-sans text-[10px] font-bold uppercase tracking-wider ${
                             latestSyncLog?.status === 'success'
                               ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
                               : latestSyncLog?.status === 'running'
@@ -366,7 +366,7 @@ export default function NotionConfigClient({ initialSyncLog }: { initialSyncLog:
           <div className="bg-white dark:bg-[#0d0e12] border border-[#f0f0f0] dark:border-[#272a34] w-full max-w-lg rounded-xl shadow-2xl p-6 sm:p-8 space-y-6 animate-in fade-in zoom-in-95 duration-200">
             <h2 className="text-base font-bold text-gray-900 dark:text-white">Add Notion API Key</h2>
             
-            <form onSubmit={handleSaveApiKey} className="space-y-4 text-xs font-mono">
+            <form onSubmit={handleSaveApiKey} className="space-y-4 text-xs font-sans">
               <div className="space-y-1.5">
                 <label className="font-bold text-gray-700 dark:text-gray-300">Name</label>
                 <input
@@ -374,7 +374,7 @@ export default function NotionConfigClient({ initialSyncLog }: { initialSyncLog:
                   value={inputWorkspaceName}
                   onChange={(e) => setInputWorkspaceName(e.target.value)}
                   placeholder="Database Name"
-                  className="w-full bg-gray-50 dark:bg-[#16181d] border border-[#f0f0f0] dark:border-[#272a34] rounded-lg px-3.5 py-2 text-xs font-mono text-gray-900 dark:text-white focus:outline-none focus:border-[#ff5e1f] transition-colors"
+                  className="w-full bg-gray-50 dark:bg-[#16181d] border border-[#f0f0f0] dark:border-[#272a34] rounded-lg px-3.5 py-2 text-xs font-sans text-gray-900 dark:text-white focus:outline-none focus:border-[#ff5e1f] transition-colors"
                   required
                 />
               </div>
@@ -404,7 +404,7 @@ export default function NotionConfigClient({ initialSyncLog }: { initialSyncLog:
               </div>
 
               {apiFeedback && (
-                <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-xs font-mono flex gap-2">
+                <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-xs font-sans flex gap-2">
                   <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                   <span>{apiFeedback.message}</span>
                 </div>
@@ -414,14 +414,14 @@ export default function NotionConfigClient({ initialSyncLog }: { initialSyncLog:
                 <button
                   type="button"
                   onClick={() => setShowApiKeyModal(false)}
-                  className="px-4 py-2 text-xs font-mono text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer"
+                  className="px-4 py-2 text-xs font-sans text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSavingApiKey || !inputWorkspaceName || !inputApiKey}
-                  className="inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-mono font-bold text-white bg-[#ff5e1f] hover:bg-[#ff7038] rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-sans font-bold text-white bg-[#ff5e1f] hover:bg-[#ff7038] rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
                   {isSavingApiKey ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                   Save Notion API Key

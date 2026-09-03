@@ -49,14 +49,14 @@ export default function WorkloadWidget({ data, brandName }: WorkloadWidgetProps)
       {/* Title & Badge */}
       <div className="flex items-center justify-between pb-4">
         <div>
-          <h3 className="font-display font-bold text-sm text-gray-900 dark:text-white">
+          <h3 className="font-sans font-bold text-sm text-gray-900 dark:text-white">
             Beban Kerja per Designer
           </h3>
           <p className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">
             Jumlah Task Ditangani Bulan Ini - {brandName}
           </p>
         </div>
-        <span className="font-mono text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 uppercase whitespace-nowrap shrink-0">
+        <span className="font-sans text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 uppercase whitespace-nowrap shrink-0">
           AVG.{avgPages} PAGES
         </span>
       </div>

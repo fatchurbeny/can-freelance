@@ -3,7 +3,7 @@ import prisma from '@/lib/prisma';
 import { getLatestSyncStatus } from '@/app/actions/sync';
 import { getContractRateAction } from '@/app/actions/notion-config';
 import Sidebar from '@/components/Sidebar';
-import CloudflareTopBar from '@/components/CloudflareTopBar';
+import TopBar from '@/components/TopBar';
 import { 
   Gavel, 
   Archive, 
@@ -291,7 +291,7 @@ export default async function BillingStatementPage(props: {
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#0d0e12] text-[#262626] dark:text-[#f4f4f5] transition-colors">
-      <CloudflareTopBar badgeLabel="BILLING" />
+      <TopBar badgeLabel="BILLING" />
       <div className="flex min-h-[calc(100vh-56px)] flex-col md:flex-row">
         <Sidebar currentSyncLog={latestSyncLog} />
 
@@ -328,7 +328,7 @@ export default async function BillingStatementPage(props: {
                   <CheckSquare className={`w-4 h-4 shrink-0 transition-colors ${activeTab === 'approval-payroll' ? 'text-[#ff5e1f]' : 'text-gray-400 dark:text-gray-500'}`} />
                   <span>Approval Payroll</span>
                   {upcomingTasksData.length > 0 && (
-                    <span className={`rounded px-2 py-0.5 text-[10px] font-mono font-bold ${
+                    <span className={`rounded px-2 py-0.5 text-[10px] font-sans font-bold ${
                       activeTab === 'approval-payroll'
                         ? 'bg-[#ff5e1f]/10 text-[#ff5e1f]'
                         : 'bg-gray-200/60 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
@@ -356,14 +356,14 @@ export default async function BillingStatementPage(props: {
                       <h2 className="font-bold text-sm text-gray-900 dark:text-white capitalize truncate">
                         Ketentuan & Aturan Kontrak Freelance
                       </h2>
-                      <p className="text-xs text-gray-400 dark:text-gray-500 font-mono mt-0.5 truncate">
+                      <p className="text-xs text-gray-400 dark:text-gray-500 font-sans mt-0.5 truncate">
                         Kontrak dimulai sejak 26 Januari 2026
                       </p>
                     </div>
                   </div>
 
                   {/* Right Full-Height Table Cells */}
-                  <div className="flex items-stretch divide-x divide-[#f0f0f0] dark:divide-[#272a34] border-t md:border-t-0 md:border-l border-[#f0f0f0] dark:border-[#272a34] shrink-0 font-mono text-xs">
+                  <div className="flex items-stretch divide-x divide-[#f0f0f0] dark:divide-[#272a34] border-t md:border-t-0 md:border-l border-[#f0f0f0] dark:border-[#272a34] shrink-0 font-sans text-xs">
                     <div className="flex items-center gap-2.5 px-5 sm:px-6 py-4 bg-white dark:bg-[#0d0e12] text-gray-700 dark:text-gray-300">
                       <span className="w-2 h-2 rounded-full bg-[#ff5e1f] shrink-0" />
                       <span className="whitespace-nowrap">Kalender: <strong className="font-bold text-gray-900 dark:text-white">25 Hari Kerja/Bulan</strong></span>
@@ -381,7 +381,7 @@ export default async function BillingStatementPage(props: {
                   {/* Card 1: Total Unpaid This Month */}
                   <div className="p-5 flex flex-col justify-between h-[130px] border-b md:border-b-0 md:border-r border-[#f0f0f0] dark:border-[#272a34] hover:bg-gray-50/50 dark:hover:bg-[#16181d]/50 transition-colors">
                     <div className="flex justify-between items-center w-full">
-                      <span className="text-xs font-mono font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                      <span className="text-xs font-sans font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                         Total Unpaid This Month
                       </span>
                       <div className="w-7 h-7 rounded-lg bg-[#ff5e1f]/10 text-[#ff5e1f] flex items-center justify-center">
@@ -390,12 +390,12 @@ export default async function BillingStatementPage(props: {
                     </div>
                     <div>
                       <div className="flex justify-between items-center">
-                        <span className="text-2xl font-bold font-mono text-gray-900 dark:text-white">
+                        <span className="text-2xl font-bold font-sans text-gray-900 dark:text-white">
                           {formatCurrency(totalMonthlyPayout)}
                         </span>
                         <StatIndicator current={totalMonthlyPayout} prev={prevTotalMonthlyPayout} />
                       </div>
-                      <p className="text-[11px] font-mono text-gray-400 dark:text-gray-500 mt-1">
+                      <p className="text-[11px] font-sans text-gray-400 dark:text-gray-500 mt-1">
                         Bulan Lalu : {formatCurrency(prevTotalMonthlyPayout)}
                       </p>
                     </div>
@@ -404,7 +404,7 @@ export default async function BillingStatementPage(props: {
                   {/* Card 2: Approved, No Payroll Month */}
                   <div className="p-5 flex flex-col justify-between h-[130px] border-b md:border-b-0 lg:border-r border-[#f0f0f0] dark:border-[#272a34] hover:bg-gray-50/50 dark:hover:bg-[#16181d]/50 transition-colors">
                     <div className="flex justify-between items-center w-full">
-                      <span className="text-xs font-mono font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                      <span className="text-xs font-sans font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                         Approved, No Payroll Month
                       </span>
                       <div className="w-7 h-7 rounded-lg bg-[#ff5e1f]/10 text-[#ff5e1f] flex items-center justify-center">
@@ -412,10 +412,10 @@ export default async function BillingStatementPage(props: {
                       </div>
                     </div>
                     <div>
-                      <span className="text-2xl font-bold font-mono text-gray-900 dark:text-white">
+                      <span className="text-2xl font-bold font-sans text-gray-900 dark:text-white">
                         {formatCurrency(upcomingPayout)}
                       </span>
-                      <div className="flex items-center gap-1.5 mt-1 text-[10px] font-mono text-gray-400 dark:text-gray-500 whitespace-nowrap overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                      <div className="flex items-center gap-1.5 mt-1 text-[10px] font-sans text-gray-400 dark:text-gray-500 whitespace-nowrap overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                         <span>{upcomingTasksData.length} Task</span>
                         <span>•</span>
                         <span>{upcomingTemplates} Template</span>
@@ -432,7 +432,7 @@ export default async function BillingStatementPage(props: {
                   {/* Card 3: Design Leader */}
                   <div className="p-5 flex flex-col justify-between h-[130px] border-b md:border-b-0 md:border-r border-[#f0f0f0] dark:border-[#272a34] hover:bg-gray-50/50 dark:hover:bg-[#16181d]/50 transition-colors">
                     <div className="flex justify-between items-center">
-                      <span className="text-xs font-mono font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                      <span className="text-xs font-sans font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                         Design Leader
                       </span>
                       <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center">
@@ -440,15 +440,15 @@ export default async function BillingStatementPage(props: {
                       </div>
                     </div>
                     <div>
-                      <span className="text-2xl font-bold font-mono text-amber-500">{designLeader}</span>
-                      <p className="text-[11px] font-mono text-gray-400 dark:text-gray-500 mt-1">Bulan lalu : {prevDesignLeader}</p>
+                      <span className="text-2xl font-bold font-sans text-amber-500">{designLeader}</span>
+                      <p className="text-[11px] font-sans text-gray-400 dark:text-gray-500 mt-1">Bulan lalu : {prevDesignLeader}</p>
                     </div>
                   </div>
 
                   {/* Card 4: Total Tasks */}
                   <div className="p-5 flex flex-col justify-between h-[130px] hover:bg-gray-50/50 dark:hover:bg-[#16181d]/50 transition-colors">
                     <div className="flex justify-between items-center">
-                      <span className="text-xs font-mono font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                      <span className="text-xs font-sans font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                         Total Tasks
                       </span>
                       <div className="w-7 h-7 rounded-lg bg-indigo-500/10 text-indigo-500 flex items-center justify-center">
@@ -457,10 +457,10 @@ export default async function BillingStatementPage(props: {
                     </div>
                     <div>
                       <div className="flex justify-between items-center">
-                        <span className="text-2xl font-bold font-mono text-gray-900 dark:text-white">{totalTasks}</span>
+                        <span className="text-2xl font-bold font-sans text-gray-900 dark:text-white">{totalTasks}</span>
                         <StatIndicator current={totalTasks} prev={prevTotalTasks} />
                       </div>
-                      <p className="text-[11px] font-mono text-gray-400 dark:text-gray-500 mt-1">Bulan lalu : {prevTotalTasks}</p>
+                      <p className="text-[11px] font-sans text-gray-400 dark:text-gray-500 mt-1">Bulan lalu : {prevTotalTasks}</p>
                     </div>
                   </div>
 
@@ -472,7 +472,7 @@ export default async function BillingStatementPage(props: {
                   {/* Card 5: Total Template */}
                   <div className="p-5 flex flex-col justify-between h-[130px] border-b md:border-b-0 md:border-r border-[#f0f0f0] dark:border-[#272a34] hover:bg-gray-50/50 dark:hover:bg-[#16181d]/50 transition-colors">
                     <div className="flex justify-between items-center">
-                      <span className="text-xs font-mono font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                      <span className="text-xs font-sans font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                         Total Template
                       </span>
                       <div className="w-7 h-7 rounded-lg bg-orange-500/10 text-orange-500 flex items-center justify-center">
@@ -481,17 +481,17 @@ export default async function BillingStatementPage(props: {
                     </div>
                     <div>
                       <div className="flex justify-between items-center">
-                        <span className="text-2xl font-bold font-mono text-gray-900 dark:text-white">{totalTemplates}</span>
+                        <span className="text-2xl font-bold font-sans text-gray-900 dark:text-white">{totalTemplates}</span>
                         <StatIndicator current={totalTemplates} prev={prevTotalTemplates} />
                       </div>
-                      <p className="text-[11px] font-mono text-gray-400 dark:text-gray-500 mt-1">Bulan lalu : {prevTotalTemplates}</p>
+                      <p className="text-[11px] font-sans text-gray-400 dark:text-gray-500 mt-1">Bulan lalu : {prevTotalTemplates}</p>
                     </div>
                   </div>
 
                   {/* Card 6: Total Pages */}
                   <div className="p-5 flex flex-col justify-between h-[130px] border-b md:border-b-0 lg:border-r border-[#f0f0f0] dark:border-[#272a34] hover:bg-gray-50/50 dark:hover:bg-[#16181d]/50 transition-colors">
                     <div className="flex justify-between items-center">
-                      <span className="text-xs font-mono font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                      <span className="text-xs font-sans font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                         Total Pages
                       </span>
                       <div className="w-7 h-7 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center">
@@ -500,17 +500,17 @@ export default async function BillingStatementPage(props: {
                     </div>
                     <div>
                       <div className="flex justify-between items-center">
-                        <span className="text-2xl font-bold font-mono text-gray-900 dark:text-white">{totalPages}</span>
+                        <span className="text-2xl font-bold font-sans text-gray-900 dark:text-white">{totalPages}</span>
                         <StatIndicator current={totalPages} prev={prevTotalPages} />
                       </div>
-                      <p className="text-[11px] font-mono text-gray-400 dark:text-gray-500 mt-1">Bulan lalu : {prevTotalPages}</p>
+                      <p className="text-[11px] font-sans text-gray-400 dark:text-gray-500 mt-1">Bulan lalu : {prevTotalPages}</p>
                     </div>
                   </div>
 
                   {/* Card 7: Total Doctype */}
                   <div className="p-5 flex flex-col justify-between h-[130px] border-b md:border-b-0 md:border-r border-[#f0f0f0] dark:border-[#272a34] hover:bg-gray-50/50 dark:hover:bg-[#16181d]/50 transition-colors">
                     <div className="flex justify-between items-center">
-                      <span className="text-xs font-mono font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                      <span className="text-xs font-sans font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                         Total Doctype
                       </span>
                       <div className="w-7 h-7 rounded-lg bg-pink-500/10 text-pink-500 flex items-center justify-center">
@@ -519,17 +519,17 @@ export default async function BillingStatementPage(props: {
                     </div>
                     <div>
                       <div className="flex justify-between items-center">
-                        <span className="text-2xl font-bold font-mono text-gray-900 dark:text-white">{uniqueDoctypes.size}</span>
+                        <span className="text-2xl font-bold font-sans text-gray-900 dark:text-white">{uniqueDoctypes.size}</span>
                         <StatIndicator current={uniqueDoctypes.size} prev={prevUniqueDoctypes.size} />
                       </div>
-                      <p className="text-[11px] font-mono text-gray-400 dark:text-gray-500 mt-1">Bulan lalu : {prevUniqueDoctypes.size}</p>
+                      <p className="text-[11px] font-sans text-gray-400 dark:text-gray-500 mt-1">Bulan lalu : {prevUniqueDoctypes.size}</p>
                     </div>
                   </div>
 
                   {/* Card 8: Designer Status */}
                   <div className="p-5 flex flex-col justify-between h-[130px] hover:bg-gray-50/50 dark:hover:bg-[#16181d]/50 transition-colors">
                     <div className="flex items-center justify-between gap-3">
-                      <span className="text-xs font-mono font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                      <span className="text-xs font-sans font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                         Designer Status
                       </span>
                       <div className="w-7 h-7 rounded-lg bg-indigo-500/10 text-indigo-500 flex items-center justify-center">
@@ -539,11 +539,11 @@ export default async function BillingStatementPage(props: {
 
                     <div className="flex items-end justify-between gap-3 flex-1 min-h-0">
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-mono font-bold text-xs mb-1">
+                        <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-sans font-bold text-xs mb-1">
                           <span className="w-2 h-2 rounded-full bg-emerald-500" />
                           Paid
                         </div>
-                        <div className="text-2xl font-bold font-mono text-gray-900 dark:text-white leading-none">
+                        <div className="text-2xl font-bold font-sans text-gray-900 dark:text-white leading-none">
                           {paidDesignerCount}
                         </div>
                       </div>
@@ -553,11 +553,11 @@ export default async function BillingStatementPage(props: {
                       </div>
 
                       <div className="flex-1 min-w-0 text-right">
-                        <div className="flex items-center justify-end gap-1.5 text-rose-600 dark:text-rose-400 font-mono font-bold text-xs mb-1">
+                        <div className="flex items-center justify-end gap-1.5 text-rose-600 dark:text-rose-400 font-sans font-bold text-xs mb-1">
                           <span className="w-2 h-2 rounded-full bg-rose-500" />
                           Unpaid
                         </div>
-                        <div className="text-2xl font-bold font-mono text-gray-900 dark:text-white leading-none">
+                        <div className="text-2xl font-bold font-sans text-gray-900 dark:text-white leading-none">
                           {unpaidDesignerCount}
                         </div>
                       </div>
@@ -571,7 +571,7 @@ export default async function BillingStatementPage(props: {
                   {/* Toolbar Header (Full-Height Symmetrical Table Style) */}
                   <div className="flex flex-col lg:flex-row items-stretch justify-between bg-white dark:bg-[#0d0e12] border-b border-[#f0f0f0] dark:border-[#272a34] min-h-[52px]">
                     {/* Left 25% Cell (PAYOUT BREAKDOWN + MonthFilter Aligned Right to Card 1 / Card 5 Above) */}
-                    <div className="flex items-stretch justify-between w-full lg:w-1/4 shrink-0 font-mono text-xs font-bold uppercase tracking-wider text-gray-900 dark:text-white border-b lg:border-b-0 lg:border-r border-[#f0f0f0] dark:border-[#272a34]">
+                    <div className="flex items-stretch justify-between w-full lg:w-1/4 shrink-0 font-sans text-xs font-bold uppercase tracking-wider text-gray-900 dark:text-white border-b lg:border-b-0 lg:border-r border-[#f0f0f0] dark:border-[#272a34]">
                       {/* Left Title Text */}
                       <div className="flex items-center px-4 py-3.5 whitespace-nowrap min-w-0">
                         <span className="truncate">Payout Breakdown</span>
@@ -584,10 +584,10 @@ export default async function BillingStatementPage(props: {
                     </div>
 
                     {/* Right Download Action Cell (Full-Height Flat Table Style) */}
-                    <div className="flex items-stretch border-t lg:border-t-0 shrink-0 font-mono text-xs">
+                    <div className="flex items-stretch border-t lg:border-t-0 shrink-0 font-sans text-xs">
                       <a
                         href={`/api/billing/download-all?month=${selectedMonth}`}
-                        className="flex items-center gap-2 px-5 py-3.5 bg-[#ff5e1f] hover:bg-[#ff7038] text-white font-mono text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer whitespace-nowrap rounded-none"
+                        className="flex items-center gap-2 px-5 py-3.5 bg-[#ff5e1f] hover:bg-[#ff7038] text-white font-sans text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer whitespace-nowrap rounded-none"
                       >
                         <Archive className="w-4 h-4 stroke-[2.5]" />
                         <span>Download all Statement</span>
@@ -602,42 +602,42 @@ export default async function BillingStatementPage(props: {
                         <summary className="flex flex-col lg:flex-row items-start lg:items-center justify-between p-4 cursor-pointer hover:bg-gray-50/60 dark:hover:bg-[#16181d]/60 transition-colors list-none gap-4">
                           
                           <div className="flex items-center gap-3 w-[220px] shrink-0">
-                            <div className="w-9 h-9 rounded-full border border-[#f0f0f0] dark:border-[#272a34] flex items-center justify-center font-mono font-bold text-gray-900 dark:text-white bg-gray-50 dark:bg-[#16181d] text-xs">
+                            <div className="w-9 h-9 rounded-full border border-[#f0f0f0] dark:border-[#272a34] flex items-center justify-center font-sans font-bold text-gray-900 dark:text-white bg-gray-50 dark:bg-[#16181d] text-xs">
                               {getInitials(designer.displayName)}
                             </div>
                             <div>
                               <div className="flex items-center gap-2">
-                                <h3 className={`font-bold text-xs font-mono ${designer.status === 'Resign' ? 'text-gray-400 line-through' : 'text-gray-900 dark:text-white'}`}>
+                                <h3 className={`font-bold text-xs font-sans ${designer.status === 'Resign' ? 'text-gray-400 line-through' : 'text-gray-900 dark:text-white'}`}>
                                   {designer.displayName}
                                 </h3>
                                 {designer.status !== 'Active' && (
-                                  <span className={`px-1.5 py-0.5 text-[9px] font-mono font-bold tracking-wider rounded uppercase ${
+                                  <span className={`px-1.5 py-0.5 text-[9px] font-sans font-bold tracking-wider rounded uppercase ${
                                     designer.status === 'Resign' ? 'text-rose-500 bg-rose-500/10' : 'text-amber-500 bg-amber-500/10'
                                   }`}>
                                     {designer.status}
                                   </span>
                                 )}
                               </div>
-                              <p className="text-[11px] font-mono text-gray-400 dark:text-gray-500">Designer</p>
+                              <p className="text-[11px] font-sans text-gray-400 dark:text-gray-500">Designer</p>
                             </div>
                           </div>
 
                           <div className="flex flex-wrap lg:flex-nowrap items-center gap-4 lg:gap-8 flex-1 w-full justify-between lg:justify-start">
                             <div className="flex flex-col items-center">
-                              <span className="text-[10px] font-mono text-gray-400 dark:text-gray-500 uppercase">Task</span>
-                              <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400 text-xs">{designer.totalTasks}</span>
+                              <span className="text-[10px] font-sans text-gray-400 dark:text-gray-500 uppercase">Task</span>
+                              <span className="font-sans font-bold text-indigo-600 dark:text-indigo-400 text-xs">{designer.totalTasks}</span>
                             </div>
                             <div className="flex flex-col items-center">
-                              <span className="text-[10px] font-mono text-gray-400 dark:text-gray-500 uppercase">Templates</span>
-                              <span className="font-mono font-bold text-amber-600 dark:text-amber-500 text-xs">{designer.totalTemplates}</span>
+                              <span className="text-[10px] font-sans text-gray-400 dark:text-gray-500 uppercase">Templates</span>
+                              <span className="font-sans font-bold text-amber-600 dark:text-amber-500 text-xs">{designer.totalTemplates}</span>
                             </div>
                             <div className="flex flex-col items-center">
-                              <span className="text-[10px] font-mono text-gray-400 dark:text-gray-500 uppercase">QTY Pages</span>
-                              <span className="font-mono font-bold text-blue-600 dark:text-blue-400 text-xs">{designer.totalPages}</span>
+                              <span className="text-[10px] font-sans text-gray-400 dark:text-gray-500 uppercase">QTY Pages</span>
+                              <span className="font-sans font-bold text-blue-600 dark:text-blue-400 text-xs">{designer.totalPages}</span>
                             </div>
                             <div className="flex flex-col items-center">
-                              <span className="text-[10px] font-mono text-gray-400 dark:text-gray-500 uppercase">Total Payroll</span>
-                              <span className="font-mono font-bold text-emerald-600 dark:text-[#ff5e1f] text-xs">{formatCurrency(designer.totalPayroll)}</span>
+                              <span className="text-[10px] font-sans text-gray-400 dark:text-gray-500 uppercase">Total Payroll</span>
+                              <span className="font-sans font-bold text-emerald-600 dark:text-[#ff5e1f] text-xs">{formatCurrency(designer.totalPayroll)}</span>
                             </div>
                           </div>
 
@@ -650,7 +650,7 @@ export default async function BillingStatementPage(props: {
                             <Link 
                               href={`/billing-statement/print?designerId=${designer.id}&paymentMonth=${selectedMonth}`}
                               target="_blank"
-                              className="inline-flex items-center gap-1.5 rounded-lg border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] px-3 py-1 text-xs font-mono font-medium text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-700 hover:text-[#ff5e1f] dark:hover:text-[#ff5e1f] transition-colors cursor-pointer"
+                              className="inline-flex items-center gap-1.5 rounded-lg border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] px-3 py-1 text-xs font-sans font-medium text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-700 hover:text-[#ff5e1f] dark:hover:text-[#ff5e1f] transition-colors cursor-pointer"
                             >
                               <Printer className="w-3.5 h-3.5" />
                               <span>Print</span>
@@ -660,14 +660,14 @@ export default async function BillingStatementPage(props: {
                         </summary>
 
                         <div className="p-4 border-t border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#0d0e12]">
-                          <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">
+                          <h4 className="text-xs font-sans font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">
                             Itemized Task Calculations
                           </h4>
                           
                           <div className="overflow-x-auto">
-                            <table className="w-full text-left border-collapse font-mono text-xs min-w-[800px]">
+                            <table className="w-full text-left border-collapse font-sans text-xs min-w-[800px]">
                               <thead>
-                                <tr className="border-b border-[#f0f0f0] dark:border-[#272a34] text-[11px] font-mono font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                                <tr className="border-b border-[#f0f0f0] dark:border-[#272a34] text-[11px] font-sans font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                                   <th className="pb-2 px-2 font-semibold">TASK TITLE</th>
                                   <th className="pb-2 px-2 font-semibold">DOCTYPE</th>
                                   <th className="pb-2 px-2 font-semibold">CANVA ACCOUNT</th>
@@ -722,7 +722,7 @@ export default async function BillingStatementPage(props: {
                     ))}
 
                     {designers.filter(d => d.totalTasks > 0).length === 0 && (
-                      <div className="p-8 text-center text-xs font-mono text-gray-400 dark:text-gray-500">
+                      <div className="p-8 text-center text-xs font-sans text-gray-400 dark:text-gray-500">
                         No payroll data available for {selectedMonth}.
                       </div>
                     )}

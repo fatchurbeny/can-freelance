@@ -13,15 +13,32 @@ const MONTH_MAP: Record<string, string> = {
   desember: '12', des: '12', december: '12', dec: '12',
 };
 
-const INDONESIAN_SHORT_MONTHS = [
+export const INDONESIAN_FULL_MONTHS = [
+  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+];
+
+export const INDONESIAN_SHORT_MONTHS = [
   'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
   'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'
 ];
+
+/** Returns current calendar month formatted e.g. "September-2026" */
+export function currentTaskMonth(): string {
+  const now = new Date();
+  return `${INDONESIAN_FULL_MONTHS[now.getMonth()]}-${now.getFullYear()}`;
+}
 
 /** Parses any taskMonth format (e.g. "Agustus-2026", "Agt-2026", "2026-08") to canonical "YYYY-MM" */
 export function parseTaskMonthToKey(taskMonth?: string | null): string | null {
   if (!taskMonth) return null;
   const clean = taskMonth.trim().toLowerCase();
+  
+  // Handle ISO date format "2026-08-01" or "2026-08-01T..."
+  if (/^\d{4}-\d{2}-\d{2}/.test(clean)) {
+    return clean.substring(0, 7);
+  }
+
   const parts = clean.split('-');
   if (parts.length !== 2) return null;
 
@@ -43,6 +60,26 @@ export function parseTaskMonthToKey(taskMonth?: string | null): string | null {
   }
 
   return null;
+}
+
+/** Converts "Agustus-2026" or "2026-08" to ISO date string "2026-08-01" for Notion Date property */
+export function formatTaskMonthToDateString(taskMonth?: string | null): string | null {
+  const key = parseTaskMonthToKey(taskMonth);
+  if (!key) return null;
+  return `${key}-01`;
+}
+
+/** Converts Date ISO string e.g. "2026-08-01" to "Agustus-2026" */
+export function formatDateStringToTaskMonth(dateStr?: string | null): string | null {
+  if (!dateStr) return null;
+  const key = parseTaskMonthToKey(dateStr);
+  if (!key) return dateStr;
+  const [year, month] = key.split('-');
+  const mIdx = parseInt(month, 10) - 1;
+  if (mIdx >= 0 && mIdx < 12) {
+    return `${INDONESIAN_FULL_MONTHS[mIdx]}-${year}`;
+  }
+  return dateStr;
 }
 
 /** Formats "YYYY-MM" to readable label e.g. "Agt-2026" */

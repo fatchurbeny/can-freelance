@@ -43,6 +43,7 @@ const COMMUNITY_COLORS: Record<string, string> = {
   'Notion Sync Engine': '#F59E0B', // Amber
   'Gotchas & Layout Rules': '#EF4444', // Red/Rose
   'Session Handover & Log': '#8B5CF6', // Violet
+  'Engineering Roles & Ops': '#EC4899', // Pink / Magenta
 };
 
 const DEFAULT_COLOR = '#64748B';
@@ -437,7 +438,7 @@ export default function GraphifyVisualizer() {
     return (
       <div className="flex items-center justify-center p-16 bg-white dark:bg-[#0d0e12] rounded-xl border border-[#f0f0f0] dark:border-[#272a34] text-[#ff5e1f]">
         <Network className="w-8 h-8 animate-pulse mr-3" />
-        <span className="font-mono text-xs font-bold">Initializing Graphify 2D Engine...</span>
+        <span className="font-sans text-xs font-bold">Initializing Graphify 2D Engine...</span>
       </div>
     );
   }
@@ -458,19 +459,19 @@ export default function GraphifyVisualizer() {
         {/* Top Left Active Community Cluster Filter Indicator */}
         <div className="absolute top-4 left-4 flex items-center gap-2 z-10">
           {selectedGroup ? (
-            <div className="bg-white/95 dark:bg-[#16181d]/95 backdrop-blur-md px-3 py-1.5 rounded-lg border border-[#ff5e1f]/30 text-xs font-mono text-gray-900 dark:text-white flex items-center gap-2 shadow-md">
+            <div className="bg-white/95 dark:bg-[#16181d]/95 backdrop-blur-md px-3 py-1.5 rounded-lg border border-[#ff5e1f]/30 text-xs font-sans text-gray-900 dark:text-white flex items-center gap-2 shadow-md">
               <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: COMMUNITY_COLORS[selectedGroup] || DEFAULT_COLOR }} />
               <span className="font-bold">{selectedGroup}</span>
               <button
                 type="button"
                 onClick={() => setSelectedGroup(null)}
-                className="ml-1 text-gray-400 hover:text-[#ff5e1f] cursor-pointer flex items-center gap-1 font-mono text-[10px] font-bold uppercase"
+                className="ml-1 text-gray-400 hover:text-[#ff5e1f] cursor-pointer flex items-center gap-1 font-sans text-[10px] font-bold uppercase"
               >
                 <X className="w-3 h-3" /> Reset
               </button>
             </div>
           ) : (
-            <div className="bg-white/80 dark:bg-[#16181d]/80 backdrop-blur-md px-3 py-1.5 rounded-lg border border-[#f0f0f0] dark:border-[#272a34] text-[11px] font-mono text-gray-500 dark:text-gray-400 flex items-center gap-2 shadow-sm">
+            <div className="bg-white/80 dark:bg-[#16181d]/80 backdrop-blur-md px-3 py-1.5 rounded-lg border border-[#f0f0f0] dark:border-[#272a34] text-[11px] font-sans text-gray-500 dark:text-gray-400 flex items-center gap-2 shadow-sm">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <span>Showing All Communities ({nodesRef.current.length} Nodes)</span>
             </div>
@@ -478,7 +479,7 @@ export default function GraphifyVisualizer() {
         </div>
 
         {/* Canvas Bottom Instructions Overlay (Cloudflare Light/Dark Badge) */}
-        <div className="absolute bottom-4 left-4 bg-white/90 dark:bg-[#16181d]/90 backdrop-blur-md px-3.5 py-1.5 rounded-lg border border-[#f0f0f0] dark:border-[#272a34] text-[11px] font-mono text-gray-700 dark:text-gray-300 flex items-center gap-2.5 shadow-sm select-none pointer-events-none">
+        <div className="absolute bottom-4 left-4 bg-white/90 dark:bg-[#16181d]/90 backdrop-blur-md px-3.5 py-1.5 rounded-lg border border-[#f0f0f0] dark:border-[#272a34] text-[11px] font-sans text-gray-700 dark:text-gray-300 flex items-center gap-2.5 shadow-sm select-none pointer-events-none">
           <span className="flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-[#ff5e1f]" />
             Scroll to Zoom
@@ -491,7 +492,7 @@ export default function GraphifyVisualizer() {
       </div>
 
       {/* Right Sidebar Panel (Cloudflare Continuous Symmetrical Table Style) */}
-      <div className="w-full lg:w-[320px] bg-white dark:bg-[#0d0e12] divide-y divide-[#f0f0f0] dark:divide-[#272a34] overflow-y-auto scrollbar-none shrink-0 font-mono text-xs flex flex-col justify-between">
+      <div className="w-full lg:w-[320px] bg-white dark:bg-[#0d0e12] divide-y divide-[#f0f0f0] dark:divide-[#272a34] overflow-y-auto scrollbar-none shrink-0 font-sans text-xs flex flex-col justify-between">
         <div className="divide-y divide-[#f0f0f0] dark:divide-[#272a34]">
           
           {/* Top Search Input Box (Image 2 Symmetrical Toolbar Style) */}
@@ -502,7 +503,7 @@ export default function GraphifyVisualizer() {
               placeholder="Search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-transparent pl-2.5 pr-6 py-1 text-xs font-mono text-gray-900 dark:text-white outline-none placeholder:text-gray-400"
+              className="w-full bg-transparent pl-2.5 pr-6 py-1 text-xs font-sans text-gray-900 dark:text-white outline-none placeholder:text-gray-400"
             />
             {searchQuery && (
               <button
@@ -517,7 +518,7 @@ export default function GraphifyVisualizer() {
 
           {/* NODE INFO Table Block (Full Width Symmetrical Style) */}
           <div>
-            <div className="px-4 py-2 bg-gray-50/50 dark:bg-[#0d0e12] border-b border-[#f0f0f0] dark:border-[#272a34] text-[10px] font-mono font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+            <div className="px-4 py-2 bg-gray-50/50 dark:bg-[#0d0e12] border-b border-[#f0f0f0] dark:border-[#272a34] text-[10px] font-sans font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
               NODE INFO
             </div>
             {selectedNode ? (
@@ -525,21 +526,21 @@ export default function GraphifyVisualizer() {
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-2 min-w-0">
                     <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: selectedNode.color }} />
-                    <span className="font-bold text-xs text-gray-900 dark:text-white font-mono truncate">{selectedNode.label}</span>
+                    <span className="font-bold text-xs text-gray-900 dark:text-white font-sans truncate">{selectedNode.label}</span>
                   </div>
                   <button onClick={() => setSelectedNode(null)} className="text-gray-400 hover:text-gray-600 dark:hover:text-white cursor-pointer shrink-0">
                     <X className="w-3.5 h-3.5" />
                   </button>
                 </div>
 
-                <div className="text-[11px] text-gray-600 dark:text-gray-300 space-y-1 font-mono">
+                <div className="text-[11px] text-gray-600 dark:text-gray-300 space-y-1 font-sans">
                   <div><span className="text-gray-400">Group:</span> {selectedNode.group}</div>
                   <div><span className="text-gray-400">Type:</span> {selectedNode.type}</div>
-                  <div className="truncate"><span className="text-gray-400">Path:</span> {selectedNode.filepath}</div>
+                  <div className="truncate"><span className="text-gray-400">Path:</span> <code className="font-mono text-gray-500">{selectedNode.filepath}</code></div>
                 </div>
 
                 {(outgoingLinks.length > 0 || incomingLinks.length > 0) && (
-                  <div className="pt-2.5 border-t border-[#f0f0f0] dark:border-[#272a34] space-y-1 text-[11px] font-mono">
+                  <div className="pt-2.5 border-t border-[#f0f0f0] dark:border-[#272a34] space-y-1 text-[11px] font-sans">
                     <span className="text-[#ff5e1f] font-bold block">Connections ({incomingLinks.length + outgoingLinks.length})</span>
                     {outgoingLinks.map((l, idx) => (
                       <div key={idx} className="text-gray-600 dark:text-gray-300 truncate">→ {l.relation} ({l.target})</div>
@@ -551,7 +552,7 @@ export default function GraphifyVisualizer() {
                 )}
               </div>
             ) : (
-              <div className="px-4 py-4 text-xs text-gray-400 italic font-mono bg-white dark:bg-[#0d0e12]">
+              <div className="px-4 py-4 text-xs text-gray-400 italic font-sans bg-white dark:bg-[#0d0e12]">
                 Click a node to inspect it
               </div>
             )}
@@ -559,18 +560,18 @@ export default function GraphifyVisualizer() {
 
           {/* COMMUNITIES Table Block (True 2-Column Symmetrical Table Style) */}
           <div>
-            <div className="flex items-stretch border-b border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#0d0e12] text-[10px] font-mono font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+            <div className="flex items-stretch border-b border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#0d0e12] text-[10px] font-sans font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
               <span className="flex-1 px-4 py-2">COMMUNITIES</span>
               <span className="w-16 text-center py-2 border-l border-[#f0f0f0] dark:border-[#272a34]">COUNT</span>
             </div>
-            <div className="divide-y divide-[#f0f0f0] dark:divide-[#272a34] max-h-[360px] overflow-y-auto font-mono">
+            <div className="divide-y divide-[#f0f0f0] dark:divide-[#272a34] max-h-[360px] overflow-y-auto font-sans">
               {filteredCommunities.map((c, i) => {
                 const isSelected = selectedGroup === c.name;
                 return (
                   <div
                     key={i}
                     onClick={() => setSelectedGroup(isSelected ? null : c.name)}
-                    className={`flex items-stretch transition-colors font-mono text-xs cursor-pointer ${
+                    className={`flex items-stretch transition-colors font-sans text-xs cursor-pointer ${
                       isSelected
                         ? 'bg-[#ff5e1f]/10 text-[#ff5e1f]'
                         : 'hover:bg-gray-50/60 dark:hover:bg-[#16181d]/60 text-gray-700 dark:text-gray-300'
@@ -578,11 +579,11 @@ export default function GraphifyVisualizer() {
                   >
                     <div className="flex-1 px-4 py-2.5 flex items-center gap-2.5 truncate min-w-0">
                       <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: c.color }} />
-                      <span className={`font-medium truncate text-xs font-mono ${isSelected ? 'text-[#ff5e1f] font-bold' : ''}`}>
+                      <span className={`font-medium truncate text-xs font-sans ${isSelected ? 'text-[#ff5e1f] font-bold' : ''}`}>
                         {c.name}
                       </span>
                     </div>
-                    <div className="w-16 border-l border-[#f0f0f0] dark:border-[#272a34] flex items-center justify-center font-mono text-xs font-bold shrink-0">
+                    <div className="w-16 border-l border-[#f0f0f0] dark:border-[#272a34] flex items-center justify-center font-sans text-xs font-bold shrink-0">
                       {c.count}
                     </div>
                   </div>

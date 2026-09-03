@@ -12,7 +12,7 @@ export default function Header({ periods, currentPeriod }: HeaderProps) {
   return (
     <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#f0f0f0] dark:border-[#272a34] transition-colors">
       <div>
-        <h2 className="font-display font-bold text-2xl tracking-tight text-[#262626] dark:text-white">
+        <h2 className="font-sans font-bold text-2xl tracking-tight text-[#262626] dark:text-white">
           Dashboard
         </h2>
         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 font-normal">

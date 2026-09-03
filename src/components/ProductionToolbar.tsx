@@ -120,7 +120,7 @@ export default function ProductionToolbar({
             onClick={() => { setFilterOpen((o) => !o); setActiveGroup(null); }}
             aria-haspopup="dialog"
             aria-expanded={filterOpen}
-            className={`h-full px-3.5 flex items-center gap-1.5 text-xs font-mono border-r border-[#f0f0f0] dark:border-[#272a34] transition-colors cursor-pointer whitespace-nowrap ${
+            className={`h-full px-3.5 flex items-center gap-1.5 text-xs font-sans border-r border-[#f0f0f0] dark:border-[#272a34] transition-colors cursor-pointer whitespace-nowrap ${
               hasFilters
                 ? 'bg-gray-100 dark:bg-[#1f222b] text-gray-900 dark:text-white font-bold'
                 : 'bg-white dark:bg-[#0d0e12] text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#16181d]'
@@ -138,7 +138,7 @@ export default function ProductionToolbar({
 
           {/* Filter Popover Dropdown */}
           {filterOpen && (
-            <div className="absolute left-0 top-full z-50 mt-0 min-w-[220px] overflow-hidden rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] p-1.5 shadow-xl font-mono text-xs">
+            <div className="absolute left-0 top-full z-50 mt-0 min-w-[220px] overflow-hidden rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] p-1.5 shadow-xl font-sans text-xs">
               {!activeGroup ? (
                 /* Stage 1: Category List */
                 groups.map((g) => {
@@ -148,7 +148,7 @@ export default function ProductionToolbar({
                       key={g.key}
                       type="button"
                       onClick={() => setActiveGroup(g.key)}
-                      className={`flex w-full items-center justify-between gap-2 rounded-none px-2.5 py-1.5 text-left text-xs font-mono font-medium transition-colors cursor-pointer ${
+                      className={`flex w-full items-center justify-between gap-2 rounded-none px-2.5 py-1.5 text-left text-xs font-sans font-medium transition-colors cursor-pointer ${
                         selectedIn
                           ? 'bg-gray-100 dark:bg-[#20232b] text-gray-900 dark:text-white font-bold'
                           : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#20232b]'
@@ -173,7 +173,7 @@ export default function ProductionToolbar({
                   return (
                     <div className="flex flex-col gap-1">
                       <div className="flex items-center justify-between border-b border-[#f0f0f0] dark:border-[#272a34] pb-1.5 mb-1.5 px-1">
-                        <div className="flex items-center gap-1 text-xs font-mono">
+                        <div className="flex items-center gap-1 text-xs font-sans">
                           <button type="button" onClick={() => setActiveGroup(null)} className="text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white flex items-center gap-0.5 cursor-pointer">
                             <ChevronLeft className="size-3.5" /> Back
                           </button>
@@ -191,7 +191,7 @@ export default function ProductionToolbar({
                               key={opt.value}
                               type="button"
                               onClick={() => toggleValue(active.key, opt.value)}
-                              className={`flex w-full items-center justify-between gap-2 rounded-none px-2.5 py-1.5 text-left text-xs font-mono transition-colors cursor-pointer ${
+                              className={`flex w-full items-center justify-between gap-2 rounded-none px-2.5 py-1.5 text-left text-xs font-sans transition-colors cursor-pointer ${
                                 on ? 'bg-gray-100 dark:bg-[#20232b] text-gray-900 dark:text-white font-bold' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#20232b]'
                               }`}
                             >
@@ -231,7 +231,7 @@ export default function ProductionToolbar({
               return (
                 <div
                   key={g.key}
-                  className="h-full px-4 border-r border-[#f0f0f0] dark:border-[#272a34] flex items-center gap-2 text-xs font-mono font-medium text-gray-700 dark:text-gray-300 bg-gray-50/50 dark:bg-[#16181d]/50"
+                  className="h-full px-4 border-r border-[#f0f0f0] dark:border-[#272a34] flex items-center gap-2 text-xs font-sans font-medium text-gray-700 dark:text-gray-300 bg-gray-50/50 dark:bg-[#16181d]/50"
                 >
                   <span>{g.label}: {filters[g.key].length}</span>
                   <button
@@ -259,7 +259,7 @@ export default function ProductionToolbar({
             onChange={(e) => onQueryChange(e.target.value)}
             placeholder="Search"
             aria-label="Search tasks"
-            className="w-[140px] sm:w-[180px] bg-transparent pl-2 pr-6 py-1 text-xs font-mono text-gray-700 dark:text-gray-200 outline-none placeholder:text-gray-400"
+            className="w-[140px] sm:w-[180px] bg-transparent pl-2 pr-6 py-1 text-xs font-sans text-gray-700 dark:text-gray-200 outline-none placeholder:text-gray-400"
           />
           {query && (
             <button

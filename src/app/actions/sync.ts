@@ -4,7 +4,7 @@ import { syncNotionData, getSyncProgress } from '@/lib/sync-notion';
 import { revalidatePath } from 'next/cache';
 import prisma from '@/lib/prisma';
 
-export async function triggerSyncAction(mode: import('@/lib/sync-notion').NotionSyncMode = 'full') {
+export async function triggerSyncAction(mode: import('@/lib/sync-notion').NotionSyncMode = 'incremental') {
   try {
     const result = await syncNotionData(mode);
     revalidatePath('/');

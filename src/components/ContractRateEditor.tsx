@@ -7,7 +7,13 @@ import { updateContractRateAction } from '@/app/actions/notion-config';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 
-export default function ContractRateEditor({ initialRate }: { initialRate: number }) {
+export default function ContractRateEditor({
+  initialRate,
+  className,
+}: {
+  initialRate: number;
+  className?: string;
+}) {
   const [open, setOpen] = useState(false);
   const [rate, setRate] = useState(String(initialRate));
   const [isSaving, setIsSaving] = useState(false);
@@ -40,7 +46,10 @@ export default function ContractRateEditor({ initialRate }: { initialRate: numbe
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex items-center gap-2.5 px-5 sm:px-6 py-4 bg-white dark:bg-[#0d0e12] text-gray-700 dark:text-gray-300 font-mono text-xs hover:bg-gray-50 dark:hover:bg-[#16181d] hover:text-[#ff5e1f] dark:hover:text-[#ff5e1f] transition-all cursor-pointer whitespace-nowrap h-full"
+        className={
+          className ||
+          'flex items-center gap-2.5 px-5 sm:px-6 py-4 bg-white dark:bg-[#0d0e12] text-gray-700 dark:text-gray-300 font-sans text-xs hover:bg-gray-50 dark:hover:bg-[#16181d] hover:text-[#ff5e1f] dark:hover:text-[#ff5e1f] transition-all cursor-pointer whitespace-nowrap h-full'
+        }
         id="edit-contract-rate-button"
       >
         <Banknote className="h-4 w-4 text-[#ff5e1f] shrink-0" />
@@ -56,10 +65,10 @@ export default function ContractRateEditor({ initialRate }: { initialRate: numbe
                 {/* Header Cell */}
                 <div className="p-4 sm:p-5 bg-gray-50/50 dark:bg-[#16181d]/50 flex items-start justify-between gap-4">
                   <div>
-                    <h3 className="text-xs font-bold font-mono uppercase tracking-wider text-gray-900 dark:text-white">
+                    <h3 className="text-xs font-bold font-sans uppercase tracking-wider text-gray-900 dark:text-white">
                       Edit Contract Rate
                     </h3>
-                    <p className="mt-1 text-xs font-mono text-gray-500 dark:text-gray-400">
+                    <p className="mt-1 text-xs font-sans text-gray-500 dark:text-gray-400">
                       Simpan rate/pool di setting kontrak. Doctype tetap di tabel bawah.
                     </p>
                   </div>
@@ -74,7 +83,7 @@ export default function ContractRateEditor({ initialRate }: { initialRate: numbe
 
                 {/* Body Content Cell */}
                 <div className="p-4 sm:p-5 space-y-4 bg-white dark:bg-[#0d0e12]">
-                  <label className="flex flex-col gap-2.5 text-xs font-mono font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">
+                  <label className="flex flex-col gap-2.5 text-xs font-sans font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">
                     <span>Rate / Pool</span>
                     <input
                       id="contract-rate-input"
@@ -83,11 +92,11 @@ export default function ContractRateEditor({ initialRate }: { initialRate: numbe
                       step="1"
                       value={rate}
                       onChange={(e) => setRate(e.target.value)}
-                      className="w-full rounded-lg border border-[#f0f0f0] dark:border-[#272a34] bg-gray-50 dark:bg-[#16181d] px-3.5 py-2.5 font-mono text-xs font-bold text-gray-900 dark:text-white outline-none focus:border-[#ff5e1f] transition-colors"
+                      className="w-full rounded-lg border border-[#f0f0f0] dark:border-[#272a34] bg-gray-50 dark:bg-[#16181d] px-3.5 py-2.5 font-sans text-xs font-bold text-gray-900 dark:text-white outline-none focus:border-[#ff5e1f] transition-colors"
                     />
                   </label>
                   {error ? (
-                    <p className="text-xs font-mono font-bold text-rose-500 mt-2">
+                    <p className="text-xs font-sans font-bold text-rose-500 mt-2">
                       {error}
                     </p>
                   ) : null}
@@ -99,7 +108,7 @@ export default function ContractRateEditor({ initialRate }: { initialRate: numbe
                     type="button"
                     onClick={() => setOpen(false)}
                     disabled={isSaving}
-                    className="w-full py-3.5 px-4 bg-gray-50/50 dark:bg-[#16181d]/50 hover:bg-gray-100 dark:hover:bg-[#16181d] font-mono text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 transition-colors disabled:opacity-50 cursor-pointer text-center"
+                    className="w-full py-3.5 px-4 bg-gray-50/50 dark:bg-[#16181d]/50 hover:bg-gray-100 dark:hover:bg-[#16181d] font-sans text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 transition-colors disabled:opacity-50 cursor-pointer text-center"
                   >
                     Cancel
                   </button>
@@ -107,7 +116,7 @@ export default function ContractRateEditor({ initialRate }: { initialRate: numbe
                     type="button"
                     onClick={save}
                     disabled={isSaving}
-                    className="w-full py-3.5 px-4 bg-[#ff5e1f] hover:bg-[#ff7038] font-mono text-xs font-bold uppercase tracking-wider text-white transition-colors disabled:opacity-50 cursor-pointer text-center"
+                    className="w-full py-3.5 px-4 bg-[#ff5e1f] hover:bg-[#ff7038] font-sans text-xs font-bold uppercase tracking-wider text-white transition-colors disabled:opacity-50 cursor-pointer text-center"
                   >
                     {isSaving ? 'Saving…' : 'Save Rate / Pool'}
                   </button>

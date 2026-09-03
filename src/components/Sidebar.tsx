@@ -1,8 +1,8 @@
 "use client";
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { useState, useEffect, Suspense, useCallback } from 'react';
 import { 
   LayoutDashboard, 
   Files, 
@@ -16,6 +16,15 @@ import {
   ChevronRight
 } from 'lucide-react';
 import SyncButton from './SyncButton';
+
+function SearchParamsListener({ onPeriodChange }: { onPeriodChange: (p: string | null) => void }) {
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    const periodFromUrl = searchParams.get('period');
+    onPeriodChange(periodFromUrl);
+  }, [searchParams, onPeriodChange]);
+  return null;
+}
 
 interface SidebarProps {
   currentSyncLog: any;
@@ -32,6 +41,24 @@ interface MenuItem {
 export default function Sidebar({ currentSyncLog }: SidebarProps) {
   const pathname = usePathname();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [activePeriod, setActivePeriod] = useState<string | null>(null);
+
+  const handlePeriodFound = useCallback((p: string | null) => {
+    setActivePeriod(p);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !activePeriod) {
+      const saved = localStorage.getItem('can_freelance_active_period');
+      if (saved) setActivePeriod(saved);
+    }
+  }, [activePeriod]);
+
+  const getHrefWithPeriod = (baseHref: string) => {
+    const periodToUse = activePeriod || (typeof window !== 'undefined' ? localStorage.getItem('can_freelance_active_period') : null);
+    if (!periodToUse || periodToUse === 'all') return baseHref;
+    return `${baseHref}?period=${encodeURIComponent(periodToUse)}`;
+  };
 
   const menuItems: MenuItem[] = [
     { name: 'Overview', icon: LayoutDashboard, href: '/', active: pathname === '/', group: 'GET STARTED' },
@@ -48,6 +75,9 @@ export default function Sidebar({ currentSyncLog }: SidebarProps) {
 
   return (
     <>
+      <Suspense fallback={null}>
+        <SearchParamsListener onPeriodChange={handlePeriodFound} />
+      </Suspense>
       {/* Mobile Top Header Bar */}
       <div className="md:hidden flex items-center justify-between px-6 py-4 bg-white dark:bg-[#16181d] border-b border-[#f0f0f0] dark:border-[#272a34] sticky top-0 z-40 w-full shrink-0 transition-colors">
         <div className="flex items-center gap-3">
@@ -57,7 +87,7 @@ export default function Sidebar({ currentSyncLog }: SidebarProps) {
           >
             <Menu className="w-5 h-5" />
           </button>
-          <div className="font-display font-bold text-base text-[#262626] dark:text-white">
+          <div className="font-sans font-bold text-base text-[#262626] dark:text-white">
             CAN-Freelance
           </div>
         </div>
@@ -84,7 +114,7 @@ export default function Sidebar({ currentSyncLog }: SidebarProps) {
         <div className="space-y-4 flex-1 overflow-y-auto pr-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {/* Mobile Header / Close Button */}
           <div className="flex md:hidden items-center justify-between px-2 pt-1 pb-1">
-            <span className="font-display font-bold text-xs text-[#262626] dark:text-white uppercase tracking-wider">
+            <span className="font-sans font-bold text-xs text-[#262626] dark:text-white uppercase tracking-wider">
               Navigation
             </span>
             <button
@@ -103,7 +133,7 @@ export default function Sidebar({ currentSyncLog }: SidebarProps) {
 
               return (
                 <div key={group} className="space-y-1">
-                  <div className="px-3 pb-1 text-[10px] font-mono font-bold tracking-wider text-gray-400 dark:text-gray-500 uppercase">
+                  <div className="px-3 pb-1 text-[10px] font-sans font-bold tracking-wider text-gray-400 dark:text-gray-500 uppercase">
                     {group}
                   </div>
                   {groupItems.map((item) => {
@@ -111,7 +141,7 @@ export default function Sidebar({ currentSyncLog }: SidebarProps) {
                     return (
                       <Link
                         key={item.name}
-                        href={item.href}
+                        href={getHrefWithPeriod(item.href)}
                         onClick={() => setIsMobileOpen(false)}
                         className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all duration-150 group cursor-pointer ${
                           item.active

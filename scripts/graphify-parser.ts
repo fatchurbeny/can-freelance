@@ -194,7 +194,27 @@ async function generateGraphifyData() {
     });
   });
 
-  // 9. AST Import Scanner (Extract Real Component & Page Import Links)
+  // 9. Engineering Roles & Domain Ownership Cluster
+  const engineeringRoles = [
+    { id: 'role:frontend', label: 'Frontend & UI/UX Role', filepath: 'docs/knowledge/roles.md', details: 'Owns src/components/**, globals.css, Inter typography, and UI accessibility' },
+    { id: 'role:backend', label: 'Backend & Database Role', filepath: 'docs/knowledge/roles.md', details: 'Owns prisma/schema.prisma, PostgreSQL pool, Decimal/Date serialization' },
+    { id: 'role:api', label: 'API & Notion Sync Role', filepath: 'docs/knowledge/roles.md', details: 'Owns Notion client, server actions, incremental cron sync, Vercel proxy auth' },
+    { id: 'role:business', label: 'Business & Domain Role', filepath: 'docs/knowledge/roles.md', details: 'Owns SaaS formulas (QTY pages = qtySubmit * pages), Resign status logic' },
+    { id: 'role:architecture', label: 'Architecture & Knowledge Ops', filepath: 'docs/knowledge/roles.md', details: 'Owns docs/knowledge/**, session handover, AST graphify, and multi-LLM sync' },
+    { id: 'role:devops', label: 'DevOps & Release Role', filepath: 'docs/knowledge/roles.md', details: 'Owns vercel.json cron configuration, build scripts, and environment deployment' },
+  ];
+  engineeringRoles.forEach(r => {
+    addNode({
+      id: r.id,
+      label: r.label,
+      type: 'doc',
+      group: 'Engineering Roles & Ops',
+      filepath: r.filepath,
+      details: r.details,
+    });
+  });
+
+  // 10. AST Import Scanner (Extract Real Component & Page Import Links)
   const scanImports = (dirPath: string) => {
     if (!fs.existsSync(dirPath)) return;
 
@@ -292,6 +312,21 @@ async function generateGraphifyData() {
   addLink({ source: 'handover:decision-1', target: 'page:/account-team', relation: 'enforces', confidence: 'INFERRED' });
   addLink({ source: 'handover:decision-2', target: 'page:/billing-statement', relation: 'enforces', confidence: 'INFERRED' });
   addLink({ source: 'handover:active-state', target: 'component:KnowledgeGraphViewer', relation: 'enforces', confidence: 'INFERRED' });
+
+  // Engineering Roles Governance Links
+  addLink({ source: 'role:frontend', target: 'component:Sidebar', relation: 'enforces', confidence: 'INFERRED' });
+  addLink({ source: 'role:frontend', target: 'component:KnowledgeGraphViewer', relation: 'enforces', confidence: 'INFERRED' });
+  addLink({ source: 'role:frontend', target: 'component:SortableTaskLists', relation: 'enforces', confidence: 'INFERRED' });
+  addLink({ source: 'role:backend', target: 'model:Task', relation: 'queries', confidence: 'INFERRED' });
+  addLink({ source: 'role:backend', target: 'model:Designer', relation: 'queries', confidence: 'INFERRED' });
+  addLink({ source: 'role:backend', target: 'model:BillingStatement', relation: 'queries', confidence: 'INFERRED' });
+  addLink({ source: 'role:api', target: 'action:sync-notion', relation: 'invokes', confidence: 'INFERRED' });
+  addLink({ source: 'role:api', target: 'sync:cron-mode', relation: 'invokes', confidence: 'INFERRED' });
+  addLink({ source: 'role:business', target: 'rule:qty-pages', relation: 'enforces', confidence: 'INFERRED' });
+  addLink({ source: 'role:business', target: 'rule:designer-resign', relation: 'enforces', confidence: 'INFERRED' });
+  addLink({ source: 'role:architecture', target: 'handover:active-state', relation: 'enforces', confidence: 'INFERRED' });
+  addLink({ source: 'role:architecture', target: 'gotcha:directive-preservation', relation: 'enforces', confidence: 'INFERRED' });
+  addLink({ source: 'role:devops', target: 'page:/notion-config', relation: 'enforces', confidence: 'INFERRED' });
 
   const graphData: GraphData = {
     version: '2.0.0',

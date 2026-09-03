@@ -4,16 +4,156 @@ Dokumen ini mencatat **status pengerjaan aktif**, keputusan arsitektur terbaru, 
 
 ---
 
-## 📌 Status Sesi Terakhir (Active State)
+## 📌 Active Session Signature (Role-Based Handover)
 
-* **Tanggal & Waktu Log**: 2026-08-31 23:23 WIB
-* **Status Tugas**: ✅ Sesi Pembelajaran `/learn` Selesai. Seluruh Aturan Baru (Force Graph Hover Isolation, Cloudflare Symmetrical Table & Control Layout Rules, dan AST Import Scanner) Berhasil Disimpan ke `AGENTS.md`, `docs/knowledge/`, dan Web UI.
-* **Cabang Git**: `main` / `staging`
-* **Editor/Environment Active**: Antigravity IDE (Gemini 3.6 Flash / Medium)
+* **Session ID**: `#SESS-20260903-38`
+* **Active Engineering Role**: `🎨 [Frontend & UI/UX]` & `🔄 [API & Notion Integration]` & `⚙️ [Backend & Database]` & `🛡️ [DevOps & Release]`
+* **Last Active Agent / Tool**: Antigravity IDE (Gemini 3.6 Flash / Medium)
+* **Timestamp**: 2026-09-03 14:10 WIB
+* **Active Git Branch**: `staging` (Targeting `main` / `origin/main` Production Direct)
+* **Task State**: ✅ Verified all codebase changes, ran Knowledge Graph AST parser (`npx tsx scripts/graphify-parser.ts` -> 124 nodes & 144 edges), updated `docs/knowledge/issues-and-fixes.md` & `session-handover.md`, verified static typing (`npx tsc --noEmit` exit code 0). Prepared implementation plan for Git commit & direct Vercel Production deployment.
+* **Recommended Next Role**: `🛡️ [DevOps & Release]`
 
 ---
 
 ## 💡 Keputusan Arsitektur & Perubahan Terakhir (Recent Decisions)
+
+1. **Hover Trigger 3-Dots Action Menu & Duplicate/Delete Server Actions (`QACard.tsx` & `qa.ts`)**:
+   - **Hover Action Trigger**: Menambahkan tombol `MoreHorizontal` (3 titik) di pojok kanan atas kartu task (`absolute right-2 top-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity`) dengan isolasi event `e.stopPropagation()` agar tidak memicu `TaskDetailSheet` atau drag-and-drop.
+   - **Cloudflare Dropdown Menu**: Opsi **`Duplicate`** (dengan ikon `Copy`) dan **`Delete`** (dengan ikon `Trash2`).
+   - **`duplicateTaskAction`**: Membuat salinan task di PostgreSQL dengan nama `"<Original> (Copy)"`, menyalin seluruh atribut (`qtySubmit`, `pages`, `poolScore`, `priority`, `license`, `languages`, `taskMonth`, Canva links, `bodyText`) pada status yang sama, dan langsung menyinkronkan pembuatan page baru di Notion secara real-time.
+   - **`deleteTaskAction`**: Menampilkan modal konfirmasi dialog singkat (*"Hapus Task Ini?"*). Setelah dikonfirmasi, menghapus task dari database PostgreSQL dan mengarsipkan page di Notion (`archived: true`).
+   - **Build Verification**: `npx tsc --noEmit` & `npm run build` 100% kelolosan (0 Errors).
+
+1. **Pool Score Formula Correction & Notion Property Harmonization (`qa.ts`, `DoctypeTable.tsx`, `DoctypeSlideModal.tsx`, `RateCardRow.tsx`)**:
+   - **Formulasi Baru `poolScore`**: Mengubah rumus perhitungan `poolScore` pada `createTaskAction` dan `updateTaskFieldsAction` di `qa.ts` menjadi `poolRate * qtySubmit` (sebelumnya keliru mengalikan `effectivePages * effectiveQtySubmit * poolRate`, menyebabkan task 12 halaman dengan poolRate 1 memiliki poolScore 12 alih-alih 1).
+   - **Pembersihan Istilah UI**: Menyeragamkan seluruh label `"POOL RATE"` dan `"Pool Rate (Bobot)"` di tabel Rate Card (`DoctypeTable.tsx`), Slide-over Modal (`DoctypeSlideModal.tsx`), dan `RateCardRow.tsx` menjadi **`POOL SCORE`** dan **`Pool Score (Bobot)`** agar 100% konsisten dengan kolom Notion **`Pool Score`**.
+   - **Koreksi Data Eksisting**: Menjalankan pengkinian data pada seluruh task di PostgreSQL dan menyinkronkan nilai `Pool Score` yang benar (seperti task `Strategic Business Proposal` dari 12 menjadi 1) ke Notion secara otomatis.
+   - **Audit Properti Notion Database**: Memverifikasi 22 properti resmi Notion database (`Name`, `Design Status`, `Designer`, `Doctype`, `QTY-Submit`, `Pages`, `Pool Score`, `Brand`, `IND/ENG`, `Priority`, `License`, `Task Month`, `Template Link`, dll) dan memastikan mapping dual-alias aplikasi 100% sesuai.
+
+1. **Notion Page Body Text Block Parser & Real-Time Sync (`qa.ts`)**:
+   - Menambahkan helper `markdownToNotionBlocks` dan `syncNotionPageBodyBlocks`.
+   - Mengubah markdown wireframe & design reference (`## Heading`, `- Bullet Link`, Paragraph) menjadi block Notion resmi (`heading_2`, `bulleted_list_item` dengan link URL aktif, dan `paragraph`).
+   - `createTaskAction` kini otomatis menyisipkan child blocks saat page baru dibuat di Notion.
+   - `updateTaskFieldsAction` kini mendeteksi perubahan `bodyText` dari slide-over editor dan menyinkronkan isi blok Notion secara real-time.
+   - Halaman Notion untuk task `Strategic Business Proposal` (ID: `3d00e19a-a135-81cc-a0de-c8668457a2c7`) telah disinkronkan dan blok wireframe/referensinya telah terisi lengkap.
+
+1. **Notion Schema Introspection & Dynamic Property Mapper (`qa.ts`)**:
+   - Menambahkan helper `getNotionDatabaseSchemaProperties` yang membaca properti database Notion secara riil (termasuk Notion Data Sources).
+   - Mengatasi error validasi `QTY Submit is not a property that exists` dengan hanya mengirim properti yang ada di Notion (`'QTY-Submit'`).
+   - Memperbaiki tipe properti `'Template Link'` yang di Notion berjenis `files` dengan mengirim format `{ files: [{ name: 'Template Link', external: { url: link } }] }`.
+   - Task `Strategic Business Proposal` yang sebelumnya berstatus pending lokal telah berhasil disinkronisasi ke Notion (Page ID: `3d00e19a-a135-81cc-a0de-c8668457a2c7`).
+
+1. **Cross-Page Period Filter Persistence Protocol (`PeriodPicker.tsx` & `Sidebar.tsx`)**:
+   - Memperbaiki sinkronisasi `localStorage` pada `PeriodPicker` dengan membaca langsung parameter URL riil (`searchParams.get('period')`) daripada prop fallback, sehingga saat navigasi antar halaman (misal dari `/production?period=2026-08` ke `/`), nilai periode yang dipilih pengguna **TIDAK ter-reset** dan otomatis dipertahankan.
+   - `Sidebar.tsx` membawa query parameter periode aktif saat berpindah rute navigasi.
+
+1. **App-Wide Default Filter: 'Semua Bulan' (`all`) & Clean URL Protocol (`PeriodPicker.tsx`, `page.tsx`, `SortableTaskLists.tsx`, `queries.ts`)**:
+   - Secara default, aplikasi membuka halaman Dashboard (`/`) dan Production Board (`/production`) dalam mode **Semua Bulan** (`all`), menampilkan agregasi seluruh data tanpa batasan 1 bulan saja.
+   - Papan Kanban (`SortableTaskLists.tsx`) diinisialisasi tanpa filter bulan (`[]`), menampilkan seluruh kartu tugas dari semua periode secara instan.
+   - URL browser dibuat bersih murni (`localhost:3002/production` atau `localhost:3002/`) tanpa query parameter `%2C` panjang saat semua bulan aktif.
+   - Komponen `PeriodPicker` dilengkapi tombol Quick Action **`Semua`** dan **`Bulan Ini`**, serta sinkronisasi `localStorage` ringkas (`'all'`).
+
+1. **Next.js `'use server'` Internal Helper Scoping Invariant (`qa.ts`)**:
+   - Di file Next.js Server Actions yang menggunakan directive `'use server'`, setiap fungsi yang menggunakan `export` secara otomatis diperlakukan sebagai callable action endpoint RPC dan wajib berupa `async function`.
+   - Mengubah fungsi helper internal `findNotionStatusOption`, `getNotionPageStatusProperty`, dan `findPrismaDesignStatus` menjadi fungsi lokal (tanpa `export`) menyelesaikan error Turbopack `Server Actions must be async functions.` dan menjamin kelolosan build `npm run build` 100%.
+
+1. **Notion Status Case-Insensitive Resolver & Real-Time Write-Through Protocol (`qa.ts` & `kanban-config.ts`)**:
+   - **Case-Insensitive Status Resolver (`findNotionStatusOption`)**: Menambahkan helper cerdas yang mencocokkan status Notion secara case-insensitive, normalized alphanumeric, dan alias-aware (`In progress` ↔ `In Progress`, `Not started` ↔ `Not Started`, `Aproved` ↔ `Approved`, variasi `QA`). Mengirimkan payload update menggunakan status option ID resmi Notion (`{ status: { id: statusOption.id } }`).
+   - **Fix Drag & Drop Kanban Status Mismatch (`updateTaskStatusAction`)**: Menyelesaikan error `Notion status "In Progress" not found` saat kartu digeser di papan Kanban. Menggunakan `findNotionStatusOption` dan `getNotionPageStatusProperty` yang kompatibel dengan skema `data_source_id` maupun `database_id`.
+   - **Full-Field Real-Time Sync on Slide-Over Editor (`updateTaskFieldsAction`)**: Menyelesaikan kendala status berpindah di aplikasi tapi tidak berubah di Notion (Gambar 1 & 3). Memetakan seluruh properti task ke `notionProperties`:
+     - `Design Status`: Resolusi opsi status Notion otomatis.
+     - `Designer` & `Designer Status`.
+     - `Doctype`.
+     - `Brand` & `Account` (Dual Alias).
+     - `IND/ENG` & `IND\ENG` (Dual Alias).
+     - `Template Link`.
+     - `Pool Score` & `Pages`.
+   - **Prioritas Penamaan Kolom Kanban (`kanban-config.ts`)**: Menyelaraskan `statuses[0]` pada kolom `notStarted` (`'Not started'`) dan `inProgress` (`'In progress'`) sesuai dengan penamaan bawaan database Notion.
+   - **Defensive Revalidation**: Membungkus `revalidatePath('/production')` dalam try/catch agar operasi aman dieksekusi di konteks manapun.
+   - **Static & Live Verification**: `npx tsc --noEmit` bersih (**Exit Code 0**) dan uji live API mengonfirmasi update status ke Notion berhasil (`{ success: true }`).
+
+1. **View Details & Full Inline Table Editing on Doctype Table (`RateCardRow.tsx`)**:
+   - **View Details Mode (`VIEW` / Row Click)**: Mengklik judul Doctype atau tombol `VIEW` (ikon mata) membuka Slide-over Drawer Modal (`DoctypeSlideModal.tsx`) untuk melihat spesifikasi lengkap, catatan Canva, dan kalkulasi payout.
+   - **Inline Table Row Editing (`EDIT`)**: Mengklik tombol `EDIT` mengaktifkan baris edit langsung di tempat (*inline*):
+     - Sel input full-height rapat tanpa gap (`h-full min-h-[44px] align-stretch p-0`).
+     - Input teks untuk `displayName` & `notionKey`.
+     - Integrated Cloudflare `CategorySelectCell` untuk pilihan kategori.
+     - Input `dimensions` dengan auto-detection aspek rasio real-time.
+     - Input numerik `poolRate` & `pages` dengan pembongkaran stepper arrow browser native (`[appearance:textfield]`).
+     - Komputasi live `Est. Payout` langsung di dalam sel.
+     - Toggle status `Aktif` / `Non-aktif`.
+     - Kolom aksi 2-kolom simetris (`SAVE` Oranye `#ff5e1f` 50% | `CANCEL` 50%) yang mengeksekusi `updateDoctypeRateCardAction` dan merelevansi path `/rate-card`.
+   - **Static Verification**: `npx tsc --noEmit` mengonfirmasi 0 error (**Exit Code 0**).
+   - **Pembersihan Monospace UI**: Mengganti `font-mono` menjadi `font-sans` pada elemen-elemen UI non-teknis:
+     - Subtitle handle Canva Account (`Chital`, `Azzahra`, `uicreative`, `Improstudio`, `Antler`, `Teman Siswa`) pada `AccountTeamSection.tsx`.
+     - Subtitle identifier Doctype (`Instagram-Carousel`, `Linked-Carousel`, `dummy_doctype`) pada `RateCardRow.tsx`.
+     - Teks aspek rasio (`16:9`) dan nominal mata uang (`Rp 15.000`) pada `RateCardRow.tsx` & `DoctypeTable.tsx`.
+     - Input Kode Identifier dan kalkulasi total pada `DoctypeSlideModal.tsx`.
+   - **Aturan Repositori & LLM**: Memperbarui `inter-primary-font-rule` pada `AGENTS.md` dan menambahkan Seksi 8 (*Typography Standard*) pada `docs/knowledge/form-crud-rules.md` untuk menegaskan bahwa `font-mono` HANYA diizinkan pada Notion Database ID, secret tokens, `<pre><code>`, dan terminal sync console logs.
+   - **Static Verification**: `npx tsc --noEmit` mengonfirmasi 0 error (**Exit Code 0**).
+   - **Slim Label Line Height (No Asterisk Wrap)**: Menghapus tanda asterisk `*` yang membungkus teks label `Nama Format` dan `Kode Identifier` sehingga teks label tetap 1 baris utuh (`whitespace-nowrap`) dan tinggi baris tabel menjadi ramping & compact (`min-h-[44px]`).
+   - **Automatic Aspect Ratio Auto-Selection**: Menambahkan pemroses otomatis `detectAspectRatio()` pada input `Dimensi Canvas`. Saat desainer mengetikkan ukuran pixel (seperti `1920×1080`, `1080x1080`, `1080x1350`, `1080x1920`), tombol Aspek Rasio (`16:9`, `1:1`, `4:5`, `9:16`) akan otomatis terpilih secara cerdas.
+   - **Cloudflare Category Dropdown (`CategorySelectCell.tsx`)**: Mengganti `<select>` bawaan HTML dengan komponen custom Cloudflare Dropdown (`bg-white dark:bg-[#16181d] border-[#272a34] shadow-xl p-1.5`) yang dilengkapi Checkbox kontras Cloudflare (`w-4 h-4 rounded-[5px]`) dan opsi ketik kategori kustom (`Ketik Kategori Kustom...`), 100% presisi sesuai komponen `RoleSelectCell.tsx` pada Gambar 2.
+   - **Static Verification**: `npx tsc --noEmit` mengonfirmasi 0 error (**Exit Code 0**).
+   - **Accent Highlights**: Menyelaraskan seluruh aksen warna tombol dan teks pada `DoctypeSlideModal.tsx`:
+     - **Orange Accent (`#ff5e1f`)**: Digunakan untuk Header icon `Layers`, kode identifier text, tombol pilihan `1.5x`, tombol Aspek Rasio aktif, sub-header Skema Tarif, kalkulasi Total Payout, serta tombol aksi utama `+ CREATE DOCTYPE` / `SAVE DOCTYPE`.
+     - **Purple Accent (`#615fff`)**: Digunakan untuk tombol segmented `1.0x (Lainnya)`.
+     - **Emerald Active Green (`#00a67d`)**: Digunakan untuk tombol status `ACTIVE` (100% presisi sesuai tombol green ACTIVE pada Gambar 2).
+     - **Neutral Dark Gray (`#6e7687`)**: Digunakan untuk tombol status `INACTIVE`.
+   - **Static Verification**: `npx tsc --noEmit` mengonfirmasi 0 error (**Exit Code 0**).
+   - **Edge-to-Edge Continuous 2-Column Grid Body**: Merombak total `DoctypeSlideModal.tsx` dari form melayang dengan floating border input menjadi **Continuous Symmetrical Table Grid Row** (`divide-y divide-[#272a34]`).
+   - **Standard Left Label Cell (150px)**: Setiap baris input menggunakan sel label 150px (`w-[150px] bg-gray-50/50 dark:bg-[#16181d]/50 px-5 py-2.5 font-bold uppercase text-gray-500`) dilengkapi ikon Lucide (`FileText`, `Code`, `FolderGit2`, `Maximize2`, `Ratio`, `Percent`, `Copy`, `DollarSign`, `Calculator`, `AlignLeft`, `CheckCircle2`).
+   - **Segmented Option Button Cells**: Menghasilkan tombol segmented full-height (`grid grid-cols-N divide-x`) untuk Kategori, Aspek Rasio (`16:9`, `1:1`, `4:5`, `9:16`), Pool Rate (`1.5x`, `1.0x`, `Custom`), dan Status (`ACTIVE` / `INACTIVE`).
+   - **Full-Width Symmetrical Action Footer**: Memasang footer 2-kolom simetris 50/50 (`CANCEL` tombol netral di sisi kiri 50%, `+ SAVE DOCTYPE` tombol `#ff5e1f` di sisi kanan 50%).
+   - **Static Verification**: `npx tsc --noEmit` mengonfirmasi 0 error (**Exit Code 0**).
+   - **Separated Banner & Main Tab Containers (`page.tsx`)**: Memisahkan kontainer Banner `Ketentuan & Aturan Kontrak Freelance` di bagian atas sebagai kartu independen terpisah (`mb-6`). Di bawahnya diposisikan kontainer utama terpisah untuk Tab Navigation, Search Toolbar, dan Tabel Data (sesuai Gambar 1).
+   - **2-Tab Navigation Bar & Far-Right Action Button (`DoctypeTable.tsx`)**: Menambahkan 2 tab utama (`Doctype (N)` dan `Kontrak`) dan memindahkan tombol **`+ ADD DOCTYPE`** ke posisi paling kanan bilah Tab Navigation Bar (`ml-auto flex items-center...`).
+   - **Sticky Tab Header Container**: Membungkus Tab Bar, Search Toolbar, dan Table Header di dalam `<div className="sticky top-[56px] z-30 bg-white dark:bg-[#0d0e12] divide-y divide-[#272a34]">`. Saat halaman di-scroll, Banner atas bergeser secara alami dan **hanya kontainer Tab Menu + Toolbar yang terkunci melayang (sticky)** di bawah TopBar.
+   - **Prisma Schema Extension & Notion Sync Safety (`schema.prisma` & `rate-card.ts`)**: Menambahkan field opsional `category`, `dimensions`, `aspectRatio`, `notes`, `isActive` pada model `Doctype` dengan eksekusi `npx prisma db push` & `npx prisma generate`. Field `notionKey` tetap dipertahankan 100% sebagai *canonical select identifier* ke Notion API via `syncDoctypeOptionToNotion()`.
+   - **Slide-over Drawer Popup Modal (`DoctypeSlideModal.tsx`)**: Membuat modal slide-over dari kanan (`max-w-xl border-l border-[#272a34] bg-white dark:bg-[#0d0e12] animate-[slideInRight_180ms_ease-out]`) yang menampilkan struktur form acuan Gambar 2:
+     - Form input 2-kolom simetris (`Nama Format Doctype`, `Kode Format / Identifier`, `Kategori`, `Dimensi Canvas`, `Aspek Rasio`).
+     - Kartu Highlight **SKEMA TARIF KONTRAK FREELANCE** (Preset Pool Rate `1.0x`/`1.5x`, Default QTY Slides, Rate / Pages Rp 15.000, Live Calculation Preview & Total Payout Default).
+     - Textarea `Catatan Produksi & Panduan Template`.
+     - Checkbox `Status Format Aktif` (Cloudflare Contrast Checkbox).
+     - Symmetrical 2-Column Action Footer (`Batal` / `Simpan Perubahan`).
+   - **Table Row & Image 2 Columns (`RateCardRow.tsx`)**: Memperbarui kolom data tabel untuk menampilkan `DOCTYPE FORMAT & IDENTIFIER`, `KATEGORI`, `CANVAS & RASIO`, `POOL RATE`, `DEFAULT PAGES`, `EST. PAYOUT`, `STATUS`, dan tombol `EDIT` yang memicu Slide-over Modal `DoctypeSlideModal`.
+   - **Static Verification**: `npx tsc --noEmit` mengonfirmasi 0 error (**Exit Code 0**).
+
+1. **Direct Clean STATUS Text Architecture**:
+   - **Removal of Badge Container**: Menghapus pembungkus pill badge (`rounded-full border`) pada trigger sel status. Teks status kini ditampilkan secara langsung sebagai teks bersih (`text-xs font-sans uppercase font-bold`) dengan warna aksen status (`Active` hijau, `Resign` merah tercoret, `Inactive` amber).
+
+1. **Add Team / Account Slide Modal & Notion Alignment Protocol**:
+   - **Slide Modal Standard (`AddTeamAccountSlideModal.tsx`)**: Merombak fitur pembuatan desainer & brand account dari popup modal ke **Slide-over Modal** kanan (`max-w-140 border-l border-[#272a34] bg-white dark:bg-[#0d0e12] animate-[slideInRight_180ms_ease-out]`) sesuai standar UI `CreateTaskSlideModal.tsx`.
+   - **2-Column Symmetrical Table Form Body**: Menggunakan layout grid 2 kolom simetris `divide-y divide-[#272a34]` dengan sel label 150px (`bg-gray-50/50 dark:bg-[#16181d]/50`), input full-height min-h-[44px], pilihan kategori (`Designer (Team)` vs `Canva Account`), pilihan status desainer (`Active`, `Inactive`, `Resign`), serta preview email handle (`username@improstd.com`).
+   - **Notion Property Alignment**: Menyesuaikan pilihan Kategori 1 `Designer (Team)` dengan field Notion **`Designer`** (dan `Designer Status`), serta Kategori 2 `Canva Account` dengan field Notion **`Brand`** dan **`Account`** (`multi_select`).
+   - **Server Actions & Smooth Revalidation**: Menambahkan `createDesignerAction` dan `createAccountAction` di [`designer.ts`](file:///Users/fatchurbeny/Documents/Project/can-freelance/src/app/actions/designer.ts) dengan pembuatan `notionKey` unik otomatis dan pemicuan `router.refresh()` tanpa flicker tema.
+
+   - **Dual Alias Rule (`notion-property-payload-mapping-rule`)**: Memasang aturan permanen di [`.agents/AGENTS.md`](file:///Users/fatchurbeny/Documents/Project/can-freelance/.agents/AGENTS.md) agar `createTaskAction` selalu mengirimkan kunci dual-alias (`QTY-Submit` & `QTY Submit`, `IND/ENG` & `IND\ENG`, `Brand` & `Account`, `Template Link`, `Pool Score`, `Designer`).
+   - **Auto Pool Score Calculation**: Memperbarui `createTaskAction` ([`qa.ts`](file:///Users/fatchurbeny/Documents/Project/can-freelance/src/app/actions/qa.ts)) agar menghitung `poolScore = effectivePages * effectiveQtySubmit * poolRate` secara otomatis, menjamin task baru tidak pernah bernilai `poolScore == null` atau masuk ke tab Parameter Issue.
+   - **Form Default & URL Period Filter Sync**: Men-default state `qtySubmit` ke `'1'` pada [`CreateTaskSlideModal.tsx`](file:///Users/fatchurbeny/Documents/Project/can-freelance/src/components/CreateTaskSlideModal.tsx) dan otomatis menyinkronkan URL search parameter `period` jika task baru dibuat pada bulan yang belum terpilih.
+   - **Prisma Syntax Fix**: Memperbarui `createTaskAction` & `updateTaskFieldsAction` di [`qa.ts`](file:///Users/fatchurbeny/Documents/Project/can-freelance/src/app/actions/qa.ts) menggunakan sintaks `connect` & `disconnect` resmi Prisma:
+     ```ts
+     designer: payload.designerId ? { connect: { id: payload.designerId } } : undefined,
+     doctype: payload.doctypeId ? { connect: { id: payload.doctypeId } } : undefined,
+     designStatus: designStatusIdToUse ? { connect: { id: designStatusIdToUse } } : undefined,
+     ```
+   - **Static Verification**: Mengonfirmasi kebersihan tipe via `npx tsc --noEmit` (**Exit Code 0**).
+   - Menggantikan seluruh dropdown `taskMonth` dan `payrollMonth` pada `CreateTaskSlideModal.tsx`, `TaskDetailSheet.tsx`, `ParameterIssueTable.tsx`, dan `PayrollTableRow.tsx` menggunakan `MonthCalendarPicker.tsx`.
+   - Menyimpan filter internal papan Kanban (pencarian, status, designer, doctype, brand, language, priority) pada [`SortableTaskLists.tsx`](file:///Users/fatchurbeny/Documents/Project/can-freelance/src/components/SortableTaskLists.tsx) ke `localStorage` (`can_freelance_board_filters`).
+
+1. **Role-Based Engineering Domains & Universal Multi-LLM Handover Architecture**:
+   - Membuat master modul pengetahuan [`docs/knowledge/roles.md`](file:///Users/fatchurbeny/Documents/Project/can-freelance/docs/knowledge/roles.md) yang memetakan 6 Engineering Roles standar (`Frontend`, `Backend`, `API`, `Business`, `Architecture`, `DevOps`) beserta *file ownership*, *invariants*, dan *extensibility protocol*.
+   - Membuat file jembatan interoperabilitas [`CLAUDE.md`](file:///Users/fatchurbeny/Documents/Project/can-freelance/CLAUDE.md) (Claude Code CLI) dan [`.cursorrules`](file:///Users/fatchurbeny/Documents/Project/can-freelance/.cursorrules) (Cursor/Codex) untuk mengikat AI apa pun pada *Single Source of Truth* Knowledge Graph.
+   - Memperbarui skrip [`scripts/graphify-parser.ts`](file:///Users/fatchurbeny/Documents/Project/can-freelance/scripts/graphify-parser.ts) untuk menghasilkan node kluster `Engineering Roles & Ops` dan relasi *governance* di Canvas 2D Force Graph.
+   - Menyinkronkan antarmuka Web UI Tab 7 di [`src/components/KnowledgeGraphViewer.tsx`](file:///Users/fatchurbeny/Documents/Project/can-freelance/src/components/KnowledgeGraphViewer.tsx) dengan *Session Signature Card* dan *Role Matrix*.
+
+2. **Universal Inter Typography Standardization & Monospace Isolation Protocol**:
+   - Menghapus Google Font `Outfit` (`font-display`) dari [`src/app/layout.tsx`](file:///Users/fatchurbeny/Documents/Project/can-freelance/src/app/layout.tsx) dan meng-alias token CSS `--font-display` ke `var(--font-inter)` di [`src/app/globals.css`](file:///Users/fatchurbeny/Documents/Project/can-freelance/src/app/globals.css).
+   - Menstandarisasi seluruh tipografi UI (headings, KPI metric numbers, table headers & row cells, modal dialogs, toolbar inputs, filter dropdowns, buttons, tags/pills) ke **`Inter`** (`font-sans`).
+   - Mengisolasi penggunaan `font-mono` secara ketat HANYA pada technical quote fields (Notion Database ID / UUID quote card blocks, secret tokens, inline `<code>`, block `<pre>`, dan terminal execution logs).
+   - Mendaftarkan aturan resmi `inter-primary-font-rule` ke [`AGENTS.md`](file:///Users/fatchurbeny/Documents/Project/can-freelance/AGENTS.md), [`docs/knowledge/issues-and-fixes.md`](file:///Users/fatchurbeny/Documents/Project/can-freelance/docs/knowledge/issues-and-fixes.md), dan sinkronisasi Web UI di [`src/components/KnowledgeGraphViewer.tsx`](file:///Users/fatchurbeny/Documents/Project/can-freelance/src/components/KnowledgeGraphViewer.tsx).
+
 
 1. **Vercel Hobby Daily Cron (00:00 WIB) & Clean Passive UI Architecture**:
    - Mengatur `vercel.json` menggunakan jadwal harian `"schedule": "0 17 * * *"` (pukul 00:00 WIB / 17:00 UTC) yang 100% didukung Vercel Hobby Plan, menyelesaikan masalah penolakan build `❌ 0/1`.

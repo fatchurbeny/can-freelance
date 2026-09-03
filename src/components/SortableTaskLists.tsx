@@ -90,7 +90,7 @@ function deriveFacets(tasks: QATask[]): FilterFacets {
   const doctypes = new Map<string, string>();
   const brands = new Map<string, { label: string; color: string | null }>();
   const languages = new Set<string>();
-  const priorities = new Set<string>();
+  const priorities = new Set<string>(['Urgent', 'High', 'Medium', 'Low']);
   const months = new Set<string>();
 
   for (const task of tasks) {
@@ -123,24 +123,55 @@ function deriveFacets(tasks: QATask[]): FilterFacets {
   };
 }
 
+import { saveBoardFiltersToStorage, getSavedBoardFiltersFromStorage } from '@/lib/use-persisted-filter';
+
 export default function SortableTaskLists({ tasks, selectedMonths }: Props) {
   const [sortKey, setSortKey] = useState<SortKey>('lastEdited');
-  const [filters, setFilters] = useState<BoardFilters>(() => ({
-    ...EMPTY_FILTERS,
-    taskMonths: selectedMonths && selectedMonths.length > 0 ? selectedMonths : [currentTaskMonth()],
-  }));
+  const [query, setQuery] = useState(() => {
+    const saved = getSavedBoardFiltersFromStorage();
+    return (saved && typeof saved.query === 'string') ? saved.query : '';
+  });
+
+  const [filters, setFilters] = useState<BoardFilters>(() => {
+    const saved = getSavedBoardFiltersFromStorage();
+    const baseMonths = selectedMonths && selectedMonths.length > 0 ? selectedMonths : [];
+    if (saved && typeof saved === 'object') {
+      const { query: _, ...savedFilters } = saved;
+      return {
+        ...EMPTY_FILTERS,
+        ...savedFilters,
+        taskMonths: selectedMonths && selectedMonths.length > 0 ? selectedMonths : (savedFilters.taskMonths || []),
+      };
+    }
+    return {
+      ...EMPTY_FILTERS,
+      taskMonths: baseMonths,
+    };
+  });
 
   useEffect(() => {
     if (selectedMonths && selectedMonths.length > 0) {
       setFilters((prev) => ({ ...prev, taskMonths: selectedMonths }));
+    } else {
+      setFilters((prev) => ({ ...prev, taskMonths: [] }));
     }
   }, [selectedMonths]);
-  const [query, setQuery] = useState('');
+
+  const handleFiltersChange = (newFilters: BoardFilters) => {
+    setFilters(newFilters);
+    saveBoardFiltersToStorage({ ...newFilters, query });
+  };
+
+  const handleQueryChange = (newQuery: string) => {
+    setQuery(newQuery);
+    saveBoardFiltersToStorage({ ...filters, query: newQuery });
+  };
+
   const [statusOverride, setStatusOverride] = useState<Record<string, string>>({});
   const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
   const [selectedTask, setSelectedTask] = useState<QATask | null>(null);
 
-  const effectiveStatus = (task: QATask) => statusOverride[task.id] ?? task.designStatus?.notionKey ?? '';
+  const effectiveStatus = (task: QATask) => statusOverride[task.id] ?? task.designStatus?.notionKey ?? 'Draft';
 
   const facets = useMemo(() => deriveFacets(tasks), [tasks]);
   const hasAnyFilter =
@@ -208,9 +239,9 @@ export default function SortableTaskLists({ tasks, selectedMonths }: Props) {
         <ProductionToolbar
           facets={facets}
           filters={filters}
-          onFiltersChange={setFilters}
+          onFiltersChange={handleFiltersChange}
           query={query}
-          onQueryChange={setQuery}
+          onQueryChange={handleQueryChange}
           sortKey={sortKey}
           onSortChange={setSortKey}
         />
@@ -250,7 +281,7 @@ export default function SortableTaskLists({ tasks, selectedMonths }: Props) {
         </div>
       ) : (
         <div className="p-12 text-center">
-          <p className="text-sm font-mono text-gray-500 dark:text-gray-400">
+          <p className="text-sm font-sans font-medium text-gray-500 dark:text-gray-400">
             No tasks match the current filters or search.
           </p>
         </div>

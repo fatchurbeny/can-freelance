@@ -1,5 +1,7 @@
 'use client';
 
+import MonthCalendarPicker from './MonthCalendarPicker';
+
 import { useState, useMemo } from 'react';
 import { updateTaskParametersAction, retryNotionSyncAction } from '@/app/actions/parameter-issue';
 import toast from 'react-hot-toast';
@@ -284,11 +286,11 @@ export default function ParameterIssueTable({ initialTasks, onParametersUpdated 
             <AlertCircle className="size-4" />
           </div>
           <div>
-            <h3 className="text-xs font-bold font-mono uppercase tracking-wider text-gray-900 dark:text-white">
+            <h3 className="text-xs font-bold font-sans uppercase tracking-wider text-gray-900 dark:text-white">
               Parameter Issues ({tasks.length})
             </h3>
-            <p className="text-xs font-mono text-gray-500 dark:text-gray-400 mt-0.5">
-              Tasks below are missing <code className="font-semibold text-[#ff5e1f]">Task Month</code> or <code className="font-semibold text-[#ff5e1f]">Pool Score</code>. Complete them to enable accurate analytics and payroll.
+            <p className="text-xs font-sans text-gray-500 dark:text-gray-400 mt-0.5">
+              Tasks below are missing <code className="font-mono font-semibold text-[#ff5e1f]">Task Month</code> or <code className="font-mono font-semibold text-[#ff5e1f]">Pool Score</code>. Complete them to enable accurate analytics and payroll.
             </p>
           </div>
         </div>
@@ -299,8 +301,8 @@ export default function ParameterIssueTable({ initialTasks, onParametersUpdated 
           <div className="flex size-12 items-center justify-center rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 mb-3">
             <CheckCircle2 className="size-6" />
           </div>
-          <h3 className="text-sm font-bold font-mono uppercase tracking-wider text-gray-900 dark:text-white">All Parameters Complete!</h3>
-          <p className="text-xs font-mono text-gray-500 dark:text-gray-400 mt-1 max-w-md">
+          <h3 className="text-sm font-bold font-sans uppercase tracking-wider text-gray-900 dark:text-white">All Parameters Complete!</h3>
+          <p className="text-xs font-sans text-gray-500 dark:text-gray-400 mt-1 max-w-md">
             Great job! No tasks currently have missing Task Month or Pool Score parameters.
           </p>
         </div>
@@ -308,7 +310,7 @@ export default function ParameterIssueTable({ initialTasks, onParametersUpdated 
         /* Cloudflare Continuous Outer Table (No Outer Border or Extra Gap) */
         <div className="w-full overflow-x-auto bg-white dark:bg-[#0d0e12]">
           <table className="w-full text-left text-xs text-gray-700 dark:text-gray-300">
-            <thead className="bg-gray-50/80 dark:bg-[#16181d]/80 text-[11px] font-mono font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            <thead className="bg-gray-50/80 dark:bg-[#16181d]/80 text-[11px] font-sans font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               <tr>
                 <th scope="col" className="p-3 w-10 text-center">
                   <input
@@ -372,7 +374,7 @@ export default function ParameterIssueTable({ initialTasks, onParametersUpdated 
                             {task.taskAccounts.map(({ account }) => (
                               <span
                                 key={account.id}
-                                className="inline-block rounded px-1.5 py-0.2 font-mono text-[10px] font-bold uppercase"
+                                className="inline-block rounded px-1.5 py-0.2 font-sans text-[10px] font-bold uppercase"
                                 style={{
                                   backgroundColor: (account.color || '#ff5e1f') + '15',
                                   color: account.color || '#ff5e1f',
@@ -395,17 +397,17 @@ export default function ParameterIssueTable({ initialTasks, onParametersUpdated 
                             className="size-2 rounded-full shrink-0"
                             style={{ backgroundColor: task.designer.avatarColor || '#ff5e1f' }}
                           />
-                          <span className="text-gray-700 dark:text-gray-300 font-mono text-xs">
+                          <span className="text-gray-700 dark:text-gray-300 font-sans text-xs">
                             {task.designer.displayName}
                           </span>
                         </div>
                       ) : (
-                        <span className="text-gray-400 font-mono text-xs">-</span>
+                        <span className="text-gray-400 font-sans text-xs">-</span>
                       )}
                     </td>
 
                     {/* Doctype */}
-                    <td className="px-3 py-3 whitespace-nowrap font-mono text-xs">
+                    <td className="px-3 py-3 whitespace-nowrap font-sans text-xs">
                       <span className="text-gray-600 dark:text-gray-400">
                         {task.doctype?.displayName || '-'}
                       </span>
@@ -413,7 +415,7 @@ export default function ParameterIssueTable({ initialTasks, onParametersUpdated 
 
                     {/* Status */}
                     <td className="px-3 py-3 whitespace-nowrap">
-                      <span className="inline-flex items-center rounded-md bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-2 py-0.5 font-mono text-[10px] font-bold text-gray-700 dark:text-gray-300 uppercase">
+                      <span className="inline-flex items-center rounded-md bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-2 py-0.5 font-sans text-[10px] font-bold text-gray-700 dark:text-gray-300 uppercase">
                         {task.designStatus?.displayName || 'Unknown'}
                       </span>
                     </td>
@@ -421,15 +423,15 @@ export default function ParameterIssueTable({ initialTasks, onParametersUpdated 
                     {/* Issue Type */}
                     <td className="px-3 py-3 whitespace-nowrap">
                       {isMonthMissing && isScoreMissing ? (
-                        <span className="font-mono text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 uppercase">
+                        <span className="font-sans text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 uppercase">
                           Both Missing
                         </span>
                       ) : isMonthMissing ? (
-                        <span className="font-mono text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 uppercase">
+                        <span className="font-sans text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 uppercase">
                           Month Missing
                         </span>
                       ) : (
-                        <span className="font-mono text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-[#ff5e1f]/10 text-[#ff5e1f] dark:text-[#ff7038] border border-[#ff5e1f]/20 uppercase">
+                        <span className="font-sans text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-[#ff5e1f]/10 text-[#ff5e1f] dark:text-[#ff7038] border border-[#ff5e1f]/20 uppercase">
                           Pool Score Missing
                         </span>
                       )}
@@ -438,22 +440,13 @@ export default function ParameterIssueTable({ initialTasks, onParametersUpdated 
                     {/* Task Month Input + Auto Suggest */}
                     <td className="px-3 py-3 whitespace-nowrap">
                       <div className="flex items-center gap-1.5">
-                        <select
-                          value={currentMonth}
-                          onChange={(e) => handleRowChange(task.id, 'taskMonth', e.target.value)}
-                          className={`w-[130px] rounded-none border px-2 py-1 font-mono text-xs outline-none transition-all dark:bg-[#16181d] ${
-                            isMonthMissing && !currentMonth
-                              ? 'border-amber-400 text-amber-600 dark:border-amber-500 dark:text-amber-400 font-bold'
-                              : 'border-[#f0f0f0] dark:border-[#272a34] text-gray-900 dark:text-white'
-                          }`}
-                        >
-                          <option value="">-- Pilih Bulan --</option>
-                          {monthOptions.map((m) => (
-                            <option key={m} value={m}>
-                              {m}
-                            </option>
-                          ))}
-                        </select>
+                        <div className="w-[140px]">
+                          <MonthCalendarPicker
+                            value={currentMonth}
+                            placeholder="-- Pilih Bulan --"
+                            onChange={(val) => handleRowChange(task.id, 'taskMonth', val)}
+                          />
+                        </div>
 
                         <button
                           onClick={() => handleAutoSuggest(task)}
@@ -473,7 +466,7 @@ export default function ParameterIssueTable({ initialTasks, onParametersUpdated 
                         placeholder="e.g. 10.5"
                         value={currentScore}
                         onChange={(e) => handleRowChange(task.id, 'poolScore', e.target.value)}
-                        className={`w-[85px] rounded-none border px-2 py-1 font-mono text-xs outline-none transition-all dark:bg-[#16181d] ${
+                        className={`w-[85px] rounded-none border px-2 py-1 font-sans text-xs outline-none transition-all dark:bg-[#16181d] ${
                           isScoreMissing && currentScore === ''
                             ? 'border-[#ff5e1f] text-[#ff5e1f] dark:border-[#ff5e1f] dark:text-[#ff7038] font-bold'
                             : 'border-[#f0f0f0] dark:border-[#272a34] text-gray-900 dark:text-white'
@@ -489,7 +482,7 @@ export default function ParameterIssueTable({ initialTasks, onParametersUpdated 
                             onClick={() => handleRetryNotionSync(task.id)}
                             disabled={isSaving}
                             title={`Sync error: ${syncError}. Click to retry.`}
-                            className="flex items-center gap-1.5 rounded-none bg-rose-500/10 border border-rose-500/20 px-2.5 py-1 font-mono text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 cursor-pointer"
+                            className="flex items-center gap-1.5 rounded-none bg-rose-500/10 border border-rose-500/20 px-2.5 py-1 font-sans text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 cursor-pointer"
                           >
                             <RefreshCw className={`size-3.5 ${isSaving ? 'animate-spin' : ''}`} />
                             <span>Retry</span>
@@ -498,7 +491,7 @@ export default function ParameterIssueTable({ initialTasks, onParametersUpdated 
                           <button
                             onClick={() => handleSaveSingle(task)}
                             disabled={isSaving}
-                            className="flex items-center gap-1.5 rounded-none bg-[#ff5e1f] hover:bg-[#ff7038] px-3 py-1 font-mono text-xs font-bold text-white transition-all shadow-sm disabled:opacity-50 cursor-pointer"
+                            className="flex items-center gap-1.5 rounded-none bg-[#ff5e1f] hover:bg-[#ff7038] px-3 py-1 font-sans text-xs font-bold text-white transition-all shadow-sm disabled:opacity-50 cursor-pointer"
                           >
                             {isSaving ? (
                               <RefreshCw className="size-3.5 animate-spin" />
@@ -520,20 +513,20 @@ export default function ParameterIssueTable({ initialTasks, onParametersUpdated 
 
       {/* Cloudflare Floating Bulk Action Bar */}
       {selectedIds.size > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] px-5 py-3 text-gray-900 dark:text-gray-100 shadow-2xl backdrop-blur-md font-mono text-xs">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] px-5 py-3 text-gray-900 dark:text-gray-100 shadow-2xl backdrop-blur-md font-sans text-xs">
           <div className="flex items-center gap-2 border-r border-[#f0f0f0] dark:border-[#272a34] pr-3">
-            <span className="font-mono text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#ff5e1f]/10 text-[#ff5e1f] border border-[#ff5e1f]/20 uppercase">
+            <span className="font-sans text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#ff5e1f]/10 text-[#ff5e1f] border border-[#ff5e1f]/20 uppercase">
               {selectedIds.size} Selected
             </span>
           </div>
 
           {/* Batch Month Select */}
           <div className="flex items-center gap-1.5">
-            <span className="text-[11px] font-mono text-gray-500 dark:text-gray-400 uppercase">Month:</span>
+            <span className="text-[11px] font-sans text-gray-500 dark:text-gray-400 uppercase">Month:</span>
             <select
               value={batchMonth}
               onChange={(e) => setBatchMonth(e.target.value)}
-              className="rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-gray-50 dark:bg-[#16181d] px-2.5 py-1 text-xs font-mono text-gray-900 dark:text-gray-100 outline-none focus:border-[#ff5e1f]"
+              className="rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-gray-50 dark:bg-[#16181d] px-2.5 py-1 text-xs font-sans text-gray-900 dark:text-gray-100 outline-none focus:border-[#ff5e1f]"
             >
               <option value="">-- No Change --</option>
               {monthOptions.map((m) => (
@@ -546,14 +539,14 @@ export default function ParameterIssueTable({ initialTasks, onParametersUpdated 
 
           {/* Batch Pool Score Input */}
           <div className="flex items-center gap-1.5">
-            <span className="text-[11px] font-mono text-gray-500 dark:text-gray-400 uppercase">Pool Score:</span>
+            <span className="text-[11px] font-sans text-gray-500 dark:text-gray-400 uppercase">Pool Score:</span>
             <input
               type="number"
               step="0.1"
               placeholder="No Change"
               value={batchPoolScore}
               onChange={(e) => setBatchPoolScore(e.target.value)}
-              className="w-[90px] rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-gray-50 dark:bg-[#16181d] px-2.5 py-1 text-xs font-mono text-gray-900 dark:text-gray-100 outline-none focus:border-[#ff5e1f]"
+              className="w-[90px] rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-gray-50 dark:bg-[#16181d] px-2.5 py-1 text-xs font-sans text-gray-900 dark:text-gray-100 outline-none focus:border-[#ff5e1f]"
             />
           </div>
 
@@ -561,7 +554,7 @@ export default function ParameterIssueTable({ initialTasks, onParametersUpdated 
           <button
             onClick={handleBatchApply}
             disabled={isBatchSaving}
-            className="flex items-center gap-1.5 rounded-none bg-[#ff5e1f] hover:bg-[#ff7038] px-4 py-1.5 font-mono text-xs font-bold text-white transition-all shadow-sm disabled:opacity-50 cursor-pointer"
+            className="flex items-center gap-1.5 rounded-none bg-[#ff5e1f] hover:bg-[#ff7038] px-4 py-1.5 font-sans text-xs font-bold text-white transition-all shadow-sm disabled:opacity-50 cursor-pointer"
           >
             {isBatchSaving ? (
               <RefreshCw className="size-3.5 animate-spin" />

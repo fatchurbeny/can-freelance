@@ -26,6 +26,27 @@ When writing mock data, formatting dates, or parsing month strings, ALWAYS use I
 ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
 <!-- END:notion-indonesian-months-rule -->
 
+<!-- BEGIN:notion-property-payload-mapping-rule -->
+# Notion API Property Payload Mapping & Parameter Safeguards
+
+When writing or updating task properties via the Notion API (`notionClient.pages.create` / `notionClient.pages.update`):
+
+1. **Dual Alias Property Payload**:
+   Always send both hyphenated and space-separated keys, as well as slash/backslash property variants to ensure compatibility regardless of Notion database column naming:
+   - `QTY-Submit` and `QTY Submit`: `{ number: Number(qtySubmit || 1) }`
+   - `IND/ENG` and `IND\ENG`: `{ multi_select: languages.map(l => ({ name: l })) }`
+   - `Brand` and `Account`: `{ multi_select: accounts.map(a => ({ name: a.displayName })) }`
+   - `Template Link`: `{ url: templateLinkUrl }`
+   - `Pool Score`: `{ number: poolScore }`
+   - `Task Month`: `{ select: { name: taskMonth } }` (ALWAYS select format, e.g. `'September-2026'`)
+
+2. **Mandatory Full Property Initialization**:
+   Every new task created via `createTaskAction` MUST initialize all Notion properties (`Name`, `QTY-Submit`, `Pages`, `Pool Score`, `Doctype`, `Designer`, `Design Status`, `Task Month`, `Priority`, `License`, `IND/ENG`, `Brand`, `Template Link`) so no parameters are left empty or trigger missing parameter issues.
+
+3. **Graceful Property Error Guarding**:
+   Wrap individual Notion property object construction in defensive try/catch blocks or property validation so schema differences do not crash page creation.
+<!-- END:notion-property-payload-mapping-rule -->
+
 <!-- BEGIN:notion-rich-text-parsing-rule -->
 # Notion API Rich Text Parsing
 
@@ -121,12 +142,23 @@ When modifying or creating full-width tables (`w-full`) in this project:
 
 When adjusting dropdowns, keep hover, selected, and disabled states aligned with the app's current light and dark design tokens. Match panel background, text contrast, border strength, and selected highlight to nearby existing controls instead of inventing a new palette.
 
+**Native HTML Select Prohibition**: NEVER use native HTML `<select>` elements for form dropdowns or filters. Native `<select>` inputs render OS-dependent blue popovers that break the application's dark mode design tokens. ALWAYS use custom Cloudflare Dropdown Panel components (`bg-white dark:bg-[#16181d] border-[#272a34] shadow-xl p-1.5`) featuring Cloudflare Contrast Checkboxes (`w-4 h-4 rounded-[5px] border flex items-center justify-center`).
+
 **Dimensional Symmetry**: When a table header contains a batch-action dropdown and the body contains per-row dropdowns, they MUST have the exact same fixed width (e.g., `w-[130px]`) and internal alignment (`justify-between` or `justify-center`) to ensure vertical visual symmetry.
 
 **Copy, Don't Approximate**: When adding a new control (button, pill, dropdown, panel) next to existing ones, COPY the exact Tailwind class strings from the nearest sibling control — shape metrics (`rounded-*`, `px-*`, `py-*`, `text-[..]`), border color, text color, hover state, and active/accent highlight. Do not invent a near-miss variant (e.g., `rounded-[6px]` vs `rounded-full`, custom hex vs the app's `#615FFF` accent). Only deviate when the user explicitly requests it.
 
 **Verify Icon Exports**: Before using a `lucide-react` icon, confirm it exists in the installed version (e.g., grep `node_modules/lucide-react` or check exports) — icon names from training data may not exist in older versions (e.g., `CalendarMonth` is absent in v1.23; use `Calendar`). Run `npx tsc --noEmit` after any icon or JSX change.
 <!-- END:ui-dropdown-style-consistency -->
+
+<!-- BEGIN:cloudflare-flat-search-toolbar-rule -->
+# Cloudflare Flat Continuous Table Toolbar & Dropdown Sort/Filter Protocol
+
+When building table toolbars above continuous data tables (`/account-team`, `/production`, `/billing-statement`):
+1. **Flat Integrated Search Cell**: Input pencarian BUKAN kotak melayang terpisah dengan margin/padding (`p-4 sm:p-5`), melainkan sel header flat (`h-11 px-3.5 flex items-center border-b border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12]`) yang membentang tanpa floating box border.
+2. **Dropdown Sort & Filter Controls (Cloudflare Checkbox Panel)**: Fungsi filter status (`ALL Status`, `Active`, `Inactive`, `Resign`) dan sorting disajikan sebagai **Dropdown Menu Terintegrasi Sel Header Flat** (`h-full px-4 flex items-center gap-2 text-xs font-sans font-medium border-r border-[#f0f0f0] dark:border-[#272a34] outline-none focus:outline-none focus-visible:outline-none`). Panel dropdown melayang (`absolute left-0 top-full z-50 min-w-[170px] bg-white dark:bg-[#16181d] p-1.5 shadow-xl border-[#272a34]`) menggunakan baris opsi dengan **Cloudflare Contrast Checkbox** di sebelah kanan (`w-4 h-4 rounded-[5px] border flex items-center justify-center`).
+3. **Pill Badge Label Isolation**: Badge informasi non-interaktif (seperti `LEADERBOARD #1: Putery`) adalah label tag independen (`px-3 py-1 rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/20`), TIDAK PERLU dipaksakan menjadi struktur sel tabel simetris.
+<!-- END:cloudflare-flat-search-toolbar-rule -->
 
 <!-- BEGIN:designer-status-handling -->
 # Designer Status Handling
@@ -324,8 +356,19 @@ When building or refactoring multi-section pages (like `/rate-card`, `/billing-s
 4. **Double Border Prevention**:
    - Direct child elements inside a `divide-y` continuous container MUST NOT specify redundant `border-t` or `border-b` classes to avoid double horizontal divider lines.
 5. **Navigation Tab Proportional Sizing**:
-   - Top navigation tabs must prioritize label readability with generous padding (`px-5 sm:px-6 py-3.5`) and clear spacing without forcing narrow grid column truncation (`grid-cols-2 lg:w-1/4`), while data cards and table action buttons enforce 25%/50% symmetrical grid column alignment (`lg:w-1/4`, `lg:grid-cols-2`, `lg:grid-cols-4`).
+   - Top navigation tabs must prioritize label readability with generous padding (`px-4 py-2.5 text-xs font-sans font-bold`) and clear spacing without forcing narrow grid column truncation (`grid-cols-2 lg:w-1/4`), while data cards and table action buttons enforce 25%/50% symmetrical grid column alignment (`lg:w-1/4`, `lg:grid-cols-2`, `lg:grid-cols-4`).
 <!-- END:cloudflare-continuous-card-layout -->
+
+<!-- BEGIN:tab-bar-navigation-typography-standard -->
+# Tab Navigation Bar Typography & Sizing Standard
+
+All top tab bars across pages (`ProductionTabNav.tsx`, `AccountTeamSection.tsx`, etc.) MUST strictly enforce:
+1. **Font Size & Weight**: ALWAYS use **`text-xs font-sans`** (12px), NEVER `text-sm` (14px). Active tabs use `font-bold text-gray-900 dark:text-white bg-white dark:bg-[#16181d]`. Inactive tabs use `font-medium text-gray-500 dark:text-gray-400`.
+2. **Padding**: Use compact `px-4 py-2.5` (or `px-5 py-3 text-xs`).
+3. **Casing**: Title Case for tab names (`Overview`, `Kanban Board`, `Designer Team (6)`).
+4. **Far-Right Action Button**: `ml-auto flex items-center gap-1.5 px-4 py-2.5 text-xs font-sans font-bold uppercase tracking-wider bg-[#ff5e1f] text-white hover:bg-[#ff7038] border-l border-[#f0f0f0] dark:border-[#272a34]`.
+5. **Active Indicator**: Bottom line `<span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#ff5e1f]" />`.
+<!-- END:tab-bar-navigation-typography-standard -->
 
 <!-- BEGIN:knowledge-graph-learning-documentation-rule -->
 # Knowledge Graph Documentation Protocol on `/learn` & Bug Fixes
@@ -347,9 +390,9 @@ Setiap kali menjalankan sesi `/learn`, menyelesaikan perbaikan bug (bug fix), at
 # Cloudflare Translucent Pill Badges & Metrics Standard
 
 When rendering badges, tags, or count pills across dashboard widgets (`WorkloadWidget`, `ApprovedProfileOnlyWidget`, `LeaderboardWidget`, `QACard`):
-1. **Typography**: Always use `font-mono text-[10px] font-bold uppercase rounded-full px-2.5 py-0.5`.
+1. **Typography**: Always use `font-sans text-[10px] font-bold uppercase rounded-full px-2.5 py-0.5`.
 2. **Color Inversion**: Use 10% opacity background (`bg-color/10`), 20% opacity border (`border-color/20`), and solid text (`text-color dark:text-color-light`).
-3. **Property Pills (`QACard`)**: Use `rounded-[4px] border px-1.5 py-0.5 font-mono text-[10px] font-semibold` with dynamic tint (`tint18` background, `tint40` border).
+3. **Property Pills (`QACard`)**: Use `rounded-[4px] border px-1.5 py-0.5 font-sans text-[10px] font-semibold` with dynamic tint (`tint18` background, `tint40` border).
 <!-- END:cloudflare-translucent-pills -->
 
 <!-- BEGIN:knowledge-graph-full-domain-mapping-rule -->
@@ -361,4 +404,50 @@ When maintaining or updating the project Knowledge Graph:
 3. **Inter-Cluster Edge Relations**: Link domain knowledge nodes to concrete UI components and server actions using `enforces`, `queries`, `invokes`, and `renders` relations.
 4. **Interactive Filtering**: Visualizers MUST support interactive cluster filtering when a community row is clicked.
 <!-- END:knowledge-graph-full-domain-mapping-rule -->
+
+<!-- BEGIN:inter-primary-font-rule -->
+# Inter Universal Typography Standard
+
+To ensure clean, modern, and unified SaaS typography across the entire application:
+
+1. **Universal Primary Font**:
+   - The entire user interface MUST use **`Inter`** (`font-sans`).
+   - This includes all headings, KPI metric cards, body text, data tables, filter toolbars, tabs, buttons, dropdowns, badges, pill tags, and modal dialogs.
+   - Do NOT use Google Font `Outfit` (`font-display`) or any other heading font.
+   
+2. **Strict Monospace (`font-mono`) Isolation**:
+   - `font-mono` is strictly restricted to **technical quote fields and code snippets**:
+     - Notion Database ID / UUID quote blocks (e.g. `notion.so/workspace/2f40e19aa1358026a0e1d9caab5cdbb7?v=...`).
+     - Secret tokens, API keys, and hash digests.
+     - Inline code tags (`<code>...</code>`) and block code containers (`<pre><code>...</code></pre>`).
+     - Terminal execution consoles and sync process logs (e.g. `SyncButton` terminal console).
+   - Standard UI components (table headers, row cells, status badges, buttons, inputs) MUST NEVER use `font-mono`.
+<!-- END:inter-primary-font-rule -->
+
+<!-- BEGIN:role-based-handover-protocol -->
+# Role-Based Engineering Domains & Multi-LLM Handover Protocol
+
+To maintain complete context retention and prevent perception loss across multiple AI agents (Gemini, Claude, GPT, Codex) and Code Editors (Antigravity, Claude Code, Cursor, VS Code):
+
+1. **Role Identification & Scope Boundary**:
+   - Before executing code edits, the agent MUST inspect [`docs/knowledge/roles.md`](file:///Users/fatchurbeny/Documents/Project/can-freelance/docs/knowledge/roles.md) to identify the active engineering role:
+     - `🎨 Frontend & UI/UX` (components, CSS, layouts, Inter font)
+     - `⚙️ Backend & Database` (Prisma schema, PostgreSQL, Decimal/Date serialization)
+     - `🔄 API & Notion Integration` (Notion client, server actions, incremental cron sync)
+     - `💼 Business & Domain Logic` (SaaS metrics, QTY pages formula, resign status logic)
+     - `🏛️ Architecture & Knowledge Ops` (knowledge graph, handover log, rule governance)
+     - `🛡️ DevOps & Release` (vercel.json cron, environment deployment)
+   - Do NOT modify files outside your active role's ownership without explicit multi-role justification.
+
+2. **Session Signature & Handover Update**:
+   - At the conclusion of a task, the agent WAJIB updates [`docs/knowledge/session-handover.md`](file:///Users/fatchurbeny/Documents/Project/can-freelance/docs/knowledge/session-handover.md) with:
+     - `Session ID` (e.g. `#SESS-YYYYMMDD-XX`)
+     - `Active Engineering Role`
+     - `Last Active Agent / Tool`
+     - `Task State & Key Decisions`
+     - `Recommended Next Role`
+   - Sync the changes to Tab 7 of the Web UI in `KnowledgeGraphViewer.tsx`.
+<!-- END:role-based-handover-protocol -->
+
+
 

@@ -21,14 +21,14 @@ export default function ApprovedProfileOnlyWidget({ data, brandName }: ApprovedP
       {/* Title & Badge */}
       <div className="flex items-center justify-between pb-4">
         <div>
-          <h3 className="font-display font-bold text-sm text-gray-900 dark:text-white">
+          <h3 className="font-sans font-bold text-sm text-gray-900 dark:text-white">
             Aproved-Profile Only
           </h3>
           <p className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">
             Jenis Doctype Approved-Profile Only - {brandName}
           </p>
         </div>
-        <span className="font-mono text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-[#ff5e1f]/10 text-[#ff5e1f] dark:text-[#ff7038] border border-[#ff5e1f]/20 uppercase whitespace-nowrap">
+        <span className="font-sans text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-[#ff5e1f]/10 text-[#ff5e1f] dark:text-[#ff7038] border border-[#ff5e1f]/20 uppercase whitespace-nowrap">
           {totalQty} TEMPLATE
         </span>
       </div>

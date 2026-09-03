@@ -7,7 +7,7 @@ import {
 import { getLatestSyncStatus } from './actions/sync';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
-import CloudflareTopBar from '@/components/CloudflareTopBar';
+import TopBar from '@/components/TopBar';
 import BrandTabs from '@/components/BrandTabs';
 import KPISection from '@/components/KPISection';
 import TrenVolumeWidget from '@/components/TrenVolumeWidget';
@@ -38,9 +38,9 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   });
   const brandsList = accounts.map((acc) => acc.displayName);
 
-  // Default to the first available period if none selected
-  const defaultPeriod = periods[0] || new Date().toISOString().substring(0, 7);
-  const selectedPeriod = activePeriod || defaultPeriod;
+  // Resolve selected period ('all' by default, or single/multiple specific months)
+  const isAll = !activePeriod || activePeriod === 'all' || activePeriod.split(',').length >= periods.length;
+  const selectedPeriod = isAll ? 'all' : activePeriod;
 
   // 2. Fetch full dashboard statistics via queries
   const dashboardData = await getDashboardData({
@@ -54,7 +54,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   return (
     <div className="min-h-screen bg-white dark:bg-[#0d0e12] text-[#262626] dark:text-[#f4f4f5] transition-colors">
       {/* Top Global Cloudflare Title Bar */}
-      <CloudflareTopBar badgeLabel="DASHBOARD" periods={periods} currentPeriod={selectedPeriod} />
+      <TopBar badgeLabel="DASHBOARD" periods={periods} currentPeriod={selectedPeriod} />
 
       <div className="flex flex-col md:flex-row min-h-[calc(100vh-56px)]">
         {/* Sidebar navigation */}

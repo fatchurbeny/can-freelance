@@ -78,7 +78,7 @@ export default function PipelineWidget({ data, inQueue, brandName }: PipelineWid
       {/* Title & Badge */}
       <div className="flex items-center justify-between pb-4">
         <div>
-          <h3 className="font-display font-bold text-sm text-gray-900 dark:text-white">
+          <h3 className="font-sans font-bold text-sm text-gray-900 dark:text-white">
             Task Pipeline
           </h3>
           <p className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">
@@ -86,10 +86,10 @@ export default function PipelineWidget({ data, inQueue, brandName }: PipelineWid
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="font-mono text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 uppercase whitespace-nowrap">
+          <span className="font-sans text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 uppercase whitespace-nowrap">
             {totalTasks} TASK
           </span>
-          <span className="font-mono text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-[#ff5e1f]/10 text-[#ff5e1f] dark:text-[#ff7038] border border-[#ff5e1f]/20 uppercase whitespace-nowrap">
+          <span className="font-sans text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-[#ff5e1f]/10 text-[#ff5e1f] dark:text-[#ff7038] border border-[#ff5e1f]/20 uppercase whitespace-nowrap">
             {totalTemplates} TEMPLATE
           </span>
         </div>

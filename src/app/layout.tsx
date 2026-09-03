@@ -1,5 +1,5 @@
 import './globals.css';
-import { Inter, Outfit } from 'next/font/google';
+import { Inter } from 'next/font/google';
 import Script from 'next/script';
 import { SyncQueueProvider } from '@/context/SyncQueueContext';
 import { Toaster } from 'react-hot-toast';
@@ -7,12 +7,6 @@ import { Toaster } from 'react-hot-toast';
 const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
-  display: 'swap',
-});
-
-const outfit = Outfit({
-  subsets: ['latin'],
-  variable: '--font-outfit',
   display: 'swap',
 });
 
@@ -29,7 +23,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${outfit.variable}`}
+      className={inter.variable}
       suppressHydrationWarning
     >
       <head>
@@ -63,13 +57,12 @@ export default function RootLayout({
             containerStyle={{ top: 64, right: 24 }}
             toastOptions={{
               duration: 3500,
-              className: 'w-[420px] sm:w-[480px] max-w-[90vw] !bg-white dark:!bg-[#16181d] !text-gray-900 dark:!text-gray-100 !border !border-[#f0f0f0] dark:!border-[#272a34] !shadow-2xl !rounded-none font-mono text-xs p-4 flex items-center justify-between gap-3',
+              className: 'w-[420px] sm:w-[480px] max-w-[90vw] !bg-white dark:!bg-[#16181d] !text-gray-900 dark:!text-gray-100 !border !border-[#f0f0f0] dark:!border-[#272a34] !shadow-2xl !rounded-none font-sans text-xs p-4 flex items-center justify-between gap-3',
               style: {
                 width: '480px',
                 maxWidth: '90vw',
                 borderRadius: '0px',
                 border: '1px solid var(--toast-border, #272a34)',
-                fontFamily: 'monospace',
                 fontSize: '12px',
               },
               success: {

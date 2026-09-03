@@ -92,14 +92,14 @@ export default function TrenVolumeWidget({ data, brandName }: TrenVolumeWidgetPr
       {/* Title & Badge */}
       <div className="flex items-center justify-between pb-4">
         <div>
-          <h3 className="font-display font-bold text-sm text-gray-900 dark:text-white">
+          <h3 className="font-sans font-bold text-sm text-gray-900 dark:text-white">
             Tren Volume Task
           </h3>
           <p className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">
             Jumlah Task Tiap Bulan - {brandName === 'Semua Brand' ? 'Semua Brand (6)' : brandName}
           </p>
         </div>
-        <span className="font-mono text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 uppercase whitespace-nowrap shrink-0">
+        <span className="font-sans text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 uppercase whitespace-nowrap shrink-0">
           AVG.{avgTasks} TASK
         </span>
       </div>

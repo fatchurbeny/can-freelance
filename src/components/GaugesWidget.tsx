@@ -33,7 +33,7 @@ export function LisensiGauge({ data, brandName }: GaugeProps) {
   return (
     <div className="p-6 flex flex-col h-full bg-white dark:bg-[#0d0e12]">
       <div>
-        <h3 className="font-display font-bold text-sm text-gray-900 dark:text-white">
+        <h3 className="font-sans font-bold text-sm text-gray-900 dark:text-white">
           Lisensi Template
         </h3>
         <p className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">
@@ -71,7 +71,7 @@ export function LisensiGauge({ data, brandName }: GaugeProps) {
 
           {/* Centered Total Text */}
           <div className="absolute left-0 right-0 bottom-2 flex flex-col items-center select-none pointer-events-none">
-            <span className="font-display font-bold text-3xl text-gray-900 dark:text-white leading-none">
+            <span className="font-sans font-bold text-3xl text-gray-900 dark:text-white leading-none">
               {formatNumber(total)}
             </span>
             <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium mt-1">
@@ -111,7 +111,7 @@ export function BahasaGauge({ data, brandName }: GaugeProps) {
   return (
     <div className="p-6 flex flex-col h-full bg-white dark:bg-[#0d0e12]">
       <div>
-        <h3 className="font-display font-bold text-sm text-gray-900 dark:text-white">
+        <h3 className="font-sans font-bold text-sm text-gray-900 dark:text-white">
           Bahasa Template
         </h3>
         <p className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">
@@ -145,7 +145,7 @@ export function BahasaGauge({ data, brandName }: GaugeProps) {
 
           {/* Centered Total Text */}
           <div className="absolute left-0 right-0 bottom-2 flex flex-col items-center select-none pointer-events-none">
-            <span className="font-display font-bold text-3xl text-gray-900 dark:text-white leading-none">
+            <span className="font-sans font-bold text-3xl text-gray-900 dark:text-white leading-none">
               {formatNumber(total)}
             </span>
             <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium mt-1">

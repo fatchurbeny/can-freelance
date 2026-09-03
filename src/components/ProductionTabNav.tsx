@@ -8,9 +8,10 @@ interface Props {
   activeTab: ProductionTab;
   onTabChange: (tab: ProductionTab) => void;
   issueCount: number;
+  onCreateTask?: () => void;
 }
 
-export default function ProductionTabNav({ activeTab, onTabChange, issueCount }: Props) {
+export default function ProductionTabNav({ activeTab, onTabChange, issueCount, onCreateTask }: Props) {
   const tabs: {
     id: ProductionTab;
     label: string;
@@ -31,7 +32,7 @@ export default function ProductionTabNav({ activeTab, onTabChange, issueCount }:
           <button
             key={t.id}
             onClick={() => onTabChange(t.id)}
-            className={`relative flex items-center gap-2 px-5 py-3 text-sm transition-all duration-150 cursor-pointer whitespace-nowrap border-r border-[#f0f0f0] dark:border-[#272a34] ${
+            className={`relative flex items-center gap-2 px-4 py-2.5 text-xs font-sans transition-all duration-150 cursor-pointer whitespace-nowrap border-r border-[#f0f0f0] dark:border-[#272a34] ${
               isActive
                 ? 'bg-white dark:bg-[#16181d] text-gray-900 dark:text-white font-bold'
                 : 'bg-[#f8f9fa] dark:bg-[#0d0e12] text-gray-600 dark:text-gray-400 font-medium hover:bg-[#f0f1f3] dark:hover:bg-[#16181d]/50 hover:text-gray-900 dark:hover:text-gray-200'
@@ -41,7 +42,7 @@ export default function ProductionTabNav({ activeTab, onTabChange, issueCount }:
             <span>{t.label}</span>
             {t.count !== undefined && t.count > 0 && (
               <span
-                className={`ml-1 inline-flex items-center justify-center min-w-[20px] h-[20px] px-1.5 rounded-full text-[10px] font-mono font-bold ${
+                className={`ml-1 inline-flex items-center justify-center min-w-[20px] h-[20px] px-1.5 rounded-full text-[10px] font-sans font-bold ${
                   isActive
                     ? 'bg-[#ff5e1f]/10 text-[#ff5e1f]'
                     : 'bg-gray-200/60 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
@@ -56,6 +57,15 @@ export default function ProductionTabNav({ activeTab, onTabChange, issueCount }:
           </button>
         );
       })}
+      {onCreateTask && (
+        <button
+          type="button"
+          onClick={onCreateTask}
+          className="ml-auto flex items-center gap-1.5 px-4 py-2.5 text-xs font-sans font-bold uppercase tracking-wider transition-all duration-150 cursor-pointer whitespace-nowrap border-l border-[#f0f0f0] dark:border-[#272a34] bg-[#ff5e1f] text-white hover:bg-[#ff7038]"
+        >
+          <span>+ Add New Task</span>
+        </button>
+      )}
     </div>
   );
 }

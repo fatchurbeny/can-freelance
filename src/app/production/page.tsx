@@ -1,9 +1,7 @@
 import prisma from '@/lib/prisma';
 import { getLatestSyncStatus } from '@/app/actions/sync';
-import Sidebar from '@/components/Sidebar';
-import CloudflareTopBar from '@/components/CloudflareTopBar';
-import ProductionView from '@/components/ProductionView';
 import { getAvailablePeriods } from '@/lib/queries';
+import ProductionPageClient from '@/components/ProductionPageClient';
 
 export const dynamic = 'force-dynamic';
 
@@ -61,7 +59,12 @@ export default async function ProductionPage({ searchParams }: PageProps) {
 
   const [tasks, issueTasks, latestSyncLog, periods] = await Promise.all([
     prisma.task.findMany({
-      where: { designStatus: { notionKey: { in: BOARD_STATUSES } } },
+      where: {
+        OR: [
+          { designStatusId: null },
+          { designStatus: { notionKey: { in: BOARD_STATUSES } } },
+        ],
+      },
       include: {
         designer: true,
         doctype: true,
@@ -91,25 +94,18 @@ export default async function ProductionPage({ searchParams }: PageProps) {
     getAvailablePeriods(),
   ]);
 
-  const currentPeriod = activePeriod || (periods[0] ?? '');
-  const selectedPeriods = currentPeriod
-    ? currentPeriod.split(',').filter(Boolean)
-    : [];
+  const isAll = !activePeriod || activePeriod === 'all' || activePeriod.split(',').length >= periods.length;
+  const currentPeriod = isAll ? 'all' : activePeriod;
+  const selectedPeriods = isAll ? periods : activePeriod.split(',').filter(Boolean);
 
   return (
-    <div className="min-h-screen bg-white dark:bg-[#0d0e12] text-[#262626] dark:text-[#f4f4f5] transition-colors">
-      <CloudflareTopBar badgeLabel="PRODUCTION" periods={periods} currentPeriod={currentPeriod} />
-      <div className="flex min-h-[calc(100vh-56px)] flex-col md:flex-row">
-        <Sidebar currentSyncLog={latestSyncLog} />
-
-        <main className="flex min-h-0 min-w-0 flex-1 md:ml-56 flex-col gap-4 p-6 md:p-8 bg-grid-pattern">
-          <ProductionView
-            kanbanTasks={JSON.parse(JSON.stringify(tasks))}
-            issueTasks={JSON.parse(JSON.stringify(issueTasks))}
-            selectedMonths={selectedPeriods}
-          />
-        </main>
-    </div>
-  </div>
+    <ProductionPageClient
+      periods={periods}
+      currentPeriod={currentPeriod}
+      latestSyncLog={latestSyncLog}
+      kanbanTasks={JSON.parse(JSON.stringify(tasks))}
+      issueTasks={JSON.parse(JSON.stringify(issueTasks))}
+      selectedMonths={selectedPeriods}
+    />
   );
 }
