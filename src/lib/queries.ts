@@ -19,30 +19,35 @@ const indNamesInv: { [key: string]: number } = {
 };
 
 export async function getAvailablePeriods() {
-  const rawPeriods = await prisma.$queryRaw<{ task_month: string }[]>(Prisma.sql`
-    SELECT DISTINCT task_month
-    FROM tasks
-    WHERE task_month IS NOT NULL AND task_month != ''
-  `);
+  try {
+    const rawPeriods = await prisma.$queryRaw<{ task_month: string }[]>(Prisma.sql`
+      SELECT DISTINCT task_month
+      FROM tasks
+      WHERE task_month IS NOT NULL AND task_month != ''
+    `);
 
-  const formatted = rawPeriods.map((p) => {
-    const parts = p.task_month.split('-');
-    if (parts.length === 2) {
-      const [mName, yStr] = parts;
-      const mIdx = indNamesInv[mName] !== undefined ? indNamesInv[mName] : 0;
-      const mm = (mIdx + 1).toString().padStart(2, '0');
-      return {
-        key: `${yStr}-${mm}`,
-        raw: p.task_month
-      };
-    }
-    return null;
-  }).filter(Boolean) as { key: string; raw: string }[];
+    const formatted = rawPeriods.map((p) => {
+      const parts = p.task_month.split('-');
+      if (parts.length === 2) {
+        const [mName, yStr] = parts;
+        const mIdx = indNamesInv[mName] !== undefined ? indNamesInv[mName] : 0;
+        const mm = (mIdx + 1).toString().padStart(2, '0');
+        return {
+          key: `${yStr}-${mm}`,
+          raw: p.task_month
+        };
+      }
+      return null;
+    }).filter(Boolean) as { key: string; raw: string }[];
 
-  // Sort descending by YYYY-MM key
-  formatted.sort((a, b) => b.key.localeCompare(a.key));
+    // Sort descending by YYYY-MM key
+    formatted.sort((a, b) => b.key.localeCompare(a.key));
 
-  return formatted.map((f) => f.key);
+    return formatted.map((f) => f.key);
+  } catch (error) {
+    console.error('Error fetching available periods:', error);
+    return [];
+  }
 }
 
 export async function getDashboardData(filters: DashboardFilters) {

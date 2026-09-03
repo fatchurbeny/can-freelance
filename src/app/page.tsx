@@ -31,22 +31,36 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   const activeBrand = typeof resolvedSearchParams.brand === 'string' ? resolvedSearchParams.brand : 'Semua Brand';
   const activePeriod = typeof resolvedSearchParams.period === 'string' ? resolvedSearchParams.period : null;
 
-  // 1. Fetch metadata & filter options from DB
-  const periods = await getAvailablePeriods();
-  const accounts = await prisma.account.findMany({
-    orderBy: { displayName: 'asc' }
-  });
-  const brandsList = accounts.map((acc) => acc.displayName);
+  // 1. Fetch metadata & filter options from DB with defensive fallbacks
+  let periods: string[] = [];
+  let brandsList: string[] = [];
+  try {
+    periods = await getAvailablePeriods();
+    const accounts = await prisma.account.findMany({
+      orderBy: { displayName: 'asc' }
+    });
+    brandsList = accounts.map((acc) => acc.displayName);
+  } catch (error) {
+    console.error('Error loading DB metadata:', error);
+  }
 
   // Resolve selected period ('all' by default, or single/multiple specific months)
-  const isAll = !activePeriod || activePeriod === 'all' || activePeriod.split(',').length >= periods.length;
+  const isAll = !activePeriod || activePeriod === 'all' || activePeriod.split(',').length >= (periods.length || 1);
   const selectedPeriod = isAll ? 'all' : activePeriod;
 
   // 2. Fetch full dashboard statistics via queries
-  const dashboardData = await getDashboardData({
-    brandName: activeBrand,
-    selectedPeriod: selectedPeriod,
-  });
+  let dashboardData: any = {
+    kpi: { totalVolumePages: 0, totalTemplateSubmit: 0, totalTasks: 0, totalDesignersActive: 0 },
+    widgets: { trenVolume: [], distribusiTemplate: [], taskPipeline: [], inQueue: 0, kategoriDoctype: [], lisensi: [], bahasa: [], workload: [], approvedProfileOnly: [], leaderboard: [] }
+  };
+  try {
+    dashboardData = await getDashboardData({
+      brandName: activeBrand,
+      selectedPeriod: selectedPeriod,
+    });
+  } catch (error) {
+    console.error('Error loading dashboard data:', error);
+  }
 
   // 3. Fetch latest sync log for status display
   const latestSyncLog = await getLatestSyncStatus();

@@ -6,19 +6,14 @@ import { PrismaClient } from '../../generated/prisma';
 const connectionString = process.env.DATABASE_URL || '';
 
 const isLocalhost = Boolean(
+  !connectionString ||
   connectionString.includes('localhost') ||
   connectionString.includes('127.0.0.1') ||
   connectionString.includes('sslmode=disable')
 );
 
-// Defensive SSL configuration for cloud PostgreSQL connections (Neon, Supabase, Vercel Postgres, RDS)
-const needsSsl = !isLocalhost && Boolean(
-  connectionString.includes('sslmode=require') ||
-  connectionString.includes('supabase') ||
-  connectionString.includes('neon') ||
-  connectionString.includes('vercel-storage') ||
-  connectionString.includes('pooler')
-);
+// Defensive SSL configuration: All remote non-localhost cloud PostgreSQL connections (Neon, Supabase, RDS, Railway, Render) require SSL
+const needsSsl = !isLocalhost;
 
 const pool = new Pool({
   connectionString,
