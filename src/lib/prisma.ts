@@ -15,18 +15,23 @@ const isLocalhost = Boolean(
 // Defensive SSL configuration: All remote non-localhost cloud PostgreSQL connections (Neon, Supabase, RDS, Railway, Render) require SSL
 const needsSsl = !isLocalhost;
 
-const pool = new Pool({
-  connectionString,
-  ssl: needsSsl ? { rejectUnauthorized: false } : undefined,
-  max: 10,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 10000,
-});
-
-const adapter = new PrismaPg(pool);
-
 const prismaClientSingleton = () => {
-  return new PrismaClient({ adapter });
+  if (connectionString) {
+    try {
+      const pool = new Pool({
+        connectionString,
+        ssl: needsSsl ? { rejectUnauthorized: false } : undefined,
+        max: 10,
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 10000,
+      });
+      const adapter = new PrismaPg(pool);
+      return new PrismaClient({ adapter });
+    } catch (e) {
+      console.warn('PrismaPg adapter initialization fallback:', e);
+    }
+  }
+  return new PrismaClient();
 };
 
 declare const globalThis: {
