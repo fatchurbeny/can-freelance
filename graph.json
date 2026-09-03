@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-09-03T07:11:42.771Z",
+  "generatedAt": "2026-09-03T07:29:27.162Z",
   "nodes": [
     {
       "id": "page:/",
@@ -977,6 +977,14 @@
       "group": "App Router Pages",
       "filepath": "src/app/content-access/page.tsx",
       "details": "Next.js App Router Page (/content-access)"
+    },
+    {
+      "id": "page:/error.tsx",
+      "label": "error.tsx Page",
+      "type": "page",
+      "group": "App Router Pages",
+      "filepath": "src/app/error.tsx",
+      "details": "Next.js App Router Page (/error.tsx)"
     },
     {
       "id": "page:/layout.tsx",

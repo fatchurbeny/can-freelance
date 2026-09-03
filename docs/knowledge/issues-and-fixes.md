@@ -179,19 +179,15 @@ Dokumen ini mencatat histori bug, edge cases, serta aturan layout CSS/React untu
   2. **Comprehensive Direct Write-Through**:
      Setiap perubahan task via `updateTaskFieldsAction` di slide-over editor WAJIB memetakan seluruh field ke `notionProperties` (`Design Status`, `Designer`, `Doctype`, `Brand/Account`, `Template Link`, `Pool Score`, `Pages`, `QTY Submit`, `Task Month`, `Priority`, `License`), sehingga pengeditan apapun dari aplikasi langsung tembus dan tersinkronisasi ke Notion secara *real-time*.
 
-### 23. Notion API Property Schema Validation Error & Dynamic Property Mapping Protocol
-* **Masalah**: Task baru yang dibuat dari tombol `+ ADD NEW TASK` (`createTaskAction`) berhasil tersimpan di database lokal (PostgreSQL) dan langsung muncul di papan Kanban (misal kolom Draft/Not Started), namun **tidak muncul di Notion**.
+### 24. Vercel Serverless PostgreSQL SSL Connection Pooling & Error Boundary Protocol
+* **Masalah**: Vercel Production menampilkan layar error hitam `This page couldn't load. A server error occurred. ERROR 1692628630` saat diakses via URL live.
 * **Penyebab (Root Cause)**:
-  1. Payload create sebelumnya mengirimkan *dual alias properties* secara bersamaan tanpa memeriksa skema asli Notion: `'QTY-Submit'` DAN `'QTY Submit'`. Di database Notion, hanya ada satu nama properti yang terdaftar (`'QTY-Submit'`). Notion API melempar error validasi: `validation_error: QTY Submit is not a property that exists.` yang menggagalkan eksekusi `pages.create`.
-  2. Properti `'Template Link'` di Notion berjenis `files`, bukan `url`. Format `{ url: link }` ditolak oleh Notion API.
-  3. Properti `'Brand'` dikirim bersamaan dengan alias `'Account'`.
+  1. Instansiasi `new Pool({ connectionString })` di top-level `src/lib/prisma.ts` tanpa konfigurasi SSL `ssl: { rejectUnauthorized: false }` pada serverless function Vercel menyebabkan kegagalan koneksi (*connection drop*) saat terhubung ke database PostgreSQL cloud (Neon/Supabase/Vercel Postgres/RDS).
+  2. Module `prisma` di `src/lib/prisma.ts` sebelumnya hanya menyimpan singleton pada `globalThis` saat `NODE_ENV !== 'production'`, sehingga di Vercel Production setiap request membuat koneksi pool baru (*connection exhaustion*).
+  3. Aplikasi tidak memiliki komponen root `error.tsx`, sehingga unhandled server error menjatuhkan seluruh render pohon App Router ke layar hitam Vercel.
 * **Aturan Solusi**:
-  1. **Dynamic Schema Introspection (`getNotionDatabaseSchemaProperties`)**:
-     Sebelum membuat page baru di Notion, lakukan introspeksi properti skema database Notion secara dinamis (mendukung database langsung maupun Notion Data Sources via `data_sources[0].id`).
-  2. **Safe Property Mapping**:
-     Hanya masukkan properti yang benar-benar eksis pada skema Notion (`schemaProps['QTY-Submit']` vs `schemaProps['QTY Submit']`, `schemaProps['Brand']` vs `schemaProps['Account']`).
-  3. **Files Type Property Formatting**:
-     Jika properti `Template Link` bertipe `files`, format payload menggunakan:
-     `{ files: [{ name: 'Template Link', external: { url: templateLinkUrl } }] }`.
+  1. **Defensive SSL Pool Connection**: `src/lib/prisma.ts` WAJIB mengaktifkan `ssl: { rejectUnauthorized: false }` untuk koneksi PostgreSQL cloud di lingkungan serverless/production.
+  2. **Production Global Singleton**: Cache instans `PrismaClient` ke `globalThis.prismaGlobal` baik di development maupun production serverless contexts.
+  3. **Global App Error Boundary**: Tambahkan `src/app/error.tsx` untuk menyajikan UI fallback interaktif yang ramah pengguna jika terjadi kendala jaringan/koneksi DB sementara.
 
 
