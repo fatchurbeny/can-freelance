@@ -89,6 +89,8 @@ export default function PayrollTableRow({
           <MonthCalendarPicker
             value={selectedMonth}
             placeholder="Pilih Bulan..."
+            availableMonths={allMonthOptions}
+            mode="payroll"
             onChange={(m) => onSelectMonth(task.id, m)}
           />
         </div>

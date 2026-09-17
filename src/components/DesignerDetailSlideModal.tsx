@@ -252,11 +252,11 @@ export default function DesignerDetailSlideModal({ open, designer, initialTab = 
         </div>
 
         {/* Sub-Tab Navigation Bar */}
-        <div className="flex items-stretch border-b border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] shrink-0 font-sans text-xs">
+        <div className="flex items-stretch border-b border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] shrink-0 font-sans text-sm">
           <button
             type="button"
             onClick={() => setActiveTab('profile')}
-            className={`relative flex-1 py-2.5 px-4 text-center font-sans text-xs transition-colors cursor-pointer outline-none focus:outline-none focus-visible:outline-none select-none border-r border-[#f0f0f0] dark:border-[#272a34] ${
+            className={`relative flex-1 py-2.5 px-4 text-center font-sans text-sm transition-colors cursor-pointer outline-none focus:outline-none focus-visible:outline-none select-none border-r border-[#f0f0f0] dark:border-[#272a34] ${
               activeTab === 'profile'
                 ? 'bg-white dark:bg-[#16181d] text-gray-900 dark:text-white font-bold'
                 : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#16181d] font-medium'
@@ -270,7 +270,7 @@ export default function DesignerDetailSlideModal({ open, designer, initialTab = 
           <button
             type="button"
             onClick={() => setActiveTab('timeline')}
-            className={`relative flex-1 py-2.5 px-4 text-center font-sans text-xs transition-colors cursor-pointer outline-none focus:outline-none focus-visible:outline-none select-none ${
+            className={`relative flex-1 py-2.5 px-4 text-center font-sans text-sm transition-colors cursor-pointer outline-none focus:outline-none focus-visible:outline-none select-none ${
               activeTab === 'timeline'
                 ? 'bg-white dark:bg-[#16181d] text-gray-900 dark:text-white font-bold'
                 : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#16181d] font-medium'

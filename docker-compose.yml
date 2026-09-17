@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: can_freelance_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: can_freelance
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d can_freelance"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: can_freelance_web
+    restart: always
+    ports:
+      - "3002:3000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgrespassword@postgres:5432/can_freelance?schema=public
+      - NODE_ENV=production
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

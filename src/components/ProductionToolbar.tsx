@@ -16,6 +16,7 @@ interface Props {
   onQueryChange: (query: string) => void;
   sortKey: SortKey;
   onSortChange: (key: SortKey) => void;
+  onCreateTask?: () => void;
 }
 
 interface Group {
@@ -45,6 +46,7 @@ export default function ProductionToolbar({
   onQueryChange,
   sortKey,
   onSortChange,
+  onCreateTask,
 }: Props) {
   const [filterOpen, setFilterOpen] = useState(false);
   const [activeGroup, setActiveGroup] = useState<keyof BoardFilters | null>(null);
@@ -108,7 +110,7 @@ export default function ProductionToolbar({
   const hasFilters = selectedCount > 0;
 
   return (
-    <div className="w-full h-10 flex items-stretch justify-between border-b border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] select-none text-xs shrink-0">
+    <div className="w-full h-11 flex items-stretch justify-between border-b border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] select-none text-xs shrink-0">
       {/* Left side: SortControl + Filter Button + Active Filter Chips */}
       <div className="flex items-stretch">
         <SortControl value={sortKey} onChange={onSortChange} />
@@ -249,7 +251,7 @@ export default function ProductionToolbar({
         )}
       </div>
 
-      {/* Right side: Integrated Search Input */}
+      {/* Right side: Integrated Search Input + Button */}
       <div className="flex items-stretch">
         <div className="relative h-full flex items-center border-l border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] px-3">
           <Search className="pointer-events-none w-3.5 h-3.5 text-gray-400" />
@@ -272,6 +274,15 @@ export default function ProductionToolbar({
             </button>
           )}
         </div>
+        {onCreateTask && (
+          <button
+            type="button"
+            onClick={onCreateTask}
+            className="flex items-center gap-1.5 px-4 h-full text-xs font-sans font-bold uppercase tracking-wider transition-all duration-150 cursor-pointer whitespace-nowrap border-l border-[#f0f0f0] dark:border-[#272a34] bg-[#ff5e1f] text-white hover:bg-[#ff7038]"
+          >
+            <span>+ Add New Task</span>
+          </button>
+        )}
       </div>
     </div>
   );

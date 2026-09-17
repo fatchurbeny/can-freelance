@@ -82,6 +82,7 @@ model Account {
   displayName  String        @map("display_name")
   color        String?
   taskAccounts TaskAccount[]
+  emailNotifications CanvaEmailNotification[]
 
   @@map("accounts")
 }
@@ -124,6 +125,8 @@ model Task {
   lastEditedTime DateTime        @default(now()) @map("last_edited_time") @db.Timestamptz(6)
   poolScore      Decimal?        @map("pool_score") @db.Decimal
   bodyText       String?         @map("body_text")
+  syncStatus     String          @default("SYNCED") @map("sync_status")
+  lastSyncedAt   DateTime?       @map("last_synced_at") @db.Timestamptz(6)
   taskAccounts   TaskAccount[]
   canvaLinks     TaskCanvaLink[]
   comments       TaskComment[]
@@ -212,4 +215,44 @@ model NotionConfig {
   databases       NotionDatabase[]
 
   @@map("notion_configs")
+}
+
+model CanvaEmailNotification {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  messageId     String   @unique @map("message_id")
+  subject       String   @default("We’ve found some issues with your template")
+  sender        String   @default("Canva <notifications@canva.com>")
+  recipient     String?
+  receivedAt    DateTime @default(now()) @map("received_at") @db.Timestamptz(6)
+  brandName     String?  @map("brand_name")
+  accountId     String?  @map("account_id") @db.Uuid
+  templateTitle String?  @map("template_title")
+  templateUrl   String?  @map("template_url")
+  issueMessages String[] @map("issue_messages")
+  rawBody       String?  @map("raw_body")
+  status        String   @default("UNRESOLVED")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  account Account? @relation(fields: [accountId], references: [id], onDelete: SetNull)
+
+  @@map("canva_email_notifications")
+}
+
+model EmailConfig {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  provider           String    @default("IMAP") // "IMAP" | "GMAIL_OAUTH"
+  email              String
+  imapHost           String?   @map("imap_host")
+  imapPort           Int?      @default(993) @map("imap_port")
+  encryptedPassword  String?   @map("encrypted_password")
+  encryptedOAuthToken String?  @map("encrypted_oauth_token")
+  iv                 String?
+  authStatus         String    @default("DISCONNECTED") @map("auth_status")
+  lastAuthErrorCode  String?   @map("last_auth_error_code")
+  lastAuthError      String?   @map("last_auth_error")
+  autoSync           Boolean   @default(true) @map("auto_sync")
+  lastSyncedAt       DateTime? @map("last_synced_at") @db.Timestamptz(6)
+  updatedAt          DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("email_configs")
 }

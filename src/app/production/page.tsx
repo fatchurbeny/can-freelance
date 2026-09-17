@@ -57,7 +57,7 @@ export default async function ProductionPage({ searchParams }: PageProps) {
   const resolvedSearchParams = await searchParams;
   const activePeriod = typeof resolvedSearchParams.period === 'string' ? resolvedSearchParams.period : '';
 
-  const [tasks, issueTasks, latestSyncLog, periods] = await Promise.all([
+  const [tasks, issueTasks, latestSyncLog, periods, accounts, unresolvedEmailCount] = await Promise.all([
     prisma.task.findMany({
       where: {
         OR: [
@@ -92,9 +92,15 @@ export default async function ProductionPage({ searchParams }: PageProps) {
     }),
     getLatestSyncStatus(),
     getAvailablePeriods(),
+    prisma.account.findMany({
+      orderBy: { displayName: 'asc' },
+    }),
+    prisma.canvaEmailNotification.count({
+      where: { status: 'UNRESOLVED' },
+    }),
   ]);
 
-  const isAll = !activePeriod || activePeriod === 'all' || activePeriod.split(',').length >= periods.length;
+  const isAll = !activePeriod || activePeriod === 'all';
   const currentPeriod = isAll ? 'all' : activePeriod;
   const selectedPeriods = isAll ? periods : activePeriod.split(',').filter(Boolean);
 
@@ -106,6 +112,8 @@ export default async function ProductionPage({ searchParams }: PageProps) {
       kanbanTasks={JSON.parse(JSON.stringify(tasks))}
       issueTasks={JSON.parse(JSON.stringify(issueTasks))}
       selectedMonths={selectedPeriods}
+      accounts={JSON.parse(JSON.stringify(accounts))}
+      unresolvedEmailCount={unresolvedEmailCount}
     />
   );
 }

@@ -31,13 +31,13 @@ export default function DoctypeTable({ doctypes, contractRate }: Props) {
       {/* Sticky Container: Row 1 (Tab Nav Bar) + Row 2 (Search Bar) + Row 3 (Table Header) */}
       <div className="sticky top-[56px] z-30 bg-white dark:bg-[#0d0e12] divide-y divide-[#f0f0f0] dark:divide-[#272a34] shadow-sm">
         {/* Row 1: Tab Navigation Bar (Image 1 Style with Far-Right Action Button) */}
-        <div className="flex items-center justify-between bg-gray-50/50 dark:bg-[#0d0e12] font-sans text-xs">
+        <div className="flex items-center justify-between bg-gray-50/50 dark:bg-[#0d0e12] font-sans text-sm">
           {/* Left Tabs */}
           <div className="flex items-center">
             <button
               type="button"
               onClick={() => setActiveTab('doctype')}
-              className={`relative px-5 py-3 text-xs font-sans font-bold transition-colors flex items-center gap-2 cursor-pointer ${
+              className={`relative px-5 py-3 text-sm font-sans font-bold transition-colors flex items-center gap-2 cursor-pointer ${
                 activeTab === 'doctype'
                   ? 'text-[#ff5e1f] bg-white dark:bg-[#0d0e12]'
                   : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
@@ -53,7 +53,7 @@ export default function DoctypeTable({ doctypes, contractRate }: Props) {
             <button
               type="button"
               onClick={() => setActiveTab('kontrak')}
-              className={`relative px-5 py-3 text-xs font-sans font-bold transition-colors flex items-center gap-2 border-l border-[#f0f0f0] dark:border-[#272a34] cursor-pointer ${
+              className={`relative px-5 py-3 text-sm font-sans font-bold transition-colors flex items-center gap-2 border-l border-[#f0f0f0] dark:border-[#272a34] cursor-pointer ${
                 activeTab === 'kontrak'
                   ? 'text-[#ff5e1f] bg-white dark:bg-[#0d0e12]'
                   : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'

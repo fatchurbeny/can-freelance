@@ -57,20 +57,21 @@ function MarkdownRenderer({ text }: { text: string }) {
             href={part}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-[#ff5e1f] hover:underline font-medium break-all"
+            className="inline-flex max-w-full items-center gap-1 text-[#ff5e1f] hover:underline font-medium min-w-0 align-bottom"
             onClick={(e) => e.stopPropagation()}
+            title={part}
           >
-            <span className="truncate max-w-[480px]">{part}</span>
+            <span className="truncate min-w-0 max-w-full">{part}</span>
             <ExternalLink className="w-3 h-3 shrink-0 opacity-75" />
           </a>
         );
       }
-      return <span key={idx}>{part}</span>;
+      return <span key={idx} className="break-all">{part}</span>;
     });
   };
 
   return (
-    <div className="space-y-3 font-sans text-xs text-gray-800 dark:text-gray-200 leading-relaxed">
+    <div className="space-y-3 font-sans text-xs text-gray-800 dark:text-gray-200 leading-relaxed overflow-hidden">
       {lines.map((line, idx) => {
         const trimmed = line.trim();
 
@@ -78,17 +79,17 @@ function MarkdownRenderer({ text }: { text: string }) {
           return (
             <h2
               key={idx}
-              className="text-xs font-bold uppercase tracking-wider text-gray-900 dark:text-white pt-2 pb-1 border-b border-[#f0f0f0] dark:border-[#272a34] flex items-center gap-1.5"
+              className="text-xs font-bold uppercase tracking-wider text-gray-900 dark:text-white pt-2 pb-1 border-b border-[#f0f0f0] dark:border-[#272a34] flex items-center gap-1.5 min-w-0 max-w-full break-all"
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-[#ff5e1f]"></span>
-              {trimmed.replace(/^##\s+/, '')}
+              <span className="w-1.5 h-1.5 rounded-full bg-[#ff5e1f] shrink-0"></span>
+              <span className="flex-1 min-w-0 break-all">{trimmed.replace(/^##\s+/, '')}</span>
             </h2>
           );
         }
 
         if (trimmed.startsWith('### ')) {
           return (
-            <h3 key={idx} className="text-xs font-bold text-gray-800 dark:text-gray-100 pt-1">
+            <h3 key={idx} className="text-xs font-bold text-gray-800 dark:text-gray-100 pt-1 min-w-0 max-w-full break-all">
               {trimmed.replace(/^###\s+/, '')}
             </h3>
           );
@@ -97,9 +98,9 @@ function MarkdownRenderer({ text }: { text: string }) {
         if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
           const content = trimmed.replace(/^[-*]\s+/, '');
           return (
-            <div key={idx} className="flex items-start gap-2 pl-2">
-              <span className="text-[#ff5e1f] font-bold select-none">•</span>
-              <div className="flex-1 min-w-0">{renderFormattedLineText(content)}</div>
+            <div key={idx} className="flex items-start gap-2 pl-2 min-w-0 max-w-full overflow-hidden">
+              <span className="text-[#ff5e1f] font-bold select-none shrink-0">•</span>
+              <div className="flex-1 min-w-0 max-w-full break-all">{renderFormattedLineText(content)}</div>
             </div>
           );
         }
@@ -108,7 +109,7 @@ function MarkdownRenderer({ text }: { text: string }) {
           return <div key={idx} className="h-1.5" />;
         }
 
-        return <div key={idx}>{renderFormattedLineText(line)}</div>;
+        return <div key={idx} className="min-w-0 max-w-full break-all">{renderFormattedLineText(line)}</div>;
       })}
     </div>
   );

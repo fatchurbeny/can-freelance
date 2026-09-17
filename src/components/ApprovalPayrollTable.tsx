@@ -4,6 +4,7 @@ import { useState, useTransition, useRef, useEffect } from 'react';
 import { ArrowDown, ArrowUp } from 'lucide-react';
 import { assignPayrollMonthAction, batchAssignPayrollMonthAction } from '@/app/actions/approval-payroll';
 import { useRouter } from 'next/navigation';
+import { isTaskInPeriods, parseTaskMonthToKey } from '@/lib/period-utils';
 import PayrollTableRow, { TaskItem } from './payroll/PayrollTableRow';
 import PayrollToolbar, { SortKey, FilterCategory } from './payroll/PayrollToolbar';
 
@@ -34,6 +35,7 @@ export default function ApprovalPayrollTable({ tasks, allMonthOptions }: Props) 
   const [doctypeFilter, setDoctypeFilter] = useState('');
   const [brandFilter, setBrandFilter] = useState('');
   const [designerFilter, setDesignerFilter] = useState('');
+  const [taskMonthFilter, setTaskMonthFilter] = useState('');
 
   // Filter Popover state
   const [filterOpen, setFilterOpen] = useState(false);
@@ -111,13 +113,15 @@ export default function ApprovalPayrollTable({ tasks, allMonthOptions }: Props) 
   const doctypeOptions = optionNames(tasks.map((task) => task.doctype?.displayName));
   const brandOptions = optionNames(tasks.map((task) => task.taskAccounts[0]?.account?.displayName));
   const designerOptions = optionNames(tasks.map((task) => task.designer?.displayName));
+  const taskMonthOptions = optionNames([...tasks.map((task) => task.taskMonth ?? undefined), ...allMonthOptions]);
 
-  const activeFilterCount = (designerFilter ? 1 : 0) + (doctypeFilter ? 1 : 0) + (brandFilter ? 1 : 0);
+  const activeFilterCount = (designerFilter ? 1 : 0) + (doctypeFilter ? 1 : 0) + (brandFilter ? 1 : 0) + (taskMonthFilter ? 1 : 0);
 
   const filteredTasks = tasks
     .filter((task) => {
       const q = searchQuery.toLowerCase();
       const brand = task.taskAccounts[0]?.account?.displayName || '';
+      const matchesTaskMonth = !taskMonthFilter || isTaskInPeriods(task.taskMonth, [parseTaskMonthToKey(taskMonthFilter) || taskMonthFilter]);
       return (
         (!q ||
           (task.name?.toLowerCase() || '').includes(q) ||
@@ -126,7 +130,8 @@ export default function ApprovalPayrollTable({ tasks, allMonthOptions }: Props) 
           brand.toLowerCase().includes(q)) &&
         (!doctypeFilter || task.doctype?.displayName === doctypeFilter) &&
         (!brandFilter || brand === brandFilter) &&
-        (!designerFilter || task.designer?.displayName === designerFilter)
+        (!designerFilter || task.designer?.displayName === designerFilter) &&
+        matchesTaskMonth
       );
     })
     .sort((a, b) => {
@@ -138,13 +143,14 @@ export default function ApprovalPayrollTable({ tasks, allMonthOptions }: Props) 
   return (
     <div className="flex flex-col bg-white dark:bg-[#0d0e12]">
       {/* Sticky Header Group: Row 2 (Payroll Toolbar) + Row 3 (Table Header) */}
-      <div className="sticky top-[101px] z-30 bg-white dark:bg-[#0d0e12] divide-y divide-[#f0f0f0] dark:divide-[#272a34] shadow-sm">
+      <div className="sticky top-[97px] z-30 bg-white dark:bg-[#0d0e12] divide-y divide-[#f0f0f0] dark:divide-[#272a34] shadow-sm">
         <PayrollToolbar
           searchQuery={searchQuery} setSearchQuery={setSearchQuery}
           sortKey={sortKey} setSortKey={setSortKey} sortOpen={sortOpen} setSortOpen={setSortOpen} sortRef={sortRef} SORT_LABELS={SORT_LABELS}
           filterOpen={filterOpen} setFilterOpen={setFilterOpen} filterRef={filterRef} activeCategory={activeCategory} setActiveCategory={setActiveCategory} activeFilterCount={activeFilterCount}
           designerFilter={designerFilter} setDesignerFilter={setDesignerFilter} doctypeFilter={doctypeFilter} setDoctypeFilter={setDoctypeFilter} brandFilter={brandFilter} setBrandFilter={setBrandFilter}
-          designerOptions={designerOptions} doctypeOptions={doctypeOptions} brandOptions={brandOptions}
+          taskMonthFilter={taskMonthFilter} setTaskMonthFilter={setTaskMonthFilter}
+          designerOptions={designerOptions} doctypeOptions={doctypeOptions} brandOptions={brandOptions} taskMonthOptions={taskMonthOptions}
           selectedIdsCount={selectedIds.size} totalFilteredCount={filteredTasks.length}
           batchMonth={batchMonth} setBatchMonth={setBatchMonth} batchOpen={batchOpen} setBatchOpen={setBatchOpen} batchRef={batchRef} allMonthOptions={allMonthOptions} handleBatchAssign={handleBatchAssign} isPending={isPending}
         />

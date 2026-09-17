@@ -12,6 +12,8 @@ interface Props {
   kanbanTasks: any[];
   issueTasks: any[];
   selectedMonths: string[];
+  accounts?: any[];
+  unresolvedEmailCount?: number;
 }
 
 export default function ProductionPageClient({
@@ -21,6 +23,8 @@ export default function ProductionPageClient({
   kanbanTasks,
   issueTasks,
   selectedMonths,
+  accounts = [],
+  unresolvedEmailCount = 0,
 }: Props) {
   const [createOpen, setCreateOpen] = useState(false);
 
@@ -43,6 +47,8 @@ export default function ProductionPageClient({
             kanbanTasks={kanbanTasks}
             issueTasks={issueTasks}
             selectedMonths={selectedMonths}
+            accounts={accounts}
+            unresolvedEmailCount={unresolvedEmailCount}
           />
         </main>
       </div>

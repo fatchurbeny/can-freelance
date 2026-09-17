@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-09-03T07:29:27.162Z",
+  "generatedAt": "2026-09-04T11:26:46.559Z",
   "nodes": [
     {
       "id": "page:/",
@@ -1047,6 +1047,12 @@
       "confidence": "EXTRACTED"
     },
     {
+      "source": "page:/billing-statement/MonthFilter.tsx",
+      "target": "component:MonthCalendarPicker",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
       "source": "page:/billing-statement",
       "target": "component:Sidebar",
       "relation": "renders",
@@ -1474,6 +1480,12 @@
     },
     {
       "source": "component:ParameterIssueTable",
+      "target": "component:MonthCalendarPicker",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:PeriodPicker",
       "target": "component:MonthCalendarPicker",
       "relation": "renders",
       "confidence": "EXTRACTED"

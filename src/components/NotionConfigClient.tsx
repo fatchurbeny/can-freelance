@@ -23,6 +23,7 @@ import {
   Zap,
 } from 'lucide-react';
 import SelectDropdown from '@/components/SelectDropdown';
+import EmailConfigCard from '@/components/EmailConfigCard';
 import { NotionLogo } from '@/logo/NotionLogo';
 import { useRouter } from 'next/navigation';
 
@@ -240,6 +241,8 @@ export default function NotionConfigClient({ initialSyncLog }: { initialSyncLog:
                       </div>
                     </div>
                   )}
+
+                  <EmailConfigCard />
                 </div>
 
                 <div className="flex flex-col divide-y divide-[#f0f0f0] dark:divide-[#272a34]">

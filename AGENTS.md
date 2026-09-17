@@ -100,8 +100,8 @@ When styling continuous tables, sidebar lists, and tab bars in Cloudflare Contin
 1. **Outer Main Container Padding**: Always use `p-6 md:p-8` for outer `<main>` padding across all pages (`/`, `/production`, `/billing-statement`, `/notion-config`, `/knowledge-graph`).
 2. **Main Outer Card Rounding**: Use `rounded-none` on outer continuous card containers without double borders or floating gaps.
 3. **Tab Navigation Bar Standard**: All top tab bars across pages (`ProductionTabNav.tsx`, `AccountTeamSection.tsx`, etc.) MUST strictly use:
-   - Font Size: **`text-xs font-sans`** (12px), NEVER `text-sm`.
-   - Padding: `px-4 py-2.5` (or `px-5 py-3 text-xs`).
+   - Font Size: **`text-sm font-sans`** (14px).
+   - Padding: `px-4 py-2.5` (or `px-5 py-3 text-sm`).
    - Casing: Title Case for tab names (`Overview`, `Kanban Board`, `Designer Team (6)`).
    - Far-Right Action Button: `ml-auto flex items-center gap-1.5 px-4 py-2.5 text-xs font-sans font-bold uppercase tracking-wider bg-[#ff5e1f] text-white hover:bg-[#ff7038] border-l border-[#f0f0f0] dark:border-[#272a34]`.
    - Active Indicator: Bottom line `<span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#ff5e1f]" />`.

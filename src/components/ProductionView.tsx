@@ -5,6 +5,7 @@ import ProductionTabNav, { ProductionTab } from './ProductionTabNav';
 import ProductionOverview from './ProductionOverview';
 import SortableTaskLists from './SortableTaskLists';
 import ParameterIssueTable from './ParameterIssueTable';
+import EmailNotificationView from './EmailNotificationView';
 import { useRouter } from 'next/navigation';
 import CreateTaskSlideModal from './CreateTaskSlideModal';
 
@@ -12,10 +13,18 @@ interface Props {
   kanbanTasks: any[];
   issueTasks: any[];
   selectedMonths?: string[];
+  accounts?: any[];
+  unresolvedEmailCount?: number;
   onCreateTask?: () => void;
 }
 
-export default function ProductionView({ kanbanTasks, issueTasks, selectedMonths }: Props) {
+export default function ProductionView({
+  kanbanTasks,
+  issueTasks,
+  selectedMonths,
+  accounts = [],
+  unresolvedEmailCount = 0,
+}: Props) {
   const [activeTab, setActiveTab] = useState<ProductionTab>('overview');
   const [createOpen, setCreateOpen] = useState(false);
   const router = useRouter();
@@ -35,21 +44,23 @@ export default function ProductionView({ kanbanTasks, issueTasks, selectedMonths
         activeTab={activeTab}
         onTabChange={setActiveTab}
         issueCount={issueTasks.length}
-        onCreateTask={() => setCreateOpen(true)}
+        emailIssueCount={unresolvedEmailCount}
       />
-
-
 
       {activeTab === 'overview' && (
         <ProductionOverview tasks={kanbanTasks} selectedMonths={selectedMonths} />
       )}
 
       {activeTab === 'kanban' && (
-        <SortableTaskLists tasks={kanbanTasks} selectedMonths={selectedMonths} />
+        <SortableTaskLists tasks={kanbanTasks} selectedMonths={selectedMonths} onCreateTask={() => setCreateOpen(true)} />
       )}
 
       {activeTab === 'parameterIssue' && (
         <ParameterIssueTable initialTasks={issueTasks} onParametersUpdated={handleRefresh} />
+      )}
+
+      {activeTab === 'emailNotification' && (
+        <EmailNotificationView accounts={accounts} />
       )}
 
       <CreateTaskSlideModal open={createOpen} onClose={() => setCreateOpen(false)} onCreated={handleTaskCreated} />

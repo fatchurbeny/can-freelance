@@ -311,7 +311,9 @@ This ensures the filter works seamlessly across any page (e.g. Dashboard `/`, `/
 
 When filtering tasks or calculating metrics based on month/period selections:
 - NEVER rely on strict literal equality (`taskMonth === filter`) or raw `Array.includes()`.
+- NEVER parse URL month strings using naive `split('-')` without canonical normalization; doing so turns `"Januari-2026"` into invalid SQL tokens (`"2026-Januari"`).
 - ALWAYS use a canonical normalization helper (such as `isTaskInPeriods` / `parseTaskMonthToKey` from `@/lib/period-utils`) that converts both the filter key and `taskMonth` strings into standard `YYYY-MM` format before matching.
+- ALWAYS build all DB string variants (Indonesian full month `"Agustus-2026"`, short month `"Agt-2026"`, and ISO key `"2026-08"`) when constructing SQL `IN (...)` clauses for PostgreSQL queries.
 - This guarantees accurate filtering regardless of whether `taskMonth` is stored as an Indonesian full month (`Agustus-2026`), short month (`Agt-2026`), ISO string (`2026-08`), or numeric month (`8-2026`).
 <!-- END:period-string-normalization-rule -->
 

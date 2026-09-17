@@ -36,6 +36,7 @@ interface QATask {
 interface Props {
   tasks: QATask[];
   selectedMonths?: string[];
+  onCreateTask?: () => void;
 }
 
 function time(value?: string | number | null) {
@@ -125,7 +126,7 @@ function deriveFacets(tasks: QATask[]): FilterFacets {
 
 import { saveBoardFiltersToStorage, getSavedBoardFiltersFromStorage } from '@/lib/use-persisted-filter';
 
-export default function SortableTaskLists({ tasks, selectedMonths }: Props) {
+export default function SortableTaskLists({ tasks, selectedMonths, onCreateTask }: Props) {
   const [sortKey, setSortKey] = useState<SortKey>('lastEdited');
   const [query, setQuery] = useState(() => {
     const saved = getSavedBoardFiltersFromStorage();
@@ -235,7 +236,7 @@ export default function SortableTaskLists({ tasks, selectedMonths }: Props) {
 
   return (
     <div className="flex min-w-0 flex-1 flex-col">
-      <div className="sticky top-[101px] z-30 flex flex-col bg-white dark:bg-[#0d0e12]">
+      <div className="sticky top-[97px] z-30 flex flex-col bg-white dark:bg-[#0d0e12]">
         <ProductionToolbar
           facets={facets}
           filters={filters}
@@ -244,6 +245,7 @@ export default function SortableTaskLists({ tasks, selectedMonths }: Props) {
           onQueryChange={handleQueryChange}
           sortKey={sortKey}
           onSortChange={setSortKey}
+          onCreateTask={onCreateTask}
         />
 
         {(!hasAnyFilter || columns.some((c) => c.tasks.length > 0)) && (

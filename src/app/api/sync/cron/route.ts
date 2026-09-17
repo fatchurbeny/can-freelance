@@ -108,9 +108,10 @@ export async function GET(request: Request) {
       ? configUpdatedAt
       : Math.max(lastFinished, configUpdatedAt);
 
+    const isVercelCron = request.headers.get('x-vercel-cron') === '1' || request.headers.get('user-agent')?.includes('vercel-cron');
     const elapsed = now - referenceStartTime;
 
-    if (elapsed < intervalMs) {
+    if (!isVercelCron && elapsed < intervalMs) {
       const msRemaining = intervalMs - elapsed;
       const minutesRemaining = Math.ceil(msRemaining / 60000);
       return NextResponse.json({
@@ -121,8 +122,9 @@ export async function GET(request: Request) {
       });
     }
 
-    // 4. Background auto-sync ALWAYS uses fast incremental mode to sync updated data only
-    const result = await syncNotionData('incremental');
+    // 4. Cron auto-sync executes outbound push + inbound sync
+    const syncMode = isVercelCron ? 'full' : 'incremental';
+    const result = await syncNotionData(syncMode);
 
     return NextResponse.json({
       status: result.status,
