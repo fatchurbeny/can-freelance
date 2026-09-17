@@ -720,7 +720,7 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
                       href={url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex-1 truncate inline-flex items-center gap-2 text-xs font-sans font-bold text-[#ff5e1f] hover:underline"
+                      className="flex-1 min-w-0 truncate inline-flex items-center gap-2 text-xs font-sans font-bold text-[#ff5e1f] hover:underline"
                     >
                       <ExternalLink className="w-3.5 h-3.5 shrink-0" />
                       <span className="truncate">Template-{idx + 1}: {url}</span>
@@ -801,7 +801,7 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
 
           {/* Comments Continuous Section */}
           <div className="flex flex-col bg-white dark:bg-[#0d0e12]">
-            <div className="px-5 py-2.5 bg-gray-50/50 dark:bg-[#16181d]/50 border-b border-[#f0f0f0] dark:border-[#272a34]">
+            <div className="px-5 py-2 bg-gray-50/50 dark:bg-[#16181d]/50 border-b border-[#f0f0f0] dark:border-[#272a34]">
               <h3 className="text-xs font-sans font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
                 <MessageSquare className="w-3.5 h-3.5" />
                 COMMENTS {commentCount > 0 && `(${commentCount})`}
@@ -809,29 +809,29 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
             </div>
             <div className="divide-y divide-[#f0f0f0] dark:divide-[#272a34]">
               {!loaded ? (
-                <div className="flex justify-center py-6">
-                  <Loader2 className="w-5 h-5 animate-spin text-[#ff5e1f]" />
+                <div className="flex justify-center py-4">
+                  <Loader2 className="w-4 h-4 animate-spin text-[#ff5e1f]" />
                 </div>
               ) : comments.length === 0 ? (
-                <p className="px-5 py-4 text-center text-xs font-sans text-gray-400 dark:text-gray-500">
-                  No comments yet
+                <p className="px-5 py-3 text-center text-xs font-sans text-gray-400 dark:text-gray-500">
+                  Belum ada komentar
                 </p>
               ) : (
                 comments.map((c) => (
-                  <div key={c.id} className="group relative px-5 py-3.5 bg-white dark:bg-[#0d0e12] hover:bg-gray-50/50 dark:hover:bg-[#16181d]/50 transition-colors">
+                  <div key={c.id} className="group relative px-5 py-2.5 bg-white dark:bg-[#0d0e12] hover:bg-gray-50/50 dark:hover:bg-[#16181d]/50 transition-colors">
                     <button
                       onClick={() => handleDeleteComment(c.id)}
-                      className="absolute right-4 top-3.5 p-1 text-gray-400 opacity-0 group-hover:opacity-100 hover:text-red-500 transition-all cursor-pointer"
-                      title="Delete comment"
+                      className="absolute right-4 top-2.5 p-1 text-gray-400 opacity-0 group-hover:opacity-100 hover:text-red-500 transition-all cursor-pointer"
+                      title="Hapus komentar"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                     <p className="text-xs font-sans text-gray-800 dark:text-gray-200 pr-6 whitespace-pre-wrap">{c.content}</p>
-                    <div className="mt-2 flex items-center gap-1 text-[10px] font-sans text-gray-400">
+                    <div className="mt-1 flex items-center gap-1 text-[10px] font-sans text-gray-400">
                       <Clock className="w-3 h-3" />
-                      {new Date(c.createdAt).toLocaleDateString('en-US', {
-                        month: 'long', day: 'numeric', year: 'numeric',
-                        hour: 'numeric', minute: '2-digit',
+                      {new Date(c.createdAt).toLocaleDateString('id-ID', {
+                        day: 'numeric', month: 'short', year: 'numeric',
+                        hour: '2-digit', minute: '2-digit',
                       })}
                     </div>
                   </div>
@@ -841,25 +841,25 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
           </div>
         </div>
 
-        {/* Comment Input Symmetrical 2-Column Footer */}
-        <div className="grid grid-cols-[1fr_auto] border-t border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] items-stretch h-14 shrink-0">
+        {/* Comment Input Symmetrical 2-Column Footer (Slim h-11) */}
+        <div className="grid grid-cols-[1fr_auto] border-t border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] items-stretch h-11 shrink-0">
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSubmitComment();
             }}
-            placeholder="Type your comment... (Cmd/Ctrl + Enter to send)"
+            placeholder="Tulis komentar... (Cmd/Ctrl + Enter untuk kirim)"
             rows={1}
-            className="w-full h-full border-0 bg-transparent px-5 py-3.5 font-sans text-xs text-gray-900 dark:text-white placeholder:text-gray-400 outline-none resize-none focus:ring-0"
+            className="w-full h-full border-0 bg-transparent px-4 py-2.5 font-sans text-xs text-gray-900 dark:text-white placeholder:text-gray-400 outline-none resize-none focus:ring-0"
           />
           <button
             onClick={handleSubmitComment}
             disabled={sending || !content.trim()}
-            className="h-full px-6 bg-[#ff5e1f] hover:bg-[#ff7038] font-sans text-xs font-bold uppercase tracking-wider text-white transition-colors disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer flex items-center justify-center gap-2 border-l border-[#f0f0f0] dark:border-[#272a34]"
+            className="h-full px-5 bg-[#ff5e1f] hover:bg-[#ff7038] font-sans text-xs font-bold uppercase tracking-wider text-white transition-colors disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer flex items-center justify-center gap-1.5 border-l border-[#f0f0f0] dark:border-[#272a34]"
           >
-            {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-            <span>SEND</span>
+            {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+            <span>KIRIM</span>
           </button>
         </div>
       </aside>

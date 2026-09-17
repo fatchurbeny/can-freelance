@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import GraphifyVisualizer from './GraphifyVisualizer';
+import ExpandableSessionTimeline from './ExpandableSessionTimeline';
 import { 
   Network, 
   Database, 
@@ -156,7 +157,7 @@ export default function KnowledgeGraphViewer({ initialStats }: KnowledgeGraphVie
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`relative flex-1 min-w-max flex items-center justify-center gap-2 px-4 py-3.5 text-xs font-sans transition-all duration-150 cursor-pointer whitespace-nowrap border-r last:border-r-0 border-[#f0f0f0] dark:border-[#272a34] ${
+                className={`relative flex-1 min-w-max flex items-center justify-center gap-2 px-4 py-3.5 text-sm font-sans transition-all duration-150 cursor-pointer whitespace-nowrap border-r last:border-r-0 border-[#f0f0f0] dark:border-[#272a34] ${
                   isActive
                     ? 'bg-white dark:bg-[#16181d] text-gray-900 dark:text-white font-bold'
                     : 'bg-[#f8f9fa] dark:bg-[#0d0e12] text-gray-600 dark:text-gray-400 font-medium hover:bg-[#f0f1f3] dark:hover:bg-[#16181d]/50 hover:text-gray-900 dark:hover:text-gray-200'
@@ -363,55 +364,7 @@ export default function KnowledgeGraphViewer({ initialStats }: KnowledgeGraphVie
           {/* Tab 7: Session Handover Log & Engineering Roles */}
           {activeTab === 'handover' && (
             <div className="p-5 sm:p-6 space-y-6 font-sans">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#f0f0f0] dark:border-[#272a34] pb-4">
-                <div>
-                  <h2 className="text-base font-bold font-sans text-gray-900 dark:text-white flex items-center gap-2">
-                    <History className="w-4 h-4 text-[#ff5e1f]" />
-                    Session Handover &amp; Engineering Roles Protocol
-                  </h2>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                    Protokol handover multi-IDE (Antigravity, Claude Code, Cursor, Codex) berbasis 6 domain peran rekayasa.
-                  </p>
-                </div>
-                <span className="text-xs text-gray-400 font-mono self-start sm:self-auto bg-gray-100 dark:bg-[#16181d] px-2.5 py-1 rounded-md border border-[#f0f0f0] dark:border-[#272a34]">
-                  Session ID: #SESS-20260903-36
-                </span>
-              </div>
-
-              {/* 1. Active Session Signature Card */}
-              <div className="p-5 rounded-xl bg-gradient-to-br from-[#ff5e1f]/5 via-purple-500/5 to-transparent border border-[#ff5e1f]/20 space-y-4 font-sans">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                    <span className="font-bold font-sans text-sm text-gray-900 dark:text-white">Active Session Signature</span>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="px-2.5 py-0.5 text-xs font-bold rounded-full bg-[#ff5e1f]/10 text-[#ff5e1f] border border-[#ff5e1f]/20 flex items-center gap-1">
-                      🎨 Frontend &amp; UI/UX
-                    </span>
-                    <span className="px-2.5 py-0.5 text-xs font-bold rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
-                      Antigravity (Gemini 3.8)
-                    </span>
-                    <span className="px-2.5 py-0.5 text-xs font-bold rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                      Branch: main
-                    </span>
-                  </div>
-                </div>
-
-                <p className="text-xs font-sans text-gray-600 dark:text-gray-300 leading-relaxed">
-                  Implementasi tombol hover 3-titik (<strong>MoreHorizontal</strong>) pada seluruh kartu task dengan aksi <strong>Duplicate</strong> (duplikasi task + pembuatan page Notion real-time) dan <strong>Delete</strong> (modal konfirmasi + pengarsipan page Notion).
-                </p>
-
-                <div className="pt-3 border-t border-[#ff5e1f]/15 flex flex-col sm:flex-row sm:items-center justify-between text-xs text-gray-500 dark:text-gray-400 gap-2">
-                  <div>
-                    <span className="font-bold text-gray-700 dark:text-gray-300">Next Recommended Role: </span>
-                    <span className="text-[#ff5e1f] font-semibold">🎨 Frontend &amp; UI/UX</span> atau <span className="text-blue-500 font-semibold">🏛️ Architecture &amp; Knowledge Ops</span>
-                  </div>
-                  <span className="font-mono text-[11px] text-gray-400">Timestamp: 2026-09-03 14:00 WIB</span>
-                </div>
-              </div>
-
-              {/* 2. Registered Engineering Roles Matrix */}
+              {/* Registered Engineering Roles Matrix */}
               <div className="space-y-3 font-sans">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-sans font-bold text-gray-400 uppercase tracking-wider">
@@ -450,46 +403,8 @@ export default function KnowledgeGraphViewer({ initialStats }: KnowledgeGraphVie
                 </div>
               </div>
 
-              {/* 3. Historical Session Notes with Role Tags */}
-              <div className="space-y-2 pt-2 font-sans">
-                <span className="text-xs font-sans font-bold text-gray-400 uppercase tracking-wider">
-                  Historical Handover Log (Tagged by Role)
-                </span>
-                
-                <div className="p-4 rounded-xl bg-gray-50/50 dark:bg-[#16181d]/50 border border-[#f0f0f0] dark:border-[#272a34] space-y-2 text-xs font-sans text-gray-600 dark:text-gray-300">
-                  <div className="flex items-center justify-between">
-                    <p className="font-bold font-sans text-gray-900 dark:text-white">1. Inter Font Post-Migration Grep Audit Protocol</p>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#ff5e1f]/10 text-[#ff5e1f] border border-[#ff5e1f]/20">🎨 Frontend</span>
-                  </div>
-                  <p className="text-gray-500 dark:text-gray-400 leading-relaxed">
-                    Menambahkan instruksi audit wajib <code className="font-mono text-[#ff5e1f]">grep_search</code> untuk pola <code className="font-mono text-[#ff5e1f]">font-mono</code> pada aturan #19 di <code className="font-mono text-[#ff5e1f]">issues-and-fixes.md</code> guna menjamin tidak ada teks UI/badge yang tertinggal.
-                  </p>
-                </div>
-
-                <div className="p-4 rounded-xl bg-gray-50/50 dark:bg-[#16181d]/50 border border-[#f0f0f0] dark:border-[#272a34] space-y-2 text-xs font-sans text-gray-600 dark:text-gray-300">
-                  <div className="flex items-center justify-between">
-                    <p className="font-bold font-sans text-gray-900 dark:text-white">2. Universal Inter Typography Standardization</p>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#ff5e1f]/10 text-[#ff5e1f] border border-[#ff5e1f]/20">🎨 Frontend</span>
-                  </div>
-                  <p className="text-gray-500 dark:text-gray-400 leading-relaxed">Menghapus font Outfit dari <code className="font-mono text-[#ff5e1f]">layout.tsx</code>, meng-alias token <code className="font-mono text-[#ff5e1f]">--font-display</code> ke Inter, dan menstandarisasi 30+ file UI ke <code className="font-mono text-[#ff5e1f]">font-sans</code>.</p>
-                </div>
-
-                <div className="p-4 rounded-xl bg-gray-50/50 dark:bg-[#16181d]/50 border border-[#f0f0f0] dark:border-[#272a34] space-y-2 text-xs font-sans text-gray-600 dark:text-gray-300">
-                  <div className="flex items-center justify-between">
-                    <p className="font-bold font-sans text-gray-900 dark:text-white">3. Double Border Elimination &amp; Navigation Tab Proportional Sizing</p>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#ff5e1f]/10 text-[#ff5e1f] border border-[#ff5e1f]/20">🎨 Frontend</span>
-                  </div>
-                  <p className="text-gray-500 dark:text-gray-400 leading-relaxed">Menghapus <code className="font-mono text-[#ff5e1f]">border-t</code> / <code className="font-mono text-[#ff5e1f]">border-b</code> berlebih pada kontainer <code className="font-mono text-[#ff5e1f]">divide-y</code>, serta mengatur tab navigasi dengan padding proporsional sama rata (<code className="font-mono text-[#ff5e1f]">px-5 sm:px-6 py-3.5</code>) tanpa truncate.</p>
-                </div>
-
-                <div className="p-4 rounded-xl bg-gray-50/50 dark:bg-[#16181d]/50 border border-[#f0f0f0] dark:border-[#272a34] space-y-2 text-xs font-sans text-gray-600 dark:text-gray-300">
-                  <div className="flex items-center justify-between">
-                    <p className="font-bold font-sans text-gray-900 dark:text-white">4. Billing &amp; Statement Symmetrical Table Style &amp; Payout Header Grid</p>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">💼 Business</span>
-                  </div>
-                  <p className="text-gray-500 dark:text-gray-400 leading-relaxed">Merombak header Payout Breakdown &amp; <code className="font-mono text-[#ff5e1f]">MonthFilter</code> ke flat table style (<code className="font-mono text-[#ff5e1f]">rounded-none</code>, <code className="font-mono text-[#ff5e1f]">min-h-[52px]</code>) dengan pemicu rata kanan di kolom 25% grid.</p>
-                </div>
-              </div>
+              {/* Multi-Editor Expandable Session Timeline Component */}
+              <ExpandableSessionTimeline />
             </div>
           )}
         </div>

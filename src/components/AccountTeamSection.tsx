@@ -94,7 +94,7 @@ export default function AccountTeamSection({ designers, accounts }: Props) {
           <button
             type="button"
             onClick={() => setActiveTab('designer')}
-            className={`relative flex items-center gap-2 px-4 py-2.5 text-xs font-sans transition-all duration-150 cursor-pointer whitespace-nowrap border-r border-[#f0f0f0] dark:border-[#272a34] ${
+            className={`relative flex items-center gap-2 px-4 py-2.5 text-sm font-sans transition-all duration-150 cursor-pointer whitespace-nowrap border-r border-[#f0f0f0] dark:border-[#272a34] ${
               activeTab === 'designer'
                 ? 'bg-white dark:bg-[#16181d] text-gray-900 dark:text-white font-bold'
                 : 'bg-[#f8f9fa] dark:bg-[#0d0e12] text-gray-600 dark:text-gray-400 font-medium hover:bg-[#f0f1f3] dark:hover:bg-[#16181d]/50 hover:text-gray-900 dark:hover:text-gray-200'
@@ -110,7 +110,7 @@ export default function AccountTeamSection({ designers, accounts }: Props) {
           <button
             type="button"
             onClick={() => setActiveTab('account')}
-            className={`relative flex items-center gap-2 px-4 py-2.5 text-xs font-sans transition-all duration-150 cursor-pointer whitespace-nowrap border-r border-[#f0f0f0] dark:border-[#272a34] ${
+            className={`relative flex items-center gap-2 px-4 py-2.5 text-sm font-sans transition-all duration-150 cursor-pointer whitespace-nowrap border-r border-[#f0f0f0] dark:border-[#272a34] ${
               activeTab === 'account'
                 ? 'bg-white dark:bg-[#16181d] text-gray-900 dark:text-white font-bold'
                 : 'bg-[#f8f9fa] dark:bg-[#0d0e12] text-gray-600 dark:text-gray-400 font-medium hover:bg-[#f0f1f3] dark:hover:bg-[#16181d]/50 hover:text-gray-900 dark:hover:text-gray-200'

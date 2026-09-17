@@ -25,6 +25,7 @@ import MonthFilter from './MonthFilter';
 import PayrollStatusToggle from '@/components/PayrollStatusToggle';
 import { getPayrollStatusMap } from '@/app/actions/payroll-status';
 import ApprovalPayrollTable from '@/components/ApprovalPayrollTable';
+import { formatDateStringToTaskMonth } from '@/lib/period-utils';
 
 function formatCurrency(amount: number) {
   return `IDR ${amount.toLocaleString('id-ID')}`;
@@ -112,7 +113,6 @@ export default async function BillingStatementPage(props: {
   const contractRateRes = await getContractRateAction();
   const contractRate = contractRateRes.success ? contractRateRes.contractRate : 15000;
 
-  // Find available months
   const tasksWithMonths = await prisma.task.findMany({
     where: { payrollMonth: { not: null } },
     select: { payrollMonth: true },
@@ -120,13 +120,12 @@ export default async function BillingStatementPage(props: {
   });
   
   const availableMonths = tasksWithMonths
-    .map(t => t.payrollMonth!)
+    .map(t => formatDateStringToTaskMonth(t.payrollMonth) || t.payrollMonth!)
     .sort((a, b) => getMonthValue(b) - getMonthValue(a));
   
-  const selectedMonth = searchParams.paymentMonth || availableMonths[0] || 'Unknown';
+  const selectedMonth = formatDateStringToTaskMonth(searchParams.paymentMonth) || searchParams.paymentMonth || availableMonths[0] || 'Unknown';
   const activeTab = searchParams.tab || 'summary';
 
-  // Fetch all designers with their approved tasks for the selected month
   const designersData = await prisma.designer.findMany({
     include: {
       tasks: {
@@ -144,7 +143,6 @@ export default async function BillingStatementPage(props: {
     }
   });
 
-  // Calculate metrics per designer
   let totalMonthlyPayout = 0;
   let totalTasks = 0;
   let totalTemplates = 0;
@@ -192,7 +190,7 @@ export default async function BillingStatementPage(props: {
       totalPages: designerPages,
       totalPayroll: designerPayroll
     };
-  }).sort((a, b) => b.totalPayroll - a.totalPayroll); // Sort by highest payroll
+  }).sort((a, b) => b.totalPayroll - a.totalPayroll);
 
   const designLeader = designers.length > 0 && designers[0].totalPayroll > 0 ? designers[0].displayName : 'None';
 
@@ -305,7 +303,7 @@ export default async function BillingStatementPage(props: {
               <div className="flex items-stretch divide-x divide-[#f0f0f0] dark:divide-[#272a34] border-r border-[#f0f0f0] dark:border-[#272a34]">
                 <Link
                   href={`?paymentMonth=${selectedMonth}&tab=summary`}
-                  className={`relative flex items-center justify-center gap-2 px-5 sm:px-6 py-3.5 text-xs sm:text-sm transition-all duration-150 cursor-pointer whitespace-nowrap ${
+                  className={`relative flex items-center justify-center gap-2 px-5 sm:px-6 py-3.5 text-sm font-sans transition-all duration-150 cursor-pointer whitespace-nowrap ${
                     activeTab === 'summary'
                       ? 'bg-white dark:bg-[#16181d] text-gray-900 dark:text-white font-bold'
                       : 'bg-[#f8f9fa] dark:bg-[#0d0e12] text-gray-600 dark:text-gray-400 font-medium hover:bg-[#f0f1f3] dark:hover:bg-[#16181d]/50 hover:text-gray-900 dark:hover:text-gray-200'
@@ -319,7 +317,7 @@ export default async function BillingStatementPage(props: {
                 </Link>
                 <Link
                   href={`?paymentMonth=${selectedMonth}&tab=approval-payroll`}
-                  className={`relative flex items-center justify-center gap-2 px-5 sm:px-6 py-3.5 text-xs sm:text-sm transition-all duration-150 cursor-pointer whitespace-nowrap ${
+                  className={`relative flex items-center justify-center gap-2 px-5 sm:px-6 py-3.5 text-sm font-sans transition-all duration-150 cursor-pointer whitespace-nowrap ${
                     activeTab === 'approval-payroll'
                       ? 'bg-white dark:bg-[#16181d] text-gray-900 dark:text-white font-bold'
                       : 'bg-[#f8f9fa] dark:bg-[#0d0e12] text-gray-600 dark:text-gray-400 font-medium hover:bg-[#f0f1f3] dark:hover:bg-[#16181d]/50 hover:text-gray-900 dark:hover:text-gray-200'

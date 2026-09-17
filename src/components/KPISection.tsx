@@ -6,6 +6,7 @@ import {
   Package,
   FileText
 } from 'lucide-react';
+import { parseTaskMonthToKey, INDONESIAN_FULL_MONTHS } from '@/lib/period-utils';
 
 interface KPIData {
   totalTasks: number;
@@ -62,18 +63,20 @@ export default function KPISection({ kpi, selectedPeriod }: KPISectionProps) {
   const priorPages = Math.round(kpi.totalPages / (1 + kpi.pagesChangePct / 100)) || 0;
 
   // Resolve dynamic label text based on selected months
-  const periods = selectedPeriod.split(',').filter(Boolean);
-  let periodLabel = 'Dalam 6 Bulan Terakhir';
+  const isAll = !selectedPeriod || selectedPeriod === 'all';
+  const periods = isAll ? [] : selectedPeriod.split(',').filter(Boolean);
+  let periodLabel = 'Dalam Semua Bulan';
   
   if (periods.length === 1) {
-    const [y, m] = periods[0].split('-');
-    const monthNamesFull: { [key: string]: string } = {
-      '01': 'Januari', '02': 'Februari', '03': 'Maret', '04': 'April',
-      '05': 'Mei', '06': 'Juni', '07': 'Juli', '08': 'Agustus',
-      '09': 'September', '10': 'Oktober', '11': 'November', '12': 'Desember'
-    };
-    const mName = monthNamesFull[m] || m;
-    periodLabel = `Dalam ${mName}-${y}`;
+    const key = parseTaskMonthToKey(periods[0]);
+    if (key) {
+      const [y, m] = key.split('-');
+      const mIdx = parseInt(m, 10) - 1;
+      const mName = INDONESIAN_FULL_MONTHS[mIdx] || m;
+      periodLabel = `Dalam ${mName}-${y}`;
+    } else {
+      periodLabel = `Dalam ${periods[0]}`;
+    }
   } else if (periods.length > 1) {
     periodLabel = `Dalam ${periods.length} Bulan`;
   }

@@ -1,7 +1,7 @@
 import prisma from '@/lib/prisma';
 import { Client } from '@notionhq/client';
 import { decrypt } from '@/lib/encryption';
-import { formatDateStringToTaskMonth } from '@/lib/period-utils';
+import { formatDateStringToTaskMonth, formatTaskMonthToDateString } from '@/lib/period-utils';
 
 export type NotionSyncMode = 'incremental' | 'full';
 
@@ -35,6 +35,269 @@ export function getSyncProgress(): SyncProgressState {
 
 const INCREMENTAL_OVERLAP_MS = 2 * 60 * 1000;
 
+function findNotionStatusOption(options: Array<{ id: string; name: string }>, targetKey: string) {
+  if (!options || !targetKey) return null;
+  const cleanTarget = targetKey.trim().toLowerCase();
+
+  const exact = options.find((opt) => opt.name.toLowerCase() === cleanTarget || opt.id === targetKey);
+  if (exact) return exact;
+
+  const normTarget = cleanTarget.replace(/[^a-z0-9]/g, '');
+  const normMatch = options.find((opt) => opt.name.toLowerCase().replace(/[^a-z0-9]/g, '') === normTarget);
+  if (normMatch) return normMatch;
+
+  if (cleanTarget === 'qa' || cleanTarget.includes('q&a') || cleanTarget.includes('in qa') || cleanTarget.includes('quality assurance')) {
+    const qaMatch = options.find((opt) => opt.name.toLowerCase().includes('qa'));
+    if (qaMatch) return qaMatch;
+  }
+
+  if (cleanTarget.includes('aprov') || cleanTarget.includes('approv')) {
+    if (cleanTarget.includes('profile')) {
+      const profileMatch = options.find((opt) => opt.name.toLowerCase().includes('profile'));
+      if (profileMatch) return profileMatch;
+    } else {
+      const approvedMatch = options.find(
+        (opt) => (opt.name.toLowerCase().includes('aprov') || opt.name.toLowerCase().includes('approv')) && !opt.name.toLowerCase().includes('profile')
+      );
+      if (approvedMatch) return approvedMatch;
+    }
+  }
+
+  if (cleanTarget.includes('not start') || cleanTarget === 'todo' || cleanTarget === 'to do') {
+    const notStartedMatch = options.find((opt) => opt.name.toLowerCase().includes('not start'));
+    if (notStartedMatch) return notStartedMatch;
+  }
+
+  if (cleanTarget.includes('progress') || cleanTarget.includes('doing') || cleanTarget.includes('working')) {
+    const inProgMatch = options.find((opt) => opt.name.toLowerCase().includes('progress'));
+    if (inProgMatch) return inProgMatch;
+  }
+
+  if (cleanTarget.includes('review')) {
+    const reviewMatch = options.find((opt) => opt.name.toLowerCase().includes('review'));
+    if (reviewMatch) return reviewMatch;
+  }
+
+  if (cleanTarget.includes('draft')) {
+    const draftMatch = options.find((opt) => opt.name.toLowerCase().includes('draft'));
+    if (draftMatch) return draftMatch;
+  }
+
+  if (cleanTarget.includes('reject')) {
+    const rejectMatch = options.find((opt) => opt.name.toLowerCase().includes('reject'));
+    if (rejectMatch) return rejectMatch;
+  }
+
+  return null;
+}
+
+async function getNotionDatabaseSchemaProperties(client: Client, databaseId: string): Promise<Record<string, any>> {
+  try {
+    const db: any = await client.databases.retrieve({ database_id: databaseId });
+    if (db.properties && Object.keys(db.properties).length > 0) {
+      return db.properties;
+    }
+    if (db.data_sources?.[0]?.id) {
+      const ds: any = await (client as any).dataSources.retrieve({
+        data_source_id: db.data_sources[0].id,
+      });
+      if (ds.properties) {
+        return ds.properties;
+      }
+    }
+    return db.properties || {};
+  } catch (err) {
+    console.warn('Failed to retrieve Notion database schema properties:', err);
+    return {};
+  }
+}
+
+export async function pushPendingLocalChangesToNotion() {
+  const pendingTasks = await prisma.task.findMany({
+    where: {
+      syncStatus: 'PENDING_PUSH',
+      NOT: {
+        notionPageId: { startsWith: 'sync_mock_page_' }
+      }
+    },
+    include: {
+      designer: true,
+      doctype: true,
+      designStatus: true,
+      taskAccounts: { include: { account: true } },
+      canvaLinks: true,
+    }
+  });
+
+  if (pendingTasks.length === 0) {
+    return { pushedCount: 0 };
+  }
+
+  let activeApiKey = process.env.NOTION_API_KEY || null;
+  let databaseId = process.env.NOTION_DATABASE_ID || null;
+
+  const dbConfig = await prisma.notionConfig.findFirst({
+    include: { databases: true }
+  });
+
+  if (dbConfig) {
+    try {
+      const decryptedApiKey = decrypt(dbConfig.encryptedApiKey, dbConfig.iv);
+      if (decryptedApiKey) activeApiKey = decryptedApiKey;
+      if (dbConfig.databases[0]) {
+        const decryptedDbId = decrypt(dbConfig.databases[0].encryptedDatabaseId, dbConfig.databases[0].iv);
+        if (decryptedDbId) databaseId = decryptedDbId;
+      }
+    } catch (err) {
+      console.error('Failed to decrypt Notion config for outbound push:', err);
+    }
+  }
+
+  if (!activeApiKey) {
+    console.warn('Cannot push local changes to Notion: Missing API Key.');
+    return { pushedCount: 0 };
+  }
+
+  const client = new Client({ auth: activeApiKey });
+  let schemaProps: Record<string, any> = {};
+  if (databaseId) {
+    schemaProps = await getNotionDatabaseSchemaProperties(client, databaseId);
+  }
+
+  let pushedCount = 0;
+
+  for (const task of pendingTasks) {
+    try {
+      const properties: Record<string, any> = {};
+
+      if (task.name) {
+        properties.Name = { title: [{ text: { content: task.name } }] };
+      }
+
+      // Payroll Month
+      if (task.payrollMonth !== undefined) {
+        const propName = schemaProps['Payroll Month'] ? 'Payroll Month' : (schemaProps['Payroll-Month'] ? 'Payroll-Month' : 'Payroll Month');
+        properties[propName] = task.payrollMonth
+          ? { select: { name: task.payrollMonth } }
+          : { select: null };
+      }
+
+      // Task Month
+      if (task.taskMonth && schemaProps['Task Month']) {
+        if (schemaProps['Task Month'].type === 'date') {
+          const dateStr = formatTaskMonthToDateString(task.taskMonth);
+          if (dateStr) properties['Task Month'] = { date: { start: dateStr } };
+        } else {
+          properties['Task Month'] = { select: { name: task.taskMonth } };
+        }
+      }
+
+      // Design Status
+      if (task.designStatus && schemaProps['Design Status']) {
+        const options = schemaProps['Design Status']?.status?.options || schemaProps['Design Status']?.select?.options;
+        const statusOption = options
+          ? findNotionStatusOption(options, task.designStatus.notionKey || task.designStatus.displayName)
+          : null;
+        if (schemaProps['Design Status'].type === 'status') {
+          properties['Design Status'] = statusOption
+            ? { status: { id: statusOption.id } }
+            : { status: { name: task.designStatus.notionKey || task.designStatus.displayName } };
+        } else {
+          properties['Design Status'] = statusOption
+            ? { select: { name: statusOption.name } }
+            : { select: { name: task.designStatus.displayName } };
+        }
+      }
+
+      // QTY-Submit / QTY Submit
+      if (task.qtySubmit != null) {
+        const qtyKey = schemaProps['QTY-Submit'] ? 'QTY-Submit' : (schemaProps['QTY Submit'] ? 'QTY Submit' : 'QTY-Submit');
+        properties[qtyKey] = { number: Number(task.qtySubmit) };
+      }
+
+      // Pages
+      if (task.pages != null && schemaProps['Pages']) {
+        properties['Pages'] = { number: Number(task.pages) };
+      }
+
+      // Pool Score
+      if (task.poolScore != null && schemaProps['Pool Score']) {
+        properties['Pool Score'] = { number: Number(task.poolScore) };
+      }
+
+      // Priority
+      if (task.priority && schemaProps['Priority']) {
+        properties['Priority'] = { select: { name: task.priority } };
+      }
+
+      // License
+      if (task.license && schemaProps['License']) {
+        properties['License'] = { select: { name: task.license } };
+      }
+
+      // Doctype
+      if (task.doctype?.displayName && schemaProps['Doctype']) {
+        properties['Doctype'] = { select: { name: task.doctype.displayName } };
+      }
+
+      // Designer
+      if (task.designer?.displayName && schemaProps['Designer']) {
+        properties['Designer'] = { select: { name: task.designer.displayName } };
+        if (task.designer.status && schemaProps['Designer Status']) {
+          properties['Designer Status'] = { select: { name: task.designer.status } };
+        }
+      }
+
+      // IND/ENG
+      if (task.languages && task.languages.length > 0) {
+        const langKey = schemaProps['IND/ENG'] ? 'IND/ENG' : (schemaProps['IND\\ENG'] ? 'IND\\ENG' : 'IND/ENG');
+        properties[langKey] = { multi_select: task.languages.map((l) => ({ name: l })) };
+      }
+
+      // Brand / Account
+      if (task.taskAccounts && task.taskAccounts.length > 0) {
+        const brandKey = schemaProps['Brand'] ? 'Brand' : (schemaProps['Account'] ? 'Account' : 'Brand');
+        properties[brandKey] = { multi_select: task.taskAccounts.map((ta) => ({ name: ta.account.displayName })) };
+      }
+
+      // Template Link
+      const templateLinkUrl = task.canvaLinks?.[0]?.url || task.notionUrl || null;
+      if (templateLinkUrl && schemaProps['Template Link']) {
+        if (schemaProps['Template Link'].type === 'files') {
+          properties['Template Link'] = {
+            files: [{ name: 'Template Link', external: { url: templateLinkUrl } }],
+          };
+        } else {
+          properties['Template Link'] = { url: templateLinkUrl };
+        }
+      }
+
+      await client.pages.update({
+        page_id: task.notionPageId,
+        properties,
+      });
+
+      await prisma.task.update({
+        where: { id: task.id },
+        data: {
+          syncStatus: 'SYNCED',
+          lastSyncedAt: new Date(),
+        },
+      });
+
+      pushedCount++;
+    } catch (err: any) {
+      console.error(`Failed to push local task ${task.id} to Notion:`, err);
+      await prisma.task.update({
+        where: { id: task.id },
+        data: { syncStatus: 'ERROR' },
+      }).catch(() => {});
+    }
+  }
+
+  return { pushedCount };
+}
+
 export async function syncNotionData(mode: NotionSyncMode = 'incremental') {
   const startedAt = new Date();
   
@@ -60,6 +323,17 @@ export async function syncNotionData(mode: NotionSyncMode = 'incremental') {
   });
 
   try {
+    // Phase 1: Push pending local App UI changes to Notion
+    try {
+      syncProgressStore.currentStepMessage = 'Mengirim perubahan lokal ke Notion...';
+      const pushRes = await pushPendingLocalChangesToNotion();
+      if (pushRes.pushedCount > 0) {
+        console.log(`Successfully pushed ${pushRes.pushedCount} pending local tasks to Notion.`);
+      }
+    } catch (pushErr) {
+      console.error('Outbound sync error during pushPendingLocalChangesToNotion:', pushErr);
+    }
+
     let activeApiKey = process.env.NOTION_API_KEY || null;
     let databasesToSync: string[] = [];
     

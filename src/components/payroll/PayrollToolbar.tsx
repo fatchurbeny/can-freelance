@@ -1,11 +1,12 @@
 'use client';
 
 import {
-  Search, SlidersHorizontal, ChevronDown, Check, User, FileText, Building2, ChevronLeft, X, Loader2,
+  Search, SlidersHorizontal, ChevronDown, Check, User, FileText, Building2, Calendar, ChevronLeft, X, Loader2,
 } from 'lucide-react';
+import MonthCalendarPicker from '../MonthCalendarPicker';
 
 export type SortKey = 'last-edited' | 'az' | 'za';
-export type FilterCategory = 'designers' | 'doctypes' | 'brands';
+export type FilterCategory = 'designers' | 'doctypes' | 'brands' | 'taskMonths';
 
 interface PayrollToolbarProps {
   searchQuery: string;
@@ -28,16 +29,19 @@ interface PayrollToolbarProps {
   setDoctypeFilter: (v: string) => void;
   brandFilter: string;
   setBrandFilter: (v: string) => void;
+  taskMonthFilter: string;
+  setTaskMonthFilter: (v: string) => void;
   designerOptions: string[];
   doctypeOptions: string[];
   brandOptions: string[];
+  taskMonthOptions: string[];
   selectedIdsCount: number;
   totalFilteredCount: number;
   batchMonth: string;
   setBatchMonth: (m: string) => void;
-  batchOpen: boolean;
-  setBatchOpen: (open: boolean) => void;
-  batchRef: React.RefObject<HTMLDivElement | null>;
+  batchOpen?: boolean;
+  setBatchOpen?: (open: boolean) => void;
+  batchRef?: React.RefObject<HTMLDivElement | null>;
   allMonthOptions: string[];
   handleBatchAssign: () => void;
   isPending: boolean;
@@ -48,12 +52,13 @@ export default function PayrollToolbar({
   sortKey, setSortKey, sortOpen, setSortOpen, sortRef, SORT_LABELS,
   filterOpen, setFilterOpen, filterRef, activeCategory, setActiveCategory, activeFilterCount,
   designerFilter, setDesignerFilter, doctypeFilter, setDoctypeFilter, brandFilter, setBrandFilter,
-  designerOptions, doctypeOptions, brandOptions,
+  taskMonthFilter, setTaskMonthFilter,
+  designerOptions, doctypeOptions, brandOptions, taskMonthOptions,
   selectedIdsCount, totalFilteredCount,
   batchMonth, setBatchMonth, batchOpen, setBatchOpen, batchRef, allMonthOptions, handleBatchAssign, isPending,
 }: PayrollToolbarProps) {
   return (
-    <div className="w-full h-10 border-b border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] flex items-stretch justify-between divide-x divide-[#f0f0f0] dark:divide-[#272a34] font-sans text-xs select-none p-0 overflow-visible">
+    <div className="w-full h-11 border-b border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] flex items-stretch justify-between divide-x divide-[#f0f0f0] dark:divide-[#272a34] font-sans text-xs select-none p-0 overflow-visible">
       {/* Left Tools Group: Search + Sort + Filter */}
       <div className="flex items-stretch divide-x divide-[#f0f0f0] dark:divide-[#272a34] min-w-0">
         {/* Search Cell */}
@@ -171,6 +176,18 @@ export default function PayrollToolbar({
                       <span className="px-1.5 py-0.5 rounded-[4px] bg-black dark:bg-white text-white dark:text-black font-bold text-[10px]">1</span>
                     )}
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveCategory('taskMonths')}
+                    className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-none text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#20232b] transition-colors cursor-pointer"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-gray-400" /> Task Month
+                    </span>
+                    {taskMonthFilter && (
+                      <span className="px-1.5 py-0.5 rounded-[4px] bg-black dark:bg-white text-white dark:text-black font-bold text-[10px]">1</span>
+                    )}
+                  </button>
                 </div>
               ) : (
                 <div>
@@ -188,6 +205,7 @@ export default function PayrollToolbar({
                         if (activeCategory === 'designers') setDesignerFilter('');
                         if (activeCategory === 'doctypes') setDoctypeFilter('');
                         if (activeCategory === 'brands') setBrandFilter('');
+                        if (activeCategory === 'taskMonths') setTaskMonthFilter('');
                       }}
                       className="text-[10px] text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors cursor-pointer"
                     >
@@ -195,7 +213,7 @@ export default function PayrollToolbar({
                     </button>
                   </div>
 
-                  <div className="space-y-0.5 max-h-52 overflow-y-auto">
+                  <div className="space-y-0.5 max-h-64 overflow-y-auto">
                     {activeCategory === 'designers' && designerOptions.map((opt) => {
                       const isChecked = designerFilter === opt;
                       return (
@@ -270,6 +288,22 @@ export default function PayrollToolbar({
                         </button>
                       );
                     })}
+
+                    {activeCategory === 'taskMonths' && (
+                      <div className="w-56 sm:w-60">
+                        <MonthCalendarPicker
+                          inline
+                          value={taskMonthFilter}
+                          availableMonths={taskMonthOptions}
+                          mode="filter"
+                          onChange={(m) => {
+                            setTaskMonthFilter(m === 'all' ? '' : m);
+                            setFilterOpen(false);
+                            setActiveCategory(null);
+                          }}
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -301,6 +335,14 @@ export default function PayrollToolbar({
             </button>
           </div>
         )}
+        {taskMonthFilter && (
+          <div className="flex items-center px-3.5 h-full bg-gray-100 dark:bg-[#1f222b] text-gray-900 dark:text-white text-xs font-sans font-bold gap-1.5">
+            <span>Task Month: {taskMonthFilter}</span>
+            <button type="button" onClick={() => setTaskMonthFilter('')} className="text-gray-400 hover:text-red-500 transition-colors cursor-pointer">
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Right Tools Group: Count + Batch Month Picker + Assign Selected Button */}
@@ -310,41 +352,14 @@ export default function PayrollToolbar({
         </div>
 
         {/* Batch Month Picker Cell */}
-        <div className="relative h-full" ref={batchRef}>
-          <button
-            type="button"
-            onClick={() => setBatchOpen(!batchOpen)}
-            className="w-[140px] h-full flex items-center justify-between px-3.5 bg-white dark:bg-[#0d0e12] hover:bg-gray-50 dark:hover:bg-[#16181d] text-xs font-sans font-medium text-gray-700 dark:text-gray-200 focus:outline-none transition-colors cursor-pointer select-none whitespace-nowrap"
-          >
-            <span className="truncate">{batchMonth || 'Pilih bulan...'}</span>
-            <ChevronDown className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 shrink-0" />
-          </button>
-          {batchOpen && (
-            <div className="absolute right-0 top-full z-50 mt-0 w-44 rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] p-1.5 shadow-xl max-h-60 overflow-y-auto font-sans text-xs">
-              <div className="space-y-0.5 px-1">
-                {allMonthOptions.map((month) => {
-                  const isChecked = batchMonth === month;
-                  return (
-                    <button
-                      key={month}
-                      type="button"
-                      onClick={() => { setBatchMonth(batchMonth === month ? '' : month); setBatchOpen(false); }}
-                      className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-none text-left text-xs font-sans text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
-                    >
-                      <span>{month}</span>
-                      <div className={`w-4 h-4 rounded-[5px] border flex items-center justify-center transition-all ${
-                        isChecked
-                          ? 'bg-black border-black text-white dark:bg-white dark:border-white dark:text-black'
-                          : 'border-gray-300 dark:border-[#343846] bg-white dark:bg-[#16181d]'
-                      }`}>
-                        {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+        <div className="w-[150px] sm:w-[160px] h-full align-stretch">
+          <MonthCalendarPicker
+            value={batchMonth}
+            placeholder="Pilih Bulan..."
+            availableMonths={allMonthOptions}
+            mode="payroll"
+            onChange={(m) => setBatchMonth(m)}
+          />
         </div>
 
         {/* Assign Selected Cell */}

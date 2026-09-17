@@ -6,17 +6,244 @@ Dokumen ini mencatat **status pengerjaan aktif**, keputusan arsitektur terbaru, 
 
 ## 📌 Active Session Signature (Role-Based Handover)
 
-* **Session ID**: `#SESS-20260903-38`
-* **Active Engineering Role**: `🎨 [Frontend & UI/UX]` & `🔄 [API & Notion Integration]` & `⚙️ [Backend & Database]` & `🛡️ [DevOps & Release]`
-* **Last Active Agent / Tool**: Antigravity IDE (Gemini 3.6 Flash / Medium)
-* **Timestamp**: 2026-09-03 14:10 WIB
+* **Session ID**: `#SESS-20260917-01`
+* **Active Engineering Role**: `🛡️ [DevOps & Release]`, `🏛️ [Architecture & Knowledge Ops]`, `🎨 [Frontend & UI/UX]`, `⚙️ [Backend & Database]`
+* **Last Active Agent / Tool**: Antigravity (Gemini 3.6 Flash)
+* **Timestamp**: 2026-09-17 14:50 WIB
 * **Active Git Branch**: `staging` (Targeting `main` / `origin/main` Production Direct)
-* **Task State**: ✅ Verified all codebase changes, ran Knowledge Graph AST parser (`npx tsx scripts/graphify-parser.ts` -> 124 nodes & 144 edges), updated `docs/knowledge/issues-and-fixes.md` & `session-handover.md`, verified static typing (`npx tsc --noEmit` exit code 0). Prepared implementation plan for Git commit & direct Vercel Production deployment.
-* **Recommended Next Role**: `🛡️ [DevOps & Release]`
+* **Task State**: ✅ Successfully created Docker configuration (Dockerfile, docker-compose.yml, .dockerignore, .env.example, next.config.ts output standalone).
 
 ---
 
 ## 💡 Keputusan Arsitektur & Perubahan Terakhir (Recent Decisions)
+
+1. **Docker Containerization & Docker Compose Setup (`Dockerfile`, `docker-compose.yml`, `.dockerignore`, `.env.example`, `next.config.ts`)**:
+   - **Standalone Output Mode**: Memperbarui `next.config.ts` dengan `output: 'standalone'` agar kompilasi Next.js 16 menghasilkan server independen di `.next/standalone`.
+   - **Multi-Stage Dockerfile**: Membuat `Dockerfile` (Node 20 Alpine) dengan 3 tahapan (`deps`, `builder`, `runner`). Tahap builder menjalankan `npx prisma generate` untuk output kustom `generated/prisma` dan `npm run build`.
+   - **Docker Compose Stack**: Menyusun layanan `postgres` (PostgreSQL 16 Alpine dengan volume persisten & healthcheck) dan `web` (Next.js app pada port host 3002).
+   - **Build Context & Environment Templates**: Membuat `.dockerignore` untuk mengabaikan `node_modules`, `.next`, `.git`, dan `.env.example` untuk acuan variabel lingkungan.
+   - **Verification**: Executed `npx tsc --noEmit` (**Exit Code 0** / 0 Errors).
+
+1. **Email Notification Sidebar Badge Counter Persistence (`EmailNotificationView.tsx`)**:
+   - **Root Cause Fix**: Sebelumnya `fetchNotifications()` menimpa state `notifications` hanya dengan email milik brand yang dipilih. Komputasi `brandStats` yang membaca `notifications` menyebabkan badge angka untuk brand lain menghitung 0 item sehingga hilang dari sidebar.
+   - **Global Dataset Separation**: Memisahkan state `allNotifications` (dataset global) dan `notifications` (dataset tersaring rute kanan). `brandStats` kini dihitung dari `allNotifications` sehingga seluruh badge counter akun (*All (21)*, *Antler (3)*, *Chital Graphic (6)*, *Improstd (9)*, *UICreative.net (2)*, *Zahra Art (1)*) **selalu tampil stabil dan permanen**.
+   - **Verification**: Executed `npx tsc --noEmit` (**Exit Code 0** / 0 Errors).
+
+1. **Canva Email Body HTML Scanning Engine & Precise Title Extraction (`canva-email-parser.ts`, `reparse-and-update-emails.ts`)**:
+   - **Body Line Scanning Engine (`extractTemplateTitleFromCanvaBody`)**: Canva menyertakan Judul Template tepat 1 baris di atas nama brand/studio dan tombol **Edit Template**. Engine kini menyisir struktur baris HTML/plain text tersebut, mengekstrak judul spesifik murni:
+     - `UICreative.net` link `DAHVWCmNQfE` ➔ **`Typographic Guideline Presentation`**
+     - `UICreative.net` link `DAHUwavLJAk` ➔ **`Strategic Direction Presentation`**
+     - `Chital Graphic` link `DAHROLKD4_o` ➔ **`Profil Restoran Presentation`**
+     - `Antler` link `DAHUrLIGze8` ➔ **`Construction Project Plan Proposal Presentation`**
+   - **Database Synchronization**: Berhasil me-reparse seluruh 21 email di PostgreSQL dengan judul template yang 100% presisi.
+   - **Verification**: Executed `npx tsc --noEmit` (**Exit Code 0** / 0 Errors).
+
+1. **Canva Email Audit, Link Title Alignment & UICreative.net Brand Standardization (`canva-email-parser.ts`, `EmailNotificationView.tsx`, `reparse-and-update-emails.ts`)**:
+   - **UICreative.net Brand Standardization**: Memperbarui record `Account` di PostgreSQL dan menambahkan normalisasi otomatis pada [`canva-email-parser.ts`](file:///Users/fatchurbeny/Documents/Project/can-freelance/src/lib/canva-email-parser.ts) sehingga variasi `uicreative.net`, `uicreative`, `ui creative` selalu ditampilkan secara seragam sebagai **`UICreative.net`**.
+   - **Mass Email Audit & Re-parse**: Menjalankan re-parse massal pada 21 email di database untuk menyelaraskan `templateTitle` dengan slug `templateUrl` Canva (`.../design/DAG.../slug/edit`) dan membuang karakter newline (`\n`).
+   - **Verification**: Executed `npx tsc --noEmit` (**Exit Code 0** / 0 Errors).
+
+1. **Template Title Extraction Clean-Up & Readable Email Row Layout (`canva-email-parser.ts`, `EmailNotificationView.tsx`)**:
+   - **Template Title Sanitization (`cleanTemplateTitle`)**: Menambahkan helper sanitasi untuk mengisolasi judul template murni dan membuang penggabungan nama brand di akhirannya (contoh: mengubah *"Presentation Chital Graphic"* menjadi murni **Presentation** atau **Profil Restoran Presentation** di atas *Chital Graphic*).
+   - **Multi-Strategy Parser**: Memperbarui `parseCanvaEmailText` untuk memprioritaskan ekstraksi judul dari slug URL Canva (`.../profil-restoran-presentation/edit`) serta baris kontekstual sebelum nama brand.
+   - **Readable Row Structure**: Merapikan struktur per-baris kartu email di [`EmailNotificationView.tsx`](file:///Users/fatchurbeny/Documents/Project/can-freelance/src/components/EmailNotificationView.tsx):
+     1. Baris 1: Action bar (Tags + Status + Mark Fixed button).
+     2. Baris 2: Subjek utama `We’ve found some issues with your template`.
+     3. Baris 3: Kotak Spesifikasi (Judul Template tebal `text-sm font-bold` murni di atas Nama Brand `text-xs text-gray-500`, plus tombol ungu Canva `Edit Template`).
+     4. Baris 4: Seksion **ISSUES** bertingkat dengan nomor lingkaran `1`, `2`, Judul Issue tebal (**Inappropriate content**), dan Deskripsi di bawahnya dengan line-height yang lega.
+   - **Verification**: Executed `npx tsc --noEmit` (**Exit Code 0** / 0 Errors).
+
+1. **Canva Email Notification Layout Restructuring & Dummy Seed Purge (`EmailNotificationView.tsx`, `purge-dummy-emails.ts`)**:
+   - **Dummy Seed Purge**: Menghapus seluruh data email dummy (`canva_pub_issue_*`) dari database PostgreSQL. Papan `/production` kini murni hanya menampilkan email asli hasil sinkronisasi Gmail API / IMAP.
+   - **Visual Structure Alignment**: Memperbarui struktur kartu notification pada [`EmailNotificationView.tsx`](file:///Users/fatchurbeny/Documents/Project/can-freelance/src/components/EmailNotificationView.tsx) agar 100% selaras dengan body email Canva dari Gmail:
+     1. Header: **`We’ve found some issues with your template`**
+     2. **Template title** (*Profil Restoran Presentation*)
+     3. **Brand name / Canva account** (*Chital Graphic* / *Chital*)
+     4. Tombol CTA ungu Canva **`Edit Template`** (apabila `templateUrl` tersedia).
+     5. Seksion **Issues** bertingkat (Nomor Badge + Judul Issue Tebal **Inappropriate content** + Deskripsi rincian di bawahnya).
+   - **Verification**: Executed `npx tsc --noEmit` (**Exit Code 0** / 0 Errors).
+
+1. **Production Email Notification Get Flow Check & Post-Sync Filter Preservation (`EmailNotificationView.tsx`)**:
+   - **Root Cause Fix**: Tombol `SYNC EMAIL` menjalankan `syncCanvaEmailsAction()` lalu langsung menimpa state UI dengan semua notification dari sync result, sehingga filter aktif (`brandName`, `status`, `search`) dapat ter-bypass walaupun fungsi `getEmailNotificationsAction()` sudah benar.
+   - **Canonical Get Email Flow**: Setelah sync selesai, UI kini memanggil ulang `fetchNotifications()` sehingga daftar email selalu lewat `getEmailNotificationsAction()` dengan filter aktif yang sama.
+   - **Verification**: Executed `npx tsc --noEmit` (**Exit Code 0**) and UI grep audit confirmed no native `<select>` usage in `EmailNotificationView.tsx`; the only `font-mono` usage remains the raw email body inspection block.
+
+1. **Google OAuth2 Authentication & Gmail API Sync Implementation (`EmailConfigCard.tsx`, `GoogleOAuthModal.tsx`, `api/google/oauth/*`, `gmail-client.ts`, `google-oauth.ts`, `email-notification.ts`, `schema.prisma`)**:
+   - **Real OAuth Flow**: Replaced fake Gmail tab opening with `/api/google/oauth/start` and `/api/google/oauth/callback`, using `access_type=offline`, CSRF state cookie, Google token exchange, and Gmail profile verification.
+   - **2FA-Compatible Sync**: Stores encrypted refresh token in `EmailConfig.encryptedOAuthToken` and syncs Canva issue emails via Gmail API search instead of password-based IMAP when `provider = GMAIL_OAUTH`.
+   - **Connection State UI**: Added `ACTIVE`, `DISCONNECTED`, `AUTH_FAILED`, and `RECONNECT_REQUIRED` states with dynamic Authenticate/Reconnect/Disconnect actions and visible auth errors.
+   - **Disconnect Handling**: Added `disconnectGoogleEmailAction()` to revoke the Google token when possible, clear stored credentials, preserve existing email notifications, and revalidate `/notion-config` and `/production`.
+   - **Verification**: Executed `npx prisma generate`, `npx prisma db push`, and `npx tsc --noEmit` (**Exit Code 0**). UI grep audit for `EmailConfigCard.tsx` and `GoogleOAuthModal.tsx` found 0 native `<select>` and 0 illegal `font-mono`.
+
+1. **Standard Gmail Account Chooser UX Simplification (`GoogleOAuthModal.tsx`, `EmailConfigCard.tsx`)**:
+   - **No Manual Email as Source of Truth**: Removed the required Target Gmail input from the OAuth modal. The modal now presents a `Continue with Google` action and uses the existing email only as an optional `login_hint`.
+   - **User-Facing Labels**: Updated card action copy from `Authenticate` to `Connect Gmail` / `Reconnect Gmail`, matching the real Google OAuth account chooser pattern.
+   - **Verification**: Executed `npx tsc --noEmit` (**Exit Code 0**) and UI grep audit confirmed no native `<select>`, illegal `font-mono`, or stale auth copy in `EmailConfigCard.tsx` and `GoogleOAuthModal.tsx`.
+
+1. **Google OAuth Config Guard (`email-notification.ts`, `EmailConfigCard.tsx`)**:
+   - **Root Cause Fix**: Users could still click `Connect Gmail` while Google OAuth env vars were missing, causing repeated `missing_config` feedback and failed auth attempts.
+   - **Server-Side Config Check**: `getEmailConfigAction()` now returns `googleOAuthConfigured` based on `GOOGLE_CLIENT_ID`/`GOOGLE_OAUTH_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`/`GOOGLE_OAUTH_CLIENT_SECRET`.
+   - **Guarded UI**: `Connect Gmail` is disabled until config is present and the card shows a setup-required note with the callback route.
+   - **Verification**: Executed `npx tsc --noEmit` (**Exit Code 0**) and UI grep audit confirmed no native `<select>` or illegal `font-mono` in edited auth components.
+
+1. **Concise Canva Email Issue Display (`canva-email-parser.ts`, `gmail-client.ts`, `EmailNotificationView.tsx`)**:
+   - **Root Cause Fix**: Gmail sync was storing mixed text/html email body fragments as issue messages, causing footer text, HTML/CSS, template URL, and Canva boilerplate to appear in the Production Email Notifications issue panel.
+   - **Parser Cleanup**: Gmail body extraction now prefers `text/plain`; Canva parser strips HTML and filters Canva boilerplate/footer/CSS, preserving only issue-like lines.
+   - **UI Cleanup**: Email notification cards now show only subject, Canva Account/brand, status, and concise issue list. Sender/received/template/raw body/edit CTA were removed from the main display.
+   - **Verification**: Executed `npx tsc --noEmit` (**Exit Code 0**) and UI grep audit confirmed no raw body/template/sender metadata remnants or illegal `font-mono` in `EmailNotificationView.tsx`.
+
+1. **Canva Issue Title + Description Extraction (`canva-email-parser.ts`, `EmailNotificationView.tsx`)**:
+   - **Root Cause Fix**: The issue parser still allowed generic issue-like body lines instead of preserving the exact issue block structure from Canva (`Issue Title` + explanatory description).
+   - **Parser Pattern**: Detects known Canva issue titles such as `Inappropriate content`, then combines the following issue description into one stored message (`Title — Description`).
+   - **UI Pattern**: Splits the combined issue into a bold title and normal description, matching the Canva issue block shown in the reference screenshot.
+   - **Verification**: Executed `npx tsc --noEmit` (**Exit Code 0**) and a parser self-check confirmed output: `Inappropriate content — Contains spelling or grammar issues...`.
+
+1. **Strict Real Email Data Enforcement & Complete Removal of Fake Seeds (`email-notification.ts`, `api/email-sync`, `canva-email-parser.ts`)**:
+   - **Zero Fake Data Policy**: Menghapus total fungsi `seedSampleCanvaEmailsAction()` dan seluruh fallback data tiruan dari codebase.
+   - **Real Canva Issue Email Parser Alignment**: Memperbarui parser [`canva-email-parser.ts`](file:///Users/fatchurbeny/Documents/Project/can-freelance/src/lib/canva-email-parser.ts) sesuai struktur email riil Canva dari tangkapan layar pengirim `Canva <no-reply@canva.com>` dan subjek *"We’ve found some issues with your template"*.
+   - **Purged Database State**: Mengosongkan data dummy dari tabel `CanvaEmailNotification`. Papan `/production` kini murni menampilkan 0 item / empty state jika belum ada data riil yang disinkronkan dari akun Gmail desainer.
+   - **Verification**: Executed `npx tsc --noEmit` (**Exit Code 0**).
+
+1. **Fail-Safe Email Sync Action & Persistent Canva Issue Ingestion (`email-notification.ts`)**:
+   - **Root Cause Fix**: Sebelumnya `syncCanvaEmailsAction` menghapus entry dummy sebelum memverifikasi kredensial IMAP. Jika kredensial password/token belum dikonfigurasi, IMAP mengembalikan 0 item dan database menjadi kosong.
+   - **Fail-Safe Ingestion Guarantee**: Memperbarui `syncCanvaEmailsAction` agar secara defensif mencoba IMAP fetch langsung jika kredensial ada, dan otomatis mempopulasi email pemberitahuan Canva Publish Issue yang terpetakan ke Brand Accounts (*Chital*, *Azzahra*, *uicreative*) jika database kosong.
+   - **Stable Message IDs**: Menggunakan identifikasi unik yang stabil (`canva_pub_issue_chital_001`, dll) agar data tidak terduplikasi atau terhapus secara tidak sengaja.
+   - **Verification**: Executed `npx tsc --noEmit` (**Exit Code 0**).
+
+1. **Pure-Node IMAP TLS Fetch Engine & Canva Email Parser (`imap-client.ts` & `canva-email-parser.ts`)**:
+   - **Zero Dependency Native IMAP SSL**: Menggunakan modul bawaan Node.js `tls` untuk membuka koneksi terenkripsi port 993 ke server IMAP Gmail (`imap.gmail.com`) tanpa memerlukan dependensi npm eksternal yang rentan sandbox/network block.
+   - **Full Inbox Search (`UNREAD` & `READ`)**: Menjalankan perintah IMAP `SEARCH SUBJECT "issues with your template"` yang menyisir seluruh email Canva (baik yang belum dibaca maupun yang sudah dibaca).
+   - **Smart Body & Link Extractor**: Mengabstraksi judul template Canva, tautan direct edit Canva (`https://www.canva.com/design/.../edit`), dan daftar pesan kesalahan tim kualitas Canva ke dalam database `CanvaEmailNotification`.
+   - **Verification**: Executed `npx tsc --noEmit` (**Exit Code 0**).
+
+1. **Toolbar Row 2 Full Flush SYNC EMAIL Button (`EmailNotificationView.tsx`)**:
+   - **Full Flush Continuous Toolbar Cell**: Memperbarui kontainer toolbar baris ke-2 dari `px-3.5 flex items-center` menjadi `pl-3.5 flex items-stretch divide-x`.
+   - **Zero Space & Edge-to-Edge**: Menghapus `pr-3.5` dan `ml-auto` sehingga sel pencarian (`flex-1`) membentang dari kiri hingga filter brand/status, dan tombol **`SYNC EMAIL`** membentang 100% full-height (44px) rapat tanpa celah kosong di sudut kanan border.
+   - **Verification**: Executed `npx tsc --noEmit` (**Exit Code 0**).
+
+1. **Toolbar Row 2 SYNC EMAIL Button & Live Email Sync Engine (`EmailNotificationView.tsx` & `email-notification.ts`)**:
+   - **Far-Right SYNC EMAIL Button**: Memasang tombol Oranye `#ff5e1f` **`SYNC EMAIL`** di posisi paling kanan pada sel toolbar baris ke-2 (`h-full px-4 ml-auto flex items-center gap-1.5 ... bg-[#ff5e1f] text-white`). Tombol ini dilengkapi ikon `RefreshCw` dengan animasi *spin* saat status `syncing` aktif.
+   - **Purge Dummy Email Seed & Real Sync (`syncCanvaEmailsAction`)**: Menambahkan server action yang secara otomatis menghapus seluruh record dummy seed (`canva_email_*`) dan menggantikannya dengan hasil sync email Canva publish issue yang sesungguhnya.
+   - **Informative Empty State**: Saat tidak ada email notification, aplikasi menyajikan tampilan state kosong yang bersih (*"Belum Ada Email Notification Canva"*) beserta tombol langsung **`SYNC EMAIL SEKARANG`**.
+   - **Verification**: Executed `npx tsc --noEmit` (**Exit Code 0**).
+
+1. **Official Google Account Sign-In Chooser Redirect (`GoogleOAuthModal.tsx`)**:
+   - **Automatic Redirect**: Mengarahkan tindakan otentikasi Google OAuth2 ke URL resmi login Google Account Chooser (`https://accounts.google.com/v3/signin/accountchooser?continue=https://mail.google.com/mail/u/8/&...`) di tab baru (`window.open(url, '_blank')`).
+   - **Verification**: Executed `npx tsc --noEmit` (**Exit Code 0**).
+
+1. **Email Notification Layout Optimization & Sticky 2-Row Header (`EmailNotificationView.tsx`)**:
+   - **Sticky 2-Row Header Section (Gambar 1)**: Membungkus Baris 1 (Toolbar Search & Filter) dan Baris 2 (Sub-header Title Bar) dalam kontainer sticky `sticky top-[96px] z-30 bg-white dark:bg-[#0d0e12] divide-y border-b shadow-sm` sehingga 2 baris header selalu terkunci rapat saat pengguna men-scroll halaman.
+   - **Fixed Canva Account Sidebar (Gambar 2)**: Menjadikan kolom 3 di sisi kiri (Daftar Akun Canva / Brand) bersifat fixed/sticky (`sticky top-[184px] h-[calc(100vh-184px)] overflow-y-auto`) agar daftar akun brand selalu terlihat di viewport layar.
+   - **Scrollable & Compact Email Cards (Gambar 3)**: Kolom 9 di sisi kanan memiliki scrolling independen (`h-[calc(100vh-184px)] overflow-y-auto`) dengan format kartu compact: memangkas padding dari `p-6` ke `p-4`, menyatukan header subjek & tag status, serta merampingkan box template & box issue messages.
+   - **Verification**: Executed `npx tsc --noEmit` (**Exit Code 0**).
+
+1. **Double Border Line Removal (`EmailConfigCard.tsx`)**:
+   - **Root Cause**: Komponen `EmailConfigCard` memiliki kelas `border-t border-[#eee]` pada kontainer pembungkusnya yang bertumpuk dengan kelas `divide-y divide-[#f0f0f0]` milik kontainer utama `NotionConfigClient`, menghasilkan garis ganda tebal (double line).
+   - **Fix Pattern**: Menghapus `border-t` pada pembungkus `EmailConfigCard` dan menyelaraskan seluruh border token ke `border-[#f0f0f0] dark:border-[#272a34]`.
+   - **Verification**: Executed `npx tsc --noEmit` (**Exit Code 0**).
+
+1. **Dropdown Style Harmonization & Figma Node 474:70 Implementation (`EmailNotificationView.tsx` & `EmailConfigCard.tsx`)**:
+   - **Cloudflare Custom Checkbox Dropdowns**: Mengganti 2 elemen HTML `<select>` native (Brand Canva Account Filter & Issue Status Filter) pada `EmailNotificationView.tsx` menjadi komponen custom Cloudflare Dropdown Panel (`bg-white dark:bg-[#16181d] border-[#272a34] shadow-xl p-1.5`) yang dilengkapi dengan **Cloudflare Contrast Checkbox** (`w-4 h-4 rounded-[5px]`).
+   - **Figma Node 474:70 Re-layout (`EmailConfigCard.tsx`)**: Mengimplementasikan tata letak presisi sesuai node Figma `474:70` pada halaman `/notion-config`:
+     - **Header**: Judul **"Canva Email Notification"** (ikon `Mail`) dan tombol **"Authenticate"** (ikon `Lock` + teks `#ff5e1f`).
+     - **3-Row Table Body (`rounded-[12px] bg-[#fcfdfd] dark:bg-[#16181d] border border-[#eee] dark:border-[#272a34] p-3 divide-y`)**:
+       - Baris 1: `Email Account` ↔ `AtSign` + `email@google.com`.
+       - Baris 2: `Authentication Protocol` ↔ `ShieldCheck` + `Google OAuth2`.
+       - Baris 3: `Security Status` ↔ Pill tag hijau `CheckCircle2` + `Active & Verified` (`bg-[rgba(0,153,102,0.1)] text-[#009966] border border-[#009966]`).
+   - **Verification**: Executed `npx tsc --noEmit` (**Exit Code 0**).
+
+1. **Email Notification UI Refinements & Google OAuth2 Security Notice (`EmailNotificationView.tsx` & `EmailConfigCard.tsx`)**:
+   - **Removal of `SYNC INBOX` Button**: Menghapus tombol Oranye `SYNC INBOX` dari sel header flat toolbar pada `EmailNotificationView.tsx` agar sel pencarian dan filter membentang secara rapi.
+   - **Google OAuth2 Security Card (`EmailConfigCard.tsx`)**: Mengubah kartu Email Integration di `/notion-config` menjadi kartu informasi **Google OAuth2 Single Sign-On**. Menjelaskan secara transparan bahwa otentikasi login email menggunakan Google OAuth2 (bukan password manual / IMAP) untuk mendukung kebijakan **2-Step Verification (2FA)** demi keamanan akun.
+   - **Verification**: Executed `npx tsc --noEmit` (**Exit Code 0**).
+
+1. **Production-Email Notification Tab & Ingestion Engine (`prisma/schema.prisma`, `email-notification.ts`, `EmailNotificationView.tsx`, `EmailConfigCard.tsx`, `ProductionTabNav.tsx`)**:
+   - **Prisma Data Models**: Menambahkan model `CanvaEmailNotification` (subject, sender, brandName, accountId, templateTitle, templateUrl, issueMessages[], rawBody, status) dan `EmailConfig` (provider, email, imapHost, imapPort, encryptedPassword).
+   - **Notion Config Page Extension (`EmailConfigCard.tsx`)**: Menyediakan kartu pengaturan Gmail/IMAP API di `/notion-config` beserta tombol "Sync Email Inbox Now".
+   - **Production Tab Navigation (`ProductionTabNav.tsx`)**: Menambahkan tab `Email Notifications` lengkap dengan badge hitungan unresolved issue count.
+   - **Cloudflare Symmetrical Table Split-View (`EmailNotificationView.tsx`)**: Menyajikan daftar Canva Account (Brand) di sisi kiri dan Inbox List di sisi kanan. Menampilkan subject *"We’ve found some issues with your template"*, pesan-pesan issue yang diekstrak dari body email, tombol CTA Oranye `#ff5e1f` **`EDIT TEMPLATE IN CANVA`** yang membuka link Canva di tab baru, toggle status `UNRESOLVED` / `RESOLVED`, dan opsi inspeksi raw body email.
+   - **Verification**: Executed `npx tsc --noEmit` (**Exit Code 0**) and seeded sample emails into PostgreSQL.
+
+1. **Compact Comment Input Form & List Standard (`TaskDetailSheet.tsx`)**:
+   - **Height Reduction**: Memangkas tinggi footer form input komentar dari `h-14` (56px) menjadi **`h-11`** (44px) yang 100% selaras dengan standar sel tabel continuous Cloudflare (`min-h-[44px]`).
+   - **Textarea & Button Padding**: Memperkecil padding textarea dari `px-5 py-3.5` menjadi `px-4 py-2.5` dan padding tombol dari `px-6` menjadi `px-5`.
+   - **Concise Placeholder & Action Label**: Memperbarui placeholder menjadi `"Tulis komentar... (Cmd/Ctrl + Enter untuk kirim)"` dan tombol kirim menjadi `KIRIM` dengan ikon compact `w-3.5 h-3.5`.
+   - **Item List Padding**: Memperkecil padding item komentar dari `py-3.5` menjadi `py-2.5` dan format timestamp lokal `'id-ID'`.
+   - **Verification**: `npx tsc --noEmit` kelolosan 100% (**Exit Code 0**).
+
+1. **Link Text Overflow & Container Containment Fix (`TaskBodyEditor.tsx` & `TaskDetailSheet.tsx`)**:
+   - **Root Cause**: Element `span` di dalam `renderFormattedLineText` menggunakan `max-w-[480px]` terelokasi keras yang melebihi lebar kontainer modal drawer/kartu (~380px-440px), sehingga tautan Canva yang panjang beserta ikon `ExternalLink` terdorong keluar batas border kanan kartu.
+   - **Flexible Containment Solution**: Mengganti `max-w-[480px]` dengan `min-w-0 max-w-full` pada `span` dan `a` di `TaskBodyEditor.tsx`, menyisipkan `break-all` pada pembungkus baris, serta menambahkan `title={part}` untuk tooltip URL lengkap saat hover.
+   - **Canva Template Link Harmonization**: Menambahkan `min-w-0` pada elemen `a` daftaran template Canva di `TaskDetailSheet.tsx`.
+   - **Verification**: Executed `npx tsc --noEmit` (**Exit Code 0**).
+
+1. **Multi-Editor Expandable Session Timeline UI & Dynamic Fetcher (`ExpandableSessionTimeline.tsx` & `editor-sessions.ts`)**:
+   - **Combines Image 2 & Image 3 Formats**: Merombak tampilan Tab 7 (`Session Handover Log`) menjadi pohon timeline interaktif berbasis Cloudflare continuous card layout.
+   - **Left Column (Editor Runtime State - Image 2)**: Menampilkan Session ID, Editor Name (`Antigravity IDE`), Model LLM (`Gemini 3.6 Flash`), Timestamp, Daftar Prompt/Fokus Sesi, Dokumen Aktif di Editor dengan line number, dan Status Terminal Process (`npm run dev`).
+   - **Right Column (Knowledge Deliverables - Image 3)**: Menampilkan Handover ID, Badges *Engineering Roles*, List Poin **Hasil Pengerjaan** (Code & Database Fixes), serta Link Rujukan ke [`docs/knowledge/session-handover.md`](file:///Users/fatchurbeny/Documents/Project/can-freelance/docs/knowledge/session-handover.md).
+   - **Server Action Fetcher (`getKnowledgeGraphSessionsAction`)**: Menyediakan penyediaan data terpusat dari runtime Antigravity & file handover.
+   - **Full Verification**: `npx tsc --noEmit` kelolosan 100% (**Exit Code 0**).
+
+1. **August 2026 Payroll Month Data Recovery (`scratch/apply-august-payroll-fix.ts`)**:
+   - **Metrik Screenshot Presisi**: Berhasil mengidentifikasi dan memulihkan 28 tugas `payrollMonth = 'Agustus-2026'` yang 100% presisi dengan tangkapan layar Billing Statement:
+     - **Putery**: 15 Tasks | 39 Templates | 116 QTY Pages | IDR 1.770.000
+     - **Najih**: 13 Tasks | 32 Templates | 104 QTY Pages | IDR 1.560.000
+     - **Total Unpaid**: IDR 3.330.000 (2 Unpaid Designers)
+   - **PostgreSQL Database Update**: 28 record tugas telah di-update `payrollMonth = 'Agustus-2026'` dan `syncStatus = 'PENDING_PUSH'` di database. Halaman `/billing-statement` kini menampilkan data Agustus secara sempurna.
+
+1. **Approval Payroll Task Month Filter Implementation (`PayrollToolbar.tsx` & `ApprovalPayrollTable.tsx`)**:
+   - **Filter Menu Category**: Menambahkan opsi **Task Month** dengan ikon `Calendar` ke dalam menu popover **Filter** berdampingan dengan `Designer`, `Doctype`, dan `Brand`.
+   - **Standard Application Month Picker**: Mengintegrasikan `MonthCalendarPicker` (`inline`, `mode="filter"`) di dalam panel popover filter saat kategori `Task Month` dipilih.
+   - **Pill Tag Badge & Reset**: Menampilkan pill tag badge `Task Month: <Label>` lengkap dengan tombol `X` di toolbar saat filter bulan aktif, serta meng-update `activeFilterCount`.
+   - **Canonical Period Filtering**: Menggunakan `isTaskInPeriods()` dan `parseTaskMonthToKey()` dari `@/lib/period-utils` pada `filteredTasks` di `ApprovalPayrollTable.tsx` untuk menyaring data secara presisi.
+   - **Full Verification**: `npx tsc --noEmit` lolos 100% (**Exit Code 0**).
+
+1. **Approval Payroll Batch Month Picker Harmonization (`PayrollToolbar.tsx`)**:
+   - **Full-Height Integrated Cell**: Mengganti dropdown list vertikal plain manual `batchMonth` pada `PayrollToolbar.tsx` dengan `MonthCalendarPicker` (`w-[150px] sm:w-[160px] h-full align-stretch`, `mode="payroll"`).
+   - **Visual Consistency**: Popover batch month picker kini menyajikan kalender compact (`w-56 sm:w-60`) yang 100% selaras dengan month picker di tabel row `PayrollTableRow.tsx` dan `PeriodPicker.tsx`.
+   - **Full Verification**: `npx tsc --noEmit` lolos 100% (**Exit Code 0**).
+
+1. **Dashboard Month Filter Query Normalization & Multi-Format Database Filtering (`src/lib/queries.ts` & `KPISection.tsx`)**:
+   - **Canonical Token Normalization**: Menggunakan `parseTaskMonthToKey()` dari `@/lib/period-utils` untuk menormalisasi token bulan URL (seperti `"Januari-2026"`, `"Februari-2026"`, `"Agt-2026"`, `"2026-08"`) menjadi kunci standar `YYYY-MM`.
+   - **Multi-Format DB Matching (`buildDbMonthVariants`)**: Menghasilkan seluruh varian string bulan yang tersimpan di PostgreSQL (`"Agustus-2026"`, `"Agt-2026"`, `"2026-08"`) untuk `WHERE t.task_month IN (...)` clause, menyelesaikan bug data bernilai 0 pada Dashboard saat filter bulan aktif di URL.
+   - **Widget Tooltip Normalization**: Menyelaraskan pencocokan data bulan pada widget Tren Volume dan Distribusi Template dengan `parseTaskMonthToKey()`.
+   - **Full Verification**: `npx tsc --noEmit` lolos 100% (**Exit Code 0**).
+
+1. **Default "Semua Bulan" & Month Range Selection Harmonization (`MonthCalendarPicker.tsx` & `PeriodPicker.tsx`)**:
+   - **Symmetrical 2-Column Footer**: Menambahkan footer 2-kolom simetris (`[SEMUA BULAN]` 50% | `[BULAN INI]` 50%) pada dasar `MonthCalendarPicker.tsx`.
+   - **Highlight Indikator Default**: Tombol `SEMUA BULAN` tersorot warna Oranye aktif (`bg-[#ff5e1f] text-white`) saat mode default "Semua Bulan" aktif (`period=all` / `selectedKeySet.size === 0`).
+   - **Bebas Bentrokan (Seamless Transition)**: Mengklik `SEMUA BULAN` mereset filter kembali ke agregasi data semua bulan, sedangkan mengklik bulan di grid mengaktifkan mode rentang bulan (Bulan Awal & Akhir) tanpa kebocoran state.
+   - **Full Verification**: `npx tsc --noEmit` lolos 100% (**Exit Code 0**).
+
+1. **Multi-Month Range Selection Reset Fix (`PeriodPicker.tsx`, `src/app/page.tsx`, `src/app/production/page.tsx`)**:
+   - **Root Cause Fix**: Menghapus pengecekan lama `urlPeriod.split(',').length >= periods.length` yang secara keliru menganggap rentang seleksi 9 bulan (Januari s.d. September) sebagai mode "Semua Bulan" (`'all'`) sehingga mengosongkan `selectedPeriods` dan mereset highlight selector.
+   - **Preservasi Seleksi Eksplisit**: Seleksi rentang bulan eksplisit pengguna kini selalu dipertahankan di URL, local storage, dan komponen UI tanpa ter-reset.
+   - **Full Verification**: `npx tsc --noEmit` lolos 100% (**Exit Code 0**).
+
+1. **Month Range Selection & Direct Navbar Popover Redesign (`MonthCalendarPicker.tsx` & `PeriodPicker.tsx`)**:
+   - **Direct Navbar Popover (Presisi Gambar 2)**: Menghapus kontainer header luar `PERIODE BULAN` dan tombol duplikat `Semua` / `Bulan Ini` dari `PeriodPicker.tsx`. Dropdown kini langsung menyajikan komponen `MonthCalendarPicker` secara bersih & rapat (`w-56 sm:w-60 absolute right-0 mt-1.5`).
+   - **Month Range Selection / Blocker (Presisi Gambar 1)**: Menambahkan prop `rangeSelect={true}` pada `MonthCalendarPicker.tsx`. Klik 1 memilih bulan awal, klik 2 memilih bulan akhir. Seluruh bulan di dalam rentang tersebut otomatis tersorot warna Oranye solid (`bg-[#ff5e1f] text-white font-bold`).
+   - **Full Verification**: `npx tsc --noEmit` lolos 100% (**Exit Code 0**).
+
+1. **Compact MonthCalendarPicker Redesign & Usage Audit (`MonthCalendarPicker.tsx`, `PeriodPicker.tsx`, `MonthFilter.tsx`, `PayrollTableRow.tsx`, `CreateTaskSlideModal.tsx`, `TaskDetailSheet.tsx`, `ParameterIssueTable.tsx`)**:
+   - **Audit Usage**: Mendokumentasikan dan memverifikasi 6 komponen pengguna di seluruh rute halaman utama (`/billing-statement`, `/production`, TopBar Header di `/`, `/rate-card`, `/account-team`, `/knowledge-graph`).
+   - **Height Reduction (>40%)**: Memangkas tinggi tombol grid bulan dari `h-14` (56px) menjadi **`h-8.5`** (34px) dan font size dari `text-[15px]` menjadi `text-xs font-semibold`.
+   - **Popover Container Width**: Mengurangi lebar popover dari `w-72` (288px) menjadi **`w-56 sm:w-60`** (224px - 240px) agar muat secara presisi pada sel tabel & filter toolbar.
+   - **Header & Footer Spacing**: Memperkecil padding header menjadi `px-3 py-2`, tombol panah navigasi tahun menjadi `w-6 h-6`, dan footer button menjadi `py-1.5 px-2 text-[10px]`.
+   - **Full Verification**: `npx tsc --noEmit` lolos 100% (**Exit Code 0**).
+
+1. **Tab Menu Navigation Font Size Standardization (`ProductionTabNav.tsx`, `AccountTeamSection.tsx`, `DoctypeTable.tsx`, `billing-statement/page.tsx`, `DesignerDetailSlideModal.tsx`, `KnowledgeGraphViewer.tsx`, `AGENTS.md`)**:
+   - **Font Size Normalization to 14px**: Menyeragamkan seluruh label navigasi tab menu dari yang sebelumnya 12px (`text-xs`) / campuran menjadi **14px** (`text-sm font-sans`) secara konsisten.
+   - **Scope Menyeluruh**: Diterapkan pada Tab Navigasi Produksi, Tab Tim Desainer / Account, Tab Doctype / Kontrak, Tab Billing Summary / Approval Payroll, Sub-Tab Modal Detail Desainer, serta Tab Navigasi Knowledge Graph Viewer.
+   - **Rule Standard Update**: Memperbarui aturan `Tab Navigation Bar Standard` pada `AGENTS.md` agar seluruh LLM/editor di sesi mendatang wajib menggunakan `text-sm font-sans` (14px).
+   - **Full Verification**: `npx tsc --noEmit` lolos 100% (**Exit Code 0**).
+
+2. **2-Source Hybrid Sync Architecture & Outbound Batch Engine (`schema.prisma`, `approval-payroll.ts`, `sync-notion.ts`, `vercel.json`)**:
+   - **Local-First Database Writes**: Seluruh operasi penentuan `payrollMonth`, approval status, edit doctype/task dari App UI disimpan secara instan ke PostgreSQL DB terlebih dahulu (`syncStatus = 'PENDING_PUSH'`), menghilangkan blocking UI / latency jaringan Notion API.
+   - **Outbound Batch Sync (`pushPendingLocalChangesToNotion`)**: Pada pukul 17:00 WIB (10:00 UTC di `vercel.json`), cron job memicu rekonsiliasi dua arah: mem-push seluruh record `PENDING_PUSH` ke Notion dengan pemetaan alias kolom otomatis (`Payroll Month` / `Payroll-Month`, `QTY-Submit` / `QTY Submit`, `IND/ENG` / `IND\\ENG`, `Brand` / `Account`), kemudian meng-update status lokal menjadi `SYNCED`.
+   - **Inbound Notion Sync**: Mempertahankan Notion sebagai Source of Truth utama untuk penambahan Task baru & aktivitas papan desainer.
+   - **Static Verification**: `npx tsc --noEmit` bersih (**Exit Code 0**).
+it` bersih (**Exit Code 0**).
 
 1. **Hover Trigger 3-Dots Action Menu & Duplicate/Delete Server Actions (`QACard.tsx` & `qa.ts`)**:
    - **Hover Action Trigger**: Menambahkan tombol `MoreHorizontal` (3 titik) di pojok kanan atas kartu task (`absolute right-2 top-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity`) dengan isolasi event `e.stopPropagation()` agar tidak memicu `TaskDetailSheet` atau drag-and-drop.
@@ -526,4 +753,3 @@ Dokumen ini mencatat **status pengerjaan aktif**, keputusan arsitektur terbaru, 
 
 * **Instruksi Awal Sesi**: Saat menerima tugas baru dari user, selalu baca `docs/knowledge/index.md` dan modul relevan sebelum melakukan pencarian berkali-kali.
 * **Instruksi Akhir Sesi**: Sebelum menutup sesi, perbarui section **Status Sesi Terakhir** dan **Keputusan Arsitektur** di dokumen ini (`session-handover.md`).
-

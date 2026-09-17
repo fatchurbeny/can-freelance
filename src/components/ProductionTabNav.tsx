@@ -1,17 +1,18 @@
 'use client';
 
-import { LayoutDashboard, Kanban, AlertCircle } from 'lucide-react';
+import { LayoutDashboard, Kanban, AlertCircle, Mail } from 'lucide-react';
 
-export type ProductionTab = 'overview' | 'kanban' | 'parameterIssue';
+export type ProductionTab = 'overview' | 'kanban' | 'parameterIssue' | 'emailNotification';
 
 interface Props {
   activeTab: ProductionTab;
   onTabChange: (tab: ProductionTab) => void;
   issueCount: number;
+  emailIssueCount?: number;
   onCreateTask?: () => void;
 }
 
-export default function ProductionTabNav({ activeTab, onTabChange, issueCount, onCreateTask }: Props) {
+export default function ProductionTabNav({ activeTab, onTabChange, issueCount, emailIssueCount = 0, onCreateTask }: Props) {
   const tabs: {
     id: ProductionTab;
     label: string;
@@ -21,6 +22,7 @@ export default function ProductionTabNav({ activeTab, onTabChange, issueCount, o
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
     { id: 'kanban', label: 'Kanban Board', icon: Kanban },
     { id: 'parameterIssue', label: 'Parameter Issue', icon: AlertCircle, count: issueCount },
+    { id: 'emailNotification', label: 'Email Notifications', icon: Mail, count: emailIssueCount },
   ];
 
   return (
@@ -32,7 +34,7 @@ export default function ProductionTabNav({ activeTab, onTabChange, issueCount, o
           <button
             key={t.id}
             onClick={() => onTabChange(t.id)}
-            className={`relative flex items-center gap-2 px-4 py-2.5 text-xs font-sans transition-all duration-150 cursor-pointer whitespace-nowrap border-r border-[#f0f0f0] dark:border-[#272a34] ${
+            className={`relative flex items-center gap-2 px-4 py-2.5 text-sm font-sans transition-all duration-150 cursor-pointer whitespace-nowrap border-r border-[#f0f0f0] dark:border-[#272a34] ${
               isActive
                 ? 'bg-white dark:bg-[#16181d] text-gray-900 dark:text-white font-bold'
                 : 'bg-[#f8f9fa] dark:bg-[#0d0e12] text-gray-600 dark:text-gray-400 font-medium hover:bg-[#f0f1f3] dark:hover:bg-[#16181d]/50 hover:text-gray-900 dark:hover:text-gray-200'
@@ -57,15 +59,6 @@ export default function ProductionTabNav({ activeTab, onTabChange, issueCount, o
           </button>
         );
       })}
-      {onCreateTask && (
-        <button
-          type="button"
-          onClick={onCreateTask}
-          className="ml-auto flex items-center gap-1.5 px-4 py-2.5 text-xs font-sans font-bold uppercase tracking-wider transition-all duration-150 cursor-pointer whitespace-nowrap border-l border-[#f0f0f0] dark:border-[#272a34] bg-[#ff5e1f] text-white hover:bg-[#ff7038]"
-        >
-          <span>+ Add New Task</span>
-        </button>
-      )}
     </div>
   );
 }

@@ -1,9 +1,14 @@
 import { Prisma } from '../../generated/prisma';
 import prisma from '@/lib/prisma';
+import { 
+  parseTaskMonthToKey, 
+  INDONESIAN_FULL_MONTHS, 
+  INDONESIAN_SHORT_MONTHS 
+} from '@/lib/period-utils';
 
 export interface DashboardFilters {
   brandName?: string | null;
-  selectedPeriod?: string | null; // format: "YYYY-MM,YYYY-MM,..."
+  selectedPeriod?: string | null; // format: "YYYY-MM,YYYY-MM,..." or "Januari-2026,Februari-2026,..."
 }
 
 const indNames: { [key: string]: string } = {
@@ -27,23 +32,27 @@ export async function getAvailablePeriods() {
     `);
 
     const formatted = rawPeriods.map((p) => {
-      const parts = p.task_month.split('-');
-      if (parts.length === 2) {
-        const [mName, yStr] = parts;
-        const mIdx = indNamesInv[mName] !== undefined ? indNamesInv[mName] : 0;
-        const mm = (mIdx + 1).toString().padStart(2, '0');
+      const key = parseTaskMonthToKey(p.task_month);
+      if (key) {
         return {
-          key: `${yStr}-${mm}`,
+          key,
           raw: p.task_month
         };
       }
       return null;
     }).filter(Boolean) as { key: string; raw: string }[];
 
-    // Sort descending by YYYY-MM key
-    formatted.sort((a, b) => b.key.localeCompare(a.key));
+    // Unique keys sorted descending by YYYY-MM
+    const uniqueMap = new Map<string, string>();
+    for (const f of formatted) {
+      if (!uniqueMap.has(f.key)) {
+        uniqueMap.set(f.key, f.key);
+      }
+    }
+    const uniqueKeys = Array.from(uniqueMap.keys());
+    uniqueKeys.sort((a, b) => b.localeCompare(a));
 
-    return formatted.map((f) => f.key);
+    return uniqueKeys;
   } catch (error) {
     console.error('Error fetching available periods:', error);
     return [];
@@ -51,17 +60,21 @@ export async function getAvailablePeriods() {
 }
 
 export async function getDashboardData(filters: DashboardFilters) {
-  // 1. Resolve selected periods array
-  let periods: string[] = [];
-  if (filters.selectedPeriod) {
-    if (filters.selectedPeriod === 'all') {
-      periods = await getAvailablePeriods();
-    } else {
-      periods = filters.selectedPeriod.split(',').filter(Boolean);
-    }
+  // 1. Resolve selected period keys (normalized YYYY-MM)
+  let selectedKeys: string[] = [];
+  if (filters.selectedPeriod && filters.selectedPeriod !== 'all') {
+    const rawTokens = (Array.isArray(filters.selectedPeriod) 
+      ? filters.selectedPeriod.join(',') 
+      : filters.selectedPeriod
+    ).split(',').filter(Boolean);
+
+    selectedKeys = rawTokens
+      .map((token) => parseTaskMonthToKey(token))
+      .filter(Boolean) as string[];
   }
-  if (filters.selectedPeriod === 'all' || periods.length === 0) {
-    periods = await getAvailablePeriods();
+
+  if (filters.selectedPeriod === 'all' || selectedKeys.length === 0) {
+    selectedKeys = await getAvailablePeriods();
   }
 
   // 2. Resolve account/brand ID
@@ -83,33 +96,38 @@ export async function getDashboardData(filters: DashboardFilters) {
   }
 
   // 3. Compute prior period months for KPI comparisons
-  const duration = periods.length;
-  const selectedIndices = periods.map((p) => {
+  const duration = selectedKeys.length;
+  const selectedIndices = selectedKeys.map((p) => {
     const [y, m] = p.split('-');
-    return parseInt(y) * 12 + (parseInt(m) - 1);
+    return parseInt(y, 10) * 12 + (parseInt(m, 10) - 1);
   });
   
   selectedIndices.sort((a, b) => a - b);
   
   const priorIndices = selectedIndices.map((idx) => idx - duration);
-  const priorPeriods = priorIndices.map((idx) => {
+  const priorKeys = priorIndices.map((idx) => {
     const y = Math.floor(idx / 12);
     const m = (idx % 12) + 1;
     return `${y}-${m.toString().padStart(2, '0')}`;
   });
 
-  // Convert "YYYY-MM" periods to Indonesian "Month-Year" strings for DB filtering
-  const indPeriods = periods.map((p) => {
-    const [y, m] = p.split('-');
-    const mName = indNames[m] || m;
-    return `${mName}-${y}`;
-  });
+  // Helper to build DB month variants ("Agustus-2026", "Agt-2026", "2026-08")
+  const buildDbMonthVariants = (keys: string[]): string[] => {
+    const variants: string[] = [];
+    for (const key of keys) {
+      const [year, month] = key.split('-');
+      const mIdx = parseInt(month, 10) - 1;
+      if (mIdx >= 0 && mIdx < 12) {
+        variants.push(`${INDONESIAN_FULL_MONTHS[mIdx]}-${year}`);
+        variants.push(`${INDONESIAN_SHORT_MONTHS[mIdx]}-${year}`);
+      }
+      variants.push(key);
+    }
+    return Array.from(new Set(variants));
+  };
 
-  const priorIndPeriods = priorPeriods.map((p) => {
-    const [y, m] = p.split('-');
-    const mName = indNames[m] || m;
-    return `${mName}-${y}`;
-  });
+  const indPeriods = buildDbMonthVariants(selectedKeys);
+  const priorIndPeriods = buildDbMonthVariants(priorKeys);
 
   const accId = accountId;
 
@@ -622,7 +640,7 @@ export async function getDashboardData(filters: DashboardFilters) {
 
   // Process data formatting
   return {
-    periods,
+    periods: selectedKeys,
     brandName: filters.brandName || 'Semua Brand',
     kpi: {
       totalTasks,
@@ -676,23 +694,22 @@ export async function getDashboardData(filters: DashboardFilters) {
 function formatTrenVolume(trenVolume: any[], topDoctypes: any[]) {
   const monthsMap: { [key: string]: any } = {};
 
-  const indNamesShort: { [key: string]: string } = {
-    'Januari': 'Jan', 'Februari': 'Feb', 'Maret': 'Mar', 'April': 'Apr',
-    'Mei': 'Mei', 'Juni': 'Jun', 'Juli': 'Jul', 'Agustus': 'Agt',
-    'September': 'Sep', 'Oktober': 'Okt', 'November': 'Nov', 'Desember': 'Des'
-  };
-
   for (const item of trenVolume) {
     const taskMonth = item.month; // e.g. "Juni-2026"
-    const [mName, yStr] = taskMonth.split('-');
-    const mLabel = indNamesShort[mName] || mName;
-    const mIdx = indNamesInv[mName] !== undefined ? indNamesInv[mName] : 0;
-    const key = `${yStr}-${(mIdx + 1).toString().padStart(2, '0')}`;
+    const key = parseTaskMonthToKey(taskMonth) || taskMonth;
+    const parts = key.split('-');
+    let mLabel = taskMonth;
+    if (parts.length === 2) {
+      const mIdx = parseInt(parts[1], 10) - 1;
+      if (mIdx >= 0 && mIdx < 12) {
+        mLabel = `${INDONESIAN_SHORT_MONTHS[mIdx]} - ${parts[0]}`;
+      }
+    }
 
     if (!monthsMap[key]) {
       monthsMap[key] = {
         key,
-        monthLabel: `${mLabel} - ${yStr}`,
+        monthLabel: mLabel,
       };
     }
     monthsMap[key][item.brand] = Number(item.task_count);
@@ -704,16 +721,8 @@ function formatTrenVolume(trenVolume: any[], topDoctypes: any[]) {
   
   // Attach top doctypes
   for (const res of results) {
-    const [yStr, mStr] = res.key.split('-');
-    const indMonthNames = [
-      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-    ];
-    const indMonth = indMonthNames[parseInt(mStr) - 1] || '';
-    const targetTaskMonth = `${indMonth}-${yStr}`;
-
     const matchingDoctypes = topDoctypes.filter(
-      (td) => td.task_month === targetTaskMonth
+      (td) => parseTaskMonthToKey(td.task_month) === res.key
     );
 
     res.tooltips = {};

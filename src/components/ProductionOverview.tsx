@@ -16,6 +16,7 @@ interface Task {
 interface Props {
   tasks: Task[];
   selectedMonths?: string[];
+  onCreateTask?: () => void;
 }
 
 const STATUS_CARDS = [

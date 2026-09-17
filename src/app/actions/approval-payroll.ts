@@ -54,12 +54,11 @@ export async function assignPayrollMonthAction(
   try {
     const updatedTask = await prisma.task.update({
       where: { id: taskId },
-      data: { payrollMonth },
+      data: { 
+        payrollMonth,
+        syncStatus: 'PENDING_PUSH'
+      },
     });
-
-    if (updatedTask?.notionPageId) {
-      await updateNotionPayrollMonth(updatedTask.notionPageId, payrollMonth);
-    }
 
     revalidatePath('/billing-statement');
     return { success: true };
@@ -76,24 +75,13 @@ export async function batchAssignPayrollMonthAction(
   payrollMonth: string
 ) {
   try {
-    const tasks = await prisma.task.findMany({
-      where: { id: { in: taskIds } },
-      select: { id: true, notionPageId: true },
-    });
-
     await prisma.task.updateMany({
       where: { id: { in: taskIds } },
-      data: { payrollMonth },
+      data: { 
+        payrollMonth,
+        syncStatus: 'PENDING_PUSH'
+      },
     });
-
-    // Update Notion pages in parallel
-    await Promise.allSettled(
-      tasks.map((task) =>
-        task.notionPageId
-          ? updateNotionPayrollMonth(task.notionPageId, payrollMonth)
-          : Promise.resolve()
-      )
-    );
 
     revalidatePath('/billing-statement');
     return { success: true };

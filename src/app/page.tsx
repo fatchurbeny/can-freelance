@@ -45,7 +45,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   }
 
   // Resolve selected period ('all' by default, or single/multiple specific months)
-  const isAll = !activePeriod || activePeriod === 'all' || activePeriod.split(',').length >= (periods.length || 1);
+  const isAll = !activePeriod || activePeriod === 'all';
   const selectedPeriod = isAll ? 'all' : activePeriod;
 
   // 2. Fetch full dashboard statistics via queries

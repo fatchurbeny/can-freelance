@@ -31,6 +31,42 @@ Dokumen ini mencatat histori bug, edge cases, serta aturan layout CSS/React untu
   1. Seluruh handler klik pada tombol aksi hover dan dropdown menu WAJIB menggunakan `e.stopPropagation()` dan `e.preventDefault()`.
   2. Gunakan `relative group` pada container kartu dan `absolute right-2 top-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity` untuk menyajikan tombol 3 titik yang bersih dan muncul saat hover.
 
+### 5. Dual-Source Hybrid Sync & Outbound Local-First Architecture
+* **Masalah**: Melakukan pemanggilan Notion API secara synchronous/real-time saat manajer mengedit `payrollMonth`, status, atau doctype dari App UI menyebabkan latency UI lambat dan rentan gagal jika nama kolom Notion sedikit berbeda.
+* **Aturan & Solusi**:
+  1. Perubahan dari App UI WAJIB disimpan ke PostgreSQL DB lokal terlebih dahulu secara instan (`syncStatus = 'PENDING_PUSH'`).
+  2. Outbound engine (`pushPendingLocalChangesToNotion`) pada batch cron jam 17:00 WIB (10:00 UTC) mem-push data yang tertunda ke Notion dengan pemeriksa skema dinamis (handling alias `Payroll Month` / `Payroll-Month`, `QTY-Submit` / `QTY Submit`, `IND/ENG` / `IND\ENG`, `Brand` / `Account`), kemudian meng-update status lokal menjadi `SYNCED`.
+  3. Notion tetap berfungsi sebagai *Source of Truth* utama untuk penambahan Task baru dari desainer.
+
+### 6. Month Standardization: Same Label, Different Business Meaning
+* **Masalah**: `taskMonth` dan `payrollMonth` bisa memakai penulisan UI yang sama (`September-2026`), tetapi keduanya punya makna bisnis berbeda.
+* **Aturan**:
+  1. **Satu format label UI**: seluruh month picker / filter WAJIB menampilkan format penuh `Month-Year`, misalnya `September-2026`.
+  2. **Dua field tetap dipisah**: `taskMonth` = bulan task turun, `payrollMonth` = bulan pembayaran.
+  3. **Satu helper normalisasi**: semua query, filter, dan revalidation WAJIB melalui helper period canonical, bukan string compare mentah.
+  4. **Auto-create bulan baru**: jika bulan belum terdaftar, sistem boleh membuat record / opsi baru, tetapi tetap mengikuti field target yang sedang diedit.
+
+### 7. Dashboard Month Filter Query Mismatch & Multi-Format Database Filtering
+* **Masalah**: Query statistik Dashboard (`getDashboardData` pada `src/lib/queries.ts`) sebelumnya secara keliru membagi string bulan URL (`"Januari-2026,Februari-2026,..."`) menggunakan `split('-')` tanpa helper normalisasi canonical. Hal ini menghasilkan string filter SQL tidak valid (`"2026-Januari"`) yang menyebabkan query database mengembalikan 0 task, 0 template, dan 0 page untuk seluruh widget statistik saat filter bulan aktif di URL.
+* **Solusi & Aturan**:
+  1. WAJIB menggunakan `parseTaskMonthToKey(token)` dari `@/lib/period-utils` untuk menormalisasi seluruh token filter URL (baik format `"Januari-2026"`, `"Agt-2026"`, maupun `"2026-08"`) menjadi kunci standar `YYYY-MM`.
+  2. Fungsi `buildDbMonthVariants(keys)` WAJIB meng-generate seluruh varian string yang mungkin tersimpan di database PostgreSQL (`"Agustus-2026"`, `"Agt-2026"`, `"2026-08"`) sebelum dimasukkan ke dalam `WHERE t.task_month IN (...)` SQL clause.
+  3. Seluruh widget visualisasi (Tren Volume, Distribusi Template, Task Pipeline, Doctype, Leaderboard) WAJIB menggunakan `parseTaskMonthToKey()` saat mencocokkan data bulan untuk tooltip dan tooltip breakdown.
+
+### 8. Production Email Notification Post-Sync Filter Preservation
+* **Masalah**: Pada tab Production → Email Notifications, fungsi `getEmailNotificationsAction()` sudah menerapkan filter `status`, `brandName`, dan `search`, tetapi tombol `SYNC EMAIL` langsung menimpa state komponen dengan seluruh hasil `syncCanvaEmailsAction()`. Akibatnya setelah sync, daftar email bisa menampilkan item di luar filter aktif sampai filter berubah atau data diambil ulang.
+* **Solusi & Aturan**:
+  1. Setelah menjalankan sync email, UI WAJIB memanggil ulang fetch canonical (`getEmailNotificationsAction`) dengan filter aktif, bukan memakai langsung daftar mentah dari sync result.
+  2. `syncCanvaEmailsAction()` tetap bertugas ingestion/upsert dan refresh cache; rendering daftar pada tab email notification tetap lewat fungsi get email yang sama agar perilaku filter konsisten.
+
+### 9. Google OAuth2 Email Sync State Machine
+* **Masalah**: Membuka Gmail langsung lalu menyimpan email config sebagai "Active & Verified" membuat UI terlihat berhasil meskipun OAuth belum benar-benar menghasilkan token. Untuk akun Google dengan 2-Step Verification, password/IMAP login raw juga tidak reliable dan dapat diblokir.
+* **Solusi & Aturan**:
+  1. Authentication Gmail WAJIB melalui OAuth2 route internal (`/api/google/oauth/start` → `/api/google/oauth/callback`) dengan state cookie dan `access_type=offline`.
+  2. UI Email Config WAJIB membedakan `ACTIVE`, `DISCONNECTED`, `AUTH_FAILED`, dan `RECONNECT_REQUIRED`; jangan tampilkan `Active & Verified` hanya karena email tersimpan.
+  3. Disconnect WAJIB menghapus token/credential sensitif dan menonaktifkan auto sync, tetapi tidak menghapus data `CanvaEmailNotification` yang sudah tersimpan.
+  4. Untuk `provider = GMAIL_OAUTH`, sync email WAJIB menggunakan Gmail API + refresh token terenkripsi, bukan mengirim token terenkripsi langsung sebagai IMAP XOAUTH2 access token.
+
 ---
 
 ## 🎨 Tailwind & UI Layout Rules
@@ -112,7 +148,7 @@ Dokumen ini mencatat histori bug, edge cases, serta aturan layout CSS/React untu
 * **Masalah**: Membatasi node Knowledge Graph hanya pada file kode (pages/components/models) membuat item pengetahuan domain (rumus bisnis, gotchas layout, alur sync, handover log) terpisah sebagai teks saja.
 * **Aturan Solusi**:
   1. Skrip parser (`scripts/graphify-parser.ts`) WAJIB memparsing dokumen `docs/knowledge/*.md` menjadi **Nodes** & **Edges inter-cluster** (`enforces`, `queries`, `invokes`, `renders`).
-  2. Kelompokkan ke dalam **8 Kluster Komunitas Berwarna** dengan dukungan penyaringan interaktif pada canvas 2D force graph (`GraphifyVisualizer.tsx`).
+  2. Kelompokkan ke dalam **8 Kluster Berwarna** dengan dukungan penyaringan interaktif pada canvas 2D force graph (`GraphifyVisualizer.tsx`).
 
 ### 16. Prevensi Native Basic Auth Login Popup pada RSC & Auto Sync di Vercel
 * **Penyebab**: Saat Auto Sync aktif dan pengguna berpindah halaman, browser mengirimkan background request RSC (`rsc: 1`, `next-action`) dan background fetch tanpa menyertakan header `Authorization: Basic`. Jika middleware `proxy.ts` mengembalikan respon 401 beserta header `WWW-Authenticate: Basic realm="..."`, browser secara otomatis mencegat respon dan menampilkan popup dialog login native (`Sign in https://can-freelance.vercel.app`).
@@ -189,5 +225,3 @@ Dokumen ini mencatat histori bug, edge cases, serta aturan layout CSS/React untu
   1. **Defensive SSL Pool Connection**: `src/lib/prisma.ts` WAJIB mengaktifkan `ssl: { rejectUnauthorized: false }` untuk koneksi PostgreSQL cloud di lingkungan serverless/production.
   2. **Production Global Singleton**: Cache instans `PrismaClient` ke `globalThis.prismaGlobal` baik di development maupun production serverless contexts.
   3. **Global App Error Boundary**: Tambahkan `src/app/error.tsx` untuk menyajikan UI fallback interaktif yang ramah pengguna jika terjadi kendala jaringan/koneksi DB sementara.
-
-
