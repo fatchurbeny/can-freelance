@@ -134,10 +134,10 @@ export default function AccountTeamSection({ designers, accounts }: Props) {
           {/* Continuous Flat Search & Sorting Toolbar Header Row */}
           <div className="flex flex-col sm:flex-row items-stretch justify-between border-b border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] min-h-[44px]">
             {/* Left: Integrated Flat Search Input + Filter Sorting Chips */}
-            <div className="flex flex-1 items-stretch divide-x divide-[#f0f0f0] dark:divide-[#272a34] min-w-0">
-              {/* Flat Search Cell dynamically aligned with combined width of Tab 1 + Tab 2 */}
+            <div className="flex flex-1 items-stretch divide-x divide-[#f0f0f0] dark:divide-[#272a34] min-w-0 overflow-x-auto [&::-webkit-scrollbar]:hidden">
+              {/* Flat Search Cell dynamically aligned with combined width of Tab 1 + Tab 2 on desktop */}
               <div
-                style={tabsCombinedWidth ? { width: `${tabsCombinedWidth}px` } : undefined}
+                style={tabsCombinedWidth && typeof window !== 'undefined' && window.innerWidth >= 640 ? { width: `${tabsCombinedWidth}px` } : undefined}
                 className="relative w-full sm:w-auto shrink-0 flex items-center px-3.5 min-h-[44px]"
               >
                 <Search className="w-4 h-4 text-gray-400 shrink-0 mr-2.5" />

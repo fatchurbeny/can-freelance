@@ -137,7 +137,7 @@ function extractTemplateTitleFromCanvaBody(rawBody: string, brandName?: string):
   const editIdx = lines.findIndex((l) => /edit template/i.test(l) || /canva\.com\/design\//i.test(l));
 
   if (editIdx > 0) {
-    // Scan lines above Edit Template link for candidate title
+    // Scan lines above Edit Template link for candidate title (skipping studio/brand line at editIdx - 1)
     for (let i = editIdx - 1; i >= Math.max(0, editIdx - 4); i--) {
       const line = lines[i];
       if (
@@ -145,7 +145,7 @@ function extractTemplateTitleFromCanvaBody(rawBody: string, brandName?: string):
         line.length <= 120 &&
         !/^(issues?|unfortunately|if you would|for the moment|what.?s next|you.?re receiving|canva pty|edit template)$/i.test(line) &&
         (!brandName || line.toLowerCase() !== brandName.toLowerCase()) &&
-        !/^(UICreative\.net|Chital Graphic|Zahra Art|Improstd|Antler|Teman Siswa|Humpback Studio|Impro Studio|Chital)$/i.test(line)
+        !/^(UICreative\.net|UICreative|Ui Creative\.net|Chital Graphic|Zahra Art|Improstd|Antler|Teman Siswa|Humpback Studio|Humpback|Impro Studio|Chital)$/i.test(line)
       ) {
         return line;
       }
@@ -188,6 +188,7 @@ export function cleanTemplateTitle(rawTitle?: string, brandName?: string): strin
     'Impro Studio',
     'Improstd',
     'Humpback Studio',
+    'Humpback',
     'Chital Graphic',
     'Zahra Art',
     'Teman Siswa',
@@ -226,26 +227,52 @@ export function parseCanvaEmailText(params: {
   const rawBody = params.rawBody;
   const receivedAt = params.receivedAt ? new Date(params.receivedAt) : new Date();
 
-  // 1. Map Brand Name / Canva Account first with UICreative.net normalization
+  // 1. Extract Studio / Brand candidate directly from lines above Edit Template link
+  const plain = textFromEmailBody(rawBody);
+  const lines = plain.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  const editIdx = lines.findIndex((l) => /edit template/i.test(l) || /canva\.com\/design\//i.test(l));
+
+  let extractedStudio: string | undefined;
+  if (editIdx > 0) {
+    const lineAbove = lines[editIdx - 1];
+    if (
+      lineAbove &&
+      lineAbove.length >= 2 &&
+      lineAbove.length <= 80 &&
+      !/^(issues?|unfortunately|if you would|for the moment|what.?s next|you.?re receiving|canva pty|edit template)$/i.test(lineAbove)
+    ) {
+      extractedStudio = lineAbove;
+    }
+  }
+
   let brandName: string | undefined;
+
+  // Check if extractedStudio or rawBody matches a registered account
   if (params.accounts && params.accounts.length > 0) {
-    const lowerBody = rawBody.toLowerCase() + ' ' + (params.recipient || '').toLowerCase();
+    const checkTarget = (extractedStudio || '') + ' ' + rawBody.toLowerCase();
     for (const acc of params.accounts) {
       const accName = acc.displayName.toLowerCase();
+      const normAcc = accName.replace(/[^a-z0-9]/g, '');
+      const normExtracted = (extractedStudio || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
       if (
-        lowerBody.includes(accName) ||
-        (accName.includes('uicreative') && (lowerBody.includes('uicreative') || lowerBody.includes('ui creative')))
+        (extractedStudio && normExtracted === normAcc) ||
+        checkTarget.toLowerCase().includes(accName) ||
+        (normAcc.includes('uicreative') && checkTarget.toLowerCase().includes('uicreative')) ||
+        (normAcc.includes('uicreative') && checkTarget.toLowerCase().includes('ui creative'))
       ) {
         brandName = acc.displayName;
         break;
       }
     }
-    if (!brandName) {
-      brandName = params.accounts[0].displayName;
-    }
   }
 
-  // Normalize brandName capitalization to UICreative.net
+  // If brand is not a registered account, use the extracted studio name (e.g. Humpback Studio)
+  if (!brandName && extractedStudio) {
+    brandName = extractedStudio;
+  }
+
+  // Normalize UICreative.net
   if (brandName && /uicreative/i.test(brandName)) {
     brandName = 'UICreative.net';
   }

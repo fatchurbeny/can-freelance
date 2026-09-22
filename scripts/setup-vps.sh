@@ -27,6 +27,15 @@ if ! command -v caddy &> /dev/null; then
     sudo apt-get install -y caddy
 fi
 
+# Konfigurasi Caddy untuk Subdomain
+echo "🌐 Mengonfigurasi Caddy untuk impro.fatchurbeny.com..."
+cat <<EOF | sudo tee /etc/caddy/Caddyfile
+impro.fatchurbeny.com {
+    reverse_proxy localhost:3002
+}
+EOF
+sudo systemctl reload caddy
+
 # 3. Configure Firewall
 echo "🛡️ [3/5] Configuring Firewall (UFW)..."
 sudo ufw allow 22/tcp || true
@@ -34,12 +43,21 @@ sudo ufw allow 80/tcp || true
 sudo ufw allow 443/tcp || true
 echo "y" | sudo ufw enable || true
 
-# 4. Environment Check
+# 4. Environment & Cron Setup
 if [ ! -f .env ]; then
     echo "📝 [4/5] .env file not found. Creating .env from .env.example..."
     cp .env.example .env
+    echo "CRON_SECRET=$(openssl rand -hex 16)" >> .env
     echo "⚠️ NOTE: Please edit .env if you need to update Notion or Google OAuth keys."
 fi
+
+# Mendapatkan CRON_SECRET dari .env untuk dimasukkan ke crontab Linux
+CRON_SECRET=$(grep CRON_SECRET .env | cut -d '=' -f2 | tr -d '"')
+
+# Konfigurasi Cron Job OS untuk Sinkronisasi Notion
+echo "⏰ Menyiapkan Cron Job OS untuk Notion Sync (Pengganti Vercel Cron)..."
+CRON_CMD="*/15 * * * * curl -X GET \"http://localhost:3002/api/sync/cron?secret=\$CRON_SECRET\" >/dev/null 2>&1"
+(crontab -l 2>/dev/null | grep -v "/api/sync/cron"; echo "$CRON_CMD") | crontab -
 
 # 5. Build and Launch Containers
 echo "🚢 [5/5] Building Docker Containers & Starting Application..."
@@ -54,5 +72,6 @@ docker compose exec web npx prisma db push
 echo "========================================================"
 echo "✅ DEPLOYMENT SUCCESSFUL!"
 echo "========================================================"
-echo "Aplikasi telah berjalan di port 3002 lokal VPS."
+echo "Aplikasi telah berjalan dan dapat diakses di:"
+echo "👉 https://impro.fatchurbeny.com"
 echo "========================================================"

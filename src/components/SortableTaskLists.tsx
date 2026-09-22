@@ -172,6 +172,16 @@ export default function SortableTaskLists({ tasks, selectedMonths, onCreateTask 
   const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
   const [selectedTask, setSelectedTask] = useState<QATask | null>(null);
 
+  useEffect(() => {
+    if (selectedTask) {
+      const freshTask = tasks.find((t) => t.id === selectedTask.id);
+      if (freshTask && freshTask.lastEditedTime !== selectedTask.lastEditedTime) {
+        setSelectedTask(freshTask);
+      }
+    }
+  }, [tasks, selectedTask]);
+
+
   const effectiveStatus = (task: QATask) => statusOverride[task.id] ?? task.designStatus?.notionKey ?? 'Draft';
 
   const facets = useMemo(() => deriveFacets(tasks), [tasks]);
@@ -221,16 +231,27 @@ export default function SortableTaskLists({ tasks, selectedMonths, onCreateTask 
 
   const headerScrollRef = useRef<HTMLDivElement>(null);
   const contentScrollRef = useRef<HTMLDivElement>(null);
+  const isSyncingLeft = useRef(false);
 
-  const handleHeaderScroll = () => {
-    if (headerScrollRef.current && contentScrollRef.current) {
-      contentScrollRef.current.scrollLeft = headerScrollRef.current.scrollLeft;
+  const handleHeaderScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    if (isSyncingLeft.current) return;
+    if (contentScrollRef.current) {
+      isSyncingLeft.current = true;
+      contentScrollRef.current.scrollLeft = e.currentTarget.scrollLeft;
+      requestAnimationFrame(() => {
+        isSyncingLeft.current = false;
+      });
     }
   };
 
-  const handleContentScroll = () => {
-    if (contentScrollRef.current && headerScrollRef.current) {
-      headerScrollRef.current.scrollLeft = contentScrollRef.current.scrollLeft;
+  const handleContentScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    if (isSyncingLeft.current) return;
+    if (headerScrollRef.current) {
+      isSyncingLeft.current = true;
+      headerScrollRef.current.scrollLeft = e.currentTarget.scrollLeft;
+      requestAnimationFrame(() => {
+        isSyncingLeft.current = false;
+      });
     }
   };
 
@@ -266,7 +287,7 @@ export default function SortableTaskLists({ tasks, selectedMonths, onCreateTask 
           <div className="min-w-max flex flex-col">
             <div className="flex items-stretch divide-x divide-[#f0f0f0] dark:divide-[#272a34] bg-white dark:bg-[#0d0e12] min-h-[550px]">
               {columns.map((column) => (
-                <div key={column.id} className="w-[260px] shrink-0 flex flex-col">
+                <div key={column.id} className="w-[280px] sm:w-[260px] shrink-0 flex flex-col">
                   <QAKanbanBoard
                     tasks={column.tasks}
                     emptyMessage={column.emptyMessage}

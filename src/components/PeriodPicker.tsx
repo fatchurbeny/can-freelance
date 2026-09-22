@@ -110,15 +110,15 @@ export default function PeriodPicker({ periods, currentPeriod }: PeriodPickerPro
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="relative pl-9 pr-8 py-2 rounded-lg border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] text-xs font-sans font-medium text-gray-900 dark:text-gray-200 hover:border-gray-300 dark:hover:border-gray-700 focus:outline-none transition-colors shadow-none cursor-pointer flex items-center gap-1.5 select-none"
+        className="relative pl-7 sm:pl-9 pr-6 sm:pr-8 py-1.5 sm:py-2 rounded-lg border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] text-xs font-sans font-medium text-gray-900 dark:text-gray-200 hover:border-gray-300 dark:hover:border-gray-700 focus:outline-none transition-colors shadow-none cursor-pointer flex items-center gap-1.5 select-none"
       >
-        <Calendar className="absolute left-3 w-3.5 h-3.5 text-[#ff5e1f]" />
-        <span className="truncate max-w-[200px]">{getButtonLabel()}</span>
-        <ChevronDown className="absolute right-3 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+        <Calendar className="absolute left-2.5 sm:left-3 w-3.5 h-3.5 text-[#ff5e1f]" />
+        <span className="truncate max-w-[75px] xs:max-w-[110px] sm:max-w-[200px]">{getButtonLabel()}</span>
+        <ChevronDown className="absolute right-2 sm:right-3 w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-400 pointer-events-none" />
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-1.5 z-50 w-56 sm:w-60 min-w-[220px]">
+        <div className="absolute right-0 mt-1.5 z-50 w-56 sm:w-60 min-w-[200px] max-w-[calc(100vw-24px)]">
           <MonthCalendarPicker
             inline={true}
             rangeSelect={true}

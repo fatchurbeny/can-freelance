@@ -165,12 +165,19 @@ export default function EmailNotificationView({ accounts }: Props) {
     };
   });
 
+  const otherNotifications = allNotifications.filter((n) => {
+    if (!n.brandName) return true;
+    return !accounts.some((acc) => isBrandMatch(n.brandName, acc.displayName) || n.accountId === acc.id);
+  });
+  const otherUnresolvedCount = otherNotifications.filter((n) => n.status === 'UNRESOLVED').length;
+
   const totalUnresolved = allNotifications.filter((n) => n.status === 'UNRESOLVED').length;
   const totalEmailsCount = allNotifications.length;
 
   const brandOptions = [
     { value: 'ALL', label: 'ALL Canva Accounts' },
     ...accounts.map((a) => ({ value: a.displayName, label: a.displayName })),
+    { value: 'OTHER', label: 'Other Brands' },
   ];
 
   const statusOptions = [
@@ -205,7 +212,7 @@ export default function EmailNotificationView({ accounts }: Props) {
               className="h-full px-4 flex items-center gap-2 text-xs font-sans font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#16181d] transition-colors cursor-pointer outline-none"
             >
               <Filter className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-              <span>{selectedBrand === 'ALL' ? 'ALL Canva Accounts' : selectedBrand}</span>
+              <span>{selectedBrand === 'ALL' ? 'ALL Canva Accounts' : (selectedBrand === 'OTHER' || selectedBrand === 'Other Brands' ? 'Other Brands' : selectedBrand)}</span>
               <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform ${brandOpen ? 'rotate-180' : ''}`} />
             </button>
 
@@ -390,6 +397,33 @@ export default function EmailNotificationView({ accounts }: Props) {
                 </button>
               );
             })}
+
+            {/* Option: Other Brands */}
+            <button
+              type="button"
+              onClick={() => setSelectedBrand('OTHER')}
+              className={`w-full px-4 py-2.5 flex items-center justify-between text-xs font-sans transition-colors text-left cursor-pointer ${
+                selectedBrand === 'OTHER' || selectedBrand === 'Other Brands'
+                  ? 'bg-white dark:bg-[#16181d] text-[#ff5e1f] font-bold border-l-2 border-[#ff5e1f]'
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-white/60 dark:hover:bg-[#16181d]/60'
+              }`}
+            >
+              <div className="flex items-center gap-2.5 truncate pr-2">
+                <span className="w-2.5 h-2.5 rounded-full shrink-0 bg-gray-400 dark:bg-gray-500" />
+                <span className="truncate">Other Brands</span>
+              </div>
+
+              <div className="flex items-center gap-1.5 shrink-0">
+                {otherUnresolvedCount > 0 && (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+                    {otherUnresolvedCount}
+                  </span>
+                )}
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-200/60 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
+                  {otherNotifications.length}
+                </span>
+              </div>
+            </button>
           </div>
         </div>
 

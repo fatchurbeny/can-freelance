@@ -5,7 +5,7 @@ import { ColumnConfig } from './kanban-config';
 interface KanbanBoardHeaderProps {
   columns: Array<ColumnConfig & { tasks: any[] }>;
   headerScrollRef: React.RefObject<HTMLDivElement | null>;
-  onHeaderScroll: () => void;
+  onHeaderScroll: (e: React.UIEvent<HTMLDivElement>) => void;
 }
 
 export default function KanbanBoardHeader({
@@ -23,7 +23,7 @@ export default function KanbanBoardHeader({
         {columns.map((column) => (
           <div
             key={column.id}
-            className="w-[260px] shrink-0 px-4 py-2.5 flex items-center justify-between text-xs font-sans font-bold"
+            className="w-[280px] sm:w-[260px] shrink-0 px-4 py-2.5 flex items-center justify-between text-xs font-sans font-bold"
           >
             <div className="flex items-center gap-2 min-w-0">
               <span className={`size-2 shrink-0 rounded-full ${column.dot}`} />

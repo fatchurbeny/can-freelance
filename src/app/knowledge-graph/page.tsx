@@ -22,7 +22,7 @@ export default async function KnowledgeGraphPage() {
         </Suspense>
 
         {/* Main content */}
-        <main className="flex-1 md:ml-56 p-6 md:p-8 space-y-6 overflow-x-hidden bg-grid-pattern">
+        <main className="flex-1 md:ml-56 p-3 sm:p-6 md:p-8 space-y-6 overflow-x-hidden bg-grid-pattern">
           <Suspense fallback={<div className="p-6 font-mono text-xs text-gray-500">Loading Knowledge Graph...</div>}>
             <KnowledgeGraphViewer />
           </Suspense>

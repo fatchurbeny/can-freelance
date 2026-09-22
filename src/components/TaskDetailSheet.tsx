@@ -124,8 +124,8 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
     setLicense(task.license || '');
     setTaskMonth(task.taskMonth || '');
     setBodyText(task.bodyText || '');
-    setSelectedAccountIds(task.taskAccounts?.map(ta => ta.account.id) || []);
-    setCanvaUrls(task.canvaLinks?.map(cl => cl.url) || []);
+    setSelectedAccountIds(task?.taskAccounts?.map(ta => ta.account.id) || []);
+    setCanvaUrls(task?.canvaLinks?.map(cl => cl.url) || []);
     setNewCanvaUrl('');
     setCanvaLinkError('');
 
@@ -151,17 +151,6 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
 
   if (!task) return null;
 
-  const saveFieldChanges = async (fieldPayload: TaskUpdatePayload, fieldName: string) => {
-    setSavingField(fieldName);
-    const res = await updateTaskFieldsAction(task.id, fieldPayload);
-    setSavingField(null);
-    if (res.success) {
-      toast.success(`${fieldName} updated successfully!`);
-      setActiveEditingField(null);
-    } else {
-      toast.error(res.error || `Failed to update ${fieldName}`);
-    }
-  };
 
   const saveAllChanges = async () => {
     setSavingField('all');
@@ -176,6 +165,7 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
       priority: priority || null,
       license: license || null,
       taskMonth: taskMonth || null,
+      bodyText: bodyText || null,
       accountIds: selectedAccountIds,
       canvaLinks: canvaUrls.filter(u => u.trim().length > 0),
     };
@@ -257,38 +247,34 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
         <div className="flex shrink-0 items-center justify-between border-b border-[#f0f0f0] dark:border-[#272a34] p-4 sm:p-5 bg-gray-50/50 dark:bg-[#16181d]/50 gap-4">
           <div className="flex items-center gap-2.5 min-w-0 flex-1">
             <FileText className="w-4 h-4 text-[#ff5e1f] shrink-0" />
-            {isEditingAll || activeEditingField === 'name' ? (
-              <div className="flex items-center gap-2 flex-1">
-                <input
-                  type="text"
-                  value={taskName}
-                  onChange={(e) => setTaskName(e.target.value)}
-                  placeholder="Task Name"
-                  className="w-full rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] px-3 py-1.5 font-sans text-sm font-bold text-gray-900 dark:text-white outline-none focus:border-[#ff5e1f]"
-                />
-                {!isEditingAll && (
-                  <button
-                    onClick={() => saveFieldChanges({ name: taskName }, 'Task Name')}
-                    disabled={savingField === 'Task Name'}
-                    className="p-1.5 bg-[#ff5e1f] text-white hover:bg-[#ff7038] transition-colors cursor-pointer"
-                    title="Save Title"
-                  >
-                    {savingField === 'Task Name' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                  </button>
-                )}
-              </div>
-            ) : (
-              <h2
-                onClick={() => setActiveEditingField('name')}
-                className="truncate text-sm font-sans font-bold text-gray-900 dark:text-white hover:text-[#ff5e1f] transition-colors cursor-pointer flex items-center gap-1.5 group"
-                title="Click to edit title"
-              >
-                <span>{taskName || 'Untitled Task'}</span>
-                <Edit2 className="w-3 h-3 opacity-0 group-hover:opacity-100 text-gray-400" />
-              </h2>
-            )}
+            <div className="flex items-center gap-2 flex-1">
+              <input
+                type="text"
+                value={taskName}
+                onChange={(e) => setTaskName(e.target.value)}
+                placeholder="Task Name"
+                className="w-full rounded-none border border-transparent bg-transparent hover:bg-white dark:hover:bg-[#0d0e12] focus:bg-white dark:focus:bg-[#0d0e12] focus:border-[#ff5e1f] px-2 py-1 font-sans text-sm font-bold text-gray-900 dark:text-white outline-none transition-colors"
+              />
+            </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={saveAllChanges}
+              disabled={savingField === 'all'}
+              className="flex items-center gap-1.5 h-8 px-4 rounded-none bg-[#ff5e1f] text-white hover:bg-[#ff7038] disabled:opacity-50 transition-colors font-sans text-xs font-bold uppercase tracking-wider"
+            >
+              {savingField === 'all' ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Saving...</span>
+                </>
+              ) : (
+                <>
+                  <Save className="w-3.5 h-3.5" />
+                  <span>Save</span>
+                </>
+              )}
+            </button>
             {task.notionUrl && (
               <a
                 href={task.notionUrl}
@@ -338,15 +324,14 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
                 <span>Design Status</span>
               </div>
               <div className="flex-1 p-0 flex items-stretch min-h-[44px] bg-white dark:bg-[#0d0e12]">
-                {isEditingAll || activeEditingField === 'designStatus' ? (
+                {true ? (
                   <CustomSelectCell
                     value={designStatusId}
                     placeholder="Select Status"
                     options={designStatuses.map((s) => ({ id: s.id, label: s.displayName }))}
                     onChange={(nextId) => {
                       setDesignStatusId(nextId);
-                      if (!isEditingAll) saveFieldChanges({ designStatusId: nextId }, 'Design Status');
-                    }}
+                                          }}
                   />
                 ) : (
                   <div
@@ -369,15 +354,14 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
                 <span>Designer</span>
               </div>
               <div className="flex-1 p-0 flex items-stretch min-h-[44px] bg-white dark:bg-[#0d0e12]">
-                {isEditingAll || activeEditingField === 'designer' ? (
+                {true ? (
                   <CustomSelectCell
                     value={designerId}
                     placeholder="Select Designer"
                     options={designers.map((d) => ({ id: d.id, label: d.displayName }))}
                     onChange={(nextId) => {
                       setDesignerId(nextId);
-                      if (!isEditingAll) saveFieldChanges({ designerId: nextId }, 'Designer');
-                    }}
+                                          }}
                   />
                 ) : (
                   <div
@@ -406,7 +390,7 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
                 <span>Doctype</span>
               </div>
               <div className="flex-1 p-0 flex items-stretch min-h-[44px] bg-white dark:bg-[#0d0e12]">
-                {isEditingAll || activeEditingField === 'doctype' ? (
+                {true ? (
                   <CustomSelectCell
                     value={doctypeId}
                     placeholder="Select Doctype"
@@ -417,8 +401,7 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
                       const autoPages = getPagesForDoctype(selectedDoc);
                       setPages(autoPages);
                       const payloadToSave: any = { doctypeId: nextId, pages: autoPages };
-                      if (!isEditingAll) saveFieldChanges(payloadToSave, 'Doctype');
-                    }}
+                                          }}
                   />
                 ) : (
                   <div
@@ -441,7 +424,7 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
                 <span>QTY Submit</span>
               </div>
               <div className="flex-1 p-0 flex items-stretch min-h-[44px] bg-white dark:bg-[#0d0e12]">
-                {isEditingAll || activeEditingField === 'qtySubmit' ? (
+                {true ? (
                   <div className="flex items-stretch w-full h-full min-h-[44px]">
                     <input
                       type="number"
@@ -450,15 +433,7 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
                       onChange={(e) => setQtySubmit(e.target.value)}
                       className="w-full h-full min-h-[44px] rounded-none border-0 bg-gray-50/50 dark:bg-[#16181d]/50 px-5 font-sans text-xs font-bold text-gray-900 dark:text-white outline-none focus:bg-white dark:focus:bg-[#16181d] focus:ring-1 focus:ring-[#ff5e1f] transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
-                    {!isEditingAll && (
-                      <button
-                        onClick={() => saveFieldChanges({ qtySubmit: Number(qtySubmit) }, 'QTY Submit')}
-                        className="h-full min-h-[44px] px-5 bg-[#ff5e1f] text-white hover:bg-[#ff7038] transition-colors cursor-pointer flex items-center justify-center border-l border-[#f0f0f0] dark:border-[#272a34]"
-                        title="Save QTY Submit"
-                      >
-                        <Save className="w-3.5 h-3.5" />
-                      </button>
-                    )}
+                    
                   </div>
                 ) : (
                   <div
@@ -479,7 +454,7 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
                 <span>Pages</span>
               </div>
               <div className="flex-1 p-0 flex items-stretch min-h-[44px] bg-white dark:bg-[#0d0e12]">
-                {isEditingAll || activeEditingField === 'pages' ? (
+                {true ? (
                   <div className="flex items-stretch w-full h-full min-h-[44px]">
                     <input
                       type="number"
@@ -488,15 +463,7 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
                       onChange={(e) => setPages(e.target.value)}
                       className="w-full h-full min-h-[44px] rounded-none border-0 bg-gray-50/50 dark:bg-[#16181d]/50 px-5 font-sans text-xs font-bold text-gray-900 dark:text-white outline-none focus:bg-white dark:focus:bg-[#16181d] focus:ring-1 focus:ring-[#ff5e1f] transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
-                    {!isEditingAll && (
-                      <button
-                        onClick={() => saveFieldChanges({ pages: Number(pages) }, 'Pages')}
-                        className="h-full min-h-[44px] px-5 bg-[#ff5e1f] text-white hover:bg-[#ff7038] transition-colors cursor-pointer flex items-center justify-center border-l border-[#f0f0f0] dark:border-[#272a34]"
-                        title="Save Pages"
-                      >
-                        <Save className="w-3.5 h-3.5" />
-                      </button>
-                    )}
+                    
                   </div>
                 ) : (
                   <div
@@ -517,7 +484,7 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
                 <span>IND/ENG</span>
               </div>
               <div className="flex-1 p-0 flex items-stretch min-h-[44px] bg-white dark:bg-[#0d0e12]">
-                {isEditingAll || activeEditingField === 'languages' ? (
+                {true ? (
                   <div className="grid grid-cols-2 divide-x divide-[#f0f0f0] dark:divide-[#272a34] w-full h-full min-h-[44px] items-stretch">
                     {['IND', 'ENG'].map((lang) => {
                       const isSelected = languages.includes(lang);
@@ -530,8 +497,7 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
                               ? languages.filter(l => l !== lang)
                               : [...languages, lang];
                             setLanguages(next);
-                            if (!isEditingAll) saveFieldChanges({ languages: next }, 'Languages');
-                          }}
+                                                      }}
                           className={`h-full min-h-[44px] px-4 font-sans text-xs font-bold uppercase transition-colors cursor-pointer flex items-center justify-center ${
                             isSelected
                               ? 'bg-[#7c3aed] text-white font-bold'
@@ -568,15 +534,14 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
                 <span>Priority</span>
               </div>
               <div className="flex-1 p-0 flex items-stretch min-h-[44px] bg-white dark:bg-[#0d0e12]">
-                {isEditingAll || activeEditingField === 'priority' ? (
+                {true ? (
                   <CustomSelectCell
                     value={priority}
                     placeholder="Select Priority"
                     options={PRIORITY_OPTIONS}
                     onChange={(nextP) => {
                       setPriority(nextP);
-                      if (!isEditingAll) saveFieldChanges({ priority: nextP }, 'Priority');
-                    }}
+                                          }}
                   />
                 ) : (
                   <div
@@ -599,15 +564,14 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
                 <span>License</span>
               </div>
               <div className="flex-1 p-0 flex items-stretch min-h-[44px] bg-white dark:bg-[#0d0e12]">
-                {isEditingAll || activeEditingField === 'license' ? (
+                {true ? (
                   <CustomSelectCell
                     value={license}
                     placeholder="Select License"
                     options={LICENSE_OPTIONS}
                     onChange={(nextL) => {
                       setLicense(nextL);
-                      if (!isEditingAll) saveFieldChanges({ license: nextL }, 'License');
-                    }}
+                                          }}
                   />
                 ) : (
                   <div
@@ -630,14 +594,13 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
                 <span>Task Month</span>
               </div>
               <div className="flex-1 p-0 flex items-stretch min-h-[44px] bg-white dark:bg-[#0d0e12]">
-                {isEditingAll || activeEditingField === 'taskMonth' ? (
+                {true ? (
                   <MonthCalendarPicker
                     value={taskMonth}
                     placeholder="Select Month"
                     onChange={(nextM) => {
                       setTaskMonth(nextM);
-                      if (!isEditingAll) saveFieldChanges({ taskMonth: nextM }, 'Task Month');
-                    }}
+                                          }}
                   />
                 ) : (
                   <div
@@ -660,7 +623,7 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
                 <span>Brand</span>
               </div>
               <div className="flex-1 p-0 flex items-stretch min-h-[44px] bg-white dark:bg-[#0d0e12]">
-                {isEditingAll || activeEditingField === 'brand' ? (
+                {true ? (
                   <div className="flex flex-wrap gap-1.5 w-full p-2.5 bg-gray-50/50 dark:bg-[#16181d]/50">
                     {accounts.map((acc) => {
                       const isSelected = selectedAccountIds.includes(acc.id);
@@ -673,8 +636,7 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
                               ? selectedAccountIds.filter(id => id !== acc.id)
                               : [...selectedAccountIds, acc.id];
                             setSelectedAccountIds(next);
-                            if (!isEditingAll) saveFieldChanges({ accountIds: next }, 'Brand');
-                          }}
+                                                      }}
                           className={`px-2.5 py-1 text-[11px] font-bold rounded-none border transition-colors cursor-pointer ${
                             isSelected
                               ? 'bg-[#06b6d4] border-[#06b6d4] text-white'
@@ -692,8 +654,8 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
                     className="flex items-center justify-between w-full px-5 py-2.5 cursor-pointer group hover:bg-gray-50/60 dark:hover:bg-[#16181d]/60 transition-colors min-w-0"
                   >
                     <span className="px-2.5 py-0.5 text-[11px] font-bold rounded bg-[#06b6d4]/15 text-[#06b6d4] truncate">
-                      {task.taskAccounts.length > 0
-                        ? task.taskAccounts.map((ta) => ta.account.displayName).join(' / ')
+                      {(task?.taskAccounts?.length ?? 0) > 0
+                        ? task?.taskAccounts.map((ta) => ta.account.displayName).join(' / ')
                         : 'Unassigned'}
                     </span>
                     <Edit2 className="w-3 h-3 opacity-0 group-hover:opacity-100 text-gray-400 shrink-0" />
@@ -730,7 +692,6 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
                       onClick={() => {
                         const next = canvaUrls.filter((_, i) => i !== idx);
                         setCanvaUrls(next);
-                        saveFieldChanges({ canvaLinks: next }, 'Canva Links');
                       }}
                       className="p-1 text-gray-400 hover:text-red-500 transition-colors cursor-pointer shrink-0"
                       title="Remove link"
@@ -772,7 +733,6 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
                       setCanvaUrls(next);
                       setNewCanvaUrl('');
                       setCanvaLinkError('');
-                      saveFieldChanges({ canvaLinks: next }, 'Canva Links');
                     }}
                     disabled={!validateTemplateLink(newCanvaUrl).ok}
                     className="px-5 bg-[#ff5e1f] text-white font-sans text-xs font-bold uppercase tracking-wider hover:bg-[#ff7038] transition-colors cursor-pointer flex items-center justify-center gap-1 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -794,7 +754,6 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
               value={bodyText}
               onChange={(nextText) => {
                 setBodyText(nextText);
-                saveFieldChanges({ bodyText: nextText }, 'Content Wireframe & References');
               }}
             />
           </div>

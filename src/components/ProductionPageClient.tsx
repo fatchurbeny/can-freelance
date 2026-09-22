@@ -42,7 +42,7 @@ export default function ProductionPageClient({
       <div className="flex min-h-[calc(100vh-56px)] flex-col md:flex-row">
         <Sidebar currentSyncLog={latestSyncLog} />
 
-        <main className="flex min-h-0 min-w-0 flex-1 md:ml-56 flex-col gap-4 p-6 md:p-8 bg-grid-pattern">
+        <main className="flex min-h-0 min-w-0 flex-1 md:ml-56 flex-col gap-4 p-3 sm:p-6 md:p-8 bg-grid-pattern">
           <ProductionView
             kanbanTasks={kanbanTasks}
             issueTasks={issueTasks}

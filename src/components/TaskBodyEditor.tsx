@@ -1,16 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   FileText,
-  Eye,
-  Edit3,
-  Sparkles,
-  Link as LinkIcon,
-  List,
-  Heading2,
-  Heading3,
-  ExternalLink,
+  Plus,
+  Trash2,
   Copy,
   Check,
 } from 'lucide-react';
@@ -20,126 +14,94 @@ interface Props {
   value: string;
   onChange?: (value: string) => void;
   readOnly?: boolean;
-  placeholder?: string;
   label?: string;
 }
 
-const DEFAULT_WIREFRAME_TEMPLATE = `## Content Wireframe
-- https://www.canva.com/design/DAHTYapgius/JZwZLV0Vyee8akUNLOvymQ/edit
+interface Section {
+  id: string;
+  heading: string;
+  content: string;
+}
 
-## Design Reference
-- https://www.canva.com/templates/EAHS6C3N_el-purple-pink-and-white-modern-company-research-proposal-presentation/`;
+function parseMarkdownToSections(markdown: string): Section[] {
+  if (!markdown) return [];
+  const lines = markdown.split('\n');
+  const sections: Section[] = [];
+  
+  let currentHeading = '';
+  let currentContent: string[] = [];
 
-/**
- * Parses markdown text lines and renders headings, bullet items, and auto-detects URLs.
- */
-function MarkdownRenderer({ text }: { text: string }) {
-  if (!text || text.trim() === '') {
-    return (
-      <div className="py-6 px-4 text-center font-sans text-xs text-gray-400 dark:text-gray-500 italic">
-        Belum ada body text / content wireframe. Klik edit atau gunakan template pintas.
-      </div>
-    );
-  }
-
-  const lines = text.split('\n');
-
-  // Helper to render text with auto-hyperlinked URLs
-  const renderFormattedLineText = (lineText: string) => {
-    const urlRegex = /(https?:\/\/[^\s]+)/g;
-    const parts = lineText.split(urlRegex);
-
-    return parts.map((part, idx) => {
-      if (part.match(urlRegex)) {
-        return (
-          <a
-            key={idx}
-            href={part}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex max-w-full items-center gap-1 text-[#ff5e1f] hover:underline font-medium min-w-0 align-bottom"
-            onClick={(e) => e.stopPropagation()}
-            title={part}
-          >
-            <span className="truncate min-w-0 max-w-full">{part}</span>
-            <ExternalLink className="w-3 h-3 shrink-0 opacity-75" />
-          </a>
-        );
+  for (const line of lines) {
+    const match = line.match(/^##\s*(.*)/);
+    if (match) {
+      if (currentHeading || currentContent.length > 0) {
+        sections.push({
+          id: Math.random().toString(36).substr(2, 9),
+          heading: currentHeading,
+          content: currentContent.join('\n').trim()
+        });
       }
-      return <span key={idx} className="break-all">{part}</span>;
+      currentHeading = match[1].trim();
+      currentContent = [];
+    } else {
+      currentContent.push(line);
+    }
+  }
+  
+  if (currentHeading || currentContent.length > 0) {
+    sections.push({
+      id: Math.random().toString(36).substr(2, 9),
+      heading: currentHeading,
+      content: currentContent.join('\n').trim()
     });
-  };
+  }
+  
+  return sections;
+}
 
-  return (
-    <div className="space-y-3 font-sans text-xs text-gray-800 dark:text-gray-200 leading-relaxed overflow-hidden">
-      {lines.map((line, idx) => {
-        const trimmed = line.trim();
-
-        if (trimmed.startsWith('## ')) {
-          return (
-            <h2
-              key={idx}
-              className="text-xs font-bold uppercase tracking-wider text-gray-900 dark:text-white pt-2 pb-1 border-b border-[#f0f0f0] dark:border-[#272a34] flex items-center gap-1.5 min-w-0 max-w-full break-all"
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-[#ff5e1f] shrink-0"></span>
-              <span className="flex-1 min-w-0 break-all">{trimmed.replace(/^##\s+/, '')}</span>
-            </h2>
-          );
-        }
-
-        if (trimmed.startsWith('### ')) {
-          return (
-            <h3 key={idx} className="text-xs font-bold text-gray-800 dark:text-gray-100 pt-1 min-w-0 max-w-full break-all">
-              {trimmed.replace(/^###\s+/, '')}
-            </h3>
-          );
-        }
-
-        if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
-          const content = trimmed.replace(/^[-*]\s+/, '');
-          return (
-            <div key={idx} className="flex items-start gap-2 pl-2 min-w-0 max-w-full overflow-hidden">
-              <span className="text-[#ff5e1f] font-bold select-none shrink-0">•</span>
-              <div className="flex-1 min-w-0 max-w-full break-all">{renderFormattedLineText(content)}</div>
-            </div>
-          );
-        }
-
-        if (trimmed === '') {
-          return <div key={idx} className="h-1.5" />;
-        }
-
-        return <div key={idx} className="min-w-0 max-w-full break-all">{renderFormattedLineText(line)}</div>;
-      })}
-    </div>
-  );
+function compileSectionsToMarkdown(sections: Section[]): string {
+  return sections
+    .filter(s => s.heading.trim() !== '' || s.content.trim() !== '')
+    .map(s => {
+      const h = s.heading.trim() ? `## ${s.heading.trim()}` : '';
+      return [h, s.content.trim()].filter(Boolean).join('\n');
+    })
+    .join('\n\n');
 }
 
 export default function TaskBodyEditor({
   value,
   onChange,
   readOnly = false,
-  placeholder = 'Tuliskan deskripsi task, content wireframe, atau tautan referensi...',
   label = 'Content Wireframe & Design References',
 }: Props) {
-  const [activeTab, setActiveTab] = useState<'preview' | 'edit'>(value ? 'preview' : 'edit');
   const [copied, setCopied] = useState(false);
+  const [sections, setSections] = useState<Section[]>([]);
 
-  const insertText = (prefix: string, suffix: string = '') => {
-    if (!onChange || readOnly) return;
-    const nextValue = value ? `${value}\n${prefix}${suffix}` : `${prefix}${suffix}`;
-    onChange(nextValue);
+  useEffect(() => {
+    const compiled = compileSectionsToMarkdown(sections);
+    if (value !== compiled) {
+      setSections(parseMarkdownToSections(value || ''));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+
+  const updateSection = (id: string, field: 'heading' | 'content', newValue: string) => {
+    const next = sections.map(s => s.id === id ? { ...s, [field]: newValue } : s);
+    setSections(next);
+    onChange?.(compileSectionsToMarkdown(next));
   };
 
-  const handleApplyTemplate = () => {
-    if (!onChange || readOnly) return;
-    if (value && value.trim() !== '') {
-      onChange(`${value}\n\n${DEFAULT_WIREFRAME_TEMPLATE}`);
-    } else {
-      onChange(DEFAULT_WIREFRAME_TEMPLATE);
-    }
-    setActiveTab('edit');
-    toast.success('Template wireframe ditambahkan!');
+  const removeSection = (id: string) => {
+    const next = sections.filter(s => s.id !== id);
+    setSections(next);
+    onChange?.(compileSectionsToMarkdown(next));
+  };
+
+  const addSection = (heading = '') => {
+    const next = [...sections, { id: Math.random().toString(36).substr(2, 9), heading, content: '' }];
+    setSections(next);
+    onChange?.(compileSectionsToMarkdown(next));
   };
 
   const handleCopy = () => {
@@ -150,28 +112,23 @@ export default function TaskBodyEditor({
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleApplyDefaults = () => {
+    const next = [
+      { id: Math.random().toString(36).substr(2, 9), heading: 'Keywords', content: '' },
+      { id: Math.random().toString(36).substr(2, 9), heading: 'Template Wireframe', content: '' },
+    ];
+    setSections(next);
+    onChange?.(compileSectionsToMarkdown(next));
+  };
+
   return (
-    <div className="w-full rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] divide-y divide-[#f0f0f0] dark:divide-[#272a34] font-sans text-xs">
-      {/* Header Bar */}
-      <div className="flex items-center justify-between p-3 sm:px-4 bg-gray-50/50 dark:bg-[#16181d]/50">
+    <div className="w-full rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] divide-y divide-[#f0f0f0] dark:divide-[#272a34] font-sans text-xs flex flex-col h-full min-h-[300px]">
+      <div className="flex shrink-0 items-center justify-between p-3 sm:px-4 bg-gray-50/50 dark:bg-[#16181d]/50">
         <div className="flex items-center gap-2 font-bold text-gray-700 dark:text-gray-300">
           <FileText className="w-4 h-4 text-[#ff5e1f]" />
           <span>{label}</span>
         </div>
-
         <div className="flex items-center gap-2">
-          {!readOnly && (
-            <button
-              type="button"
-              onClick={handleApplyTemplate}
-              className="inline-flex items-center gap-1 px-2.5 py-1 rounded border border-[#ff5e1f]/30 bg-[#ff5e1f]/10 text-[#ff5e1f] hover:bg-[#ff5e1f]/20 text-[11px] font-bold transition-colors cursor-pointer"
-              title="Sisipkan struktur template Wireframe & Reference"
-            >
-              <Sparkles className="w-3 h-3" />
-              <span>+ Template</span>
-            </button>
-          )}
-
           {value && value.trim() !== '' && (
             <button
               type="button"
@@ -182,90 +139,69 @@ export default function TaskBodyEditor({
               {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
             </button>
           )}
-
-          {!readOnly && (
-            <div className="flex items-center border border-[#f0f0f0] dark:border-[#272a34] rounded overflow-hidden">
-              <button
-                type="button"
-                onClick={() => setActiveTab('edit')}
-                className={`flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold transition-colors ${
-                  activeTab === 'edit'
-                    ? 'bg-[#ff5e1f] text-white'
-                    : 'bg-white dark:bg-[#16181d] text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                }`}
-              >
-                <Edit3 className="w-3 h-3" />
-                <span>Edit</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('preview')}
-                className={`flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold transition-colors ${
-                  activeTab === 'preview'
-                    ? 'bg-[#ff5e1f] text-white'
-                    : 'bg-white dark:bg-[#16181d] text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                }`}
-              >
-                <Eye className="w-3 h-3" />
-                <span>Preview</span>
-              </button>
-            </div>
-          )}
         </div>
       </div>
 
-      {/* Editor Body */}
-      {activeTab === 'edit' && !readOnly ? (
-        <div className="p-0 bg-white dark:bg-[#0d0e12]">
-          {/* Formatting Shortcuts Bar */}
-          <div className="flex items-center gap-1 px-3 py-1.5 border-b border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/30 dark:bg-[#16181d]/30 text-gray-500">
+      <div className="flex-1 p-0 bg-white dark:bg-[#0d0e12] overflow-y-auto">
+        <div className="p-4 space-y-6">
+          {sections.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-10 gap-3">
+              <p className="text-gray-500 italic text-center max-w-[250px]">
+                Tidak ada konten. Anda dapat mengetik manual atau menggunakan format terstruktur.
+              </p>
+              <button
+                onClick={handleApplyDefaults}
+                className="px-4 py-2 bg-[#ff5e1f]/10 text-[#ff5e1f] hover:bg-[#ff5e1f]/20 font-bold rounded flex items-center gap-2 transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                Gunakan Template Struktur
+              </button>
+            </div>
+          ) : (
+            sections.map((section, idx) => (
+              <div key={section.id} className="group flex flex-col gap-2 relative">
+                <div className="flex items-center gap-2">
+                  <span className="text-[#ff5e1f] font-mono font-bold select-none shrink-0">##</span>
+                  <input
+                    type="text"
+                    value={section.heading}
+                    onChange={(e) => updateSection(section.id, 'heading', e.target.value)}
+                    placeholder="Section Heading (e.g. Keywords)"
+                    className="flex-1 bg-transparent border-b border-transparent focus:border-[#ff5e1f] hover:border-[#f0f0f0] dark:hover:border-[#272a34] px-1 py-1 text-sm font-bold text-gray-900 dark:text-white outline-none transition-colors"
+                    readOnly={readOnly}
+                  />
+                  {!readOnly && (
+                    <button
+                      onClick={() => removeSection(section.id)}
+                      className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded transition-colors opacity-0 group-hover:opacity-100"
+                      title="Delete Section"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+                <textarea
+                  value={section.content}
+                  onChange={(e) => updateSection(section.id, 'content', e.target.value)}
+                  placeholder="Enter details, bullet points, or URLs here..."
+                  className="w-full min-h-[80px] p-3 rounded border border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 text-gray-900 dark:text-gray-200 outline-none focus:border-[#ff5e1f] focus:ring-1 focus:ring-[#ff5e1f]/50 transition-colors resize-y font-mono text-[11px] leading-relaxed"
+                  readOnly={readOnly}
+                />
+              </div>
+            ))
+          )}
+          
+          {!readOnly && sections.length > 0 && (
             <button
-              type="button"
-              onClick={() => insertText('## ')}
-              className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 transition-colors"
-              title="Heading 2"
+              onClick={() => addSection('')}
+              className="flex items-center gap-1.5 text-[#ff5e1f] font-bold text-[11px] uppercase tracking-wider hover:underline"
             >
-              <Heading2 className="w-3.5 h-3.5" />
+              <Plus className="w-3.5 h-3.5" />
+              Add Section
             </button>
-            <button
-              type="button"
-              onClick={() => insertText('### ')}
-              className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 transition-colors"
-              title="Heading 3"
-            >
-              <Heading3 className="w-3.5 h-3.5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => insertText('- ')}
-              className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 transition-colors"
-              title="Bulleted List"
-            >
-              <List className="w-3.5 h-3.5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => insertText('- https://')}
-              className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 transition-colors"
-              title="Link"
-            >
-              <LinkIcon className="w-3.5 h-3.5" />
-            </button>
-          </div>
-
-          <textarea
-            value={value || ''}
-            onChange={(e) => onChange?.(e.target.value)}
-            placeholder={placeholder}
-            rows={7}
-            className="w-full p-4 font-mono text-xs text-gray-900 dark:text-white bg-transparent outline-none resize-y min-h-[140px] focus:ring-1 focus:ring-[#ff5e1f] transition-colors"
-          />
+          )}
         </div>
-      ) : (
-        <div className="p-4 bg-white dark:bg-[#0d0e12] min-h-[100px]">
-          <MarkdownRenderer text={value} />
-        </div>
-      )}
+      </div>
     </div>
   );
 }

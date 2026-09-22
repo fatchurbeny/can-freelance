@@ -451,5 +451,11 @@ To maintain complete context retention and prevent perception loss across multip
    - Sync the changes to Tab 7 of the Web UI in `KnowledgeGraphViewer.tsx`.
 <!-- END:role-based-handover-protocol -->
 
+<!-- BEGIN:kanban-scroll-sync-optimization-rule -->
+# Kanban Scroll Snapping & Sync Optimization
 
+When building or modifying horizontally scrolling Kanban boards or tables with sticky scrolling headers:
+1. **Never use CSS Scroll Snapping on Desktop**: Do NOT use `snap-x`, `snap-mandatory`, or `snap-center` on horizontal scroll containers. It conflicts with native trackpad smooth scrolling physics and causes severe stuttering/jitter ("patah-patah").
+2. **Prevent Infinite Scroll Feedback Loops**: When synchronizing `scrollLeft` between two separate containers (e.g., a sticky header and a table body) via React `onScroll` events, you MUST use a `useRef` boolean flag to track the scrolling initiator and debounce the event using `requestAnimationFrame`. Never blindly set `scrollLeft` in both directions without a guard, as it causes an infinite update loop and jitter.
+<!-- END:kanban-scroll-sync-optimization-rule -->
 

@@ -225,3 +225,12 @@ Dokumen ini mencatat histori bug, edge cases, serta aturan layout CSS/React untu
   1. **Defensive SSL Pool Connection**: `src/lib/prisma.ts` WAJIB mengaktifkan `ssl: { rejectUnauthorized: false }` untuk koneksi PostgreSQL cloud di lingkungan serverless/production.
   2. **Production Global Singleton**: Cache instans `PrismaClient` ke `globalThis.prismaGlobal` baik di development maupun production serverless contexts.
   3. **Global App Error Boundary**: Tambahkan `src/app/error.tsx` untuk menyajikan UI fallback interaktif yang ramah pengguna jika terjadi kendala jaringan/koneksi DB sementara.
+
+### 25. React Scroll Sync Feedback Loop & CSS Scroll Snapping Optimization
+* **Masalah**: Scroll horizontal pada Kanban Board terasa lag, bergetar, dan patah-patah saat menggunakan trackpad desktop.
+* **Penyebab (Root Cause)**: 
+  1. Penggunaan `snap-x` dan `snap-mandatory` memaksa browser melakukan *snap* yang bertentangan dengan *smooth scroll* bawaan OS.
+  2. *Infinite Feedback Loop*: Dua kontainer (Header dan Konten) saling mengubah `scrollLeft` lawannya melalui event `onScroll` tanpa ada pencegahan (guard), memicu rentetan event tak berujung (*jitter*).
+* **Aturan Solusi**:
+  1. Hapus kelas `snap-x`, `snap-mandatory`, dan `snap-center` dari seluruh kontainer Kanban horizontal.
+  2. Implementasikan `const isSyncingLeft = useRef(false)` untuk melacak inisiator scroll, dan gunakan `requestAnimationFrame` untuk me-reset flag, memutus siklus pemanggilan event berulang.

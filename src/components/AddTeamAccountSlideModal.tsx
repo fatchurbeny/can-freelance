@@ -183,7 +183,7 @@ export default function AddTeamAccountSlideModal({ open, onClose, onCreated }: P
 
             {/* Row 1: Category Selection */}
             <div className="flex items-stretch text-xs font-sans min-h-[44px]">
-              <div className="w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
+              <div className="w-[110px] sm:w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-3 sm:px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
                 {category === 'designer' ? <Users className="w-3.5 h-3.5 text-gray-400" /> : <Building2 className="w-3.5 h-3.5 text-gray-400" />}
                 <span>Category</span>
               </div>
@@ -219,7 +219,7 @@ export default function AddTeamAccountSlideModal({ open, onClose, onCreated }: P
 
             {/* Row 2: Display Name Input */}
             <div className="flex items-stretch text-xs font-sans min-h-[44px]">
-              <div className="w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
+              <div className="w-[110px] sm:w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-3 sm:px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
                 <FileText className="w-3.5 h-3.5 text-gray-400" />
                 <span>Display Name</span>
               </div>
@@ -239,7 +239,7 @@ export default function AddTeamAccountSlideModal({ open, onClose, onCreated }: P
               <>
                 {/* Row 3: Role / Jabatan */}
                 <div className="flex items-stretch text-xs font-sans min-h-[44px]">
-                  <div className="w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
+                  <div className="w-[110px] sm:w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-3 sm:px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
                     <Award className="w-3.5 h-3.5 text-gray-400" />
                     <span>Role / Jabatan</span>
                   </div>
@@ -254,7 +254,7 @@ export default function AddTeamAccountSlideModal({ open, onClose, onCreated }: P
 
                 {/* Row 4: Contract Type */}
                 <div className="flex items-stretch text-xs font-sans min-h-[44px]">
-                  <div className="w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
+                  <div className="w-[110px] sm:w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-3 sm:px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
                     <FileSpreadsheet className="w-3.5 h-3.5 text-gray-400" />
                     <span>Contract Type</span>
                   </div>
@@ -283,7 +283,7 @@ export default function AddTeamAccountSlideModal({ open, onClose, onCreated }: P
 
                 {/* Row 5: Contract Start Date (via DatePickerCell) */}
                 <div className="flex items-stretch text-xs font-sans min-h-[44px]">
-                  <div className="w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
+                  <div className="w-[110px] sm:w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-3 sm:px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
                     <Calendar className="w-3.5 h-3.5 text-gray-400" />
                     <span>Contract Start</span>
                   </div>
@@ -315,7 +315,7 @@ export default function AddTeamAccountSlideModal({ open, onClose, onCreated }: P
 
                 {/* Row 6: Status Selector */}
                 <div className="flex items-stretch text-xs font-sans min-h-[44px]">
-                  <div className="w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
+                  <div className="w-[110px] sm:w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-3 sm:px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
                     <CircleDot className="w-3.5 h-3.5 text-gray-400" />
                     <span>Status</span>
                   </div>
@@ -416,7 +416,7 @@ export default function AddTeamAccountSlideModal({ open, onClose, onCreated }: P
 
                 {/* Row 7: Email & Phone */}
                 <div className="flex items-stretch text-xs font-sans min-h-[44px]">
-                  <div className="w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
+                  <div className="w-[110px] sm:w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-3 sm:px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
                     <Mail className="w-3.5 h-3.5 text-gray-400" />
                     <span>Email & Phone</span>
                   </div>
@@ -442,7 +442,7 @@ export default function AddTeamAccountSlideModal({ open, onClose, onCreated }: P
 
                 {/* Row 8: Bank Details */}
                 <div className="flex items-stretch text-xs font-sans min-h-[44px]">
-                  <div className="w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
+                  <div className="w-[110px] sm:w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-3 sm:px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
                     <CreditCard className="w-3.5 h-3.5 text-gray-400" />
                     <span>Bank & Rekening</span>
                   </div>

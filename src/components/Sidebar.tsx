@@ -48,6 +48,12 @@ export default function Sidebar({ currentSyncLog }: SidebarProps) {
   }, []);
 
   useEffect(() => {
+    const handleToggle = () => setIsMobileOpen((prev) => !prev);
+    window.addEventListener('toggle-mobile-sidebar', handleToggle);
+    return () => window.removeEventListener('toggle-mobile-sidebar', handleToggle);
+  }, []);
+
+  useEffect(() => {
     if (typeof window !== 'undefined' && !activePeriod) {
       const saved = localStorage.getItem('can_freelance_active_period');
       if (saved) setActivePeriod(saved);
@@ -78,23 +84,6 @@ export default function Sidebar({ currentSyncLog }: SidebarProps) {
       <Suspense fallback={null}>
         <SearchParamsListener onPeriodChange={handlePeriodFound} />
       </Suspense>
-      {/* Mobile Top Header Bar */}
-      <div className="md:hidden flex items-center justify-between px-6 py-4 bg-white dark:bg-[#16181d] border-b border-[#f0f0f0] dark:border-[#272a34] sticky top-0 z-40 w-full shrink-0 transition-colors">
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={() => setIsMobileOpen(true)}
-            className="p-1.5 rounded-lg text-gray-500 hover:text-[#ff5e1f] hover:bg-gray-50 dark:hover:bg-[#1e2028] transition-colors"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
-          <div className="font-sans font-bold text-base text-[#262626] dark:text-white">
-            CAN-Freelance
-          </div>
-        </div>
-        <div className="w-8 h-8 rounded-lg bg-[#ff5e1f] flex items-center justify-center text-white font-bold text-sm">
-          CF
-        </div>
-      </div>
 
       {/* Mobile Backdrop Overlay */}
       {isMobileOpen && (

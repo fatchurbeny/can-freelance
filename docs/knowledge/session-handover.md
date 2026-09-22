@@ -6,16 +6,35 @@ Dokumen ini mencatat **status pengerjaan aktif**, keputusan arsitektur terbaru, 
 
 ## 📌 Active Session Signature (Role-Based Handover)
 
-* **Session ID**: `#SESS-20260917-01`
-* **Active Engineering Role**: `🛡️ [DevOps & Release]`, `🏛️ [Architecture & Knowledge Ops]`, `🎨 [Frontend & UI/UX]`, `⚙️ [Backend & Database]`
+* **Session ID**: `#SESS-20260922-01`
+* **Active Engineering Role**: `🎨 [Frontend & UI/UX]`, `⚙️ [Backend & Database]`, `💼 [Business & Domain Logic]`
 * **Last Active Agent / Tool**: Antigravity (Gemini 3.6 Flash)
-* **Timestamp**: 2026-09-17 14:50 WIB
+* **Timestamp**: 2026-09-22 11:30 WIB
 * **Active Git Branch**: `staging` (Targeting `main` / `origin/main` Production Direct)
-* **Task State**: ✅ Successfully created Docker configuration (Dockerfile, docker-compose.yml, .dockerignore, .env.example, next.config.ts output standalone).
+* **Task State**: ✅ Resolved duplicate UICreative account records, added "Other Brands" sidebar tab & filter, and fixed Canva email brand extraction to display actual body brand names.
 
 ---
 
 ## 💡 Keputusan Arsitektur & Perubahan Terakhir (Recent Decisions)
+
+1. **Canva Email Notification Brand Labeling, Duplicate Account Consolidation & "Other Brands" Tab (`canva-email-parser.ts`, `EmailNotificationView.tsx`, `email-notification.ts`, `sync-notion.ts`)**:
+   - **Root Cause Fix (Duplicate UICreative Accounts)**: Mengidentifikasi dan menggabungkan record akun ganda (`UICreative.net` vs `Ui Creative.net`, `Improstd` vs `Impro Studio`, dll) di tabel `Account` PostgreSQL yang terbentuk akibat variasi nama tag dari sync Notion.
+   - **Fuzzy Account Matching (`sync-notion.ts`)**: Menambahkan pemeta seragam agar sync Notion mendatang secara otomatis memetakan nama seperti `Ui Creative.net` atau `uicreative` ke akun tunggal `UICreative.net`.
+   - **Real Body Brand Extraction (`canva-email-parser.ts`)**: Memperbarui parser agar mengekstrak nama studio murni langsung dari baris di atas tombol *Edit Template* (misal: `Humpback Studio`). Jika studio tidak terdaftar di `Account`, `brandName` disimpan sebagai studio asli (`Humpback Studio`) dengan `accountId = null` tanpa memaksakan fallback ke akun lain.
+   - **"Other Brands" Tab & Dropdown (`EmailNotificationView.tsx`, `email-notification.ts`)**: Menambahkan tab **`Other Brands`** pada daftar sidebar kiri dan opsi filter dropdown header. Menyajikan statistik unresolved issue count dan total email untuk brand di luar daftar akun terdaftar.
+   - **Verification**: Executed `npx tsc --noEmit` (**Exit Code 0**) and re-parsed all 29 emails in database; 8 emails from **Humpback Studio** are now correctly assigned under **Other Brands** with **`Humpback Studio`** displayed under template titles.
+
+1. **Kanban Board Horizontal Scroll Lag Optimization (`SortableTaskLists.tsx`, `KanbanBoardHeader.tsx`)**:
+   - **Root Cause Fix (Snapping)**: Menghapus kelas `snap-x`, `snap-mandatory`, dan `snap-center` pada kontainer scroll dan kolom Kanban untuk mengembalikan fisika *smooth scroll* bawaan sistem operasi.
+   - **Root Cause Fix (Scroll Feedback Loop)**: Menambahkan `useRef(false)` flag (`isSyncingLeft`) dan `requestAnimationFrame` pada *handler* `onScroll` untuk memutus *infinite echo loop* yang terjadi saat sinkronisasi `scrollLeft` antara Header dan Konten. Scroll kini 100% mulus tanpa lag.
+   - **Verification**: Executed `npx tsc --noEmit` (**Exit Code 0** / 0 Errors).
+
+1. **Comprehensive Mobile Responsiveness Fixes (`page.tsx`, `ProductionPageClient.tsx`, `account-team/page.tsx`, `rate-card/page.tsx`, `billing-statement/page.tsx`, `knowledge-graph/page.tsx`, `notion-config/page.tsx`, `DoctypeSlideModal.tsx`, `CreateTaskSlideModal.tsx`, `AddTeamAccountSlideModal.tsx`, `SortableTaskLists.tsx`, `KanbanBoardHeader.tsx`, `AccountTeamSection.tsx`)**:
+   - **Outer Main Padding Standardization**: Menyelaraskan padding kontainer `<main>` dari `p-6 md:p-8` menjadi `p-3 sm:p-6 md:p-8` di 8 rute halaman utama, menghemat 24px–32px lebar layar HP (360px–430px).
+   - **Form Drawer Modal Slim Labels**: Mengubah sel label kiri pada Slide-over Modal dari `w-[150px]` menjadi `w-[110px] sm:w-[150px] px-3 sm:px-5`, membuat tombol segmented (seperti Aspek Rasio `16:9`, `1:1`, `4:5`, `9:16`) dan input form muat dengan lega di layar mobile.
+   - **Kanban Board Mobile Snap Scroll (`/production`)**: Membungkus 4 kolom Kanban dalam kontainer `flex overflow-x-auto snap-x snap-mandatory` dengan `w-[280px] sm:w-[260px] snap-center` per kolom, sehingga kartu task desainer di HP dapat di-scroll/drag secara terstruktur per kolom tanpa terhimpit.
+   - **Flat Search Calculated Width Fix (`/account-team`)**: Membatasi penggunaan inline style JS `tabsCombinedWidth` hanya pada breakpoint desktop (`window.innerWidth >= 640`), menghilangkan meluapnya baris pencarian di HP.
+   - **Verification**: Executed `npx tsc --noEmit` (**Exit Code 0** / 0 Errors).
 
 1. **Docker Containerization & Docker Compose Setup (`Dockerfile`, `docker-compose.yml`, `.dockerignore`, `.env.example`, `next.config.ts`)**:
    - **Standalone Output Mode**: Memperbarui `next.config.ts` dengan `output: 'standalone'` agar kompilasi Next.js 16 menghasilkan server independen di `.next/standalone`.

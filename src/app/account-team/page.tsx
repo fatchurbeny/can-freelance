@@ -98,7 +98,7 @@ export default async function AccountTeamPage() {
       <div className="flex min-h-[calc(100vh-56px)] flex-col md:flex-row">
         <Sidebar currentSyncLog={latestSyncLog} />
 
-        <main className="flex-1 md:ml-56 p-6 md:p-8 space-y-8 overflow-x-hidden bg-grid-pattern">
+        <main className="flex-1 md:ml-56 p-3 sm:p-6 md:p-8 space-y-8 overflow-x-hidden bg-grid-pattern">
 
 
         {/* Separate Container 1: Contract Rules Banner */}
