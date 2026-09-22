@@ -265,7 +265,7 @@ export default function DoctypeSlideModal({
 
             {/* Row 1: Nama Format Doctype */}
             <div className="flex items-stretch text-xs font-sans min-h-[44px]">
-              <div className="w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none whitespace-nowrap">
+              <div className="w-[110px] sm:w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-3 sm:px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none whitespace-nowrap">
                 <FileText className="w-3.5 h-3.5 text-gray-400 shrink-0" />
                 <span>Nama Format</span>
               </div>
@@ -282,7 +282,7 @@ export default function DoctypeSlideModal({
 
             {/* Row 2: Kode Format / Identifier */}
             <div className="flex items-stretch text-xs font-sans min-h-[44px]">
-              <div className="w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none whitespace-nowrap">
+              <div className="w-[110px] sm:w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-3 sm:px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none whitespace-nowrap">
                 <Code className="w-3.5 h-3.5 text-gray-400 shrink-0" />
                 <span>Kode Identifier</span>
               </div>
@@ -299,7 +299,7 @@ export default function DoctypeSlideModal({
 
             {/* Row 3: Kategori Cloudflare Dropdown Cell */}
             <div className="flex items-stretch text-xs font-sans min-h-[44px]">
-              <div className="w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none whitespace-nowrap">
+              <div className="w-[110px] sm:w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-3 sm:px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none whitespace-nowrap">
                 <FolderGit2 className="w-3.5 h-3.5 text-gray-400 shrink-0" />
                 <span>Kategori</span>
               </div>
@@ -314,7 +314,7 @@ export default function DoctypeSlideModal({
 
             {/* Row 4: Dimensi Canvas */}
             <div className="flex items-stretch text-xs font-sans min-h-[44px]">
-              <div className="w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none whitespace-nowrap">
+              <div className="w-[110px] sm:w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-3 sm:px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none whitespace-nowrap">
                 <Maximize2 className="w-3.5 h-3.5 text-gray-400 shrink-0" />
                 <span>Dimensi Canvas</span>
               </div>
@@ -331,7 +331,7 @@ export default function DoctypeSlideModal({
 
             {/* Row 5: Aspek Rasio Segmented Buttons */}
             <div className="flex items-stretch text-xs font-sans min-h-[44px]">
-              <div className="w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
+              <div className="w-[110px] sm:w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-3 sm:px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
                 <Ratio className="w-3.5 h-3.5 text-gray-400" />
                 <span>Aspek Rasio</span>
               </div>
@@ -371,7 +371,7 @@ export default function DoctypeSlideModal({
 
             {/* Row 7: Pool Rate (Bobot) Segmented Options */}
             <div className="flex items-stretch text-xs font-sans min-h-[44px]">
-              <div className="w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
+              <div className="w-[110px] sm:w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-3 sm:px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
                 <Percent className="w-3.5 h-3.5 text-gray-400" />
                 <span>Pool Score (Bobot)</span>
               </div>
@@ -414,7 +414,7 @@ export default function DoctypeSlideModal({
 
             {/* Row 8: Default QTY Halaman / Slides */}
             <div className="flex items-stretch text-xs font-sans min-h-[44px]">
-              <div className="w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
+              <div className="w-[110px] sm:w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-3 sm:px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
                 <Copy className="w-3.5 h-3.5 text-gray-400" />
                 <span>Default Slides</span>
               </div>
@@ -432,7 +432,7 @@ export default function DoctypeSlideModal({
 
             {/* Row 9: Rate / Pages (Rp) */}
             <div className="flex items-stretch text-xs font-sans min-h-[44px]">
-              <div className="w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
+              <div className="w-[110px] sm:w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-3 sm:px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
                 <DollarSign className="w-3.5 h-3.5 text-gray-400" />
                 <span>Rate / Pages</span>
               </div>
@@ -443,7 +443,7 @@ export default function DoctypeSlideModal({
 
             {/* Row 10: Live Calculation Summary Cell */}
             <div className="flex items-stretch text-xs font-sans min-h-[44px]">
-              <div className="w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
+              <div className="w-[110px] sm:w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-3 sm:px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
                 <Calculator className="w-3.5 h-3.5 text-gray-400" />
                 <span>Kalkulasi Payout</span>
               </div>
@@ -476,7 +476,7 @@ export default function DoctypeSlideModal({
 
             {/* Row 12: Status Format Selection Grid (Image 2 Color Standard: Active Green / Inactive Gray) */}
             <div className="flex items-stretch text-xs font-sans min-h-[44px]">
-              <div className="w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
+              <div className="w-[110px] sm:w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-3 sm:px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
                 <CheckCircle2 className="w-3.5 h-3.5 text-gray-400" />
                 <span>Status Format</span>
               </div>

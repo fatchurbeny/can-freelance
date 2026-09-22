@@ -32,10 +32,19 @@ export async function getEmailNotificationsAction(filters?: {
     }
 
     if (filters?.brandName && filters.brandName !== 'ALL') {
-      where.brandName = {
-        equals: filters.brandName,
-        mode: 'insensitive',
-      };
+      if (filters.brandName === 'OTHER' || filters.brandName === 'Other Brands') {
+        const registeredAccounts = await prisma.account.findMany({ select: { displayName: true } });
+        const regNames = registeredAccounts.map((a) => a.displayName);
+        where.OR = [
+          { accountId: null },
+          { brandName: { notIn: regNames, mode: 'insensitive' } },
+        ];
+      } else {
+        where.brandName = {
+          equals: filters.brandName,
+          mode: 'insensitive',
+        };
+      }
     }
 
     if (filters?.search?.trim()) {

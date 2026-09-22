@@ -193,7 +193,7 @@ export default function CreateTaskSlideModal({ open, onClose, onCreated }: Props
 
             {/* Row 1: Design Status */}
             <div className="flex items-stretch text-xs font-sans min-h-[44px]">
-              <div className="w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
+              <div className="w-[110px] sm:w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-3 sm:px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
                 <CircleDot className="w-3.5 h-3.5 text-gray-400" />
                 <span>Design Status</span>
               </div>
@@ -209,7 +209,7 @@ export default function CreateTaskSlideModal({ open, onClose, onCreated }: Props
 
             {/* Row 2: Designer */}
             <div className="flex items-stretch text-xs font-sans min-h-[44px]">
-              <div className="w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
+              <div className="w-[110px] sm:w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-3 sm:px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
                 <Users className="w-3.5 h-3.5 text-gray-400" />
                 <span>Designer</span>
               </div>
@@ -225,7 +225,7 @@ export default function CreateTaskSlideModal({ open, onClose, onCreated }: Props
 
             {/* Row 3: Doctype */}
             <div className="flex items-stretch text-xs font-sans min-h-[44px]">
-              <div className="w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
+              <div className="w-[110px] sm:w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-3 sm:px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
                 <BookOpen className="w-3.5 h-3.5 text-gray-400" />
                 <span>Doctype</span>
               </div>
@@ -241,7 +241,7 @@ export default function CreateTaskSlideModal({ open, onClose, onCreated }: Props
 
             {/* Row 4: QTY Submit */}
             <div className="flex items-stretch text-xs font-sans min-h-[44px]">
-              <div className="w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
+              <div className="w-[110px] sm:w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-3 sm:px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
                 <FileText className="w-3.5 h-3.5 text-gray-400" />
                 <span>QTY Submit</span>
               </div>
@@ -259,7 +259,7 @@ export default function CreateTaskSlideModal({ open, onClose, onCreated }: Props
 
             {/* Row 5: Pages */}
             <div className="flex items-stretch text-xs font-sans min-h-[44px]">
-              <div className="w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
+              <div className="w-[110px] sm:w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-3 sm:px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
                 <FileText className="w-3.5 h-3.5 text-gray-400" />
                 <span>Pages</span>
               </div>
@@ -277,7 +277,7 @@ export default function CreateTaskSlideModal({ open, onClose, onCreated }: Props
 
             {/* Row 6: IND/ENG Languages */}
             <div className="flex items-stretch text-xs font-sans min-h-[44px]">
-              <div className="w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
+              <div className="w-[110px] sm:w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-3 sm:px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
                 <Languages className="w-3.5 h-3.5 text-gray-400" />
                 <span>IND/ENG</span>
               </div>
@@ -310,7 +310,7 @@ export default function CreateTaskSlideModal({ open, onClose, onCreated }: Props
 
             {/* Row 7: Priority */}
             <div className="flex items-stretch text-xs font-sans min-h-[44px]">
-              <div className="w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
+              <div className="w-[110px] sm:w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-3 sm:px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
                 <Gauge className="w-3.5 h-3.5 text-gray-400" />
                 <span>Priority</span>
               </div>
@@ -326,7 +326,7 @@ export default function CreateTaskSlideModal({ open, onClose, onCreated }: Props
 
             {/* Row 8: License */}
             <div className="flex items-stretch text-xs font-sans min-h-[44px]">
-              <div className="w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
+              <div className="w-[110px] sm:w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-3 sm:px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
                 <KeyRound className="w-3.5 h-3.5 text-gray-400" />
                 <span>License</span>
               </div>
@@ -342,7 +342,7 @@ export default function CreateTaskSlideModal({ open, onClose, onCreated }: Props
 
             {/* Row 9: Task Month */}
             <div className="flex items-stretch text-xs font-sans min-h-[44px]">
-              <div className="w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
+              <div className="w-[110px] sm:w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-3 sm:px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
                 <CalendarDays className="w-3.5 h-3.5 text-gray-400" />
                 <span>Task Month</span>
               </div>
@@ -357,7 +357,7 @@ export default function CreateTaskSlideModal({ open, onClose, onCreated }: Props
 
             {/* Row 10: Brand / Account */}
             <div className="flex items-stretch text-xs font-sans min-h-[44px]">
-              <div className="w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
+              <div className="w-[110px] sm:w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-3 sm:px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
                 <Building2 className="w-3.5 h-3.5 text-gray-400" />
                 <span>Brand</span>
               </div>

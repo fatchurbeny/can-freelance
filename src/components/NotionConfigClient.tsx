@@ -137,7 +137,7 @@ export default function NotionConfigClient({ initialSyncLog }: { initialSyncLog:
       <div className="flex min-h-[calc(100vh-56px)] flex-col md:flex-row">
         <Sidebar currentSyncLog={latestSyncLog} />
 
-        <main className="flex min-h-0 min-w-0 flex-1 md:ml-56 flex-col p-6 md:p-8 space-y-6 overflow-x-hidden relative bg-grid-pattern">
+        <main className="flex min-h-0 min-w-0 flex-1 md:ml-56 flex-col p-3 sm:p-6 md:p-8 space-y-6 overflow-x-hidden relative bg-grid-pattern">
 
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4">

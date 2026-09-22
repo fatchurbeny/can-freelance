@@ -56,13 +56,13 @@ export default function AccountSwitcher() {
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="h-[34px] px-3 rounded-lg border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] text-xs font-sans font-medium text-gray-900 dark:text-gray-200 hover:border-gray-300 dark:hover:border-gray-700 focus:outline-none transition-colors shadow-none cursor-pointer flex items-center gap-2 select-none"
+        className="h-[34px] px-2 sm:px-3 rounded-lg border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] text-xs font-sans font-medium text-gray-900 dark:text-gray-200 hover:border-gray-300 dark:hover:border-gray-700 focus:outline-none transition-colors shadow-none cursor-pointer flex items-center gap-1.5 sm:gap-2 select-none shrink-0"
         title="Switch Account Manager"
       >
         <UserCheck className="w-3.5 h-3.5 text-[#ff5e1f] shrink-0" />
-        <span className="max-w-[130px] truncate">{currentAccount.name}</span>
+        <span className="hidden xs:inline max-w-[70px] sm:max-w-[130px] truncate">{currentAccount.name}</span>
         {currentAccount.badge && (
-          <span className="px-1.5 py-0.5 rounded-[4px] bg-gray-100 dark:bg-[#272a34] text-[9px] font-sans font-bold text-gray-600 dark:text-gray-300">
+          <span className="px-1.5 py-0.5 rounded-[4px] bg-gray-100 dark:bg-[#272a34] text-[9px] font-sans font-bold text-gray-600 dark:text-gray-300 shrink-0">
             {currentAccount.badge}
           </span>
         )}
@@ -71,7 +71,7 @@ export default function AccountSwitcher() {
 
       {/* Account Dropdown Overlay (Cloudflare Style) */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-64 rounded-xl border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] p-1.5 shadow-xl z-50 font-sans text-xs">
+        <div className="absolute right-0 mt-2 w-64 max-w-[calc(100vw-24px)] rounded-xl border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] p-1.5 shadow-xl z-50 font-sans text-xs">
           {/* Header */}
           <div className="px-2.5 py-1.5 mb-1 border-b border-[#f0f0f0] dark:border-[#272a34] flex items-center justify-between text-[10px] font-sans font-bold text-gray-400 dark:text-gray-500 tracking-wider uppercase">
             <span>PILIH AKUN MANAGER</span>

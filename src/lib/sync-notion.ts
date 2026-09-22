@@ -790,6 +790,21 @@ export async function syncNotionData(mode: NotionSyncMode = 'incremental') {
                      a.displayName.toLowerCase() === na.name.toLowerCase()
             );
             if (!foundAccount) {
+              const cleanNa = na.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+              foundAccount = accounts.find((a) => {
+                const cleanKey = a.notionKey.toLowerCase().replace(/[^a-z0-9]/g, '');
+                const cleanDisplay = a.displayName.toLowerCase().replace(/[^a-z0-9]/g, '');
+                return (
+                  cleanKey === cleanNa ||
+                  cleanDisplay === cleanNa ||
+                  (cleanNa.includes('uicreative') && cleanDisplay.includes('uicreative')) ||
+                  (cleanNa.includes('impro') && cleanDisplay.includes('impro')) ||
+                  (cleanNa.includes('chital') && cleanDisplay.includes('chital')) ||
+                  (cleanNa.includes('antler') && cleanDisplay.includes('antler'))
+                );
+              });
+            }
+            if (!foundAccount) {
               const brandColors = ['#F97316', '#EF4444', '#10B981', '#EC4899', '#8B5CF6', '#3B82F6'];
               const randomColor = brandColors[Math.floor(Math.random() * brandColors.length)];
               const newAcc = await prisma.account.create({

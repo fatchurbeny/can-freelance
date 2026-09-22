@@ -293,7 +293,7 @@ export default async function BillingStatementPage(props: {
       <div className="flex min-h-[calc(100vh-56px)] flex-col md:flex-row">
         <Sidebar currentSyncLog={latestSyncLog} />
 
-        <main className="flex min-h-0 min-w-0 flex-1 md:ml-56 flex-col p-6 md:p-8 bg-grid-pattern">
+        <main className="flex min-h-0 min-w-0 flex-1 md:ml-56 flex-col p-3 sm:p-6 md:p-8 bg-grid-pattern">
 
           {/* Single Continuous Outer Container */}
           <div className="w-full rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] divide-y divide-[#f0f0f0] dark:divide-[#272a34] shadow-none">
