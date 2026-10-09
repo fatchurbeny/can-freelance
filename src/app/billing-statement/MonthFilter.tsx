@@ -21,8 +21,9 @@ export default function MonthFilter({
   };
 
   return (
-    <div className="relative h-full w-full flex items-stretch">
+    <div className="relative h-full w-full flex items-stretch overflow-visible z-30">
       <MonthCalendarPicker
+        align="right"
         value={selectedMonth}
         availableMonths={availableMonths}
         mode="filter"

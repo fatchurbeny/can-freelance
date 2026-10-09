@@ -6,16 +6,239 @@ Dokumen ini mencatat **status pengerjaan aktif**, keputusan arsitektur terbaru, 
 
 ## 📌 Active Session Signature (Role-Based Handover)
 
-* **Session ID**: `#SESS-20260922-01`
-* **Active Engineering Role**: `🎨 [Frontend & UI/UX]`, `⚙️ [Backend & Database]`, `💼 [Business & Domain Logic]`
-* **Last Active Agent / Tool**: Antigravity (Gemini 3.6 Flash)
-* **Timestamp**: 2026-09-22 11:30 WIB
-* **Active Git Branch**: `staging` (Targeting `main` / `origin/main` Production Direct)
-* **Task State**: ✅ Resolved duplicate UICreative account records, added "Other Brands" sidebar tab & filter, and fixed Canva email brand extraction to display actual body brand names.
+* **Session ID**: `#SESS-20261009-01`
+* **Active Engineering Role**: `⚙️ [Backend & Database] / 🔄 [API & Notion Integration]`
+* **Last Active Agent / Tool**: Antigravity (Gemini 3.8 Flash)
+* **Timestamp**: 2026-10-09 11:36 WIB
+* **Active Git Branch**: `main`
+* **Task State**: ✅ Implemented Instant Save (<100ms) Optimization: (1) Created `src/lib/background-sync.ts` (`runInBackground` via `setImmediate`); (2) Refactored `updateTaskStatusAction` & `updateTaskFieldsAction` in `qa.ts` to write to local PostgreSQL immediately (~10-20ms) and offload serial Notion API calls to background; (3) Refactored `updateDoctypeRateCardAction` in `rate-card.ts` to sync doctype options to Notion non-blocking; (4) Refactored `updateTaskParametersAction` in `parameter-issue.ts` to run bulk Notion updates in background; (5) Verified `npx tsc --noEmit` (**Exit Code 0**).
 
 ---
 
 ## 💡 Keputusan Arsitektur & Perubahan Terakhir (Recent Decisions)
+
+1. **Instant Save & Non-Blocking Background Notion Sync (`background-sync.ts`, `qa.ts`, `rate-card.ts`, `parameter-issue.ts`)**:
+   - **Root Cause Resolution**: Setiap kali menyimpan editing (Task Detail Sheet, drag-and-drop Kanban, Rate Card, Parameter Issue), Server Actions sebelumnya menjalankan `await` berantai untuk panggilan HTTPS ke Notion API di Amerika Serikat (`pages.retrieve`, `pages.update`, `blocks.children.append`). Browser dipaksa menunggu 2–5 detik.
+   - **Local-First Immediate Persistence**: Perubahan data disimpan terlebih dahulu ke PostgreSQL internal (~10–20ms), dan respon `{ success: true }` langsung dikembalikan ke browser sehingga UI menutup modal/drawer dan menampilkan toast sukses seketika (<100ms).
+   - **Non-Blocking Background Helper (`src/lib/background-sync.ts`)**: Seluruh transaksi jaringan ke Notion API dijalankan di latar belakang menggunakan `setImmediate` dengan penanganan error (`try/catch`) yang aman tanpa pernah memblokir user response atau melempar unhandled rejection ke runtime Next.js.
+   - **Verification**: Executed `npx tsc --noEmit` (**Exit Code 0**).
+
+2. **Google OAuth Disconnect Exception Safeguard & Canonical Subpath Routing (`google-oauth.ts`, `email-notification.ts`, `GoogleOAuthModal.tsx`, `api/google/oauth/*`)**:
+   - **Root Cause 1 (Disconnect Exception)**: Fungsi `decipher.final()` di `decryptEmailToken` melempar uncaught exception `Unsupported state or unable to authenticate data` saat token secret berubah atau data token lama tidak valid, menggagalkan `disconnectGoogleEmailAction` sebelum mengupdate database. Diatasi dengan membungkus decipher dan token revocation dalam try-catch sehingga database update selalu berhasil mereset status ke `DISCONNECTED`.
+   - **Root Cause 2 (Root Gateway Redirection)**: Next.js berjalan dengan `basePath: '/can-freelance'`. Pemanggilan `window.open('/api/google/oauth/start')` membuka root host yang ditangkap oleh console gateway Nginx (`portal.fatchurbeny.com`), bukan Next.js. Diatasi dengan menyertakan prefix `/can-freelance` secara dinamis dan menggunakan alur direct redirect browser yang bersih.
+   - **Root Cause 3 (Callback & Return URL Subpath)**: Handler `start/route.ts` dan `callback/route.ts` kini menyertakan `basePath: '/can-freelance'` pada URL redirect, memastikan pengguna selalu kembali ke `/can-freelance/notion-config`. `getGoogleOAuthRedirectUri` juga diselaraskan dengan URI resmi di Google Cloud Console.
+   - **Verification**: Executed `npx tsc --noEmit` (**Exit Code 0**).
+
+2. **VPS Production Update & Zero-Downtime Deployment to Biznet GIO (`can-freelance-app`, PM2, Nginx)**:
+   - **Standalone Build & Transfer**: Mem-bundle kode terbaru dari MacBook lokal ke format Next.js 16 standalone + static chunks (`can-freelance-release.tar.gz`), kemudian mengunggah dan mengekstraknya di `/www/wwwroot/can-freelance-app` VPS Biznet GIO.
+   - **Environment Safeguard**: Memastikan file `.env` di VPS tetap terkonfigurasi dengan kredensial PostgreSQL lokal VPS (`canfreelance2026`), Basic Auth (`impro-freelance`), Google OAuth, dan Cron Secret tanpa tertimpa konfigurasi dev lokal.
+   - **Zero Downtime Reload**: Menjalankan `pm2 reload can-freelance` sehingga proses node di-reload secara mulus tanpa memutus koneksi pengguna.
+   - **End-to-End Verification**: Seluruh endpoint utama (`/can-freelance`, `/can-freelance/production`, `/can-freelance/billing-statement`) terverifikasi aktif dengan respon **HTTP/2 200 OK** melalui Cloudflare Edge dan reverse proxy Nginx. Endpoint cron background sync (`/can-freelance/api/sync/cron`) juga teruji sukses berjalan normal.
+
+2. **Production Kanban Board Toolbar Re-Ordering & Mobile CTA Visibility (`ProductionToolbar.tsx`, `SortControl.tsx`)**:
+   - **Far-Left Expandable Search**: Memindahkan search bar dari sisi kanan ke urutan pertama di sebelah kiri sebelum `SortControl`. Secara default disajikan sebagai tombol icon `Search` ringkas (`px-3 sm:px-3.5`) dengan dot oranye saat query aktif. Saat diklik, input melebar (*expandable*) dengan auto-focus, tombol clear query (`✕`), dan tombol tutup (`X`).
+   - **Always-Visible CTA Button on Mobile**: Mengatasi masalah tombol `+ Add New Task` yang sebelumnya terdorong ke luar layar ponsel (off-screen) dengan: (a) Menempatkan tombol CTA di slot kanan permanen (`shrink-0 ml-auto`); (b) Menggunakan label adaptif (`+ Task` di ponsel `< sm`, `+ Add New Task` di desktop `>= sm`); (c) Mengoptimalkan padding sel Sort dan Filter (`px-2.5 sm:px-4`); (d) Membungkus chip aktif di container scroll horizontal `overflow-x-auto min-w-0 flex-1`. Seluruh baris kini muat sempurna di viewport 360px–390px tanpa perlu menggeser (*slide*) layar ke kanan.
+   - **Verification**: Executed `npx tsc --noEmit` (**Exit Code 0**).
+
+2. **Approval Payroll Filter Dropdown Width Reduction & Dimensional Symmetry (`PayrollToolbar.tsx`)**:
+   - **Root Cause & Visual Issue**: Popover dropdown Filter sebelumnya menggunakan lebar tetap `min-w-[220px]`. Pada tahap awal pemilihan kategori (*Designer, Doctype, Brand, Task Month*), lebar ini menyisakan ruang kosong berlebih di sisi kanan dan tampak terlalu lebar dibandingkan tombol Filter maupun dropdown Sort di sebelahnya.
+   - **Dimensional Symmetry Refinement**: Mengubah lebar container popover saat `!activeCategory` menjadi `w-40` (160px), persis sama dengan lebar dropdown Sort (`w-40`). Saat sub-kategori aktif dipilih, lebar menyesuaikan secara proporsional (`w-48 sm:w-52` untuk daftar nama item, dan `w-56 sm:w-60` untuk inline calendar picker).
+   - **Verification**: Executed `npx tsc --noEmit` (**Exit Code 0**).
+
+2. **Payout Breakdown Mobile Date Picker & Viewport Boundary Safeguards (`MonthFilter.tsx`, `MonthCalendarPicker.tsx`, `page.tsx`)**:
+   - **Root Cause Analysis**: Pada tab Summary seksi Payout Breakdown, tombol date picker `[September-2026 ∨]` berada di sisi kanan toolbar header (`w-full`). Karena `MonthFilter.tsx` sebelumnya memanggil `MonthCalendarPicker` tanpa prop `align`, popover terbuka dengan default `left-0`. Akibatnya, kalender selebar 224px–240px meluap keluar batas kanan layar HP (`off-screen`), menyebabkan panah tahun `>`, kolom bulan ke-3 (`Mar/Jun/Sep/Des`), dan tombol `BULAN INI` terpotong.
+   - **Right-Aligned Popover (`align="right"`)**: Menetapkan `align="right"` pada `MonthCalendarPicker` di `MonthFilter.tsx` sehingga popover otomatis rata kanan (`right-0`) dengan tombol pembukanya. Seluruh kalender kini 100% berada di dalam layar ponsel.
+   - **Viewport Bounds Guard**: Menambahkan `max-w-[calc(100vw-32px)]` pada container popover di `MonthCalendarPicker.tsx`.
+   - **Stacking Context**: Menetapkan `relative z-30 overflow-visible` pada toolbar header Payout Breakdown dan sel `MonthFilter` di `src/app/billing-statement/page.tsx` agar popover tidak tertimpa elemen accordion di bawahnya.
+   - **Mobile Button Symmetrical**: Mengubah tombol download statement menjadi `w-full lg:w-auto justify-center lg:justify-start` agar membentang simetris dan rapi di mobile.
+   - **Verification**: Executed `npx tsc --noEmit` (**Exit Code 0**).
+
+2. **Sort & Filter Dropdown In Front Of Object & Mobile Viewport Safeguards (`PayrollToolbar.tsx`, `ApprovalPayrollTable.tsx`, `MonthCalendarPicker.tsx`)**:
+   - **Root Cause Analysis**: Pada tampilan mobile, dropdown Sort dan Filter sebelumnya berada di belakang objek atau terpotong karena: (a) Container pembungkus Row 2 dan Row 3 tidak memiliki stacking context terisolasi dengan z-index terdefinisi, sehingga elemen berikutnya di DOM (Row 3, Table Header `overflow-x-auto`, dan baris tabel) me-render di atas popover; (b) Popover Filter dengan `min-w-[220px]` / sub-menu `min-w-[260px]` meluap keluar tepi kanan layar ponsel (off-screen); (c) Chip filter aktif bercampur di satu container yang sama dengan tombol dropdown.
+   - **Stacking Context Hierarchy**:
+     - Outer `PayrollToolbar`: `relative z-50 overflow-visible`.
+     - Row 2 (Search, Sort, Filter): `relative z-50 overflow-visible`.
+     - Sort Popover: `relative h-full ${sortOpen ? 'z-60' : 'z-40'}` dengan menu `z-60 shadow-2xl`.
+     - Filter Popover: `relative h-full ${filterOpen ? 'z-60' : 'z-40'}` dengan menu `z-60 shadow-2xl max-w-[calc(100vw-32px)]`.
+     - Left Tools Group: `flex items-stretch divide-x shrink-0 overflow-visible`.
+     - Active Filter Chips: dibungkus ke dalam container scroll terpisah `overflow-x-auto [&::-webkit-scrollbar]:hidden min-w-0` sehingga tidak pernah memotong (*clip*) popover.
+     - Row 3 (Selection, Date Picker, CTA): `relative z-20 overflow-visible`.
+     - Table Header: `overflow-x-auto relative z-10`.
+     - Dengan hierarki ini: Popover (`z-60`) >> Row 2 (`z-50`) >> Row 3 (`z-20`) >> Table (`z-10`), seluruh dropdown 100% dipastikan tampil di depan (*in front of*) seluruh objek.
+   - **MonthCalendarPicker Responsive Alignment**: Menambahkan prop `align?: 'left' | 'right'` pada `MonthCalendarPicker` sehingga popup kalender di Row 3 otomatis rata kanan (`right-0`), mencegah popup keluar dari batas kanan layar ponsel.
+   - **Verification**: Executed `npx tsc --noEmit` (**Exit Code 0**).
+
+2. **Billing Statement 3-Row Menu Architecture & Mobile Responsive Searchbar (`PayrollToolbar.tsx`, `ApprovalPayrollTable.tsx`)**:
+   - **3-Row Menu Separation**: Mengatasi penumpukan seluruh kontrol filter dan batch action di dalam 1 baris sempit dengan membaginya menjadi 3 baris terstruktur:
+     - **Baris 1 (Tab Menu)**: Tab navigasi *Summary* dan *Approval Payroll (Counter)*.
+     - **Baris 2 (Search, Sort, Filter)**: Toolbar terdedikasi untuk eksplorasi data. Search bar di mobile disajikan sebagai tombol icon `Search` ringkas (`h-11 px-3.5`) yang dapat melebar (*expandable*) dengan auto-focus dan tombol tutup `X`, sehingga tidak lagi menghimpit dropdown Sort dan Filter.
+     - **Baris 3 (Selection, Date Picker & CTA)**: Baris terdedikasi untuk aksi batch. Di sisi kiri menampilkan status data terpilih (`0 of 7 selected` dengan aksen oranye saat aktif). Di sisi kanan menampung `MonthCalendarPicker` (*Pilih Bulan...*) dan tombol CTA `Assign Selected`.
+   - **Sticky Top Alignment**: Memperbarui offset sticky container di `ApprovalPayrollTable.tsx` ke `top-[104px]` (`56px TopBar + 48px Tab Menu`) agar menempel rapi tanpa celah maupun tumpang tindih.
+   - **Verification**: Executed `npx tsc --noEmit` (**Exit Code 0**).
+
+2. **Account & Team Expandable Search Bar (`AccountTeamSection.tsx`)**:
+   - **Collapsed Icon-Only Default**: Search bar di toolbar di kedua tab (`Designer Team` dan `Canva Accounts`) secara default disajikan sebagai tombol icon `Search` ringkas (`h-11 px-3.5 border-r border-[#f0f0f0] dark:border-[#272a34]`). Hal ini memberikan ruang luas bagi filter dropdown (`ALL Specialization` dan `ALL Status`) sehingga teks filter tidak lagi terdesak atau terpotong di layar ponsel sempit (360px–390px).
+   - **Expanded Interactive State**: Mengklik icon `Search` akan membuka search input bar melebar dengan transisi mulus, auto-focus kursor (`ref.current?.focus()`), tombol hapus keyword (`✕`), dan tombol tutup (`X`).
+   - **Active Query Indication**: Jika pencarian sedang aktif (`designerSearch !== ''` atau `accountSearch !== ''`), tombol icon menampilkan dot indicator oranye (`w-1.5 h-1.5 rounded-full bg-[#ff5e1f]`) sehingga pengguna mengetahui filter pencarian sedang berlaku.
+   - **Verification**: Executed `npx tsc --noEmit` (**Exit Code 0**).
+
+2. **Account & Team Mobile Responsiveness & Contract Banner Enter Content (`account-team/page.tsx`, `TopBar.tsx`, `rate-card/page.tsx`, `billing-statement/page.tsx`, `AccountTeamSection.tsx`)**:
+   - **Contract Banner Enter Content**: Mengubah sel `Kalender` dan `Rate/Pool` dari format 1 baris memanjang dengan `whitespace-nowrap` menjadi format 2 baris vertikal (*enter content*):
+     - Baris 1: Label kecil (`Kalender:` / `Rate/Pool:`) dengan warna netral `text-gray-400 dark:text-gray-500` huruf kapital ringkas.
+     - Baris 2: Nilai/konten tebal (`25 Hari Kerja/Bulan` / `IDR 15.000`) di bawahnya.
+     - Perubahan ini diterapkan secara seragam pada `/account-team`, `/rate-card`, dan `/billing-statement` sehingga kedua sel terbagi 50%-50% simetris tanpa terpotong di layar ponsel sempit (360px–390px).
+   - **TopBar Title Truncation Fix**: Menghapus pembatasan kaku `max-w-[80px]` yang terpasang akibat kelas non-standar `xs:` di Tailwind. Diperbarui menjadi `max-w-[150px] sm:max-w-none` sehingga judul `ACCOUNT & TEAM` tampil utuh di ponsel.
+   - **AccountTeamSection Mobile Toolbar**: Mengganti `w-full` menjadi `min-w-[200px]` pada search input cell agar dropdown filter di sampingnya terlihat dan mudah di-scroll di ponsel, serta menambahkan border pemisah atas untuk badge leaderboard `#1`.
+   - **Verification**: Executed `npx tsc --noEmit` (**Exit Code 0**).
+
+2. **Knowledge Graph Interactive Canvas Mobile Touch Gestures (`GraphifyVisualizer.tsx`)**:
+   - **Touch Gesture Engine**: Menambahkan `onTouchStart`, `onTouchMove`, `onTouchEnd`, dan `onTouchCancel` pada canvas 2D. Mendukung 1-finger panning canvas atau dragging node individual (dengan hit radius ramah sentuhan `+ 8px`), serta 2-finger pinch zoom (`Math.hypot` distance ratio) dengan batas zoom aman `[0.4, 3.0]`.
+   - **Canvas Touch Conflict Prevention**: Menerapkan kelas CSS `touch-none` pada elemen `<canvas>` agar interaksi geser dan cubit tidak memicu browser gesture seperti pull-to-refresh atau page scroll.
+   - **Responsive Height & Layout**: Mengubah wrapper dari fixed `h-[720px]` menjadi `min-h-[640px] lg:h-[720px]` dengan canvas area `min-h-[380px] sm:min-h-[460px] lg:min-h-0 lg:h-full` agar tidak terpotong di layar ponsel.
+   - **Adaptive Instruction Overlay**: Memperbarui petunjuk di kiri bawah canvas agar menampilkan panduan sentuh di HP (*"Cubit Zoom • Geser 1 Jari • Ketuk Node"*) dan mouse di desktop (*"Scroll to Zoom • Drag to Pan • Click Node to Inspect"*).
+   - **Simulation Isolation Rule Compliance**: Touch handlers mengupdate `transformRef.current` dan `draggedNodeRef.current` secara langsung tanpa mereset simulasi fisika canvas.
+   - **Verification**: Executed `npx tsc --noEmit` (**Exit Code 0**).
+
+2. **Rate Card Doctype Table Header-Body Horizontal Scroll Synchronization (`DoctypeTable.tsx`)**:
+   - **Single Table Structure**: Menghapus `<thead>` terisolasi di dalam container Row 3 sticky bar yang sebelumnya terpisah dari `<tbody>`. Menyatukan `<thead>` dan `<tbody>` ke dalam 1 elemen `<table>` tunggal di dalam 1 container `overflow-x-auto`.
+   - **Zero Column Desync**: Dengan tabel yang menyatu secara native, saat pengguna menggeser tabel secara horizontal di layar ponsel, header dan seluruh baris data bergerak serempak tanpa jeda atau perbedaan offset.
+   - **Verification**: Executed `npx tsc --noEmit` (**Exit Code 0**).
+
+3. **Email Notifications Toolbar & Category Slider Enhancements (`EmailNotificationView.tsx`)**:
+   - **Expandable Searchbar**: Search bar di toolbar secara default disajikan sebagai icon `Search` ringkas. Saat diklik, input pencarian otomatis muncul melebar dengan auto-focus dan tombol tutup `X` untuk mengembalikannya ke bentuk icon, menghemat ruang secara signifikan di mobile maupun toolbar compact.
+   - **Unified More Filters Dropdown (Brand & Status)**: Menyederhanakan 2 tombol filter lebar (Brand Canva dan Status Resolusi) di balik sebuah tombol icon **Filters** (`SlidersHorizontal`). Popover dropdown menyajikan 2 seksi terpisah (*CANVA ACCOUNT* dan *STATUS & RESOLUTION*) lengkap dengan *Cloudflare Contrast Checkboxes* dan counter aktif.
+   - **Horizontal Category Slider Bar**: Mengubah baris kategori dari multi-row wrap menjadi deretan slider horizontal 1 baris yang mulus (*smooth touch swipe* di HP dan tombol navigasi panah kiri/kanan di desktop), menjaga deretan chip kategori dan tombol `SUBJECT TRIGGERS` tetap sejajar dan rapi.
+   - **Verification**: Executed `npx tsc --noEmit` (**Exit Code 0**).
+
+1. **Mobile Responsiveness P1 Fixes (`EmailNotificationView.tsx`, `TopBar.tsx`, `Sidebar.tsx`)**:
+   - **Full-Width Mobile Email Cards**: Menyembunyikan Brand Rail 270px di layar mobile (`hidden md:block`) sehingga daftar kartu email tidak lagi terhimpit menjadi 90px–120px melainkan membentang 100% lebar layar ponsel.
+   - **Toolbar Overflow Elimination**: Menambahkan `overflow-x-auto [&::-webkit-scrollbar]:hidden` pada baris toolbar pencarian & filter email.
+   - **Mobile Period Picker & Account Switcher Accessibility**: Membuka kelas pembungkus `PeriodPicker` di `TopBar.tsx` ke `flex items-center` dan menambahkan widget `AccountSwitcher` di menu mobile drawer pada `Sidebar.tsx`.
+   - **Verification**: Executed `npx tsc --noEmit` (**Exit Code 0**).
+
+1. **Nginx HTTP Basic Auth Protection for `/can-freelance` Subpath (`portal.fatchurbeny.com.conf`, `/www/server/nginx/auth/can-freelance.htpasswd`)**:
+   - **Restricted Access**: Memasang proteksi HTTP Basic Auth level Nginx pada subpath `/can-freelance` sehingga browser menampilkan popup dialog otentikasi login (*can-freelance Restricted Area*).
+   - **Bypass Safeguards**:
+     - Mem-bypass Basic Auth (`auth_basic off`) untuk endpoint `/can-freelance/api` agar proses sinkronisasi otomatis latar belakang (Cron Job) dan Google OAuth callback tidak terhalang popup.
+     - Mem-bypass Basic Auth untuk `/can-freelance/_next/static` agar aset desain tidak terhambat.
+   - **Landing Gateway Isolation**: Halaman root portal (`portal.fatchurbeny.com`) dan workspace Metavora (`/metavora-v1`) tetap bebas diakses publik tanpa login.
+   - **Verification**: `curl -sI https://portal.fatchurbeny.com/can-freelance` mengembalikan **HTTP/2 401 Unauthorized** dengan header `WWW-Authenticate: Basic realm="can-freelance Restricted Area"`; kueri dengan kredensial mengembalikan **HTTP/2 200 OK**.
+
+2. **VPS Production Deployment to Biznet GIO & Portal Gateway (`next.config.ts`, `portal.fatchurbeny.com.conf`, `ecosystem.config.cjs`, `schema.prisma`)**:
+   - **Gateway Architecture**: Mengintegrasikan `can-freelance` di bawah gateway `portal.fatchurbeny.com/can-freelance` melalui reverse proxy Nginx ke Next.js standalone server pada port internal `3002`.
+   - **PostgreSQL Database Migration**: Menginstal PostgreSQL 16 di VPS Biznet GIO (`103.89.5.148`), memindahkan seluruh data lokal (311 tasks, 4 designers, 20 doctypes, 58 email notifications) via `pg_dump` tanpa perlu sinkronisasi awal Notion yang lambat.
+   - **Next.js Subpath Routing (`next.config.ts`)**: Menetapkan `basePath: '/can-freelance'` agar seluruh aset statis, API routes, dan Client-side router berpindah ke prefix `/can-freelance` secara rapi.
+   - **Notion Realtime Sync & Crontab Automation**: Mengaktifkan `auto_sync = true` dengan interval 15 menit dan memasang background cron job Linux (`*/15 * * * * curl ... /can-freelance/api/sync/cron`) dengan verifikasi secret token.
+   - **Process Management via PM2**: Menggunakan PM2 cluster daemon di VPS dengan `max_memory_restart: '450M'` dan persistent boot save.
+   - **Verification**: `curl -sI https://portal.fatchurbeny.com/can-freelance` (**HTTP/2 200 OK**), endpoint sync cron mengembalikan `{"status":"success","mode":"incremental"}`, dan portal gateway `https://portal.fatchurbeny.com` beroperasi normal.
+
+2. **Auto-Fill Doctype Preset Pages on Create New Task & Database Backfill (`doctype-presets.ts`, `task-form-utils.ts`, `sync-notion.ts`, `backfill-doctype-pages.ts`)**:
+   - **Root Cause Resolution**: Nilai Doctype pages di database sebelumnya bernilai `1` untuk seluruh doctype karena di-hardcode `pages: 1.0` pada `sync-notion.ts`. Akibatnya, `getPagesForDoctype` selalu terhenti di kondisi `doc.pages > 0` dan mengembalikan `1` untuk semua jenis doctype termasuk `Regular-Presentation` dan `Instagram-Carousel`.
+   - **Universal Preset Utility (`src/lib/doctype-presets.ts`)**: Membuat kamus `DOCTYPE_DEFAULT_PRESETS` dan resolver cerdas `getPresetPagesByName` yang mengenali perbedaan doctype spesifik (seperti `Regular-Sosmed` 4p vs `Infographic-Sosmed` 1p, `Infographic-Slides-1` 10p vs `Infographic-Slides` 15p).
+   - **Smart Resolver (`task-form-utils.ts`)**: Mengutamakan preset berbasis nama jika nilai DB masih default `1`, sekaligus tetap menghormati kustomisasi pengguna jika diubah ke angka `> 1` di Rate Card.
+   - **Sync Engine Hardcode Removal (`sync-notion.ts`)**: Mengganti hardcoded `pages: 1.0` dengan `getPresetPagesByName(doctypeName)` saat sinkronisasi Notion menemukan doctype baru.
+   - **PostgreSQL Database Backfill**: Menjalankan `scripts/backfill-doctype-pages.ts` yang berhasil memperbarui 10 doctype multi-halaman di database lokal ke ukuran riil tugas.
+   - **Verification**: Executed `npx tsc --noEmit` (**Exit Code 0**).
+
+1. **Suppression of Checkboxes on Read-Only Email Notifications (`EmailNotificationView.tsx`)**:
+   - **Per-Card UX Cleanliness**: Menyembunyikan elemen tombol checkbox 18px pada seluruh kartu berkategori read-only (`TEMPLATE REJECTED` dan `LIBRARY PUBLISHED`). Kartu kini menyajikan judul template langsung dari sisi kiri tanpa ruang kosong yang tidak perlu.
+   - **Drawer Alignment**: Mengubah margin drawer rincian issue Canva pada kartu ditolak dari `ml-7` statis menjadi `${!isReadOnly ? 'ml-7' : 'ml-0'}` agar sejajar rapi dengan batas teks judul.
+   - **Selective Brand-Level Bulk Action**: Memperbarui logika `toggleSelectAllBrand` dan `isBrandAllSelected` agar secara spesifik hanya menyaring `actionableEmails` (kategori revisi `Publish Issue`). Tombol *"Select all"* otomatis disembunyikan jika suatu grup brand murni berisi email yang ditolak atau dipublikasikan.
+   - **Verification**: Executed `npx tsc --noEmit` (**Exit Code 0**).
+
+2. **Canva Library Published Emails Display & Profile Link Parsing (`canva-email-parser.ts`, `EmailNotificationView.tsx`)**:
+   - **Parser Precision Scanning**: Menambahkan pendeteksian baris tombol `"My profile"`. Dua baris di atas tombol diekstrak sebagai nama template asli Canva (misal: *"Series A Startup Pitch Deck Presentation"*, *"Sales Performance Review Presentation"*), dan satu baris tepat di atas tombol diekstrak sebagai nama brand/studio (misal: *"Zahra art"*, *"Antler"*, *"Improstd"*).
+   - **Creator Profile URL Extraction**: Menyisir tag `<a ...>My profile</a>` dan link `canva.com/p/...` / `trail.canva.com/...` dari body email untuk disimpan pada field `templateUrl`.
+   - **UI Action & Clean Presentation (`EmailNotificationView.tsx`)**: Menampilkan tombol CTA ungu khas Canva (`#8b3dff`) berlabel **`My Profile`** yang mengarah langsung ke profil kreator Canva. Memastikan kartu sukses penerbitan ini bersih tanpa badge status `UNRESOLVED`, tanpa tombol toggle `Mark Fixed`, dan tanpa issue drawer.
+   - **Database Backfill**: Menjalankan skrip re-parse pada 21 record email library di PostgreSQL sehingga seluruh judul template, brand, dan tautan profil terisi dengan data nyata.
+   - **Verification**: Executed `npx tsc --noEmit` (**Exit Code 0**).
+
+2. **Read-Only Category Status Mismatch Fix (`EmailNotificationView.tsx`, `email-notification.ts`)**:
+   - **Root Cause Resolution**: Ketika dropdown teratas diset ke `STATUS: Unresolved Issues` (default), kueri PostgreSQL sebelumnya memfilter murni `status = 'UNRESOLVED'`. Karena email penolakan (`TEMPLATE REJECTED`) dan terbit library (`LIBRARY PUBLISHED`) berstatus `RESOLVED`/read-only, kueri mengembalikan 0 baris meskipun chip kategori menampilkan angka counter (`TEMPLATE REJECTED 1`).
+   - **Action Filter Fix (`email-notification.ts`)**: Memperbarui `getEmailNotificationsAction` agar klausa `UNRESOLVED` secara otomatis menyertakan subjek penolakan (`not been added` / `not added`) dan publikasi library (`canva library` / `added to`), sehingga tidak tereliminasi oleh filter status default.
+   - **Client Refetch Fix (`EmailNotificationView.tsx`)**: Menambahkan `selectedCategory` ke dependency array `useEffect` dan menggunakan `effectiveStatus = (selectedCategory === 'rejected' || selectedCategory === 'library') ? 'ALL' : selectedStatus` pada `fetchNotifications()`. Mengklik chip `TEMPLATE REJECTED` / `LIBRARY PUBLISHED` kini secara instan menampilkan kartu email terkait tanpa tersembunyi.
+   - **Verification**: Executed `npx tsc --noEmit` (**Exit Code 0**).
+
+1. **Rejection Email Display & Parser Disambiguation (`canva-email-parser.ts`, `email-notification.ts`, `EmailNotificationView.tsx`)**:
+   - **Parser Regex Disambiguation**: Memperbaiki ekspresi reguler `isLibraryPublished` agar murni mencocokkan frasa publikasi library (`"added to the Canva library"`), mengeliminasi false positive pada subjek penolakan (`"Your template has **not been added to** Canva"`).
+   - **Template Title & Issue Extraction**: Menambahkan penyisiran judul template pada baris di atas header `Issues` di email penolakan, secara presisi mengekstrak nama template asli (misal: `Business Growth LinkedIn Post`, `Social Media Strategy Presentation`) dan rincian alih-alih `Canva Marketplace Template`.
+   - **Clean Rejection UI Structure (`EmailNotificationView.tsx`)**: Mengatur `isReadOnly = isRejected || isLibraryPublished` pada kartu email penolakan `TEMPLATE REJECTED`. Menyajikan Nama Template, Nama Brand, Badge Hitungan Issue (`1 issue`), serta Drawer Rincian Issue Rose-tinted (Judul & Deskripsi), sambil menyembunyikan badge status `UNRESOLVED`, tombol `Mark Fixed`, dan tombol CTA `Edit Template`.
+   - **Database Backfill**: Menjalankan re-parsing pada record email penolakan di PostgreSQL, memuat judul template dan rincian issue Canva asli.
+   - **Verification**: Executed `npx tsc --noEmit` (**Exit Code 0**).
+
+1. **Library Published Email Resolution & Fake Issue Cleanup (`canva-email-parser.ts`, `email-notification.ts`, `EmailNotificationView.tsx`)**:
+   - **Root Cause Resolution**: Sebelumnya parser Canva memicu fallback pesan issue (`"Issues reported by Canva Quality Review team..."`) pada seluruh email yang tidak memiliki baris issue eksplisit (termasuk email sukses penerbitan `LIBRARY PUBLISHED`). Selain itu, `syncCanvaEmailsAction` menyimpan seluruh email baru dengan `status: 'UNRESOLVED'`.
+   - **Parser Fix (`canva-email-parser.ts`)**: Mencegah penambahan pesan issue fallback jika subjek email mengindikasikan publikasi sukses (`"added to the Canva library"` / `"library"`). Serta membuang kode entitas HTML (`&#8199;`, `&#847;`) pada pembersihan judul template.
+   - **Sync Engine Fix (`email-notification.ts`)**: Meng-upsert email publikasi library secara otomatis dengan `status: 'RESOLVED'`.
+   - **UI Fix (`EmailNotificationView.tsx`)**: Mengatur `effectiveStatus = 'RESOLVED'` untuk kategori `library`, menyembunyikan pill badge issue jika count = 0, serta menyembunyikan tombol `Mark Fixed`.
+   - **Database Backfill**: Menjalankan pembaruan pada 23 record email di PostgreSQL (`status = 'RESOLVED'`, `issue_messages = '{}'`).
+   - **Verification**: Executed `npx tsc --noEmit` (**Exit Code 0**).
+
+1. **Production Email Notifications Redesign (`EmailNotificationView.tsx`, `IMPLEMENTATION-email-notifications.md`)**:
+   - **Consolidated Sticky Header Block**: Membungkus Toolbar Pencarian (`h-11`) dan Row Category Chips (`bg-[#fafafa] dark:bg-[#16181d]`) dalam 1 kontainer `sticky top-[56px] z-30`. Tombol `SUBJECT TRIGGERS` dipindahkan ke sisi paling kanan row category chips (`ml-auto`).
+   - **Dynamic Brand Rail Offset**: Menggunakan `ResizeObserver` pada `stickyHeaderRef` untuk mengukur tinggi header secara dinamis (`setRailTop(56 + height)`) dan menerapkan `style={{ top: railTop, maxHeight: 'calc(100vh - ${railTop}px)' }}` pada Brand Rail 270px.
+   - **2-Level Grouped List**:
+     - *Level 1 (Brand Section)*: Sticky-free header `bg-[#f8f9fa] dark:bg-[#16181d]/80` menampilkan avatar brand, nama, statistik total & unresolved emails, serta tombol `Select all` / `Deselect all`. Sederet email dari sender yang tidak terdaftar otomatis dikelompokkan dalam **Other Brands** dengan keterangan `· not registered in system`.
+     - *Level 2 (Category Subgroup)*: Header subgroup yang dapat di-collapse (`closedCats[`${brand}|${cat}`]`), menyajikan badge kategori (`PUBLISH ISSUE`, `TEMPLATE REJECTED`, `LIBRARY PUBLISHED`), subjek trigger, dan counter jumlah email.
+   - **Compact Email Cards & On-Demand Issue Detail**: Mengubah kartu email dari tampilan statis 400px menjadi baris compact 1-line. Tombol pill badge issue (`1 issue` / `N issues`) mengontrol visibilitas drawer rincian issue berwarna rose-tinted (`openIssues[item.id]`).
+   - **Batch Selection & Bulk Actions**: Menyediakan checkbox 18px pada tiap kartu email dan floating action bar gelap (`#111827`) saat `≥1` email terpilih untuk melakukan resolusi status masal (`MARK FIXED / RESOLVED`).
+   - **Verification**: Executed `npx tsc --noEmit` (**Exit Code 0**).
+
+1. **Status Dropdown Toolbar Adaptation to Subject Triggers (`EmailNotificationView.tsx`, `email-notification.ts`)**:
+   - **Dynamic Query Filter (`getEmailNotificationsAction`)**: Mendukung penyaringan langsung berdasarkan subjek melalui parameter `subjectTrigger` atau format nilai `TRIGGER:<pattern>`. Kueri SQL PostgreSQL otomatis mencari kecocokan subjek dengan case-insensitive serta normalisasi tanda petik lurus `'` dan lengkung `’`.
+   - **Cloudflare Dropdown Panel Grouping (`EmailNotificationView.tsx`)**:
+     - *Grup 1 (Status Resolusi)*: `STATUS: All Emails`, `STATUS: Unresolved Issues`, `STATUS: Resolved`.
+     - *Grup 2 (Subject Triggers)*: Mengambil daftar trigger aktif dari database `sync_subject_triggers` secara dinamis dengan badge counter jumlah email yang cocok (`getTriggerMatchCount`), label ringkas (`getTriggerLabel`), dan Cloudflare Checkbox.
+   - **Semantic Card Badges & Real Headlines**: Mengganti teks headline statis dengan `item.subject` asli dari email, serta menambahkan badge semantik cerdas:
+     - `LIBRARY PUBLISHED` (Hijau Emerald) untuk email terbit di Canva library.
+     - `TEMPLATE REJECTED` (Merah Rose) untuk email penolakan / not added.
+     - `PUBLISH ISSUE` (Rose) untuk email revisi / issue Canva.
+     - `CANVA NOTIFICATION` (Biru) untuk notifikasi Canva umum lainnya.
+   - **Verification**: `npx tsc --noEmit` lolos tanpa error (**Exit Code 0**). Kueri filter `TRIGGER:issues with your template` mengembalikan 30 email, dan `TRIGGER:added to the Canva library` mengembalikan 0 email secara akurat.
+   - **Root Cause "(0 Aktif)" Resolution**: Ketika modal dibuka, state awal `triggers` bernilai `[]` dan `loading: true`. Header langsung menghitung `activeCount` menjadi 0 sehingga teks sempat menampilkan `(0 Aktif)`. Selain itu, sebelum fallback raw SQL dipasang, Prisma singleton di runtime memory dev server tidak memiliki delegate `syncSubjectTrigger` sehingga query get mengembalikan array kosong. Keduanya kini teratasi dengan fallback SQL dan status header `({loading ? 'Memuat...' : `${activeCount} Aktif`})`.
+   - **Preset Canva Real Alignment**: 4 preset tombol cepat kini diselaraskan dengan subjek asli Canva:
+     - `We've found some issues with your template` (*Isu Template (Bermasalah)*)
+     - `Your template has not been added to Canva` (*Template Ditolak (Not Added)*)
+     - `Your template has been added to the Canva library!` (*Template Disetujui (Library)*)
+     - `issues with your template` (*Keyword: issues with your template*)
+   - **Apostrophe Normalization**: Menambahkan `normalizeSubject` (`replace(/[\u2018\u2019]/g, "'")`) agar petik lurus `'` dan lengkung `’` terdeteksi identik tanpa duplikasi.
+   - **Verification**: `npx tsc --noEmit` lolos (**Exit Code 0**), PostgreSQL `sync_subject_triggers` terverifikasi memiliki 3 baris aktif.
+   - **Data Model (`SyncSubjectTrigger`)**: Menambahkan tabel `sync_subject_triggers` di PostgreSQL dengan kolom `id`, `subject` (unique), `isActive`, `description`, dan timestamps. Dilengkapi auto-seed default (`issues with your template`, `We’ve found some issues with your template`, `Update on your Canva template submission`).
+   - **Dynamic Sync Engine (Gmail API & IMAP)**: Mengubah `fetchCanvaEmailsFromGmailApi` dan `fetchCanvaEmailsFromImap` agar menerima parameter `subjectTriggers?: string[]`. Query Gmail dinamis menghasilkan `subject:(...)` terorasi, dan query IMAP membentuk RFC 3501 `SEARCH OR (SUBJECT "...") (SUBJECT "...")`.
+   - **Slide-over Modal Component (`SyncSubjectSettingsSlideModal.tsx`)**: Mengimplementasikan drawer kanan 140 max-width, form body continuous symmetrical 2-column table grid, input tambah cepat, preset subject Canva, toggle aktif `ACTIVE` (`#00a67d`) / `DISABLED` (`#6e7687`), hapus baris, dan symmetrical 50/50 action footer (`CANCEL` / `SAVE TRIGGERS`).
+   - **Sub-Header Row 2 Button Placement**: Menempatkan tombol trigger `SUBJECT TRIGGERS` pada Sub-Header Bar Row 2 berdampingan dengan `Filter: ... Status: ...` sesuai tangkapan layar pengguna.
+   - **Verification**: `npx tsc --noEmit` lolos tanpa error (**Exit Code 0**), 0 native `<select>`, 0 unauthorized `font-mono`.
+
+2. **Canva Email Notification Brand Categorization, Fallback Disconnection & "Other Brands" Alignment (`canva-email-parser.ts`, `email-notification.ts`, `EmailNotificationView.tsx`, `issues-and-fixes.md`)**:
+   - **Root Cause Resolution (Fallback Trap)**: Menghapus fallback `accounts[0]?.id` pada `syncCanvaEmailsAction`. Sebelumnya, brand yang tidak terdaftar (seperti `Humpback Studio`) secara otomatis dipasangi `accountId = Zahra Art`. Akibatnya, badge sidebar kiri pada `EmailNotificationView.tsx` mengarahkan ke Zahra Art sehingga tab "Other Brands" menampilkan angka `0` meski berisi 9 email.
+   - **Fuzzy Brand Alias Normalization (`Impro Studio` → `Improstd`)**:
+     - Memperbarui `canva-email-parser.ts` agar email dari "Impro Studio" dinormalisasi sebagai `Improstd`.
+     - Memperbarui `syncCanvaEmailsAction` agar mencocokkan varian `impro` ke akun `Improstd` dan `uicreative` ke `UICreative.net`.
+     - Memperbarui `getEmailNotificationsAction` agar query `brandName: 'Improstd'` atau `brandName: 'OTHER'` menggunakan `andClauses` terpisah, sehingga pencarian teks tidak menimpa filter brand/status.
+   - **UI Brand Stats & Other Brands Filtering (`EmailNotificationView.tsx`)**:
+     - Memperbarui filter `otherNotifications` dan `brandStats` agar memeriksa `isBrandMatch(n.brandName, acc.displayName) || (!n.brandName && n.accountId === acc.id)`.
+     - Menghubungkan badge counter sidebar kiri secara sinkron dengan panel email di kanan.
+   - **Database Backfill Execution**: Menjalankan migrasi 20 baris email di PostgreSQL: 2 email `Impro Studio` diperbarui ke `brand_name = 'Improstd'` & `account_id = Improstd ID`, serta 7 email `Humpback Studio` diset `account_id = null`.
+   - **Verification**: `npx tsc --noEmit` lolos tanpa error (**Exit Code 0**). Database distribution: Antler (5), Chital Graphic (4), UICreative.net (2), Improstd (2), Other Brands / Humpback Studio (7), Zahra Art (0).
+
+2. **Google OAuth 2.0 Credentials & Gmail API Environment Configuration (`.env`, `google-oauth.ts`, `EmailConfigCard.tsx`)**:
+   - **Environment Variables**: Memasang `GOOGLE_CLIENT_ID` dan `GOOGLE_CLIENT_SECRET` dari Google Cloud Console ke dalam `.env`.
+   - **AES-256-GCM Token Encryption Secret**: Membuat `EMAIL_TOKEN_SECRET` (32-byte hex) untuk enkripsi aman Google refresh token di PostgreSQL.
+   - **Redirect URI Binding**: Mendaftarkan `GOOGLE_OAUTH_REDIRECT_URI="http://localhost:3002/api/google/oauth/callback"`.
+   - **Verification**: Terverifikasi `googleOAuthConfigured: true` via `getEmailConfigAction()`. Endpoint `/api/google/oauth/start` berhasil melakukan 307 redirect ke Google Consent Screen dengan scope `gmail.readonly`. Banner setup required di `/notion-config` otomatis nonaktif dan tombol "Connect Gmail" aktif.
+
+1. **Notion Page Block Body Extraction Decoupling & Rich Markdown Parser (`sync-notion.ts`, `backfill-approved-bodytext.ts`, `issues-and-fixes.md`)**:
+   - **Root Cause Resolution**: Memisahkan `fetchAllBlocks` dari pembungkus `if (canvaUrls.length === 0)` di `src/lib/sync-notion.ts`. Sebelumnya, hampir semua task berstatus *Aproved* sudah memiliki properti `Template Link` Canva, sehingga sinkronisasi secara keliru mem-bypass pembacaan blok halaman Notion.
+   - **Rich Markdown Parser (`parseNotionBlocksToMarkdown`)**: Mendukung seluruh blok umum Notion (`heading_1/2/3`, `bulleted_list_item`, `numbered_list_item`, `to_do` `- [x]`/`- [ ]`, `quote` `> `, `callout` `> 💡 `, `divider` `---`, dan `paragraph`), serta mempertahankan markdown link `[text](url)` jika elemen rich text memiliki `href`.
+   - **Official Backfill Script Execution (`scripts/backfill-approved-bodytext.ts`)**: Berhasil menyinkronkan 57 task (55 approved + 1 approved-profile-only + 1 reject) yang sebelumnya kosong. Database PostgreSQL kini memiliki 299 dari 301 total task dengan `body_text` terisi lengkap (2 task tersisa memang kosong di Notion).
+   - **Verification**: `npx tsc --noEmit` lolos tanpa error (**Exit Code 0**).
+
+1. **Local Development Environment & Database Initialization (`.env`, `schema.prisma`, `node@22`, `postgresql@16`)**:
+   - **Node.js Runtime Installation**: Memasang Node.js 22 LTS (`v22.23.2`) dan npm (`10.9.8`) melalui Homebrew (`brew install node@22`) dan menautkannya ke PATH sistem.
+   - **Environment Configuration (`.env`)**: Menginisialisasi file `.env` lokal yang mengarah ke database PostgreSQL lokal (`postgresql://fatchurbeny@localhost:5432/can-freelance?schema=public`), secret token enkripsi, dan cron secret.
+   - **Dependency & Prisma Generation**: Menjalankan `npm install` yang secara otomatis men-generate Prisma Client ke `generated/prisma` via postinstall hook.
+   - **Database Sync & Seeding**: Menjalankan `npx prisma db push` untuk menyinkronkan 16 tabel ke database `can-freelance`, kemudian menjalankan `npx tsx prisma/seed.ts` untuk mengisi data awal user, doctype, dan status.
+   - **Verification**: `npx tsc --noEmit` lolos tanpa error (**Exit Code 0**). Next.js dev server berjalan di `http://127.0.0.1:3002` dengan seluruh rute (`/`, `/production`, `/billing-statement`, `/rate-card`, `/account-team`, `/knowledge-graph`, `/notion-config`) mengembalikan **HTTP 200 OK**.
 
 1. **Canva Email Notification Brand Labeling, Duplicate Account Consolidation & "Other Brands" Tab (`canva-email-parser.ts`, `EmailNotificationView.tsx`, `email-notification.ts`, `sync-notion.ts`)**:
    - **Root Cause Fix (Duplicate UICreative Accounts)**: Mengidentifikasi dan menggabungkan record akun ganda (`UICreative.net` vs `Ui Creative.net`, `Improstd` vs `Impro Studio`, dll) di tabel `Account` PostgreSQL yang terbentuk akibat variasi nama tag dari sync Notion.

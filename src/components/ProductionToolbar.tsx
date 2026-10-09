@@ -48,11 +48,19 @@ export default function ProductionToolbar({
   onSortChange,
   onCreateTask,
 }: Props) {
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [filterOpen, setFilterOpen] = useState(false);
   const [activeGroup, setActiveGroup] = useState<keyof BoardFilters | null>(null);
   const [monthOpen, setMonthOpen] = useState(false);
   const filterRef = useRef<HTMLDivElement>(null);
   const monthRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (searchOpen) {
+      searchInputRef.current?.focus();
+    }
+  }, [searchOpen]);
 
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
@@ -110,19 +118,73 @@ export default function ProductionToolbar({
   const hasFilters = selectedCount > 0;
 
   return (
-    <div className="w-full h-11 flex items-stretch justify-between border-b border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] select-none text-xs shrink-0">
-      {/* Left side: SortControl + Filter Button + Active Filter Chips */}
-      <div className="flex items-stretch">
+    <div className="w-full h-11 flex items-stretch justify-between border-b border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] select-none text-xs shrink-0 overflow-visible relative z-30">
+      {/* Left side: Expandable Search + SortControl + Filter Button + Active Filter Chips */}
+      <div className="flex items-stretch min-w-0 overflow-visible flex-1">
+        {/* Search Cell: Mobile-Responsive Expandable */}
+        {!searchOpen ? (
+          /* Collapsed: Icon Search Only */
+          <button
+            type="button"
+            onClick={() => setSearchOpen(true)}
+            className="h-full px-3 sm:px-3.5 border-r border-[#f0f0f0] dark:border-[#272a34] flex items-center justify-center gap-1.5 text-gray-500 hover:text-[#ff5e1f] hover:bg-gray-50 dark:hover:bg-[#16181d] transition-colors cursor-pointer outline-none shrink-0"
+            title="Search tasks..."
+            aria-label="Open search input"
+          >
+            <Search className="w-4 h-4" />
+            {query && (
+              <span className="w-1.5 h-1.5 rounded-full bg-[#ff5e1f]" />
+            )}
+          </button>
+        ) : (
+          /* Expanded: Search input with autofocus & close button */
+          <div className="relative w-44 sm:w-60 flex items-center h-full px-3 border-r border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] gap-2 shrink-0 animate-[fadeIn_120ms_ease-in]">
+            <Search className="w-4 h-4 text-[#ff5e1f] shrink-0" />
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={query}
+              onChange={(e) => onQueryChange(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') setSearchOpen(false);
+              }}
+              placeholder="Search tasks..."
+              aria-label="Search tasks"
+              className="w-full h-full bg-transparent text-xs font-sans text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none border-none min-w-0"
+            />
+            {query && (
+              <button
+                type="button"
+                aria-label="Clear search"
+                onClick={() => onQueryChange('')}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-xs px-1"
+                title="Clear query"
+              >
+                ✕
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setSearchOpen(false)}
+              className="p-1 rounded text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-xs shrink-0 cursor-pointer"
+              title="Close search"
+              aria-label="Close search"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
         <SortControl value={sortKey} onChange={onSortChange} />
 
         {/* Filter Dropdown Button */}
-        <div className="relative h-full flex items-stretch" ref={filterRef}>
+        <div className="relative h-full flex items-stretch shrink-0" ref={filterRef}>
           <button
             type="button"
             onClick={() => { setFilterOpen((o) => !o); setActiveGroup(null); }}
             aria-haspopup="dialog"
             aria-expanded={filterOpen}
-            className={`h-full px-3.5 flex items-center gap-1.5 text-xs font-sans border-r border-[#f0f0f0] dark:border-[#272a34] transition-colors cursor-pointer whitespace-nowrap ${
+            className={`h-full px-2.5 sm:px-3.5 flex items-center gap-1 sm:gap-1.5 text-xs font-sans border-r border-[#f0f0f0] dark:border-[#272a34] transition-colors cursor-pointer whitespace-nowrap ${
               hasFilters
                 ? 'bg-gray-100 dark:bg-[#1f222b] text-gray-900 dark:text-white font-bold'
                 : 'bg-white dark:bg-[#0d0e12] text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#16181d]'
@@ -140,7 +202,7 @@ export default function ProductionToolbar({
 
           {/* Filter Popover Dropdown */}
           {filterOpen && (
-            <div className="absolute left-0 top-full z-50 mt-0 min-w-[220px] overflow-hidden rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] p-1.5 shadow-xl font-sans text-xs">
+            <div className="absolute left-0 top-full z-50 mt-0 min-w-[200px] max-w-[calc(100vw-32px)] overflow-hidden rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] p-1.5 shadow-2xl font-sans text-xs">
               {!activeGroup ? (
                 /* Stage 1: Category List */
                 groups.map((g) => {
@@ -205,8 +267,8 @@ export default function ProductionToolbar({
                               </span>
                               <div className={`w-4 h-4 rounded-[5px] border flex items-center justify-center transition-all shrink-0 ${
                                 on
-                                  ? 'bg-black border-black text-white dark:bg-white dark:border-white dark:text-black'
-                                  : 'border-gray-300 dark:border-[#343846] bg-white dark:bg-[#16181d]'
+                                    ? 'bg-black border-black text-white dark:bg-white dark:border-white dark:text-black'
+                                    : 'border-gray-300 dark:border-[#343846] bg-white dark:bg-[#16181d]'
                               }`}>
                                 {on && <Check className="w-3 h-3 stroke-[3]" />}
                               </div>
@@ -222,9 +284,9 @@ export default function ProductionToolbar({
           )}
         </div>
 
-        {/* Active Filter Chips as Flat Table Cells */}
+        {/* Active Filter Chips as Flat Table Cells (Scrollable on small screens) */}
         {hasFilters && (
-          <div className="flex items-stretch">
+          <div className="flex items-stretch overflow-x-auto [&::-webkit-scrollbar]:hidden min-w-0 flex-1 divide-x divide-[#f0f0f0] dark:divide-[#272a34]">
             {Object.keys(filters).map((k) => {
               const key = k as keyof BoardFilters;
               if (!filters[key].length || key === 'taskMonths') return null;
@@ -233,7 +295,7 @@ export default function ProductionToolbar({
               return (
                 <div
                   key={g.key}
-                  className="h-full px-4 border-r border-[#f0f0f0] dark:border-[#272a34] flex items-center gap-2 text-xs font-sans font-medium text-gray-700 dark:text-gray-300 bg-gray-50/50 dark:bg-[#16181d]/50"
+                  className="h-full px-2.5 sm:px-4 border-r border-[#f0f0f0] dark:border-[#272a34] flex items-center gap-1.5 sm:gap-2 text-xs font-sans font-medium text-gray-700 dark:text-gray-300 bg-gray-50/50 dark:bg-[#16181d]/50 shrink-0 whitespace-nowrap"
                 >
                   <span>{g.label}: {filters[g.key].length}</span>
                   <button
@@ -251,39 +313,20 @@ export default function ProductionToolbar({
         )}
       </div>
 
-      {/* Right side: Integrated Search Input + Button */}
-      <div className="flex items-stretch">
-        <div className="relative h-full flex items-center border-l border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] px-3">
-          <Search className="pointer-events-none w-3.5 h-3.5 text-gray-400" />
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => onQueryChange(e.target.value)}
-            placeholder="Search"
-            aria-label="Search tasks"
-            className="w-[140px] sm:w-[180px] bg-transparent pl-2 pr-6 py-1 text-xs font-sans text-gray-700 dark:text-gray-200 outline-none placeholder:text-gray-400"
-          />
-          {query && (
-            <button
-              type="button"
-              aria-label="Clear search"
-              onClick={() => onQueryChange('')}
-              className="absolute right-2 text-gray-400 hover:text-gray-700 dark:hover:text-white"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          )}
-        </div>
-        {onCreateTask && (
+      {/* Right side: Fixed CTA Button (Always visible on mobile without horizontal slide) */}
+      {onCreateTask && (
+        <div className="flex items-stretch shrink-0 ml-auto">
           <button
             type="button"
             onClick={onCreateTask}
-            className="flex items-center gap-1.5 px-4 h-full text-xs font-sans font-bold uppercase tracking-wider transition-all duration-150 cursor-pointer whitespace-nowrap border-l border-[#f0f0f0] dark:border-[#272a34] bg-[#ff5e1f] text-white hover:bg-[#ff7038]"
+            className="flex items-center gap-1 sm:gap-1.5 px-3 sm:px-4 h-full text-xs font-sans font-bold uppercase tracking-wider transition-all duration-150 cursor-pointer whitespace-nowrap border-l border-[#f0f0f0] dark:border-[#272a34] bg-[#ff5e1f] text-white hover:bg-[#ff7038] shrink-0"
           >
-            <span>+ Add New Task</span>
+            <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+            <span className="hidden sm:inline">Add New Task</span>
+            <span className="sm:hidden">Task</span>
           </button>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

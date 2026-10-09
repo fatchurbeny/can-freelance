@@ -74,52 +74,44 @@ export default function DoctypeTable({ doctypes, contractRate }: Props) {
           />
         </div>
 
-        {/* Render Tab 1 Controls & Table Header */}
+        {/* Render Tab 1 Controls (Search Toolbar) */}
         {activeTab === 'doctype' ? (
-          <>
-            {/* Row 2: Search & Count Flat Toolbar */}
-            <div className="h-10 px-3.5 flex items-center justify-between bg-white dark:bg-[#0d0e12]">
-              <div className="relative flex-1 max-w-[320px] flex items-center">
-                <Search className="absolute left-1 w-3.5 h-3.5 text-gray-400 dark:text-gray-500 pointer-events-none" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search by doctype or identifier..."
-                  className="w-full pl-7 pr-3 py-1 bg-transparent text-xs font-sans text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none border-none"
-                />
-              </div>
-              <span className="text-xs font-sans text-gray-400 dark:text-gray-500 whitespace-nowrap">
-                {filteredDoctypes.length} Doctype Produced
-              </span>
+          /* Row 2: Search & Count Flat Toolbar */
+          <div className="h-10 px-3.5 flex items-center justify-between bg-white dark:bg-[#0d0e12]">
+            <div className="relative flex-1 max-w-[320px] flex items-center">
+              <Search className="absolute left-1 w-3.5 h-3.5 text-gray-400 dark:text-gray-500 pointer-events-none" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search by doctype or identifier..."
+                className="w-full pl-7 pr-3 py-1 bg-transparent text-xs font-sans text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none border-none"
+              />
             </div>
-
-            {/* Row 3: Table Header (Structure matching Image 2 attributes) */}
-            <div className="overflow-x-auto bg-gray-50/80 dark:bg-[#0d0e12]">
-              <table className="w-full border-collapse text-left font-sans text-xs">
-                <thead>
-                  <tr className="border-b border-[#f0f0f0] dark:border-[#272a34] text-[11px] font-sans font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-                    <th className="pl-5 pr-4 py-3 font-semibold w-[240px]">DOCTYPE FORMAT</th>
-                    <th className="px-4 py-3 text-center font-semibold w-[130px] whitespace-nowrap">KATEGORI</th>
-                    <th className="px-4 py-3 text-center font-semibold w-[140px] whitespace-nowrap">CANVAS & RASIO</th>
-                    <th className="px-4 py-3 text-center font-semibold w-[110px] whitespace-nowrap">POOL SCORE</th>
-                    <th className="px-4 py-3 text-center font-semibold w-[110px] whitespace-nowrap">DEFAULT PAGES</th>
-                    <th className="px-4 py-3 text-center font-semibold w-[140px] whitespace-nowrap">EST. PAYOUT</th>
-                    <th className="px-4 py-3 text-center font-semibold w-[110px] whitespace-nowrap">STATUS</th>
-                    <th className="px-4 py-3 text-center font-semibold w-[120px] whitespace-nowrap border-l border-[#f0f0f0] dark:border-[#272a34]">ACTION</th>
-                  </tr>
-                </thead>
-              </table>
-            </div>
-          </>
+            <span className="text-xs font-sans text-gray-400 dark:text-gray-500 whitespace-nowrap">
+              {filteredDoctypes.length} Doctype Produced
+            </span>
+          </div>
         ) : null}
       </div>
 
       {/* Tab Contents */}
       {activeTab === 'doctype' ? (
-        /* Table Body (Scrolls smoothly under sticky header container) */
+        /* Unified Table Container: Thead and Tbody live in a single table inside single overflow-x-auto to prevent mobile desync */
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-left font-sans text-xs">
+            <thead className="bg-gray-50/80 dark:bg-[#0d0e12]">
+              <tr className="border-b border-[#f0f0f0] dark:border-[#272a34] text-[11px] font-sans font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                <th className="pl-5 pr-4 py-3 font-semibold w-[240px]">DOCTYPE FORMAT</th>
+                <th className="px-4 py-3 text-center font-semibold w-[130px] whitespace-nowrap">KATEGORI</th>
+                <th className="px-4 py-3 text-center font-semibold w-[140px] whitespace-nowrap">CANVAS & RASIO</th>
+                <th className="px-4 py-3 text-center font-semibold w-[110px] whitespace-nowrap">POOL SCORE</th>
+                <th className="px-4 py-3 text-center font-semibold w-[110px] whitespace-nowrap">DEFAULT PAGES</th>
+                <th className="px-4 py-3 text-center font-semibold w-[140px] whitespace-nowrap">EST. PAYOUT</th>
+                <th className="px-4 py-3 text-center font-semibold w-[110px] whitespace-nowrap">STATUS</th>
+                <th className="px-4 py-3 text-center font-semibold w-[120px] whitespace-nowrap border-l border-[#f0f0f0] dark:border-[#272a34]">ACTION</th>
+              </tr>
+            </thead>
             <tbody className="divide-y divide-[#f0f0f0] dark:divide-[#272a34] bg-white dark:bg-[#0d0e12]">
               {filteredDoctypes.map((doctype) => (
                 <RateCardRow key={doctype.id} doctype={doctype} contractRate={contractRate} />

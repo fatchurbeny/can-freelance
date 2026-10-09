@@ -362,13 +362,27 @@ export default async function BillingStatementPage(props: {
 
                   {/* Right Full-Height Table Cells */}
                   <div className="flex items-stretch divide-x divide-[#f0f0f0] dark:divide-[#272a34] border-t md:border-t-0 md:border-l border-[#f0f0f0] dark:border-[#272a34] shrink-0 font-sans text-xs">
-                    <div className="flex items-center gap-2.5 px-5 sm:px-6 py-4 bg-white dark:bg-[#0d0e12] text-gray-700 dark:text-gray-300">
-                      <span className="w-2 h-2 rounded-full bg-[#ff5e1f] shrink-0" />
-                      <span className="whitespace-nowrap">Kalender: <strong className="font-bold text-gray-900 dark:text-white">25 Hari Kerja/Bulan</strong></span>
+                    <div className="flex items-center gap-2.5 px-3.5 sm:px-6 py-3 sm:py-4 bg-white dark:bg-[#0d0e12] text-gray-700 dark:text-gray-300 min-w-0">
+                      <span className="w-2 h-2 rounded-full bg-[#ff5e1f] shrink-0 self-start sm:self-center mt-1 sm:mt-0" />
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-[10px] sm:text-[11px] font-sans font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                          Kalender:
+                        </span>
+                        <strong className="text-xs sm:text-xs font-bold text-gray-900 dark:text-white truncate">
+                          25 Hari Kerja/Bulan
+                        </strong>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2.5 px-5 sm:px-6 py-4 bg-white dark:bg-[#0d0e12] text-gray-700 dark:text-gray-300">
-                      <span className="w-2 h-2 rounded-full bg-[#ff5e1f] shrink-0" />
-                      <span className="whitespace-nowrap">Rate/Pool: <strong className="font-bold text-gray-900 dark:text-white">IDR {contractRate!.toLocaleString('id-ID')}</strong></span>
+                    <div className="flex items-center gap-2.5 px-3.5 sm:px-6 py-3 sm:py-4 bg-white dark:bg-[#0d0e12] text-gray-700 dark:text-gray-300 min-w-0">
+                      <span className="w-2 h-2 rounded-full bg-[#ff5e1f] shrink-0 self-start sm:self-center mt-1 sm:mt-0" />
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-[10px] sm:text-[11px] font-sans font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                          Rate/Pool:
+                        </span>
+                        <strong className="text-xs sm:text-xs font-bold text-gray-900 dark:text-white truncate">
+                          IDR {contractRate!.toLocaleString('id-ID')}
+                        </strong>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -567,16 +581,16 @@ export default async function BillingStatementPage(props: {
                 {/* Block 3: Payout Breakdown Section */}
                 <div className="flex flex-col bg-white dark:bg-[#0d0e12] rounded-none">
                   {/* Toolbar Header (Full-Height Symmetrical Table Style) */}
-                  <div className="flex flex-col lg:flex-row items-stretch justify-between bg-white dark:bg-[#0d0e12] border-b border-[#f0f0f0] dark:border-[#272a34] min-h-[52px]">
+                  <div className="flex flex-col lg:flex-row items-stretch justify-between bg-white dark:bg-[#0d0e12] border-b border-[#f0f0f0] dark:border-[#272a34] min-h-[52px] relative z-30 overflow-visible">
                     {/* Left 25% Cell (PAYOUT BREAKDOWN + MonthFilter Aligned Right to Card 1 / Card 5 Above) */}
-                    <div className="flex items-stretch justify-between w-full lg:w-1/4 shrink-0 font-sans text-xs font-bold uppercase tracking-wider text-gray-900 dark:text-white border-b lg:border-b-0 lg:border-r border-[#f0f0f0] dark:border-[#272a34]">
+                    <div className="flex items-stretch justify-between w-full lg:w-1/4 shrink-0 font-sans text-xs font-bold uppercase tracking-wider text-gray-900 dark:text-white border-b lg:border-b-0 lg:border-r border-[#f0f0f0] dark:border-[#272a34] relative overflow-visible">
                       {/* Left Title Text */}
                       <div className="flex items-center px-4 py-3.5 whitespace-nowrap min-w-0">
                         <span className="truncate">Payout Breakdown</span>
                       </div>
 
                       {/* Right MonthFilter Dropdown (Align Right at 25% Vertical Line) */}
-                      <div className="flex items-stretch border-l border-[#f0f0f0] dark:border-[#272a34] shrink-0">
+                      <div className="flex items-stretch border-l border-[#f0f0f0] dark:border-[#272a34] shrink-0 relative overflow-visible">
                         <MonthFilter availableMonths={availableMonths} selectedMonth={selectedMonth} />
                       </div>
                     </div>
@@ -585,7 +599,7 @@ export default async function BillingStatementPage(props: {
                     <div className="flex items-stretch border-t lg:border-t-0 shrink-0 font-sans text-xs">
                       <a
                         href={`/api/billing/download-all?month=${selectedMonth}`}
-                        className="flex items-center gap-2 px-5 py-3.5 bg-[#ff5e1f] hover:bg-[#ff7038] text-white font-sans text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer whitespace-nowrap rounded-none"
+                        className="w-full lg:w-auto flex items-center justify-center lg:justify-start gap-2 px-5 py-3.5 bg-[#ff5e1f] hover:bg-[#ff7038] text-white font-sans text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer whitespace-nowrap rounded-none"
                       >
                         <Archive className="w-4 h-4 stroke-[2.5]" />
                         <span>Download all Statement</span>

@@ -20,6 +20,7 @@ interface Props {
   inline?: boolean;
   multiSelect?: boolean;
   rangeSelect?: boolean;
+  align?: 'left' | 'right';
 }
 
 export function normalizeDisplayMonth(value?: string | null) {
@@ -88,6 +89,7 @@ export default function MonthCalendarPicker({
   inline = false,
   multiSelect = false,
   rangeSelect = false,
+  align = 'left',
 }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -337,7 +339,7 @@ export default function MonthCalendarPicker({
       </button>
 
       {isOpen && (
-        <div className="absolute left-0 top-full z-50 mt-0 w-56 sm:w-60 min-w-[220px]">
+        <div className={`absolute ${align === 'right' ? 'right-0' : 'left-0 sm:left-0'} top-full z-50 mt-0 w-56 sm:w-60 min-w-[220px] max-w-[calc(100vw-32px)]`}>
           {calendarGridContent}
         </div>
       )}

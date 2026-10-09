@@ -67,6 +67,24 @@ Dokumen ini mencatat histori bug, edge cases, serta aturan layout CSS/React untu
   3. Disconnect WAJIB menghapus token/credential sensitif dan menonaktifkan auto sync, tetapi tidak menghapus data `CanvaEmailNotification` yang sudah tersimpan.
   4. Untuk `provider = GMAIL_OAUTH`, sync email WAJIB menggunakan Gmail API + refresh token terenkripsi, bukan mengirim token terenkripsi langsung sebagai IMAP XOAUTH2 access token.
 
+### 10. Canva Email Notification Account Fallback Trap & Brand Alias Mapping
+* **Masalah**:
+  1. Pada `syncCanvaEmailsAction`, terdapat fallback keliru `accountMap.get(brandKey) || accounts[0]?.id || null`. Jika brand dari email Canva belum terdaftar (misal: "Humpback Studio"), sistem secara keliru menetapkan `accountId` milik akun pertama di database (`Zahra Art`). Akibatnya, penghitungan badge sidebar pada `EmailNotificationView.tsx` yang mengecek `n.accountId === acc.id` mengarahkan email Humpback ke Zahra Art, sehingga tab "Other Brands" menampilkan angka `0` meskipun terdapat 9 email di dalamnya.
+  2. Brand "Impro Studio" dari Canva tidak cocok dengan nama akun terdaftar `Improstd` karena ketiadaan fuzzy alias matching, sehingga masuk ke "Other Brands" dan terpasang `accountId` fallback secara keliru.
+* **Solusi & Aturan**:
+  1. DILARANG menggunakan fallback `accounts[0]?.id` saat mencocokkan brand email ke akun. Jika brand tidak terdaftar, `accountId` WAJIB diset `null`.
+  2. Parser (`canva-email-parser.ts`) dan Action (`email-notification.ts`) WAJIB memiliki fuzzy alias normalization: nama yang mengandung `impro` dinormalisasi menjadi `Improstd`, dan `uicreative` dinormalisasi menjadi `UICreative.net`.
+  3. Komponen UI (`EmailNotificationView.tsx`) WAJIB menghitung `otherNotifications` dan `brandStats` berdasarkan `isBrandMatch(n.brandName, acc.displayName) || (!n.brandName && n.accountId === acc.id)` agar badge unresolved counter di sidebar kiri selalu identik dengan data pada panel kanan.
+
+### 11. Prisma Client Hot-Reload Delay & Delegate Undefined Trap After Schema Changes
+* **Masalah**:
+  Setelah menambahkan model baru pada `schema.prisma` dan mengeksekusi `prisma generate`, server actions yang memanggil model tersebut (contoh: `prisma.syncSubjectTrigger.upsert(...)`) melempar error:
+  `Cannot read properties of undefined (reading 'upsert')`.
+  Hal ini terjadi karena Next.js dev server yang sedang berjalan mempertahankan singleton `PrismaClient` lama di dalam memori Node (`globalThis.prismaGlobal`). Instance lama tersebut belum memiliki delegate model baru.
+* **Solusi & Aturan**:
+  1. **Restart Dev Server**: Sesuai aturan `prisma-schema-update-workflow`, Next.js dev server WAJIB di-restart setelah `prisma db push` / `prisma generate` agar model baru termuat ke memori.
+  2. **Defensive Model Fallback**: Server actions WAJIB mengimplementasikan pengecekan delegate `const model = (prisma as any).newModel`. Jika delegate bernilai `undefined`, gunakan fallback raw SQL (`prisma.$executeRaw` / `prisma.$queryRaw` dengan `Prisma.sql` / `Prisma.join`) sehingga server actions tetap bekerja normal tanpa downtime atau error 500 sekalipun server dev belum di-restart.
+
 ---
 
 ## 🎨 Tailwind & UI Layout Rules
@@ -234,3 +252,38 @@ Dokumen ini mencatat histori bug, edge cases, serta aturan layout CSS/React untu
 * **Aturan Solusi**:
   1. Hapus kelas `snap-x`, `snap-mandatory`, dan `snap-center` dari seluruh kontainer Kanban horizontal.
   2. Implementasikan `const isSyncingLeft = useRef(false)` untuk melacak inisiator scroll, dan gunakan `requestAnimationFrame` untuk me-reset flag, memutus siklus pemanggilan event berulang.
+
+### 28. Doctype Preset Shadowing & Hardcoded Pages in Notion Sync
+* **Masalah**: Pada saat create new task di Kanban board (`CreateTaskSlideModal.tsx`) dan memilih doctype (misal: `Regular-Presentation`), jumlah pages selalu terisi `1` dan tidak mengikuti preset bawaan (12 halaman untuk Presentation, 5 untuk Carousel, 15 untuk Infographic-Slides, dll.).
+* **Penyebab (Root Cause)**:
+  1. Pada `src/lib/sync-notion.ts`, pembuatan Doctype baru dari Notion di-hardcode `pages: 1.0`. Akibatnya, seluruh 20 doctype di database PostgreSQL tersimpan dengan `pages = 1`.
+  2. Fungsi `getPagesForDoctype` di `task-form-utils.ts` mengecek `if (doc.pages != null && Number(doc.pages) > 0) return Number(doc.pages)`. Karena di DB bernilai `1` (`> 0`), fungsi langsung mengembalikan `1` dan mengabaikan baris logika preset berbasis nama doctype di bawahnya (*dead code*).
+  3. Nilai di halaman Rate Card (`/rate-card`) juga menampilkan `1 hal` untuk semua Doctype sehingga estimasi payout ikut terdistorsi.
+* **Aturan Solusi**:
+  1. **Universal Preset Engine (`src/lib/doctype-presets.ts`)**: Buat modul terpusat `DOCTYPE_DEFAULT_PRESETS` dan helper `getPresetPagesByName` yang aman digunakan di Server maupun Client.
+  2. **Smart Resolution (`getPagesForDoctype`)**: Jika `doc.pages > 1`, hormati nilai kustom Rate Card. Namun jika `doc.pages === 1`, cek apakah `getPresetPagesByName(doc.displayName) > 1`. Jika ya, prioritaskan preset nama tersebut sehingga doctype multi-halaman tidak terpasung di angka 1.
+### 29. Subpath Routing (`basePath: '/can-freelance'`) Google OAuth Disconnect & Gateway Root Redirection Trap
+* **Masalah**:
+  1. Tombol **Disconnect** di `/notion-config` gagal dan memunculkan error, tidak dapat mereset konfigurasi Google email ke status `DISCONNECTED`.
+  2. Saat tombol **Reconnect Google** diklik, browser terlempar ke halaman landing root gateway `portal.fatchurbeny.com / Project Portal — Access Console` alih-alih membuka halaman autentikasi Google.
+* **Penyebab (Root Cause)**:
+  1. **Unhandled Cipher Exception**: Fungsi `decryptEmailToken` di `src/lib/google-oauth.ts` memanggil `decipher.final()` tanpa `try-catch`. Ketika secret token berbeda atau data token lama tidak valid, fungsi melempar uncaught exception `Unsupported state or unable to authenticate data`. Hal ini menggagalkan eksekusi `disconnectGoogleEmailAction` di server action sebelum sempat menjalankan `prisma.emailConfig.update`.
+  2. **Missing Subpath in OAuth Routes**: Aplikasi Next.js berjalan di bawah `basePath: '/can-freelance'`. Pemanggilan `window.open('/api/google/oauth/start')` di `GoogleOAuthModal.tsx`, serta pembuatan `returnUrl = new URL('/notion-config', origin)` dan `doneUrl` di route handler tidak menyertakan subpath `/can-freelance`. Akibatnya, request masuk ke root domain `portal.fatchurbeny.com` yang ditangani oleh portal landing console Nginx dan bukan Next.js app.
+  3. **Redirect URI Mismatch Risk**: `getGoogleOAuthRedirectUri` sebelumnya menghasilkan `${origin}/api/google/oauth/callback` tanpa `/can-freelance`, sedangkan Google Cloud Console pengguna mendaftarkan `https://portal.fatchurbeny.com/can-freelance/api/google/oauth/callback`.
+* **Aturan Solusi**:
+  1. **Defensive Decryption & Disconnect**: Bungkus `crypto.createDecipheriv` di `decryptEmailToken` dalam blok `try-catch` agar mengembalikan `null` jika dekripsi gagal tanpa melempar exception fatal. Pada `disconnectGoogleEmailAction`, pastikan kegagalan revoke token tidak pernah menggagalkan pembersihan record di database.
+  2. **Canonical Subpath Routing**: Sertakan `/can-freelance` pada URL start OAuth (`${basePath}/api/google/oauth/start`), returnUrl, dan doneUrl callback.
+  3. **Domain-Aware Callback URI**: `getGoogleOAuthRedirectUri` mendeteksi origin `portal.fatchurbeny.com` dan mengembalikan `https://portal.fatchurbeny.com/can-freelance/api/google/oauth/callback` secara konsisten dengan konfigurasi di Google Cloud Console.
+
+### 30. Synchronous International Notion API Latency on Editing & Instant Background Sync Pattern
+* **Masalah**:
+  Setiap kali pengguna menyimpan perubahan di Task Detail Sheet, memindahkan kolom di Kanban board, mengedit Rate Card, atau memperbarui parameter task, proses simpan memakan waktu 2–5 detik sehingga tombol Save berputar lama dan UI terasa berat.
+* **Penyebab (Root Cause)**:
+  1. **Serial Synchronous Calls ke Luar Negeri**: Server Actions (`updateTaskFieldsAction`, `updateTaskStatusAction`, `updateDoctypeRateCardAction`, `updateTaskParametersAction`) menjalankan `await` berantai untuk panggilan HTTPS ke Notion API di Amerika Serikat (`pages.retrieve`, `pages.update`, `blocks.children.append`). Browser dipaksa menunggu hingga 2000–5000ms sebelum menerima respon.
+  2. **Sequential Loop Overhead**: Pada pembaruan parameter massal, request ke Notion API dijalankan di dalam loop satu per satu (`for ... await`).
+* **Aturan Solusi**:
+  1. **Local-First Immediate Persistence**: Perubahan data WAJIB disimpan terlebih dahulu ke PostgreSQL internal VPS lokal (~10–20ms).
+  2. **Non-Blocking Background Notion Sync (`runInBackground`)**: Seluruh transaksi jaringan ke Notion API dialihkan ke fungsi background asinkron (`setImmediate`) via `src/lib/background-sync.ts`. Server action langsung mengembalikan `{ success: true }` ke klien sehingga modal/drawer tertutup seketika (<100ms).
+  3. **Safe Error Isolation**: Kegagalan jaringan atau rate limit pada Notion API diisolasi dengan error logging yang aman tanpa pernah membatalkan penyimpanan lokal di PostgreSQL atau melempar unhandled rejection ke runtime Next.js.
+
+

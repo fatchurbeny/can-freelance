@@ -2,6 +2,7 @@ import prisma from '@/lib/prisma';
 import { Client } from '@notionhq/client';
 import { decrypt } from '@/lib/encryption';
 import { formatDateStringToTaskMonth, formatTaskMonthToDateString } from '@/lib/period-utils';
+import { getPresetPagesByName } from '@/lib/doctype-presets';
 
 export type NotionSyncMode = 'incremental' | 'full';
 
@@ -110,6 +111,73 @@ async function getNotionDatabaseSchemaProperties(client: Client, databaseId: str
     console.warn('Failed to retrieve Notion database schema properties:', err);
     return {};
   }
+}
+
+export function formatRichTextToMarkdown(richText: any[]): string {
+  if (!richText || !Array.isArray(richText)) return '';
+  return richText.map(t => {
+    const plain = t.plain_text || '';
+    const url = t.href || t.text?.link?.url;
+    if (url && plain && plain !== url) {
+      return `[${plain}](${url})`;
+    }
+    return plain;
+  }).join('');
+}
+
+export function parseNotionBlocksToMarkdown(blocks: any[]): string {
+  if (!blocks || !Array.isArray(blocks)) return '';
+  const lines: string[] = [];
+
+  for (const block of blocks) {
+    const type = block.type;
+    if (!type) continue;
+
+    if (block.heading_1) {
+      const text = formatRichTextToMarkdown(block.heading_1.rich_text);
+      if (text) lines.push(`# ${text}`);
+    } else if (block.heading_2) {
+      const text = formatRichTextToMarkdown(block.heading_2.rich_text);
+      if (text) lines.push(`## ${text}`);
+    } else if (block.heading_3) {
+      const text = formatRichTextToMarkdown(block.heading_3.rich_text);
+      if (text) lines.push(`### ${text}`);
+    } else if (block.bulleted_list_item) {
+      const text = formatRichTextToMarkdown(block.bulleted_list_item.rich_text);
+      if (text) lines.push(`- ${text}`);
+    } else if (block.numbered_list_item) {
+      const text = formatRichTextToMarkdown(block.numbered_list_item.rich_text);
+      if (text) lines.push(`- ${text}`);
+    } else if (block.to_do) {
+      const text = formatRichTextToMarkdown(block.to_do.rich_text);
+      const mark = block.to_do.checked ? '[x]' : '[ ]';
+      if (text) lines.push(`- ${mark} ${text}`);
+    } else if (block.quote) {
+      const text = formatRichTextToMarkdown(block.quote.rich_text);
+      if (text) lines.push(`> ${text}`);
+    } else if (block.callout) {
+      const icon = block.callout.icon?.emoji || '💡';
+      const text = formatRichTextToMarkdown(block.callout.rich_text);
+      if (text) lines.push(`> ${icon} ${text}`);
+    } else if (block.toggle) {
+      const text = formatRichTextToMarkdown(block.toggle.rich_text);
+      if (text) lines.push(`- ${text}`);
+    } else if (block.divider) {
+      lines.push('---');
+    } else if (block.paragraph) {
+      const text = formatRichTextToMarkdown(block.paragraph.rich_text);
+      if (text) {
+        lines.push(text);
+      } else {
+        lines.push('');
+      }
+    }
+  }
+
+  while (lines.length > 0 && lines[0] === '') lines.shift();
+  while (lines.length > 0 && lines[lines.length - 1] === '') lines.pop();
+
+  return lines.join('\n');
 }
 
 export async function pushPendingLocalChangesToNotion() {
@@ -480,6 +548,7 @@ export async function syncNotionData(mode: NotionSyncMode = 'incremental') {
             );
             
             if (!foundDoctype) {
+              const presetPages = getPresetPagesByName(doctypeName);
               const newDt = await prisma.doctype.create({
                 data: {
                   notionKey: doctypeName,
@@ -487,7 +556,7 @@ export async function syncNotionData(mode: NotionSyncMode = 'incremental') {
                   isTopSpecialist: false,
                   sortOrder: doctypes.length + 1,
                   poolRate: 1.0,
-                  pages: 1.0,
+                  pages: presetPages,
                 }
               });
               doctypes.push(newDt);
@@ -660,97 +729,78 @@ export async function syncNotionData(mode: NotionSyncMode = 'incremental') {
               }
             }
 
-            // Only fetch blocks if we didn't find links in the properties (saves API calls and time)
-            if (canvaUrls.length === 0) {
-              async function fetchAllBlocks(blockId: string, depth = 0): Promise<any[]> {
-                if (depth > 3) return []; // Limit depth to avoid infinite loops and rate limits
-                try {
-                  const response: any = await (notionClient as any).blocks.children.list({
-                    block_id: blockId,
-                    page_size: 100,
-                  });
-                  let blocks = response.results || [];
-                  const childPromises = blocks
-                    .filter((b: any) => b.has_children)
-                    .map((b: any) => fetchAllBlocks(b.id, depth + 1));
-                  const childrenArrays = await Promise.all(childPromises);
-                  for (const children of childrenArrays) {
-                    blocks = blocks.concat(children);
-                  }
-                  return blocks;
-                } catch (e) {
-                  console.warn(`Could not fetch children for block ${blockId}`);
-                  return [];
+            async function fetchAllBlocks(blockId: string, depth = 0): Promise<any[]> {
+              if (depth > 3) return []; // Limit depth to avoid infinite loops and rate limits
+              try {
+                const response: any = await (notionClient as any).blocks.children.list({
+                  block_id: blockId,
+                  page_size: 100,
+                });
+                let blocks = response.results || [];
+                const childPromises = blocks
+                  .filter((b: any) => b.has_children)
+                  .map((b: any) => fetchAllBlocks(b.id, depth + 1));
+                const childrenArrays = await Promise.all(childPromises);
+                for (const children of childrenArrays) {
+                  blocks = blocks.concat(children);
                 }
+                return blocks;
+              } catch (e) {
+                console.warn(`Could not fetch children for block ${blockId}`);
+                return [];
               }
+            }
 
+            // Decoupled block fetching: fetch blocks if bodyText is missing, full sync, or no canva link found yet
+            const shouldFetchBlocks = !task.bodyText || canvaUrls.length === 0 || mode === 'full';
+
+            if (shouldFetchBlocks) {
               const allBlocks = await fetchAllBlocks(notionPageId);
 
               for (const block of allBlocks) {
                 const textContainers = [
-                block.paragraph?.rich_text,
-                block.bulleted_list_item?.rich_text,
-                block.numbered_list_item?.rich_text,
-                block.to_do?.rich_text,
-                block.toggle?.rich_text,
-                block.quote?.rich_text,
-                block.callout?.rich_text
-              ];
-              for (const rts of textContainers) {
-                if (rts) {
-                  for (const rt of rts) {
-                    const url = rt.href || rt.text?.link?.url || rt.plain_text;
-                    if (url && url.includes('canva.link')) {
-                      const match = url.match(/https?:\/\/(?:www\.)?canva\.link\/[^\s]+/i);
-                      if (match) {
-                        canvaUrls.push(match[0]);
+                  block.paragraph?.rich_text,
+                  block.bulleted_list_item?.rich_text,
+                  block.numbered_list_item?.rich_text,
+                  block.to_do?.rich_text,
+                  block.toggle?.rich_text,
+                  block.quote?.rich_text,
+                  block.callout?.rich_text
+                ];
+                for (const rts of textContainers) {
+                  if (rts) {
+                    for (const rt of rts) {
+                      const url = rt.href || rt.text?.link?.url || rt.plain_text;
+                      if (url && url.includes('canva.link')) {
+                        const match = url.match(/https?:\/\/(?:www\.)?canva\.link\/[^\s]+/i);
+                        if (match) {
+                          canvaUrls.push(match[0]);
+                        }
                       }
+                    }
+                  }
+                }
+
+                // Extract from bookmarks and embeds
+                const blockUrls = [block.bookmark?.url, block.embed?.url, block.link_preview?.url];
+                for (const bUrl of blockUrls) {
+                  if (bUrl && bUrl.includes('canva.link')) {
+                    const match = bUrl.match(/https?:\/\/(?:www\.)?canva\.link\/[^\s]+/i);
+                    if (match) {
+                      canvaUrls.push(match[0]);
                     }
                   }
                 }
               }
 
-              // Extract from bookmarks and embeds
-              const blockUrls = [block.bookmark?.url, block.embed?.url, block.link_preview?.url];
-              for (const bUrl of blockUrls) {
-                if (bUrl && bUrl.includes('canva.link')) {
-                  const match = bUrl.match(/https?:\/\/(?:www\.)?canva\.link\/[^\s]+/i);
-                  if (match) {
-                    canvaUrls.push(match[0]);
-                  }
-                }
-              }
-            }
-              let bodyTextLines: string[] = [];
-              for (const block of allBlocks) {
-                if (block.heading_1?.rich_text?.length) {
-                  const text = block.heading_1.rich_text.map((t: any) => t.plain_text).join('');
-                  if (text) bodyTextLines.push(`# ${text}`);
-                } else if (block.heading_2?.rich_text?.length) {
-                  const text = block.heading_2.rich_text.map((t: any) => t.plain_text).join('');
-                  if (text) bodyTextLines.push(`## ${text}`);
-                } else if (block.heading_3?.rich_text?.length) {
-                  const text = block.heading_3.rich_text.map((t: any) => t.plain_text).join('');
-                  if (text) bodyTextLines.push(`### ${text}`);
-                } else if (block.bulleted_list_item?.rich_text?.length) {
-                  const text = block.bulleted_list_item.rich_text.map((t: any) => t.plain_text).join('');
-                  if (text) bodyTextLines.push(`- ${text}`);
-                } else if (block.numbered_list_item?.rich_text?.length) {
-                  const text = block.numbered_list_item.rich_text.map((t: any) => t.plain_text).join('');
-                  if (text) bodyTextLines.push(`- ${text}`);
-                } else if (block.paragraph?.rich_text?.length) {
-                  const text = block.paragraph.rich_text.map((t: any) => t.plain_text).join('');
-                  if (text) bodyTextLines.push(text);
-                }
-              }
-
-              if (bodyTextLines.length > 0) {
+              const parsedBody = parseNotionBlocksToMarkdown(allBlocks);
+              if (parsedBody) {
                 await prisma.task.update({
                   where: { id: task.id },
-                  data: { bodyText: bodyTextLines.join('\n') },
+                  data: { bodyText: parsedBody },
                 });
               }
-            } // END if (canvaUrls.length === 0)
+            }
 
             const uniqueCanvaUrls = Array.from(new Set(canvaUrls));
             await prisma.taskCanvaLink.deleteMany({ where: { taskId: task.id } });

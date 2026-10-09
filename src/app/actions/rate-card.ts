@@ -3,6 +3,7 @@
 import prisma from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { syncDoctypeOptionToNotion } from '@/app/actions/notion-config';
+import { runInBackground } from '@/lib/background-sync';
 
 function normalizeName(name: string) {
   return name.trim();
@@ -65,7 +66,9 @@ export async function updateDoctypeRateCardAction(
     });
 
     if (values.notionKey || values.name) {
-      await syncDoctypeOptionToNotion(updated.notionKey);
+      runInBackground(`Sync Doctype ${updated.displayName} to Notion`, async () => {
+        await syncDoctypeOptionToNotion(updated.notionKey);
+      });
     }
 
     revalidatePath('/rate-card');

@@ -113,7 +113,7 @@ export default function TopBar({
             {!['/', '/production', '/account-team', '/rate-card', '/billing-statement', '/knowledge-graph', '/notion-config'].includes(pathname) ? (
               <LayoutDashboard className="w-4 h-4 text-[#ff5e1f] shrink-0" />
             ) : null}
-            <span className="font-sans text-xs sm:text-sm font-semibold tracking-wide text-[#262626] dark:text-white truncate max-w-[80px] xs:max-w-[120px] sm:max-w-none">
+            <span className="font-sans text-xs sm:text-sm font-semibold tracking-wide text-[#262626] dark:text-white truncate max-w-[150px] sm:max-w-none">
               {badgeLabel}
             </span>
           </div>
@@ -143,8 +143,8 @@ export default function TopBar({
               )}
             </button>
 
-            {/* Period Picker Dropdown (Hidden on mobile < md) */}
-            <div className="hidden md:flex items-center">
+            {/* Period Picker Dropdown (Accessible on all screen sizes) */}
+            <div className="flex items-center">
               {periods && periods.length > 0 ? (
                 <Suspense fallback={<div className="w-[80px] sm:w-[120px] h-[34px] bg-gray-100 dark:bg-[#16181d] rounded-lg animate-pulse" />}>
                   <PeriodPicker periods={periods} currentPeriod={currentPeriod || ''} />

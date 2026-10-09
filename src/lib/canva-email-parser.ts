@@ -143,7 +143,41 @@ function extractTemplateTitleFromCanvaBody(rawBody: string, brandName?: string):
       if (
         line.length >= 3 &&
         line.length <= 120 &&
-        !/^(issues?|unfortunately|if you would|for the moment|what.?s next|you.?re receiving|canva pty|edit template)$/i.test(line) &&
+        !/^(issues?|unfortunately|if you would|for the moment|what.?s next|you.?re receiving|canva pty|edit template|creators)$/i.test(line) &&
+        (!brandName || line.toLowerCase() !== brandName.toLowerCase()) &&
+        !/^(UICreative\.net|UICreative|Ui Creative\.net|Chital Graphic|Zahra Art|Improstd|Antler|Teman Siswa|Humpback Studio|Humpback|Impro Studio|Chital)$/i.test(line)
+      ) {
+        return line;
+      }
+    }
+  }
+
+  // 1b. Scan lines above "Issues" header in rejection emails
+  const issuesIdx = lines.findIndex((l) => /^issues?$/i.test(l));
+  if (issuesIdx > 1) {
+    for (let i = issuesIdx - 1; i >= Math.max(0, issuesIdx - 3); i--) {
+      const line = lines[i];
+      if (
+        line.length >= 3 &&
+        line.length <= 120 &&
+        !/^(issues?|unfortunately|if you would|for the moment|what.?s next|you.?re receiving|canva pty|edit template|creators)$/i.test(line) &&
+        (!brandName || line.toLowerCase() !== brandName.toLowerCase()) &&
+        !/^(UICreative\.net|UICreative|Ui Creative\.net|Chital Graphic|Zahra Art|Improstd|Antler|Teman Siswa|Humpback Studio|Humpback|Impro Studio|Chital)$/i.test(line)
+      ) {
+        return line;
+      }
+    }
+  }
+
+  // 1c. Scan lines above "My profile" button in library published emails
+  const profileIdx = lines.findIndex((l) => /^my profile$/i.test(l) || /my profile\b/i.test(l));
+  if (profileIdx > 0) {
+    for (let i = profileIdx - 1; i >= Math.max(0, profileIdx - 4); i--) {
+      const line = lines[i];
+      if (
+        line.length >= 3 &&
+        line.length <= 120 &&
+        !/^(issues?|unfortunately|if you would|for the moment|what.?s next|you.?re receiving|canva pty|edit template|my profile|creators)$/i.test(line) &&
         (!brandName || line.toLowerCase() !== brandName.toLowerCase()) &&
         !/^(UICreative\.net|UICreative|Ui Creative\.net|Chital Graphic|Zahra Art|Improstd|Antler|Teman Siswa|Humpback Studio|Humpback|Impro Studio|Chital)$/i.test(line)
       ) {
@@ -178,7 +212,12 @@ function extractTemplateTitleFromCanvaBody(rawBody: string, brandName?: string):
 
 export function cleanTemplateTitle(rawTitle?: string, brandName?: string): string {
   if (!rawTitle) return 'Canva Marketplace Template';
-  let title = rawTitle.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
+  let title = rawTitle
+    .replace(/&#[0-9]+;/g, '')
+    .replace(/&[a-z]+;/g, ' ')
+    .replace(/[\r\n]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 
   const brandList = [
     brandName,
@@ -210,7 +249,12 @@ export function cleanTemplateTitle(rawTitle?: string, brandName?: string): strin
   }
 
   title = title.replace(/\s+Graphic$/i, '').replace(/\s+Studio$/i, '').trim();
-  return title || 'Canva Marketplace Template';
+
+  if (!title || /^design$/i.test(title)) {
+    return 'Canva Marketplace Template';
+  }
+
+  return title;
 }
 
 export function parseCanvaEmailText(params: {
@@ -227,10 +271,13 @@ export function parseCanvaEmailText(params: {
   const rawBody = params.rawBody;
   const receivedAt = params.receivedAt ? new Date(params.receivedAt) : new Date();
 
-  // 1. Extract Studio / Brand candidate directly from lines above Edit Template link
+  const isLibraryPublished = /added to (?:the )?canva library|published to library/i.test(subject);
+
+  // 1. Extract Studio / Brand candidate directly from lines above Edit Template link or My profile link
   const plain = textFromEmailBody(rawBody);
   const lines = plain.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
   const editIdx = lines.findIndex((l) => /edit template/i.test(l) || /canva\.com\/design\//i.test(l));
+  const profileIdx = lines.findIndex((l) => /^my profile$/i.test(l) || /my profile\b/i.test(l));
 
   let extractedStudio: string | undefined;
   if (editIdx > 0) {
@@ -240,6 +287,16 @@ export function parseCanvaEmailText(params: {
       lineAbove.length >= 2 &&
       lineAbove.length <= 80 &&
       !/^(issues?|unfortunately|if you would|for the moment|what.?s next|you.?re receiving|canva pty|edit template)$/i.test(lineAbove)
+    ) {
+      extractedStudio = lineAbove;
+    }
+  } else if (profileIdx > 0) {
+    const lineAbove = lines[profileIdx - 1];
+    if (
+      lineAbove &&
+      lineAbove.length >= 2 &&
+      lineAbove.length <= 80 &&
+      !/^(issues?|unfortunately|if you would|for the moment|what.?s next|you.?re receiving|canva pty|edit template|my profile)$/i.test(lineAbove)
     ) {
       extractedStudio = lineAbove;
     }
@@ -259,7 +316,8 @@ export function parseCanvaEmailText(params: {
         (extractedStudio && normExtracted === normAcc) ||
         checkTarget.toLowerCase().includes(accName) ||
         (normAcc.includes('uicreative') && checkTarget.toLowerCase().includes('uicreative')) ||
-        (normAcc.includes('uicreative') && checkTarget.toLowerCase().includes('ui creative'))
+        (normAcc.includes('uicreative') && checkTarget.toLowerCase().includes('ui creative')) ||
+        (normAcc.includes('impro') && (checkTarget.toLowerCase().includes('impro') || normExtracted.includes('impro')))
       ) {
         brandName = acc.displayName;
         break;
@@ -267,30 +325,51 @@ export function parseCanvaEmailText(params: {
     }
   }
 
-  // If brand is not a registered account, use the extracted studio name (e.g. Humpback Studio)
+  // If brand is not a registered account, use the extracted studio name (e.g. Zahra art, Humpback Studio)
   if (!brandName && extractedStudio) {
     brandName = extractedStudio;
   }
 
-  // Normalize UICreative.net
+  // Normalize UICreative.net & Improstd
   if (brandName && /uicreative/i.test(brandName)) {
     brandName = 'UICreative.net';
+  } else if (brandName && /impro/i.test(brandName)) {
+    brandName = 'Improstd';
   }
 
-  // 2. Extract Canva Template Link
+  // 2. Extract Canva Template Link or Creator Profile Link
+  let templateUrl: string | undefined;
   const urlMatch = rawBody.match(/https?:\/\/(?:www\.)?canva\.com\/design\/[a-zA-Z0-9_-]+(?:\/[a-zA-Z0-9_-]+)?(?:\/edit[^\s]*)?/i);
-  const templateUrl = urlMatch ? urlMatch[0] : undefined;
+  if (urlMatch) {
+    templateUrl = urlMatch[0];
+  } else if (isLibraryPublished || profileIdx >= 0) {
+    // Look for My Profile link in HTML anchor or canva.com/p/...
+    const anchorMatch = rawBody.match(/<a\s+[^>]*href=["']([^"']+)["'][^>]*>(?:(?!<\/a>)[\s\S])*?my\s+profile(?:(?!<\/a>)[\s\S])*?<\/a>/i);
+    if (anchorMatch && anchorMatch[1]) {
+      templateUrl = anchorMatch[1].replace(/&amp;/g, '&');
+    } else {
+      const profileLinkMatch = rawBody.match(/https?:\/\/(?:www\.)?canva\.com\/p\/[a-zA-Z0-9_.-]+/i)
+        || rawBody.match(/https?:\/\/link\.canva\.com\/[^\s"'>]+/i);
+      if (profileLinkMatch) {
+        templateUrl = profileLinkMatch[0].replace(/&amp;/g, '&');
+      }
+    }
+  }
 
   // 3. Extract Template Title using precise body scanning
   let rawTitle = extractTemplateTitleFromCanvaBody(rawBody, brandName);
   let templateTitle = cleanTemplateTitle(rawTitle, brandName);
 
-  // 4. Extract Issue Messages
-  const issueMessages = extractIssueMessages(rawBody);
+  // 4. Extract Issue Messages (only for issue/rejection emails, not library published success emails)
+  let issueMessages: string[] = [];
 
-  // Fallback issue message if none extracted but rawBody has content
-  if (issueMessages.length === 0 && rawBody.length > 20) {
-    issueMessages.push('Issues reported by Canva Quality Review team. Inspect raw email body for full details.');
+  if (!isLibraryPublished) {
+    issueMessages = extractIssueMessages(rawBody);
+
+    // Fallback issue message if none extracted but rawBody has content
+    if (issueMessages.length === 0 && rawBody.length > 20) {
+      issueMessages.push('Issues reported by Canva Quality Review team. Inspect raw email body for full details.');
+    }
   }
 
   return {

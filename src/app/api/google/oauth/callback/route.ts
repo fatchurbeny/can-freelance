@@ -23,7 +23,8 @@ async function markAuthError(code: string, message = friendlyGoogleAuthError(cod
 
 export async function GET(request: NextRequest) {
   const origin = request.nextUrl.origin;
-  const doneUrl = new URL('/notion-config', origin);
+  const basePath = request.nextUrl.basePath || (origin.includes('portal.fatchurbeny.com') ? '/can-freelance' : '');
+  const doneUrl = new URL(`${basePath}/notion-config`, origin);
   const code = request.nextUrl.searchParams.get('code');
   const error = request.nextUrl.searchParams.get('error');
   const returnedState = request.nextUrl.searchParams.get('state');

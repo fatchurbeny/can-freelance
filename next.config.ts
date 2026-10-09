@@ -4,9 +4,11 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
   output: 'standalone',
+  basePath: '/can-freelance',
   turbopack: {
     root: path.resolve('.'),
   },
 };
 
 export default nextConfig;
+

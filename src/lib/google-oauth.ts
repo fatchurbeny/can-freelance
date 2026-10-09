@@ -3,7 +3,14 @@ import crypto from 'crypto';
 const GMAIL_READONLY_SCOPE = 'https://www.googleapis.com/auth/gmail.readonly';
 
 export function getGoogleOAuthRedirectUri(origin: string) {
-  return process.env.GOOGLE_OAUTH_REDIRECT_URI || `${origin}/api/google/oauth/callback`;
+  const cleanOrigin = origin.replace(/\/+$/, '');
+  if (cleanOrigin.includes('portal.fatchurbeny.com')) {
+    return 'https://portal.fatchurbeny.com/can-freelance/api/google/oauth/callback';
+  }
+  if (process.env.GOOGLE_OAUTH_REDIRECT_URI) {
+    return process.env.GOOGLE_OAUTH_REDIRECT_URI;
+  }
+  return `${cleanOrigin}/can-freelance/api/google/oauth/callback`;
 }
 
 export function getGoogleOAuthConfig(origin: string) {
@@ -51,14 +58,19 @@ export function encryptEmailToken(token: string) {
 
 export function decryptEmailToken(encryptedToken?: string | null, ivWithTag?: string | null) {
   if (!encryptedToken || !ivWithTag) return null;
-  const [ivRaw, tagRaw] = ivWithTag.split(':');
-  if (!ivRaw || !tagRaw) return null;
-  const decipher = crypto.createDecipheriv('aes-256-gcm', encryptionKey(), Buffer.from(ivRaw, 'base64'));
-  decipher.setAuthTag(Buffer.from(tagRaw, 'base64'));
-  return Buffer.concat([
-    decipher.update(Buffer.from(encryptedToken, 'base64')),
-    decipher.final(),
-  ]).toString('utf8');
+  try {
+    const [ivRaw, tagRaw] = ivWithTag.split(':');
+    if (!ivRaw || !tagRaw) return null;
+    const decipher = crypto.createDecipheriv('aes-256-gcm', encryptionKey(), Buffer.from(ivRaw, 'base64'));
+    decipher.setAuthTag(Buffer.from(tagRaw, 'base64'));
+    return Buffer.concat([
+      decipher.update(Buffer.from(encryptedToken, 'base64')),
+      decipher.final(),
+    ]).toString('utf8');
+  } catch (err) {
+    console.warn('Failed to decrypt email token:', err);
+    return null;
+  }
 }
 
 export function friendlyGoogleAuthError(code?: string | null) {

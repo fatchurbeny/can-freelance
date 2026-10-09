@@ -25,49 +25,37 @@ export async function getKnowledgeGraphSessionsAction(): Promise<SessionLogItem[
 
   // 1. Current Active Session (Real-time from Antigravity Environment)
   const activeSession: SessionLogItem = {
-    id: 'codex-20260916-13',
-    handoverId: '#SESS-20260916-14',
+    id: 'antigravity-20261005-01',
+    handoverId: '#SESS-20261005-01',
     status: 'active',
-    title: 'Google OAuth2 Gmail Account Chooser UX & Gmail API Sync',
-    editor: 'Codex Desktop (macOS)',
-    model: 'GPT-5',
-    startTime: '16 September 2026, 15:47 WIB',
+    title: 'Google OAuth Disconnect Safeguard & Subpath Routing Fix',
+    editor: 'Antigravity IDE (macOS)',
+    model: 'Gemini 3.8 Flash',
+    startTime: '05 Oktober 2026, 11:25 WIB',
     prompts: [
-      { label: 'Plan', text: 'buat plan untuk google authentication dalam sinkronisasi dengan email' },
-      { label: 'UX', text: 'buat plan juga untuk handling tampilan ketika account sudah terkoneksi, bagaimana disconnect serta error ketika gagal authentikasi' },
-      { label: 'Implementasi', text: 'oke implementasikan plan' },
-      { label: 'Refinement', text: 'oke implementasikan rekomendasi tersebut' },
+      { label: 'Fix', text: 'Di sisi aplikasi belum bisa disconnect dan ketika reconnect diarahkan ke halaman bukan google oauth (root portal gateway)' },
     ],
     activeDocuments: [
-      { ext: 'TSX', path: 'src/components/EmailConfigCard.tsx' },
-      { ext: 'TSX', path: 'src/components/GoogleOAuthModal.tsx' },
+      { ext: 'TS', path: 'src/lib/google-oauth.ts' },
       { ext: 'TS', path: 'src/app/actions/email-notification.ts' },
+      { ext: 'TSX', path: 'src/components/GoogleOAuthModal.tsx' },
       { ext: 'TS', path: 'src/app/api/google/oauth/start/route.ts' },
       { ext: 'TS', path: 'src/app/api/google/oauth/callback/route.ts' },
-      { ext: 'TS', path: 'src/lib/google-oauth.ts' },
-      { ext: 'TS', path: 'src/lib/gmail-client.ts' },
-      { ext: 'PRISMA', path: 'prisma/schema.prisma' },
-      { ext: 'MD', path: 'docs/knowledge/session-handover.md' },
-      { ext: 'MD', path: 'docs/knowledge/issues-and-fixes.md' },
     ],
-    terminalProcess: 'npx prisma generate, npx prisma db push, npx tsc --noEmit (Exit Code 0)',
-    roles: ['🎨 Frontend & UI/UX', '🔄 API & Notion Integration', '⚙️ Backend & Database', '🏛️ Architecture & Knowledge Ops'],
+    terminalProcess: 'npx tsc --noEmit (Exit Code 0)',
+    roles: ['🔄 API & Notion Integration', '⚙️ Backend & Database', '🎨 Frontend & UI/UX'],
     accomplishments: [
       {
-        title: 'Real Google OAuth2 Route Flow',
-        desc: 'Menambahkan start/callback route OAuth dengan state cookie, offline access, token exchange, Gmail profile verification, dan redirect status ke Notion Config.'
+        title: 'Penanganan Defensive Decrypt pada Disconnect Google Account',
+        desc: 'Membungkus decipher.final() dan token revocation ke dalam try-catch sehingga kegagalan token lama tidak menggagalkan proses reset status database ke DISCONNECTED.'
       },
       {
-        title: 'Email Auth State Machine UI',
-        desc: 'EmailConfigCard kini membedakan ACTIVE, DISCONNECTED, AUTH_FAILED, dan RECONNECT_REQUIRED dengan aksi Connect Gmail/Reconnect Gmail/Disconnect.'
+        title: 'Koreksi Subpath /can-freelance pada OAuth Start Flow',
+        desc: 'Menyertakan prefix /can-freelance pada pemanggilan rute start OAuth dan mengalihkan ke direct window location redirect agar tidak terlempar ke Project Portal console gateway.'
       },
       {
-        title: 'Standard Google Account Chooser UX',
-        desc: 'OAuth modal tidak lagi meminta input email wajib; current email hanya menjadi optional login hint dan email valid tetap berasal dari callback/profile Google.'
-      },
-      {
-        title: 'Gmail API Sync for 2FA Accounts',
-        desc: 'Refresh token terenkripsi dipakai untuk mendapatkan access token Gmail API dan menarik email Canva issue tanpa raw Gmail password.'
+        title: 'Penyelarasan Return URL & Redirect URI Callback',
+        desc: 'Memastikan returnUrl dan doneUrl callback selalu mengarah ke /can-freelance/notion-config dan getGoogleOAuthRedirectUri mengembalikan URL callback resmi Google Cloud Console.'
       }
     ],
     handoverNotePath: 'docs/knowledge/session-handover.md',

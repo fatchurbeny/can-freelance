@@ -44,7 +44,7 @@ export default function SortControl({ value, onChange, disabled }: Props) {
         disabled={disabled}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
-        className="h-full px-4 border-r border-[#f0f0f0] dark:border-[#272a34] flex items-center gap-2 text-xs font-sans font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#16181d]/50 transition-colors disabled:opacity-50 cursor-pointer select-none outline-none focus:outline-none focus-visible:outline-none"
+        className="h-full px-2.5 sm:px-4 border-r border-[#f0f0f0] dark:border-[#272a34] flex items-center gap-1.5 sm:gap-2 text-xs font-sans font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#16181d]/50 transition-colors disabled:opacity-50 cursor-pointer select-none outline-none focus:outline-none focus-visible:outline-none whitespace-nowrap"
       >
         <Arrow className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
         <span>{selected?.label}</span>

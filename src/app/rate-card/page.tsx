@@ -43,11 +43,16 @@ export default async function RateCardPage() {
               {/* Right Full-Height Table Cells */}
               <div className="flex items-stretch divide-x divide-[#f0f0f0] dark:divide-[#272a34] border-t md:border-t-0 md:border-l border-[#f0f0f0] dark:border-[#272a34] shrink-0 font-sans text-xs">
                 {/* Cell 1: Kalender */}
-                <div className="flex items-center gap-2.5 px-5 sm:px-6 py-4 bg-white dark:bg-[#0d0e12] text-gray-700 dark:text-gray-300">
-                  <Calendar className="w-4 h-4 text-[#ff5e1f] shrink-0" />
-                  <span className="whitespace-nowrap">
-                    Kalender: <strong className="font-bold text-gray-900 dark:text-white">25 Hari Kerja/Bulan</strong>
-                  </span>
+                <div className="flex items-center gap-2.5 px-3.5 sm:px-6 py-3 sm:py-4 bg-white dark:bg-[#0d0e12] text-gray-700 dark:text-gray-300 min-w-0">
+                  <Calendar className="w-4 h-4 text-[#ff5e1f] shrink-0 self-start sm:self-center mt-0.5 sm:mt-0" />
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-[10px] sm:text-[11px] font-sans font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                      Kalender:
+                    </span>
+                    <strong className="text-xs sm:text-xs font-bold text-gray-900 dark:text-white truncate">
+                      25 Hari Kerja/Bulan
+                    </strong>
+                  </div>
                 </div>
 
                 {/* Cell 2: Rate/Pool Editor Button */}

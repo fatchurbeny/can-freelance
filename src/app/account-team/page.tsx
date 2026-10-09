@@ -121,13 +121,27 @@ export default async function AccountTeamPage() {
 
             {/* Right Full-Height Table Cells (Column 2 - 50%) */}
             <div className="flex items-stretch divide-x divide-[#f0f0f0] dark:divide-[#272a34] font-sans text-xs min-w-0">
-              <div className="flex-1 flex items-center justify-center gap-2 px-4 py-4 bg-white dark:bg-[#0d0e12] text-gray-700 dark:text-gray-300">
-                <CircleDot className="w-3.5 h-3.5 text-[#ff5e1f] shrink-0" />
-                <span className="whitespace-nowrap">Kalender: <strong className="font-bold text-gray-900 dark:text-white">25 Hari Kerja/Bulan</strong></span>
+              <div className="flex-1 flex items-center gap-2.5 px-3.5 sm:px-5 py-3 sm:py-3.5 bg-white dark:bg-[#0d0e12] text-gray-700 dark:text-gray-300 min-w-0">
+                <CircleDot className="w-3.5 h-3.5 text-[#ff5e1f] shrink-0 self-start sm:self-center mt-0.5 sm:mt-0" />
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[10px] sm:text-[11px] font-sans font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                    Kalender:
+                  </span>
+                  <strong className="text-xs sm:text-xs font-bold text-gray-900 dark:text-white truncate">
+                    25 Hari Kerja/Bulan
+                  </strong>
+                </div>
               </div>
-              <div className="flex-1 flex items-center justify-center gap-2 px-4 py-4 bg-white dark:bg-[#0d0e12] text-gray-700 dark:text-gray-300">
-                <CircleDot className="w-3.5 h-3.5 text-[#ff5e1f] shrink-0" />
-                <span className="whitespace-nowrap">Rate/Pool: <strong className="font-bold text-gray-900 dark:text-white">IDR {contractRate!.toLocaleString('id-ID')}</strong></span>
+              <div className="flex-1 flex items-center gap-2.5 px-3.5 sm:px-5 py-3 sm:py-3.5 bg-white dark:bg-[#0d0e12] text-gray-700 dark:text-gray-300 min-w-0">
+                <CircleDot className="w-3.5 h-3.5 text-[#ff5e1f] shrink-0 self-start sm:self-center mt-0.5 sm:mt-0" />
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[10px] sm:text-[11px] font-sans font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                    Rate/Pool:
+                  </span>
+                  <strong className="text-xs sm:text-xs font-bold text-gray-900 dark:text-white truncate">
+                    IDR {contractRate!.toLocaleString('id-ID')}
+                  </strong>
+                </div>
               </div>
             </div>
           </div>

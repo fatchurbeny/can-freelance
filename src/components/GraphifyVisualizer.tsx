@@ -84,6 +84,11 @@ export default function GraphifyVisualizer() {
   const draggedNodeRef = useRef<GraphNode | null>(null);
   const dragStartRef = useRef({ x: 0, y: 0 });
 
+  // Touch gesture state for mobile
+  const touchPinchDistRef = useRef<number | null>(null);
+  const touchStartPosRef = useRef<{ clientX: number; clientY: number }>({ clientX: 0, clientY: 0 });
+  const touchMovedRef = useRef(false);
+
   // Fetch Graphify JSON
   useEffect(() => {
     fetch('/api/knowledge-graph')
@@ -422,6 +427,101 @@ export default function GraphifyVisualizer() {
     transformRef.current.k = newK;
   };
 
+  // Touch event handlers for mobile devices
+  const getCanvasTouchPos = (touch: React.Touch) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return { x: 0, y: 0, rawX: 0, rawY: 0 };
+    const rect = canvas.getBoundingClientRect();
+    const mx = touch.clientX - rect.left;
+    const my = touch.clientY - rect.top;
+    const { x, y, k } = transformRef.current;
+    return {
+      x: (mx - x) / k,
+      y: (my - y) / k,
+      rawX: mx,
+      rawY: my,
+    };
+  };
+
+  const handleTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    if (e.touches.length === 1) {
+      const touch = e.touches[0];
+      touchStartPosRef.current = { clientX: touch.clientX, clientY: touch.clientY };
+      touchMovedRef.current = false;
+      const pos = getCanvasTouchPos(touch);
+
+      const clickedNode = nodesRef.current.find(n => {
+        const dx = n.x! - pos.x;
+        const dy = n.y! - pos.y;
+        return Math.sqrt(dx * dx + dy * dy) <= (n.radius! + 8);
+      });
+
+      if (clickedNode) {
+        draggedNodeRef.current = clickedNode;
+        setSelectedNode(clickedNode);
+      } else {
+        isDraggingRef.current = true;
+        dragStartRef.current = {
+          x: touch.clientX - transformRef.current.x,
+          y: touch.clientY - transformRef.current.y,
+        };
+      }
+    } else if (e.touches.length === 2) {
+      // 2-finger pinch zoom
+      draggedNodeRef.current = null;
+      isDraggingRef.current = false;
+      const t1 = e.touches[0];
+      const t2 = e.touches[1];
+      touchPinchDistRef.current = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    if (e.touches.length === 1) {
+      const touch = e.touches[0];
+      const distFromStart = Math.hypot(
+        touch.clientX - touchStartPosRef.current.clientX,
+        touch.clientY - touchStartPosRef.current.clientY
+      );
+      if (distFromStart > 4) {
+        touchMovedRef.current = true;
+      }
+
+      const pos = getCanvasTouchPos(touch);
+
+      if (draggedNodeRef.current) {
+        draggedNodeRef.current.x = pos.x;
+        draggedNodeRef.current.y = pos.y;
+        draggedNodeRef.current.vx = 0;
+        draggedNodeRef.current.vy = 0;
+        return;
+      }
+
+      if (isDraggingRef.current) {
+        transformRef.current.x = touch.clientX - dragStartRef.current.x;
+        transformRef.current.y = touch.clientY - dragStartRef.current.y;
+      }
+    } else if (e.touches.length === 2) {
+      // Pinch zoom
+      const t1 = e.touches[0];
+      const t2 = e.touches[1];
+      const currentDist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+
+      if (touchPinchDistRef.current && touchPinchDistRef.current > 0) {
+        const factor = currentDist / touchPinchDistRef.current;
+        const newK = Math.min(Math.max(transformRef.current.k * factor, 0.4), 3.0);
+        transformRef.current.k = newK;
+      }
+      touchPinchDistRef.current = currentDist;
+    }
+  };
+
+  const handleTouchEnd = () => {
+    draggedNodeRef.current = null;
+    isDraggingRef.current = false;
+    touchPinchDistRef.current = null;
+  };
+
   const filteredCommunities = communities.filter(c => 
     searchQuery === '' || c.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -444,16 +544,20 @@ export default function GraphifyVisualizer() {
   }
 
   return (
-    <div className="flex flex-col lg:flex-row h-[720px] bg-white dark:bg-[#0d0e12] divide-y lg:divide-y-0 lg:divide-x divide-[#f0f0f0] dark:divide-[#272a34]">
+    <div className="flex flex-col lg:flex-row min-h-[640px] lg:h-[720px] bg-white dark:bg-[#0d0e12] divide-y lg:divide-y-0 lg:divide-x divide-[#f0f0f0] dark:divide-[#272a34]">
       {/* 2D Canvas Area */}
-      <div ref={containerRef} className="relative flex-1 h-full bg-gray-50 dark:bg-[#0d0e12] cursor-grab active:cursor-grabbing overflow-hidden">
+      <div ref={containerRef} className="relative flex-1 min-h-[380px] sm:min-h-[460px] lg:min-h-0 lg:h-full bg-gray-50 dark:bg-[#0d0e12] cursor-grab active:cursor-grabbing overflow-hidden">
         <canvas
           ref={canvasRef}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onWheel={handleWheel}
-          className="w-full h-full block"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchEnd}
+          className="w-full h-full block touch-none"
         />
 
         {/* Top Left Active Community Cluster Filter Indicator */}
@@ -479,15 +583,18 @@ export default function GraphifyVisualizer() {
         </div>
 
         {/* Canvas Bottom Instructions Overlay (Cloudflare Light/Dark Badge) */}
-        <div className="absolute bottom-4 left-4 bg-white/90 dark:bg-[#16181d]/90 backdrop-blur-md px-3.5 py-1.5 rounded-lg border border-[#f0f0f0] dark:border-[#272a34] text-[11px] font-sans text-gray-700 dark:text-gray-300 flex items-center gap-2.5 shadow-sm select-none pointer-events-none">
+        <div className="absolute bottom-4 left-4 bg-white/90 dark:bg-[#16181d]/90 backdrop-blur-md px-3.5 py-1.5 rounded-lg border border-[#f0f0f0] dark:border-[#272a34] text-[11px] font-sans text-gray-700 dark:text-gray-300 flex items-center gap-2 shadow-sm select-none pointer-events-none">
           <span className="flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-[#ff5e1f]" />
-            Scroll to Zoom
+            <span className="hidden sm:inline">Scroll to Zoom</span>
+            <span className="sm:hidden">Cubit Zoom</span>
           </span>
           <span className="text-gray-400 dark:text-gray-600">•</span>
-          <span>Drag to Pan</span>
+          <span className="hidden sm:inline">Drag to Pan</span>
+          <span className="sm:hidden">Geser 1 Jari</span>
           <span className="text-gray-400 dark:text-gray-600">•</span>
-          <span>Click Node to Inspect</span>
+          <span className="hidden sm:inline">Click Node to Inspect</span>
+          <span className="sm:hidden">Ketuk Node</span>
         </div>
       </div>
 

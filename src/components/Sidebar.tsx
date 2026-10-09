@@ -16,6 +16,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import SyncButton from './SyncButton';
+import AccountSwitcher from './AccountSwitcher';
 
 function SearchParamsListener({ onPeriodChange }: { onPeriodChange: (p: string | null) => void }) {
   const searchParams = useSearchParams();
@@ -112,6 +113,14 @@ export default function Sidebar({ currentSyncLog }: SidebarProps) {
             >
               <X className="w-4 h-4" />
             </button>
+          </div>
+
+          {/* Mobile Account Switcher (Visible only in mobile drawer) */}
+          <div className="flex md:hidden flex-col gap-1.5 px-2 pb-2 border-b border-[#f0f0f0] dark:border-[#272a34]">
+            <span className="text-[10px] font-sans font-bold tracking-wider text-gray-400 dark:text-gray-500 uppercase">
+              Active Account
+            </span>
+            <AccountSwitcher />
           </div>
 
           {/* Grouped Navigation Menu */}

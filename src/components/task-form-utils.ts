@@ -1,3 +1,5 @@
+import { getPresetPagesByName } from '@/lib/doctype-presets';
+
 export interface OptionItem {
   id: string;
   displayName: string;
@@ -63,17 +65,26 @@ export function getLicenseStyle(license?: string | null): string {
   }
 }
 
+export { getPresetPagesByName };
+
 export function getPagesForDoctype(doc?: { displayName?: string; pages?: number | null } | null): number {
   if (!doc) return 1;
+
+  // 1. If doc.pages is set and > 1, respect the configured value in Rate Card
+  if (doc.pages != null && Number(doc.pages) > 1) {
+    return Number(doc.pages);
+  }
+
+  // 2. Check canonical preset by doctype name (e.g. Presentation -> 12, Carousel -> 5, etc.)
+  const preset = getPresetPagesByName(doc.displayName);
+  if (preset > 1) {
+    return preset;
+  }
+
+  // 3. Fallback to doc.pages if positive, or default 1
   if (doc.pages != null && Number(doc.pages) > 0) {
     return Number(doc.pages);
   }
-  const name = (doc.displayName || '').toLowerCase();
-  if (name.includes('presentation') || name.includes('slides-12') || name.includes('calendar')) return 12;
-  if (name.includes('infographic-slides')) return 15;
-  if (name.includes('infographic')) return 6;
-  if (name.includes('sosmed') || name.includes('carousel') || name.includes('magazine')) return 4;
-  if (name.includes('newsletter')) return 3;
-  if (name.includes('resume') || name.includes('cv')) return 2;
+
   return 1;
 }
