@@ -10,9 +10,11 @@ interface Props {
   issueCount: number;
   emailIssueCount?: number;
   onCreateTask?: () => void;
+  /** Tab yang disembunyikan untuk role ini (mis. Parameter Issue, Email Notifications). */
+  hiddenTabs?: ProductionTab[];
 }
 
-export default function ProductionTabNav({ activeTab, onTabChange, issueCount, emailIssueCount = 0, onCreateTask }: Props) {
+export default function ProductionTabNav({ activeTab, onTabChange, issueCount, emailIssueCount = 0, onCreateTask, hiddenTabs = [] }: Props) {
   const tabs: {
     id: ProductionTab;
     label: string;
@@ -25,9 +27,11 @@ export default function ProductionTabNav({ activeTab, onTabChange, issueCount, e
     { id: 'emailNotification', label: 'Email Notifications', icon: Mail, count: emailIssueCount },
   ];
 
+  const visibleTabs = tabs.filter((t) => !hiddenTabs.includes(t.id));
+
   return (
     <div className="sticky top-[56px] z-40 flex items-stretch overflow-x-auto border-b border-[#f0f0f0] dark:border-[#272a34] bg-[#f8f9fa] dark:bg-[#0d0e12] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-      {tabs.map((t) => {
+      {visibleTabs.map((t) => {
         const isActive = activeTab === t.id;
         const Icon = t.icon;
         return (

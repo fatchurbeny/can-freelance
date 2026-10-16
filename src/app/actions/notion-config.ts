@@ -1,5 +1,6 @@
 'use server';
 
+import { denyUnless, denyWrite } from '@/lib/access';
 import prisma from '@/lib/prisma';
 import { Client } from '@notionhq/client';
 import { encrypt, decrypt } from '@/lib/encryption';
@@ -28,6 +29,8 @@ export async function getContractRateAction() {
 }
 
 export async function updateContractRateAction(contractRate: number) {
+  const denied = await denyWrite('rateCard.edit');
+  if (denied) return denied as never;
   try {
     const existingConfig = await prisma.notionConfig.findFirst();
     if (!existingConfig) {
@@ -50,6 +53,8 @@ export async function updateContractRateAction(contractRate: number) {
 }
 
 export async function getNotionConfigAction() {
+  const denied = await denyUnless('integration.manage');
+  if (denied) return denied as never;
   try {
     const config = await getConfig();
     if (!config) {
@@ -73,6 +78,8 @@ export async function getNotionConfigAction() {
 }
 
 export async function saveNotionWorkspaceAction(workspaceName: string, apiKey: string) {
+  const denied = await denyWrite('integration.manage');
+  if (denied) return denied as never;
   try {
     if (!workspaceName || !apiKey) throw new Error('Workspace Name and API Key are required');
     const existingConfig = await prisma.notionConfig.findFirst();
@@ -97,6 +104,8 @@ export async function saveNotionWorkspaceAction(workspaceName: string, apiKey: s
 }
 
 export async function addNotionDatabaseAction(name: string, databaseId: string) {
+  const denied = await denyWrite('integration.manage');
+  if (denied) return denied as never;
   try {
     if (!name || !databaseId) throw new Error('Database Name and ID are required');
     const config = await prisma.notionConfig.findFirst();
@@ -112,6 +121,8 @@ export async function addNotionDatabaseAction(name: string, databaseId: string) 
 }
 
 export async function saveSchedulingConfigAction(autoSync: boolean, syncInterval: string) {
+  const denied = await denyWrite('integration.manage');
+  if (denied) return denied as never;
   try {
     const existingConfig = await prisma.notionConfig.findFirst();
     if (!existingConfig) return { success: false, error: 'Notion configuration not found. Please save API credentials first.' };
@@ -133,6 +144,8 @@ export async function saveSchedulingConfigAction(autoSync: boolean, syncInterval
 }
 
 export async function deleteNotionConfigAction() {
+  const denied = await denyWrite('integration.manage');
+  if (denied) return denied as never;
   try {
     const existingConfig = await prisma.notionConfig.findFirst();
     if (!existingConfig) return { success: true };
@@ -146,6 +159,8 @@ export async function deleteNotionConfigAction() {
 }
 
 export async function deleteNotionDatabaseAction(dbId: string) {
+  const denied = await denyWrite('integration.manage');
+  if (denied) return denied as never;
   try {
     await prisma.notionDatabase.delete({ where: { id: dbId } });
     revalidatePath('/notion-config');
@@ -186,6 +201,8 @@ export async function syncDoctypeOptionToNotion(doctypeName: string) {
 }
 
 export async function testNotionConnectionAction(databaseId: string) {
+  const denied = await denyUnless('integration.manage');
+  if (denied) return denied as never;
   try {
     if (!databaseId) throw new Error('Database ID is required');
     const existingConfig = await prisma.notionConfig.findFirst();

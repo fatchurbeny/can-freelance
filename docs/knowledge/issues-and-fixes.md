@@ -286,4 +286,60 @@ Dokumen ini mencatat histori bug, edge cases, serta aturan layout CSS/React untu
   2. **Non-Blocking Background Notion Sync (`runInBackground`)**: Seluruh transaksi jaringan ke Notion API dialihkan ke fungsi background asinkron (`setImmediate`) via `src/lib/background-sync.ts`. Server action langsung mengembalikan `{ success: true }` ke klien sehingga modal/drawer tertutup seketika (<100ms).
   3. **Safe Error Isolation**: Kegagalan jaringan atau rate limit pada Notion API diisolasi dengan error logging yang aman tanpa pernah membatalkan penyimpanan lokal di PostgreSQL atau melempar unhandled rejection ke runtime Next.js.
 
+### 31. Multi-Resolution Favicon Suite & Next.js Subpath Routing Invariants
+* **Masalah**:
+  Browser tab menampilkan icon default Next.js atau blank globe favicon saat mengakses subpath `/can-freelance` karena favicon hanya ada di satu ukuran atau tidak terhubung ke subpath routing Next.js.
+* **Penyebab (Root Cause)**:
+  1. Next.js App Router dengan `basePath: '/can-freelance'` memerlukan mapping eksplisit atau file-based icon convention (`src/app/icon.svg`, `src/app/apple-icon.png`, `src/app/favicon.ico`) agar build compiler men-generate route statis yang ter-prefix basePath.
+  2. Browser lama dan desktop tab bar memerlukan ICO multi-frame (16x16, 32x32, 48x48), sedangkan browser modern dan Retina display mengutamakan SVG (`image/svg+xml`), dan perangkat mobile (iOS Safari/Android) mencari `apple-touch-icon` atau icon 192/512px.
+* **Aturan Solusi**:
+  1. **Dual Asset Placement**: Tempatkan aset favicon di kedua lokasi: `src/app/` (untuk konvensi App Router otomatis) dan `public/` (untuk direct static file fetching Nginx/Cloudflare).
+  2. **Comprehensive Metadata Config (`src/app/layout.tsx`)**:
+     Definisikan konfigurasi `icons` pada `metadata` dengan URL ber-prefix `/can-freelance`:
+     ```typescript
+     icons: {
+       icon: [
+         { url: '/can-freelance/icon.svg', type: 'image/svg+xml' },
+         { url: '/can-freelance/favicon.ico', sizes: 'any' },
+       ],
+       apple: '/can-freelance/apple-icon.png',
+     }
+     ```
+  3. **Multi-Frame ICO & Vector SVG**: Hasilkan `favicon.ico` valid yang memuat frame 16x16, 32x32, dan 48x48, serta `icon.svg` berbasis squircle oranye `#ff5e1f` dan monogram tajam "IS" (*impro.std*).
+
+### 32. Image Color Palette Extraction & Notion Native Image Strip Architecture
+* **Masalah**: Pengguna ingin mengekstrak warna dari gambar referensi desain dan menampilkannya langsung di halaman Notion. Pendekatan sebelumnya menggunakan KaTeX equation `\colorbox` menghasilkan error `\sqrt{x} Invalid equation`, sedangkan block `embed` terhalang peringatan *Click to view content from...*.
+* **Penyebab (Root Cause)**:
+  1. **Notion KaTeX Colorbox Strictness**: KaTeX di Notion tidak mendukung perintah `\colorbox` bertingkat untuk teks kustom di dalam inline equation, sehingga menampilkan error `Invalid equation`.
+  2. **Notion Embed Proxy Restriction**: Block `embed` memerlukan interaksi klik tambahan dari pengguna jika domain belum diverifikasi penuh di dalam workspace Notion.
+* **Aturan Solusi (Opsi 2 — Native Notion Image Block & Server-Side PNG Strip)**:
+  1. **Client-Side Canvas Quantization (`src/lib/color-extractor.ts`)**: Lakukan ekstraksi warna 100% di browser klien menggunakan HTML5 Canvas Median Cut downsampled ke 100×100 px (<50ms, zero server load).
+  2. **Dynamic Palette Strip Vector Endpoint (`src/app/api/palette/strip/route.ts`)**:
+     - Menerima parameter query `?colors=HEX1,HEX2...`.
+     - Merender SVG swatch 5 kolom warna proporsional (lengkap dengan nama peranan warna dan kode HEX dengan deteksi kontras dinamis) langsung sebagai respon vector `image/svg+xml`.
+     - Menghindari ketergantungan library native binary (seperti `sharp` yang membutuhkan kompilasi binary C++ spesifik Linux/Darwin) sehingga berjalan 100% andal di VPS tanpa isu cache `npm` atau architecture mismatch.
+     - Mengembalikan `image/svg+xml` dengan header cache permanen (`public, max-age=31536000, immutable`).
+  3. **Notion Official Image Block (`src/app/actions/qa.ts`)**:
+     - Memasukkan strip warna sebagai block resmi Notion berjenis `image` (`external.url: ${publicUrl}/api/palette/strip?colors=...`).
+     - Blok gambar SVG dirender 100% native seketika oleh Notion di aplikasi desktop dan mobile tanpa error equation atau tombol peringatan embed.
+  4. **Clean Callout & Bullet List**:
+     - Menampilkan info box `All HEX: ...` dan bullet peranan warna (`Primary`, `Accent`, dll.) sebagai teks biasa yang rapi dan mudah disalin oleh tim desainer.
+
+### 33. Client-Side WebP Compression & Persistent Upload Storage Architecture
+* **Masalah**: Pengguna mem-paste gambar screenshot resolusi tinggi (misal 5MB PNG dari Canva/Figma). Jika disimpan langsung, disk VPS akan cepat penuh dan file berisiko terhapus saat deployment update aplikasi.
+* **Penyebab (Root Cause)**:
+  1. File screenshot uncompressed memakan bandwidth upload besar dan menghabiskan ruang disk penyimpanan server (~1GB/bulan untuk 500 tasks).
+  2. Direktori rilis Next.js standalone bersifat ephemeral; setiap kali tarball rilis diekstrak, folder `public/` dapat tertimpa atau terhapus.
+* **Aturan Solusi (Long-Term Storage Invariant)**:
+  1. **Client-Side WebP Auto-Compression (`src/lib/color-extractor.ts`)**:
+     - Saat gambar di-paste/upload, browser langsung meresize gambar ke max width/height 800px dan mengonversinya ke format WebP (quality 0.8) via HTML5 Canvas.
+     - Ukuran file menyusut drastis dari ~2–5MB menjadi hanya **~50–90KB** (>95% space saving) sebelum di-upload ke server.
+  2. **Dedicated Upload API Endpoint (`src/app/api/upload/route.ts`)**:
+     - Menerima `multipart/form-data`, membatasi ukuran file maks 2MB, menghasilkan nama unik hash-timestamp (`ref-{timestamp}-{hash}.webp`), dan mengembalikan URL publik.
+  3. **Persistent Server Storage & Symlink (`scripts/deploy-vps.sh`)**:
+     - Folder penyimpanan fisik diletakkan secara terpisah di `$REMOTE_APP_DIR/storage/uploads`.
+     - Skrip deployment membuat symlink permanen: `ln -sfn $REMOTE_APP_DIR/storage/uploads public/uploads`.
+     - Ini menjamin seluruh gambar referensi yang pernah diunggah desainer **100% aman dan tidak akan pernah terhapus** saat menjalankan `npm run deploy:vps`.
+  4. **Notion Image Markdown Translation (`src/app/actions/qa.ts`)**:
+     - Saat markdown memuat syntax `![alt](url)`, parser otomatis menghasilkan Notion block berjenis `image` (`external.url`) sehingga gambar acuan desain tampil utuh di Notion di atas strip palet warna.
 

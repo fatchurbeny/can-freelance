@@ -8,6 +8,7 @@ interface Props {
   onChange: (dateStr: string) => void;
   placeholder?: string;
   disabled?: boolean;
+  fullWidth?: boolean; // popup selebar field
 }
 
 const MONTH_NAMES = [
@@ -22,6 +23,7 @@ export default function DatePickerCell({
   onChange,
   placeholder = 'Pilih Tanggal...',
   disabled = false,
+  fullWidth = false,
 }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -121,7 +123,7 @@ export default function DatePickerCell({
       </button>
 
       {isOpen && (
-        <div className="absolute left-0 right-0 top-full z-50 mt-0 rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] p-3 shadow-2xl font-sans text-xs w-64">
+        <div className={`absolute left-0 right-0 top-full z-50 mt-0 rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] p-3 shadow-2xl font-sans text-xs ${fullWidth ? 'w-full' : 'w-64'}`}>
           {/* Header Month & Year Navigation */}
           <div className="flex items-center justify-between pb-2 mb-2 border-b border-[#f0f0f0] dark:border-[#272a34]">
             <button

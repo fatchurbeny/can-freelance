@@ -1,9 +1,12 @@
 'use server';
 
+import { denyUnless, denyWrite } from '@/lib/access';
 import prisma from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 
 export async function togglePayrollStatusAction(designerId: string, payrollMonth: string, isPaid: boolean) {
+  const denied = await denyWrite('billing.view');
+  if (denied) return denied as never;
   try {
     await prisma.payrollStatus.upsert({
       where: {
@@ -27,6 +30,8 @@ export async function togglePayrollStatusAction(designerId: string, payrollMonth
 }
 
 export async function getPayrollStatusMap(designerIds: string[], payrollMonth: string) {
+  const denied = await denyUnless('billing.view', 'billing.view.own');
+  if (denied) return denied as never;
   const rows = await prisma.payrollStatus.findMany({
     where: {
       designerId: { in: designerIds },

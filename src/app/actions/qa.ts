@@ -1,23 +1,29 @@
 'use server';
 
+import { assertCanEditTask, assertPermission, getAccess, denyUnless, denyWrite } from '@/lib/access';
 import prisma from '@/lib/prisma';
+import { Prisma } from '../../../generated/prisma';
 import { revalidatePath } from 'next/cache';
 import { Client } from '@notionhq/client';
 import { decrypt } from '@/lib/encryption';
 import { validateTemplateLink } from '@/lib/validate-template-link';
 import { formatTaskMonthToDateString } from '@/lib/period-utils';
+import { orderBriefMarkdown } from '@/components/task-detail/brief-parser';
+import { pushBodyToNotion } from '@/lib/notion-body-push';
 import { runInBackground } from '@/lib/background-sync';
+import { attachUploadRequest } from '@/lib/dropbox-output';
 
-async function getNotionClientAndDatabase() {
+async function getNotionClientAndDatabase(databaseIdOverride?: string | null) {
   const activeConfig = await prisma.notionConfig.findFirst({
     include: { databases: true },
   });
   if (!activeConfig) return null;
   const activeApiKey = decrypt(activeConfig.encryptedApiKey, activeConfig.iv);
   if (!activeApiKey) return null;
-  const dbId = activeConfig.databases[0]
-    ? decrypt(activeConfig.databases[0].encryptedDatabaseId, activeConfig.databases[0].iv)
-    : process.env.NOTION_DATABASE_ID || null;
+  const dbId = databaseIdOverride
+    || (activeConfig.databases[0]
+      ? decrypt(activeConfig.databases[0].encryptedDatabaseId, activeConfig.databases[0].iv)
+      : process.env.NOTION_DATABASE_ID || null);
   return {
     client: new Client({ auth: activeApiKey }),
     databaseId: dbId,
@@ -139,21 +145,127 @@ async function getNotionPageStatusProperty(notionClient: Client, page: any) {
 
 function markdownToNotionBlocks(bodyText: string): any[] {
   if (!bodyText || !bodyText.trim()) return [];
-  const lines = bodyText.split('\n');
+  // Notion always receives the canonical Design Brief section order
+  const lines = orderBriefMarkdown(bodyText).split('\n');
   const blocks: any[] = [];
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://portal.fatchurbeny.com/can-freelance';
+
+  let inColorPalette = false;
+  let paletteLines: string[] = [];
+
+  const flushColorPalette = () => {
+    if (paletteLines.length === 0) return;
+
+    // Extract unique hex codes
+    const hexSet = new Set<string>();
+    const hexRegex = /#([A-Fa-f0-9]{6})\b/g;
+    for (const pl of paletteLines) {
+      let match;
+      while ((match = hexRegex.exec(pl)) !== null) {
+        hexSet.add(`#${match[1].toUpperCase()}`);
+      }
+    }
+    const hexList = Array.from(hexSet);
+
+    if (hexList.length > 0) {
+      const publicUrl = baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1')
+        ? 'https://portal.fatchurbeny.com/can-freelance'
+        : baseUrl.replace(/\/$/, '');
+      const cleanHexCsv = hexList.map((h) => h.replace('#', '')).join(',');
+
+      // 1. Native Notion Image Block: Sharp-generated palette strip (100% reliable)
+      try {
+        const stripImageUrl = `${publicUrl}/api/palette/strip?colors=${cleanHexCsv}`;
+        blocks.push({
+          object: 'block',
+          type: 'image',
+          image: {
+            type: 'external',
+            external: {
+              url: stripImageUrl,
+            },
+          },
+        });
+      } catch (e) {
+        console.warn('Failed to construct image strip block:', e);
+      }
+
+      // 2. Clean Callout block for quick HEX copy-paste
+      blocks.push({
+        object: 'block',
+        type: 'callout',
+        callout: {
+          icon: { type: 'emoji', emoji: '🎨' },
+          color: 'gray_background',
+          rich_text: [
+            {
+              type: 'text',
+              text: { content: 'Extracted Color Palette\n' },
+              annotations: { bold: true },
+            },
+            {
+              type: 'text',
+              text: { content: `All HEX: ${hexList.join(', ')}` },
+            },
+          ],
+        },
+      });
+    }
+
+    // 3. Detailed bullet items (Primary, Accent, etc.)
+    for (const pl of paletteLines) {
+      const trimmed = pl.trim();
+      if (!trimmed || trimmed.toLowerCase().startsWith('- swatches:')) continue;
+      if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+        const content = trimmed.replace(/^[-*]\s+/, '');
+        blocks.push({
+          object: 'block',
+          type: 'bulleted_list_item',
+          bulleted_list_item: {
+            rich_text: [{ type: 'text', text: { content } }],
+          },
+        });
+      }
+    }
+
+    paletteLines = [];
+    inColorPalette = false;
+  };
 
   for (const rawLine of lines) {
     const line = rawLine.trim();
     if (!line) continue;
 
     if (line.startsWith('## ')) {
-      blocks.push({
-        object: 'block',
-        type: 'heading_2',
-        heading_2: {
-          rich_text: [{ type: 'text', text: { content: line.replace(/^##\s+/, '') } }],
-        },
-      });
+      if (inColorPalette) {
+        flushColorPalette();
+      }
+
+      const headingContent = line.replace(/^##\s+/, '').trim();
+      const isColorPaletteSection =
+        headingContent.toLowerCase().includes('color palette') ||
+        headingContent.includes('🎨');
+
+      if (isColorPaletteSection) {
+        inColorPalette = true;
+        blocks.push({
+          object: 'block',
+          type: 'heading_2',
+          heading_2: {
+            rich_text: [{ type: 'text', text: { content: headingContent } }],
+          },
+        });
+      } else {
+        blocks.push({
+          object: 'block',
+          type: 'heading_2',
+          heading_2: {
+            rich_text: [{ type: 'text', text: { content: headingContent } }],
+          },
+        });
+      }
+    } else if (inColorPalette) {
+      paletteLines.push(line);
     } else if (line.startsWith('### ')) {
       blocks.push({
         object: 'block',
@@ -189,23 +301,42 @@ function markdownToNotionBlocks(bodyText: string): any[] {
         },
       });
     } else {
-      const urlMatch = line.match(/^(https?:\/\/[^\s]+)$/i);
-      blocks.push({
-        object: 'block',
-        type: 'paragraph',
-        paragraph: {
-          rich_text: [
-            {
-              type: 'text',
-              text: {
-                content: rawLine,
-                link: urlMatch ? { url: urlMatch[1] } : undefined,
-              },
+      // Check for Markdown image syntax: ![alt](url)
+      const imgMatch = line.match(/^!\[(.*?)\]\((https?:\/\/[^\s)]+)\)$/i);
+      if (imgMatch) {
+        blocks.push({
+          object: 'block',
+          type: 'image',
+          image: {
+            type: 'external',
+            external: {
+              url: imgMatch[2],
             },
-          ],
-        },
-      });
+          },
+        });
+      } else {
+        const urlMatch = line.match(/^(https?:\/\/[^\s]+)$/i);
+        blocks.push({
+          object: 'block',
+          type: 'paragraph',
+          paragraph: {
+            rich_text: [
+              {
+                type: 'text',
+                text: {
+                  content: rawLine,
+                  link: urlMatch ? { url: urlMatch[1] } : undefined,
+                },
+              },
+            ],
+          },
+        });
+      }
     }
+  }
+
+  if (inColorPalette) {
+    flushColorPalette();
   }
 
   return blocks;
@@ -213,34 +344,8 @@ function markdownToNotionBlocks(bodyText: string): any[] {
 
 async function syncNotionPageBodyBlocks(client: Client, pageId: string, bodyText: string | null | undefined) {
   if (bodyText === undefined) return;
-  try {
-    const existing = await client.blocks.children.list({ block_id: pageId, page_size: 100 });
-    if (existing.results && existing.results.length > 0) {
-      for (const block of existing.results) {
-        try {
-          await client.blocks.delete({ block_id: block.id });
-        } catch (delErr) {
-          console.warn(`Failed to delete block ${block.id}:`, delErr);
-        }
-      }
-    }
-
-    if (bodyText && bodyText.trim()) {
-      const newBlocks = markdownToNotionBlocks(bodyText);
-      if (newBlocks.length > 0) {
-        const chunkSize = 100;
-        for (let i = 0; i < newBlocks.length; i += chunkSize) {
-          const chunk = newBlocks.slice(i, i + chunkSize);
-          await client.blocks.children.append({
-            block_id: pageId,
-            children: chunk,
-          });
-        }
-      }
-    }
-  } catch (err) {
-    console.error('Failed to sync body blocks to Notion:', err);
-  }
+  // Serialised + coalesced per page (see notion-body-push.ts) — prevents duplicated bodies
+  await pushBodyToNotion(client, pageId, bodyText, markdownToNotionBlocks);
 }
 
 async function findPrismaDesignStatus(statusKey: string) {
@@ -304,6 +409,7 @@ async function findPrismaDesignStatus(statusKey: string) {
 
 export async function updateTaskStatusAction(taskId: string, statusNotionKey: string) {
   try {
+    await assertCanEditTask(taskId);
     const [status, task] = await Promise.all([
       findPrismaDesignStatus(statusNotionKey),
       prisma.task.findUnique({ where: { id: taskId } }),
@@ -352,7 +458,7 @@ export async function updateTaskStatusAction(taskId: string, statusNotionKey: st
     }
 
     try {
-      revalidatePath('/production');
+      revalidatePath('/production', 'layout');
     } catch {
       // Ignore if called outside request context
     }
@@ -367,6 +473,8 @@ export async function updateTaskStatusAction(taskId: string, statusNotionKey: st
 }
 
 export async function addCommentAction(taskId: string, content: string) {
+  const denied = await denyWrite('kanban.view');
+  if (denied) return denied as never;
   try {
     const task = await prisma.task.findUnique({ where: { id: taskId } });
     if (!task) return { success: false, error: 'Task not found' };
@@ -395,7 +503,7 @@ export async function addCommentAction(taskId: string, content: string) {
       console.error('Failed to sync comment to Notion:', notionErr);
     }
 
-    revalidatePath('/production');
+    revalidatePath('/production', 'layout');
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message || 'Failed to add comment' };
@@ -403,6 +511,8 @@ export async function addCommentAction(taskId: string, content: string) {
 }
 
 export async function getTaskCommentsAction(taskId: string) {
+  const denied = await denyUnless('kanban.view');
+  if (denied) return denied as never;
   try {
     const comments = await prisma.taskComment.findMany({
       where: { taskId },
@@ -415,6 +525,8 @@ export async function getTaskCommentsAction(taskId: string) {
 }
 
 export interface CreateTaskPayload {
+  /** Production unit tujuan task (multi-production). Wajib. */
+  productionUnitId: string;
   name: string;
   notionUrl?: string | null;
   designerId?: string | null;
@@ -433,10 +545,19 @@ export interface CreateTaskPayload {
 
 export async function createTaskAction(payload: CreateTaskPayload) {
   try {
+    await assertPermission('task.create', payload.productionUnitId);
     const name = payload.name.trim();
     if (!name) return { success: false, error: 'Task name is required' };
 
-    const validatedCanvaLinks = payload.canvaLinks?.length
+    const targetUnit = await prisma.productionUnit.findUnique({
+      where: { id: payload.productionUnitId },
+      include: { platform: true },
+    });
+    if (!targetUnit) return { success: false, error: 'Production tujuan tidak ditemukan.' };
+
+    // Link Canva hanya untuk platform Canva; platform lain (Dropbox) tidak menyimpan link Canva
+    const isCanvaOutput = targetUnit.platform.outputType === 'canva_link';
+    const validatedCanvaLinks = isCanvaOutput && payload.canvaLinks?.length
       ? payload.canvaLinks.map((url) => validateTemplateLink(url)).filter((l) => l.ok && l.normalizedUrl)
       : [];
 
@@ -490,7 +611,7 @@ export async function createTaskAction(payload: CreateTaskPayload) {
     let createdNotionPageId = `app_created_${Date.now()}`;
     let createdNotionUrl: string | null = payload.notionUrl?.trim() || null;
 
-    const notionConfig = await getNotionClientAndDatabase();
+    const notionConfig = await getNotionClientAndDatabase(targetUnit.notionTaskDbId);
     if (notionConfig && notionConfig.databaseId) {
       try {
         const schemaProps = await getNotionDatabaseSchemaProperties(notionConfig.client, notionConfig.databaseId);
@@ -636,7 +757,7 @@ export async function createTaskAction(payload: CreateTaskPayload) {
         priority: payload.priority || 'Medium',
         license: payload.license || 'Free',
         taskMonth: payload.taskMonth?.trim() || null,
-        bodyText: payload.bodyText || null,
+        bodyText: payload.bodyText ? orderBriefMarkdown(payload.bodyText) : null,
         languages: payload.languages || [],
         taskAccounts: payload.accountIds?.length
           ? {
@@ -650,10 +771,14 @@ export async function createTaskAction(payload: CreateTaskPayload) {
           : undefined,
         createdTime: new Date(),
         lastEditedTime: new Date(),
+        productionUnit: { connect: { id: targetUnit.id } },
       },
     });
 
-    revalidatePath('/production');
+    // Platform Dropbox: buat File Request di latar belakang (tidak menahan respons simpan)
+    runInBackground('dropbox-upload-request', () => attachUploadRequest(task.id));
+
+    revalidatePath('/production', 'layout');
     return { success: true, taskId: task.id };
   } catch (error: unknown) {
     console.error('Failed to create task:', error);
@@ -662,11 +787,13 @@ export async function createTaskAction(payload: CreateTaskPayload) {
 }
 
 export async function deleteCommentAction(commentId: string) {
+  const denied = await denyWrite('kanban.view');
+  if (denied) return denied as never;
   try {
     await prisma.taskComment.delete({
       where: { id: commentId },
     });
-    revalidatePath('/production');
+    revalidatePath('/production', 'layout');
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message || 'Failed to delete comment' };
@@ -687,10 +814,16 @@ export interface TaskUpdatePayload {
   languages?: string[];
   accountIds?: string[];
   canvaLinks?: string[];
+  /** Custom field dari Notion (disimpan lokal; belum ditulis balik ke Notion). */
+  customFields?: Record<string, string> | null;
 }
 
 export async function updateTaskFieldsAction(taskId: string, payload: TaskUpdatePayload) {
   try {
+    const access = await assertCanEditTask(taskId);
+    if (!access.allows('account.view')) delete (payload as { accountIds?: string[] }).accountIds;
+    // Brief (isi task) hanya boleh diubah role manajemen; designer hanya mengubah miliknya di luar brief.
+    if (!access.allows('task.edit')) delete (payload as { bodyText?: string | null }).bodyText;
     const existingTask = await prisma.task.findUnique({
       where: { id: taskId },
       include: {
@@ -701,6 +834,13 @@ export async function updateTaskFieldsAction(taskId: string, payload: TaskUpdate
     });
 
     if (!existingTask) return { success: false, error: 'Task not found' };
+
+    // Task di platform Dropbox tidak memakai link Canva
+    const taskUnit = await prisma.productionUnit.findUnique({
+      where: { id: existingTask.productionUnitId },
+      include: { platform: true },
+    });
+    const isDropboxTask = taskUnit?.platform.outputType === 'dropbox_link';
 
     const updateData: any = {
       lastEditedTime: new Date(),
@@ -721,7 +861,12 @@ export async function updateTaskFieldsAction(taskId: string, payload: TaskUpdate
     if (payload.priority !== undefined) updateData.priority = payload.priority;
     if (payload.license !== undefined) updateData.license = payload.license;
     if (payload.taskMonth !== undefined) updateData.taskMonth = payload.taskMonth;
-    if (payload.bodyText !== undefined) updateData.bodyText = payload.bodyText;
+    if (payload.bodyText !== undefined) updateData.bodyText = payload.bodyText ? orderBriefMarkdown(payload.bodyText) : payload.bodyText;
+    if (payload.customFields !== undefined) {
+      updateData.customFields = payload.customFields && Object.keys(payload.customFields).length > 0
+        ? payload.customFields
+        : Prisma.DbNull;
+    }
     if (payload.languages !== undefined) updateData.languages = payload.languages;
 
     // Recalculate poolScore if doctypeId or pages is updated
@@ -759,7 +904,7 @@ export async function updateTaskFieldsAction(taskId: string, payload: TaskUpdate
     }
 
     // Handle Canva links if provided
-    if (payload.canvaLinks !== undefined) {
+    if (payload.canvaLinks !== undefined && !isDropboxTask) {
       const validatedLinks = payload.canvaLinks.map((url) => validateTemplateLink(url));
       const invalidLink = validatedLinks.find((link) => !link.ok);
       if (invalidLink) {
@@ -897,7 +1042,7 @@ export async function updateTaskFieldsAction(taskId: string, payload: TaskUpdate
         }
 
         // Sync Template Link
-        if (payload.canvaLinks !== undefined && schemaProps['Template Link']) {
+        if (payload.canvaLinks !== undefined && !isDropboxTask && schemaProps['Template Link']) {
           const linkUrl = payload.canvaLinks[0] || null;
           if (schemaProps['Template Link'].type === 'files') {
             notionProperties['Template Link'] = linkUrl
@@ -922,7 +1067,7 @@ export async function updateTaskFieldsAction(taskId: string, payload: TaskUpdate
     }
 
     try {
-      revalidatePath('/production');
+      revalidatePath('/production', 'layout');
     } catch {
       // Ignore if called outside request context
     }
@@ -933,8 +1078,16 @@ export async function updateTaskFieldsAction(taskId: string, payload: TaskUpdate
   }
 }
 
-export async function fetchTaskMetadataOptionsAction() {
+export async function fetchTaskMetadataOptionsAction(productionUnitId?: string) {
   try {
+    const access = await getAccess();
+    const canSeeBrand = access.allows('account.view', productionUnitId);
+    // Doctype & akun mengikuti platform production yang dipilih (multi-production)
+    const unit = productionUnitId
+      ? await prisma.productionUnit.findUnique({ where: { id: productionUnitId }, include: { platform: true } })
+      : null;
+    const platformScope = unit ? { platformId: unit.platformId } : {};
+
     const [designers, doctypes, designStatuses, accounts] = await Promise.all([
       prisma.designer.findMany({
         where: { status: 'Active' },
@@ -942,6 +1095,7 @@ export async function fetchTaskMetadataOptionsAction() {
         orderBy: { displayName: 'asc' },
       }),
       prisma.doctype.findMany({
+        where: platformScope,
         select: { id: true, displayName: true, pages: true, poolRate: true, _count: { select: { tasks: true } } },
         orderBy: [
           { tasks: { _count: 'desc' } },
@@ -952,10 +1106,13 @@ export async function fetchTaskMetadataOptionsAction() {
         select: { id: true, displayName: true, notionKey: true },
         orderBy: { displayName: 'asc' },
       }),
-      prisma.account.findMany({
-        select: { id: true, displayName: true, color: true },
-        orderBy: { displayName: 'asc' },
-      }),
+      canSeeBrand
+        ? prisma.account.findMany({
+            where: platformScope,
+            select: { id: true, displayName: true, color: true },
+            orderBy: { displayName: 'asc' },
+          })
+        : Promise.resolve([]),
     ]);
 
     return {
@@ -966,6 +1123,7 @@ export async function fetchTaskMetadataOptionsAction() {
           doctypes,
           designStatuses,
           accounts,
+          outputType: unit?.platform.outputType ?? 'canva_link',
         })
       ),
     };
@@ -976,6 +1134,7 @@ export async function fetchTaskMetadataOptionsAction() {
 
 export async function duplicateTaskAction(taskId: string) {
   try {
+    await assertPermission('task.create');
     if (!taskId) return { success: false, error: 'Task ID is required' };
 
     const existingTask = await prisma.task.findUnique({
@@ -995,6 +1154,7 @@ export async function duplicateTaskAction(taskId: string) {
     const canvaLinkUrls = existingTask.canvaLinks.map((cl) => cl.url);
 
     const result = await createTaskAction({
+      productionUnitId: existingTask.productionUnitId,
       name: duplicatedName,
       designerId: existingTask.designerId || undefined,
       doctypeId: existingTask.doctypeId || undefined,
@@ -1011,7 +1171,7 @@ export async function duplicateTaskAction(taskId: string) {
     });
 
     if (result.success) {
-      revalidatePath('/production');
+      revalidatePath('/production', 'layout');
       revalidatePath('/');
     }
 
@@ -1023,6 +1183,7 @@ export async function duplicateTaskAction(taskId: string) {
 
 export async function deleteTaskAction(taskId: string) {
   try {
+    await assertPermission('task.edit');
     if (!taskId) return { success: false, error: 'Task ID is required' };
 
     const task = await prisma.task.findUnique({
@@ -1049,7 +1210,7 @@ export async function deleteTaskAction(taskId: string) {
       where: { id: taskId },
     });
 
-    revalidatePath('/production');
+    revalidatePath('/production', 'layout');
     revalidatePath('/');
 
     return { success: true };

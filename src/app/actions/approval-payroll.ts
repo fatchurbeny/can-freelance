@@ -1,5 +1,6 @@
 'use server';
 
+import { denyUnless, denyWrite } from '@/lib/access';
 import prisma from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { Client } from '@notionhq/client';
@@ -51,6 +52,8 @@ export async function assignPayrollMonthAction(
   taskId: string,
   payrollMonth: string
 ) {
+  const denied = await denyWrite('billing.view');
+  if (denied) return denied as never;
   try {
     const updatedTask = await prisma.task.update({
       where: { id: taskId },
@@ -74,6 +77,8 @@ export async function batchAssignPayrollMonthAction(
   taskIds: string[],
   payrollMonth: string
 ) {
+  const denied = await denyWrite('billing.view');
+  if (denied) return denied as never;
   try {
     await prisma.task.updateMany({
       where: { id: { in: taskIds } },

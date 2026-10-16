@@ -8,6 +8,7 @@ import {
 
 export interface DashboardFilters {
   brandName?: string | null;
+  productionUnitId?: string | null;
   selectedPeriod?: string | null; // format: "YYYY-MM,YYYY-MM,..." or "Januari-2026,Februari-2026,..."
 }
 
@@ -136,12 +137,15 @@ export async function getDashboardData(filters: DashboardFilters) {
     ? Prisma.sql`AND EXISTS (SELECT 1 FROM task_accounts ta WHERE ta.task_id = t.id AND ta.account_id = ${accId}::uuid)`
     : Prisma.empty;
 
+  const unitFilter = filters.productionUnitId
+    ? Prisma.sql`AND t.production_unit_id = ${filters.productionUnitId}::uuid`
+    : Prisma.empty;
   const periodsFilter = indPeriods.length > 0
-    ? Prisma.sql`AND t.task_month IN (${Prisma.join(indPeriods)})`
-    : Prisma.empty;
+    ? Prisma.sql`AND t.task_month IN (${Prisma.join(indPeriods)}) ${unitFilter}`
+    : unitFilter;
   const priorPeriodsFilter = priorIndPeriods.length > 0
-    ? Prisma.sql`AND t.task_month IN (${Prisma.join(priorIndPeriods)})`
-    : Prisma.empty;
+    ? Prisma.sql`AND t.task_month IN (${Prisma.join(priorIndPeriods)}) ${unitFilter}`
+    : unitFilter;
 
   // -------------------------------------------------------------
   // KPI 1: Total Task
@@ -751,6 +755,7 @@ function formatDistribusi(distribusi: any[], topDoctypes: any[]) {
 
 export async function getDoctypes() {
   return await prisma.doctype.findMany({
+    include: { platform: { select: { slug: true, name: true } } },
     orderBy: [
       { updatedAt: 'desc' },
       { pages: 'desc' },
@@ -762,4 +767,125 @@ export async function getDoctypes() {
 export async function getContractRateSetting() {
   const config = await prisma.notionConfig.findFirst({ select: { contractRate: true } });
   return config?.contractRate ?? 15000;
+}
+
+/**
+ * Tarif dasar per platform. Platform tanpa `baseRate` = belum berkontrak: task satuan di platform itu
+ * "belum ada harga" (payout 0), TIDAK jatuh ke tarif global. Bila `contractStartDate` diisi, hanya payroll
+ * month pada/setelah bulan mulai yang berharga.
+ */
+export async function getPlatformRates() {
+  const [fallback, platforms] = await Promise.all([
+    getContractRateSetting(),
+    prisma.platform.findMany({ select: { id: true, name: true, baseRate: true, contractStartDate: true }, orderBy: { createdAt: 'asc' } }),
+  ]);
+  const byId = new Map(platforms.map((p) => [p.id, p]));
+  const startKey = (d?: Date | null) => (d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` : null);
+  /** Harga satu task: { rate, priced }. `payrollMonth` null (antrian) dinilai tanpa batas tanggal mulai. */
+  const priceFor = (doctype?: { platformId?: string | null } | null, payrollMonth?: string | null) => {
+    const platform = doctype?.platformId ? byId.get(doctype.platformId) : undefined;
+    if (!platform || platform.baseRate == null) return { rate: 0, priced: false };
+    const start = startKey(platform.contractStartDate);
+    const key = payrollMonth ? parseTaskMonthToKey(payrollMonth) : null;
+    if (start && key && key < start) return { rate: 0, priced: false };
+    return { rate: platform.baseRate, priced: true };
+  };
+  const contracted = platforms.filter((p) => p.baseRate != null);
+  return {
+    fallback,
+    priceFor,
+    /** Tarif efektif untuk tampilan (0 bila platform belum berkontrak). */
+    rateFor: (doctype?: { platformId?: string | null } | null) => priceFor(doctype).rate,
+    /** Ringkasan untuk header, hanya platform berkontrak, mis. "Canva 15.000". */
+    label: contracted.length ? contracted.map((p) => `${p.name} ${(p.baseRate as number).toLocaleString('id-ID')}`).join(' · ') : 'Belum ada kontrak platform',
+  };
+}
+
+/**
+ * Order bundle untuk satu periode. Order dihitung "Completed" (masuk payout) bila semua task komponennya
+ * berstatus yang dihitung approved; harga paket dibayarkan sekali per order (bukan per task).
+ */
+export async function getBundleOrdersForPeriod(period: string) {
+  const orders = await prisma.bundleOrder.findMany({
+    where: { OR: [{ period }, { payoutMonth: period }] },
+    orderBy: { createdAt: 'desc' },
+    include: bundleOrderInclude,
+  });
+  const rows = orders.map((o) => mapBundleOrderRow(o, period));
+  const payoutByDesigner = new Map<string, number>();
+  let payoutTotal = 0;
+  for (const r of rows) {
+    if (!r.inPayout || !r.completed || !r.designerId || r.resigned) continue;
+    payoutByDesigner.set(r.designerId, (payoutByDesigner.get(r.designerId) ?? 0) + r.price);
+    payoutTotal += r.price;
+  }
+  return { rows, payoutByDesigner, payoutTotal };
+}
+
+/** Order bundle yang semua task-nya approved tapi belum punya Payout Month (antrian tab Closing). */
+export async function getBundleClosingQueue() {
+  const orders = await prisma.bundleOrder.findMany({
+    where: { payoutMonth: null },
+    orderBy: { createdAt: 'desc' },
+    include: bundleOrderInclude,
+  });
+  return orders.map((o) => mapBundleOrderRow(o, '')).filter((r) => r.completed);
+}
+
+const bundleOrderInclude = {
+  bundle: { select: { name: true } },
+  designer: { select: { id: true, displayName: true, status: true, isAgency: true } },
+  tasks: { select: { id: true, name: true, designStatus: { select: { countsAsApproved: true } }, productionUnit: { select: { name: true } } } },
+} as const;
+
+function mapBundleOrderRow(o: Prisma.BundleOrderGetPayload<{ include: typeof bundleOrderInclude }>, period: string) {
+  const approved = o.tasks.filter((t) => t.designStatus?.countsAsApproved).length;
+  const completed = o.tasks.length > 0 && approved === o.tasks.length;
+  return {
+    id: o.id,
+    bundleName: o.bundle.name,
+    designerId: o.designerId,
+    designerName: o.designer?.displayName ?? '-',
+    isAgency: o.designer?.isAgency ?? false,
+    resigned: o.designer?.status === 'Resign',
+    period: o.period,
+    payoutMonth: o.payoutMonth,
+    inPayout: !!period && o.payoutMonth === period,
+    orderType: (o.orderType === 'Kontrak' ? 'Kontrak' : 'Trial') as 'Trial' | 'Kontrak',
+    price: Number(o.price),
+    paymentType: (o.paymentType === 'DP' ? 'DP' : 'Full') as 'DP' | 'Full',
+    dpAmount: Number(o.dpAmount),
+    dpPaid: !!o.dpPaidAt,
+    paid: !!o.paidAt,
+    dpPaidAt: o.dpPaidAt ? o.dpPaidAt.toISOString() : null,
+    paidAt: o.paidAt ? o.paidAt.toISOString() : null,
+    totalTasks: o.tasks.length,
+    approvedTasks: approved,
+    completed,
+    tasks: o.tasks.map((t) => ({ id: t.id, name: t.name ?? '', board: t.productionUnit.name, approved: !!t.designStatus?.countsAsApproved })),
+  };
+}
+
+export interface ProductionMonthTotals { tasks: number; templates: number; pages: number; payout: number }
+
+/** Total payout satuan per production untuk satu payroll month (task bundle dikecualikan, harga memakai kontrak platform). */
+export async function getProductionTotalsForMonth(month: string, platformRates: Awaited<ReturnType<typeof getPlatformRates>>) {
+  const tasks = await prisma.task.findMany({
+    where: { payrollMonth: month, bundleOrderId: null, designStatus: { countsAsApproved: true } },
+    select: { productionUnitId: true, qtySubmit: true, pages: true, payrollMonth: true, doctype: { select: { platformId: true, poolRate: true } }, designer: { select: { status: true } } },
+  });
+  const totals = new Map<string, ProductionMonthTotals>();
+  for (const t of tasks) {
+    const qty = Number(t.qtySubmit || 0);
+    const pages = Number(t.pages || 0);
+    const price = platformRates.priceFor(t.doctype, t.payrollMonth);
+    const payment = t.designer?.status === 'Resign' || !price.priced ? 0 : qty * pages * Number(t.doctype?.poolRate || 0) * price.rate;
+    const bucket = totals.get(t.productionUnitId) ?? { tasks: 0, templates: 0, pages: 0, payout: 0 };
+    bucket.tasks += 1;
+    bucket.templates += qty;
+    bucket.pages += qty * pages;
+    bucket.payout += payment;
+    totals.set(t.productionUnitId, bucket);
+  }
+  return totals;
 }

@@ -7,11 +7,14 @@ import AccountDetailSlideModal, { AccountItem } from './AccountDetailSlideModal'
 import { DesignerItem } from './DesignerDetailSlideModal';
 import AddTeamAccountButton from './AddTeamAccountButton';
 import DesignerStatusFilterDropdown from './DesignerStatusFilterDropdown';
+import AccountPlatformFilterDropdown from './AccountPlatformFilterDropdown';
 import DesignerSpecializationFilterDropdown from './DesignerSpecializationFilterDropdown';
 
 interface Props {
   designers: DesignerItem[];
   accounts: AccountItem[];
+  productionUnits?: { id: string; name: string }[];
+  canManageUsers?: boolean;
 }
 
 function getInitials(name: string) {
@@ -29,7 +32,7 @@ function getBrandColor(name: string) {
   return 'text-pink-500 dark:text-[#ec4899]';
 }
 
-export default function AccountTeamSection({ designers, accounts }: Props) {
+export default function AccountTeamSection({ designers, accounts, productionUnits = [], canManageUsers = false }: Props) {
   const [activeTab, setActiveTab] = useState<'designer' | 'account'>('designer');
   
   // Search & Filter state for Designers
@@ -95,8 +98,11 @@ export default function AccountTeamSection({ designers, accounts }: Props) {
   });
 
   // Filter Accounts
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
+  const accountPlatforms = Array.from(new Set(accounts.map((a) => a.platformName).filter(Boolean))) as string[];
   const filteredAccounts = accounts.filter((a) =>
-    a.displayName.toLowerCase().includes(accountSearch.toLowerCase())
+    a.displayName.toLowerCase().includes(accountSearch.toLowerCase()) &&
+    (selectedPlatforms.length === 0 || selectedPlatforms.includes(a.platformName || ''))
   );
 
   const topDesigner = designers.length > 0 ? designers[0] : null;
@@ -134,7 +140,7 @@ export default function AccountTeamSection({ designers, accounts }: Props) {
             }`}
           >
             <Building2 className={`w-4 h-4 shrink-0 transition-colors ${activeTab === 'account' ? 'text-[#ff5e1f]' : 'text-gray-400 dark:text-gray-500'}`} />
-            <span>Canva Accounts / Brands ({accounts.length})</span>
+            <span>Account Platform ({accounts.length})</span>
             {activeTab === 'account' && (
               <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#ff5e1f]" />
             )}
@@ -253,6 +259,8 @@ export default function AccountTeamSection({ designers, accounts }: Props) {
                 </tr>
               </thead>
               <DesignerTableBody
+                productionUnits={productionUnits}
+                canManageUsers={canManageUsers}
                 designers={filteredDesigners.map((d, i) => ({
                   ...d,
                   isLeaderboardWinner: i === 0 && d.status === 'Active',
@@ -267,14 +275,14 @@ export default function AccountTeamSection({ designers, accounts }: Props) {
       {activeTab === 'account' && (
         <div className="flex flex-col divide-y divide-[#f0f0f0] dark:divide-[#272a34]">
           {/* Continuous Flat Search Toolbar Header Row for Accounts */}
-          <div className="flex items-stretch justify-between border-b border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] min-h-[44px]">
+          <div className="flex items-stretch justify-start border-b border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] min-h-[44px]">
             {!accountSearchOpen ? (
               /* Collapsed: Icon Search Only */
               <button
                 type="button"
                 onClick={() => setAccountSearchOpen(true)}
                 className="h-11 px-3.5 flex items-center justify-center gap-1.5 text-gray-500 hover:text-[#ff5e1f] hover:bg-gray-50/50 dark:hover:bg-[#16181d] transition-colors cursor-pointer outline-none shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34]"
-                title="Cari nama Canva Account / Brand"
+                title="Cari nama Account / Brand"
                 aria-label="Buka pencarian brand"
               >
                 <Search className="w-4 h-4" />
@@ -294,7 +302,7 @@ export default function AccountTeamSection({ designers, accounts }: Props) {
                   onKeyDown={(e) => {
                     if (e.key === 'Escape') setAccountSearchOpen(false);
                   }}
-                  placeholder="Cari nama Canva Account / Brand..."
+                  placeholder="Cari nama Account / Brand..."
                   className="w-full bg-transparent font-sans text-xs font-medium text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none"
                 />
                 {accountSearch && (
@@ -317,8 +325,13 @@ export default function AccountTeamSection({ designers, accounts }: Props) {
                 </button>
               </div>
             )}
-            <div className="px-4 py-2.5 flex items-center shrink-0 text-xs font-sans font-medium text-gray-500 dark:text-gray-400">
-              Total <strong className="font-bold text-gray-900 dark:text-white mx-1">{filteredAccounts.length}</strong> Canva Accounts
+            <AccountPlatformFilterDropdown
+              options={accountPlatforms}
+              value={selectedPlatforms}
+              onChange={setSelectedPlatforms}
+            />
+            <div className="ml-auto px-4 py-2.5 flex items-center shrink-0 text-xs font-sans font-medium text-gray-500 dark:text-gray-400">
+              Total <strong className="font-bold text-gray-900 dark:text-white mx-1">{filteredAccounts.length}</strong> Accounts
             </div>
           </div>
 
@@ -328,6 +341,7 @@ export default function AccountTeamSection({ designers, accounts }: Props) {
               <thead>
                 <tr className="border-b border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#0d0e12] text-[11px] font-sans font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                   <th className="pl-5 pr-3 py-3 font-semibold">BRAND ACCOUNT</th>
+                  <th className="px-3 py-3 font-semibold">PLATFORM</th>
                   <th className="px-3 py-3 text-center font-semibold">DOCTYPES HANDLED</th>
                   <th className="px-3 py-3 text-center font-semibold">TEMPLATES QTY</th>
                   <th className="pr-5 pl-3 py-3 text-center font-semibold">TOTAL PAGES</th>
@@ -357,10 +371,13 @@ export default function AccountTeamSection({ designers, accounts }: Props) {
                               {a.displayName}
                             </span>
                             <span className="text-[10px] text-gray-400 font-sans truncate">
-                              {a.notionKey || 'Canva Account'}
+                              {a.notionKey || 'Account / Brand'}
                             </span>
                           </div>
                         </div>
+                      </td>
+                      <td className="px-3 py-3 text-gray-600 dark:text-gray-300">
+                        {a.platformName || '-'}
                       </td>
                       <td className="px-3 py-3 text-center font-bold text-gray-900 dark:text-white">
                         {a.doctypes || 0}

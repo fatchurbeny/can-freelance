@@ -2,7 +2,11 @@ import './globals.css';
 import { Inter } from 'next/font/google';
 import Script from 'next/script';
 import { SyncQueueProvider } from '@/context/SyncQueueContext';
+import AppSidebar from '@/components/AppSidebar';
 import { Toaster } from 'react-hot-toast';
+import { getAccess } from '@/lib/access';
+import { AccessProvider } from '@/context/AccessContext';
+import PreviewBanner from '@/components/PreviewBanner';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -13,13 +17,22 @@ const inter = Inter({
 export const metadata = {
   title: 'CAN-Freelance Dashboard',
   description: 'Comprehensive report and payroll dashboard for CAN-Freelance.',
+  icons: {
+    icon: [
+      { url: '/can-freelance/icon.svg', type: 'image/svg+xml' },
+      { url: '/can-freelance/favicon.ico', sizes: 'any' },
+    ],
+    apple: '/can-freelance/apple-icon.png',
+  },
 };
 
-export default function RootLayout({
+
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const access = await getAccess();
   return (
     <html
       lang="en"
@@ -50,7 +63,10 @@ export default function RootLayout({
         />
       </head>
       <body className="font-sans antialiased text-[#262626] dark:text-[#f4f4f5] min-h-screen bg-white dark:bg-[#0d0e12]">
+        <AccessProvider value={access.info}>
         <SyncQueueProvider>
+          <AppSidebar access={access.info} />
+          <PreviewBanner />
           {children}
           <Toaster
             position="top-right"
@@ -80,6 +96,7 @@ export default function RootLayout({
             }}
           />
         </SyncQueueProvider>
+        </AccessProvider>
       </body>
     </html>
   );

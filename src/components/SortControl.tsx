@@ -16,12 +16,14 @@ interface Props {
   value: SortKey;
   onChange: (value: SortKey) => void;
   disabled?: boolean;
+  /** Subset of sort options to offer. Defaults to all. */
+  options?: readonly { value: SortKey; label: string }[];
 }
 
 /** A-Z / Z-A carry their own direction, so the arrow only reflects the date sorts. */
 const ASCENDING: SortKey[] = ['nameAsc'];
 
-export default function SortControl({ value, onChange, disabled }: Props) {
+export default function SortControl({ value, onChange, disabled, options = SORT_OPTIONS }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -33,7 +35,7 @@ export default function SortControl({ value, onChange, disabled }: Props) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const selected = SORT_OPTIONS.find((o) => o.value === value);
+  const selected = options.find((o) => o.value === value);
   const Arrow = ASCENDING.includes(value) ? ArrowUp : ArrowDown;
 
   return (
@@ -56,7 +58,7 @@ export default function SortControl({ value, onChange, disabled }: Props) {
           role="listbox"
           className="absolute left-0 top-full z-50 mt-0 min-w-[160px] rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] p-1.5 shadow-xl font-sans text-xs"
         >
-          {SORT_OPTIONS.map((opt) => {
+          {options.map((opt) => {
             const isChecked = value === opt.value;
             return (
               <button

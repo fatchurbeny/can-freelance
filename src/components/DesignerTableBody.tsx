@@ -11,10 +11,14 @@ function getInitials(name: string) {
 
 interface Props {
   designers: DesignerItem[];
+  productionUnits?: { id: string; name: string }[];
+  canManageUsers?: boolean;
 }
 
-export default function DesignerTableBody({ designers }: Props) {
-  const [selectedDesigner, setSelectedDesigner] = useState<DesignerItem | null>(null);
+export default function DesignerTableBody({ designers, productionUnits = [], canManageUsers = false }: Props) {
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  // Diturunkan dari props agar akun login yang baru dibuat langsung tampil setelah refresh.
+  const selectedDesigner = designers.find((x) => x.id === selectedId) ?? null;
   const [modalInitialTab, setModalInitialTab] = useState<'profile' | 'timeline'>('profile');
 
   return (
@@ -28,7 +32,7 @@ export default function DesignerTableBody({ designers }: Props) {
             <tr
               key={d.id}
               onClick={() => {
-                setSelectedDesigner(d);
+                setSelectedId(d.id);
                 setModalInitialTab('profile');
               }}
               className={`hover:bg-gray-50/80 dark:hover:bg-[#16181d] transition-colors cursor-pointer group ${
@@ -47,6 +51,8 @@ export default function DesignerTableBody({ designers }: Props) {
                     </span>
                     <span className="text-[10px] text-gray-500 dark:text-gray-400 font-medium truncate">
                       {d.role || 'Junior Designer'}
+                      {d.account?.userCode && <span className="ml-1.5 font-mono text-[9px] text-gray-400">{d.account.userCode}</span>}
+                      {d.isAgency && <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">AGENCY</span>}
                     </span>
                   </div>
                 </div>
@@ -95,7 +101,7 @@ export default function DesignerTableBody({ designers }: Props) {
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setSelectedDesigner(d);
+                    setSelectedId(d.id);
                     setModalInitialTab('timeline');
                   }}
                   className="w-full h-full min-h-[44px] border-l border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/30 dark:bg-[#16181d]/30 hover:bg-[#ff5e1f] dark:hover:bg-[#ff5e1f] text-gray-700 dark:text-gray-300 hover:text-white dark:hover:text-white font-sans text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
@@ -114,7 +120,9 @@ export default function DesignerTableBody({ designers }: Props) {
         open={!!selectedDesigner}
         designer={selectedDesigner}
         initialTab={modalInitialTab}
-        onClose={() => setSelectedDesigner(null)}
+        productionUnits={productionUnits}
+        canManageUsers={canManageUsers}
+        onClose={() => setSelectedId(null)}
       />
     </>
   );

@@ -1,5 +1,6 @@
 'use server';
 
+import { denyUnless, denyWrite } from '@/lib/access';
 import prisma from '@/lib/prisma';
 import { Prisma } from '../../../generated/prisma';
 import { revalidatePath } from 'next/cache';
@@ -26,6 +27,8 @@ export async function getEmailNotificationsAction(filters?: {
   search?: string;
   subjectTrigger?: string;
 }) {
+  const denied = await denyUnless('emailNotification.view');
+  if (denied) return denied as never;
   try {
     const andClauses: any[] = [];
 
@@ -149,13 +152,15 @@ export async function updateEmailNotificationStatusAction(
   id: string,
   status: 'UNRESOLVED' | 'RESOLVED'
 ) {
+  const denied = await denyWrite('emailNotification.view');
+  if (denied) return denied as never;
   try {
     const updated = await prisma.canvaEmailNotification.update({
       where: { id },
       data: { status },
     });
 
-    try { revalidatePath('/production'); } catch (_) {}
+    try { revalidatePath('/production', 'layout'); } catch (_) {}
     return { success: true, notification: JSON.parse(JSON.stringify(updated)) };
   } catch (error: any) {
     return {
@@ -173,6 +178,8 @@ export async function saveEmailConfigAction(data: {
   password?: string;
   autoSync?: boolean;
 }) {
+  const denied = await denyWrite('integration.manage');
+  if (denied) return denied as never;
   try {
     const existing = await prisma.emailConfig.findFirst();
 
@@ -219,6 +226,8 @@ export async function saveEmailConfigAction(data: {
 }
 
 export async function getEmailConfigAction() {
+  const denied = await denyUnless('integration.manage');
+  if (denied) return denied as never;
   try {
     const config = await prisma.emailConfig.findFirst();
     const googleOAuthConfigured = Boolean(
@@ -236,6 +245,8 @@ export async function getEmailConfigAction() {
 }
 
 export async function disconnectGoogleEmailAction() {
+  const denied = await denyWrite('integration.manage');
+  if (denied) return denied as never;
   try {
     const config = await prisma.emailConfig.findFirst();
     if (!config) return { success: true };
@@ -265,7 +276,7 @@ export async function disconnectGoogleEmailAction() {
         autoSync: false,
       },
     });
-    try { revalidatePath('/notion-config'); revalidatePath('/production'); } catch (_) {}
+    try { revalidatePath('/notion-config'); revalidatePath('/production', 'layout'); } catch (_) {}
     return { success: true, config: JSON.parse(JSON.stringify(updated)) };
   } catch (error: any) {
     return { success: false, error: error.message || 'Failed to disconnect Google account.' };
@@ -273,9 +284,11 @@ export async function disconnectGoogleEmailAction() {
 }
 
 export async function clearAllEmailNotificationsAction() {
+  const denied = await denyWrite('integration.manage');
+  if (denied) return denied as never;
   try {
     await prisma.canvaEmailNotification.deleteMany({});
-    try { revalidatePath('/production'); } catch (_) {}
+    try { revalidatePath('/production', 'layout'); } catch (_) {}
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -425,7 +438,7 @@ export async function syncCanvaEmailsAction() {
       console.warn('Failed fetching notifications:', e);
     }
 
-    try { revalidatePath('/production'); } catch (_) {}
+    try { revalidatePath('/production', 'layout'); } catch (_) {}
     return {
       success: true,
       count: notifications.length,
@@ -439,6 +452,8 @@ export async function syncCanvaEmailsAction() {
 }
 
 export async function getSyncSubjectTriggersAction() {
+  const denied = await denyUnless('emailNotification.view');
+  if (denied) return denied as never;
   try {
     const triggerModel = (prisma as any).syncSubjectTrigger;
     let triggers: any[] = [];
@@ -532,6 +547,8 @@ export async function saveSyncSubjectTriggersAction(
     description?: string | null;
   }>
 ) {
+  const denied = await denyWrite('integration.manage');
+  if (denied) return denied as never;
   try {
     const validItems = items.filter((item) => item.subject && item.subject.trim());
     if (validItems.length === 0) {
@@ -579,7 +596,7 @@ export async function saveSyncSubjectTriggersAction(
         },
       });
 
-      try { revalidatePath('/production'); } catch (_) {}
+      try { revalidatePath('/production', 'layout'); } catch (_) {}
 
       const allTriggers = await triggerModel.findMany({
         orderBy: { createdAt: 'asc' },
@@ -609,7 +626,7 @@ export async function saveSyncSubjectTriggersAction(
         WHERE "subject" NOT IN (${Prisma.join(subjects)})
       `;
 
-      try { revalidatePath('/production'); } catch (_) {}
+      try { revalidatePath('/production', 'layout'); } catch (_) {}
 
       const allTriggers: any[] = await prisma.$queryRaw`
         SELECT "id", "subject", "is_active" as "isActive", "description", "created_at" as "createdAt", "updated_at" as "updatedAt"

@@ -15,10 +15,11 @@ async function main() {
   });
 
   const doctype = await prisma.doctype.upsert({
-    where: { notionKey: 'dummy_doctype' },
+    where: { platformId_notionKey: { platformId: '00000000-0000-4000-8000-000000000001', notionKey: 'dummy_doctype' } },
     update: {},
     create: {
       notionKey: 'dummy_doctype',
+      platformId: '00000000-0000-4000-8000-000000000001',
       displayName: 'Test Doctype',
       pages: 1,
     },

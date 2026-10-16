@@ -1,7 +1,35 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { SESSION_COOKIE, verifySessionCookie } from '@/lib/session-cookie';
 
-export function proxy(req: NextRequest) {
+/**
+ * AUTH_MODE=session: login ID+PIN (docs/knowledge/user-role-spec.md). Proxy hanya memeriksa
+ * tanda tangan cookie; keabsahan sesi di DB diperiksa getCurrentUser() di server.
+ * Selain itu tetap Basic Auth lama.
+ */
+async function sessionGate(req: NextRequest) {
+  const { pathname } = req.nextUrl;
+  if (pathname === '/login' || pathname.startsWith('/login/')) return NextResponse.next();
+
+  const token = await verifySessionCookie(req.cookies.get(SESSION_COOKIE)?.value);
+  if (token) return NextResponse.next();
+
+  const isRsc =
+    req.headers.get('rsc') === '1' ||
+    req.headers.has('next-router-state-tree') ||
+    req.headers.has('next-action') ||
+    req.headers.has('x-nextjs-data');
+  if (isRsc) return new NextResponse('Auth required', { status: 401 });
+
+  const url = req.nextUrl.clone();
+  url.pathname = '/login';
+  url.search = '';
+  return NextResponse.redirect(url);
+}
+
+export async function proxy(req: NextRequest) {
+  if (process.env.AUTH_MODE === 'session') return sessionGate(req);
+
   const expectedUser = process.env.BASIC_AUTH_USER;
   const expectedPassword = process.env.BASIC_AUTH_PASSWORD;
 
@@ -60,5 +88,6 @@ function authRequiredResponse(isRsc = false) {
 }
 
 export const config = {
-  matcher: '/((?!api|_next/static|_next/image|favicon.ico).*)',
+  matcher: ['/', '/((?!api|_next/static|_next/image|favicon.ico|icon.svg|apple-icon.png|icon-192.png|icon-512.png).*)'],
 };
+

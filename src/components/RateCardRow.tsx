@@ -16,6 +16,7 @@ export default function RateCardRow({ doctype, contractRate }: RateCardRowProps)
   const pages = doctype.pages ?? 1.0;
   const estPayout = poolRate * pages * contractRate;
   const isActive = doctype.isActive ?? true;
+  const isBundleOnly = doctype.usage === 'Bundle';
 
   return (
     <>
@@ -30,7 +31,7 @@ export default function RateCardRow({ doctype, contractRate }: RateCardRowProps)
               {doctype.displayName || doctype.notionKey}
             </span>
             <span className="font-sans text-[10px] text-gray-400 dark:text-gray-500 truncate">
-              {doctype.notionKey}
+              {doctype.platform ? `${doctype.platform.name} · ` : ''}{doctype.notionKey}
             </span>
           </div>
         </td>
@@ -56,7 +57,7 @@ export default function RateCardRow({ doctype, contractRate }: RateCardRowProps)
 
         {/* Column 4: Pool Score */}
         <td className="px-4 py-3 text-center font-bold text-blue-600 dark:text-blue-400 w-[110px] whitespace-nowrap">
-          {poolRate}x
+          {isBundleOnly ? '-' : `${poolRate}x`}
         </td>
 
         {/* Column 5: Default Pages */}
@@ -66,7 +67,7 @@ export default function RateCardRow({ doctype, contractRate }: RateCardRowProps)
 
         {/* Column 6: Est. Payout */}
         <td className="px-4 py-3 text-center font-bold font-sans text-emerald-600 dark:text-emerald-400 w-[140px] whitespace-nowrap">
-          Rp {estPayout.toLocaleString('id-ID')}
+          {isBundleOnly ? <span className="text-gray-400 font-medium">Harga paket</span> : `Rp ${estPayout.toLocaleString('id-ID')}`}
         </td>
 
         {/* Column 7: Status */}

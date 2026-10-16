@@ -1,14 +1,17 @@
 'use server';
 
+import { denyUnless, denyWrite } from '@/lib/access';
 import { syncNotionData, getSyncProgress } from '@/lib/sync-notion';
 import { revalidatePath } from 'next/cache';
 import prisma from '@/lib/prisma';
 
 export async function triggerSyncAction(mode: import('@/lib/sync-notion').NotionSyncMode = 'incremental') {
+  const denied = await denyWrite('integration.manage');
+  if (denied) return denied as never;
   try {
     const result = await syncNotionData(mode);
     revalidatePath('/');
-    revalidatePath('/production');
+    revalidatePath('/production', 'layout');
     return result;
   } catch (error: any) {
     return { status: 'failed', errorMessage: error.message || String(error) };

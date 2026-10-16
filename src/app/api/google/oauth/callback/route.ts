@@ -2,6 +2,7 @@ import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import prisma from '@/lib/prisma';
+import { authorizeApi } from '@/lib/api-auth';
 import {
   encryptEmailToken,
   friendlyGoogleAuthError,
@@ -22,6 +23,8 @@ async function markAuthError(code: string, message = friendlyGoogleAuthError(cod
 }
 
 export async function GET(request: NextRequest) {
+  const denied = await authorizeApi('integration.manage');
+  if (denied) return denied;
   const origin = request.nextUrl.origin;
   const basePath = request.nextUrl.basePath || (origin.includes('portal.fatchurbeny.com') ? '/can-freelance' : '');
   const doneUrl = new URL(`${basePath}/notion-config`, origin);
@@ -106,7 +109,7 @@ export async function GET(request: NextRequest) {
     }
 
     revalidatePath('/notion-config');
-    revalidatePath('/production');
+    revalidatePath('/production', 'layout');
     doneUrl.searchParams.set('google_auth', 'success');
     return NextResponse.redirect(doneUrl);
   } catch (err: any) {

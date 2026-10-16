@@ -1,8 +1,7 @@
 import Link from 'next/link';
 import prisma from '@/lib/prisma';
 import { getLatestSyncStatus } from '@/app/actions/sync';
-import { getContractRateAction } from '@/app/actions/notion-config';
-import Sidebar from '@/components/Sidebar';
+import { getPlatformRates, getBundleOrdersForPeriod, getBundleClosingQueue, getProductionTotalsForMonth } from '@/lib/queries';
 import TopBar from '@/components/TopBar';
 import { 
   Gavel, 
@@ -26,6 +25,13 @@ import PayrollStatusToggle from '@/components/PayrollStatusToggle';
 import { getPayrollStatusMap } from '@/app/actions/payroll-status';
 import ApprovalPayrollTable from '@/components/ApprovalPayrollTable';
 import { formatDateStringToTaskMonth } from '@/lib/period-utils';
+import { requireAccess } from '@/lib/access';
+import OwnBillingView from '@/components/billing/OwnBillingView';
+import BundleOrdersSection from '@/components/billing/BundleOrdersSection';
+import BundleStats from '@/components/billing/BundleStats';
+import BundlePayoutGroup from '@/components/billing/BundlePayoutGroup';
+import BundleClosingQueue from '@/components/billing/BundleClosingQueue';
+import ProductionBreakdown, { type ProductionCompareRow } from '@/components/billing/ProductionBreakdown';
 
 function formatCurrency(amount: number) {
   return `IDR ${amount.toLocaleString('id-ID')}`;
@@ -106,12 +112,12 @@ function StatIndicator({ current, prev }: { current: number, prev: number }) {
 }
 
 export default async function BillingStatementPage(props: {
-  searchParams: Promise<{ paymentMonth?: string; tab?: string }>;
+  searchParams: Promise<{ paymentMonth?: string; tab?: string; view?: string; compare?: string }>;
 }) {
   const searchParams = await props.searchParams;
+  const access = await requireAccess(['billing.view', 'billing.view.own']);
   const latestSyncLog = await getLatestSyncStatus();
-  const contractRateRes = await getContractRateAction();
-  const contractRate = contractRateRes.success ? contractRateRes.contractRate : 15000;
+  const platformRates = await getPlatformRates();
 
   const tasksWithMonths = await prisma.task.findMany({
     where: { payrollMonth: { not: null } },
@@ -124,13 +130,20 @@ export default async function BillingStatementPage(props: {
     .sort((a, b) => getMonthValue(b) - getMonthValue(a));
   
   const selectedMonth = formatDateStringToTaskMonth(searchParams.paymentMonth) || searchParams.paymentMonth || availableMonths[0] || 'Unknown';
+  if (!access.allows('billing.view')) {
+    return <OwnBillingView designerId={access.user?.designerId ?? null} selectedMonth={selectedMonth} availableMonths={availableMonths} />;
+  }
   const activeTab = searchParams.tab || 'summary';
+  const view: 'kontrak' | 'bundle' = searchParams.view === 'bundle' ? 'bundle' : 'kontrak';
 
+  const bundleCurrent = await getBundleOrdersForPeriod(selectedMonth);
+  const bundleQueue = await getBundleClosingQueue();
   const designersData = await prisma.designer.findMany({
     include: {
       tasks: {
         where: {
           payrollMonth: selectedMonth,
+          bundleOrderId: null,
           designStatus: { countsAsApproved: true }
         },
         include: {
@@ -144,11 +157,14 @@ export default async function BillingStatementPage(props: {
   });
 
   let totalMonthlyPayout = 0;
+  let unpricedTasks = 0;
   let totalTasks = 0;
   let totalTemplates = 0;
   let totalPages = 0;
   
   const uniqueDoctypes = new Set<string>();
+  // Akumulasi payout per ProductionUnit (Fase 7)
+  const productionTotals = new Map<string, { tasks: number; templates: number; pages: number; payout: number }>();
 
   const designers = designersData.map(d => {
     let designerPayroll = 0;
@@ -160,9 +176,17 @@ export default async function BillingStatementPage(props: {
       const qty = Number(t.qtySubmit || 0);
       const pages = Number(t.pages || 0);
       const poolRate = Number(t.doctype?.poolRate || 0);
-      const payment = d.status === 'Resign' ? 0 : qty * pages * poolRate * contractRate!;
+      const price = platformRates.priceFor(t.doctype, t.payrollMonth);
+      const payment = d.status === 'Resign' || t.bundleOrderId || !price.priced ? 0 : qty * pages * poolRate * price.rate;
+      if (!price.priced) unpricedTasks += 1;
       
       designerPayroll += payment;
+      const bucket = productionTotals.get(t.productionUnitId) ?? { tasks: 0, templates: 0, pages: 0, payout: 0 };
+      bucket.tasks += 1;
+      bucket.templates += qty;
+      bucket.pages += qty * pages;
+      bucket.payout += payment;
+      productionTotals.set(t.productionUnitId, bucket);
       designerTemplates += qty;
       designerPages += qty * pages;
       if (t.doctypeId) uniqueDoctypes.add(t.doctypeId);
@@ -172,11 +196,15 @@ export default async function BillingStatementPage(props: {
         qty,
         pages,
         poolRate,
+        rate: price.rate,
+        unpriced: !price.priced,
         payment,
         accountName: t.taskAccounts.length > 0 ? t.taskAccounts[0].account.displayName : 'Unknown'
       };
     });
 
+    const satuanPayroll = designerPayroll;
+    designerPayroll += bundleCurrent.payoutByDesigner.get(d.id) ?? 0;
     totalMonthlyPayout += designerPayroll;
     totalTasks += designerTasksCount;
     totalTemplates += designerTemplates;
@@ -188,18 +216,29 @@ export default async function BillingStatementPage(props: {
       totalTasks: designerTasksCount,
       totalTemplates: designerTemplates,
       totalPages: designerPages,
-      totalPayroll: designerPayroll
+      totalPayroll: designerPayroll,
+      satuanPayroll,
     };
   }).sort((a, b) => b.totalPayroll - a.totalPayroll);
 
+  const bundleOptions = (await prisma.bundle.findMany({ where: { isActive: true }, orderBy: { name: 'asc' }, select: { id: true, name: true, price: true } }))
+    .map((b) => ({ id: b.id, name: b.name, price: Number(b.price) }));
+  const designerOptions = (await prisma.designer.findMany({ where: { status: { not: 'Resign' } }, orderBy: { displayName: 'asc' }, select: { id: true, displayName: true, isAgency: true } }));
+
+  const productionUnits = await prisma.productionUnit.findMany({
+    include: { platform: true },
+    orderBy: { createdAt: 'asc' },
+  });
   const designLeader = designers.length > 0 && designers[0].totalPayroll > 0 ? designers[0].displayName : 'None';
 
   const previousMonth = selectedMonth !== 'Unknown' ? getPreviousMonth(selectedMonth) : null;
+  const bundlePrev = previousMonth ? await getBundleOrdersForPeriod(previousMonth) : null;
   const prevDesignersData = previousMonth ? await prisma.designer.findMany({
     include: {
       tasks: {
         where: {
           payrollMonth: previousMonth,
+          bundleOrderId: null,
           designStatus: { countsAsApproved: true }
         },
         include: { doctype: true }
@@ -220,7 +259,8 @@ export default async function BillingStatementPage(props: {
       const qty = Number(t.qtySubmit || 0);
       const pages = Number(t.pages || 0);
       const poolRate = Number(t.doctype?.poolRate || 0);
-      const payment = d.status === 'Resign' ? 0 : qty * pages * poolRate * contractRate!;
+      const price = platformRates.priceFor(t.doctype, t.payrollMonth);
+      const payment = d.status === 'Resign' || t.bundleOrderId || !price.priced ? 0 : qty * pages * poolRate * price.rate;
       
       designerPayroll += payment;
       prevTotalTemplates += qty;
@@ -228,6 +268,7 @@ export default async function BillingStatementPage(props: {
       if (t.doctypeId) prevUniqueDoctypes.add(t.doctypeId);
     });
 
+    designerPayroll += bundlePrev?.payoutByDesigner.get(d.id) ?? 0;
     prevTotalMonthlyPayout += designerPayroll;
     prevTotalTasks += d.tasks.length;
 
@@ -240,6 +281,7 @@ export default async function BillingStatementPage(props: {
     await prisma.task.findMany({
       where: {
         payrollMonth: null,
+        bundleOrderId: null,
         designStatus: {
           countsAsApproved: true,
         }
@@ -253,6 +295,36 @@ export default async function BillingStatementPage(props: {
       }
     })
   )) as Array<any>;
+
+  // Perbandingan per production: bulan terpilih vs bulan pembanding (default bulan lalu) + antrian bulan depan
+  const compareMonth = formatDateStringToTaskMonth(searchParams.compare) || searchParams.compare || previousMonth || '';
+  const compareTotals = compareMonth ? await getProductionTotalsForMonth(compareMonth, platformRates) : new Map();
+  const queueByUnit = new Map<string, { tasks: number; payout: number }>();
+  upcomingTasksData.forEach((t) => {
+    const qty = Number(t.qtySubmit || 0);
+    const pages = Number(t.pages || 0);
+    const price = platformRates.priceFor(t.doctype, null);
+    const payment = t.bundleOrderId || !price.priced ? 0 : qty * pages * Number(t.doctype?.poolRate || 0) * price.rate;
+    const bucket = queueByUnit.get(t.productionUnitId) ?? { tasks: 0, payout: 0 };
+    bucket.tasks += 1;
+    bucket.payout += payment;
+    queueByUnit.set(t.productionUnitId, bucket);
+  });
+  const emptyTotals = { tasks: 0, templates: 0, pages: 0, payout: 0 };
+  const productionCompareRows: ProductionCompareRow[] = productionUnits.map((u) => ({
+    unitId: u.id,
+    name: u.name,
+    platformName: u.platform.name,
+    cur: productionTotals.get(u.id) ?? emptyTotals,
+    cmp: compareTotals.get(u.id) ?? emptyTotals,
+    queue: queueByUnit.get(u.id) ?? { tasks: 0, payout: 0 },
+  }));
+  const nextOfSelected = (() => {
+    const [m, y] = selectedMonth.split('-');
+    const idx = INDONESIAN_MONTHS.findIndex((x) => x.toLowerCase() === (m || '').toLowerCase());
+    if (idx < 0) return '';
+    return `${INDONESIAN_MONTHS[(idx + 1) % 12]}-${idx === 11 ? Number(y) + 1 : y}`;
+  })();
 
   const payrollStatusMap = selectedMonth !== 'Unknown'
     ? await getPayrollStatusMap(designers.map((designer) => designer.id), selectedMonth)
@@ -272,7 +344,7 @@ export default async function BillingStatementPage(props: {
     const qty = Number(t.qtySubmit || 0);
     const pages = Number(t.pages || 0);
     const poolRate = Number(t.doctype?.poolRate || 0);
-    const payment = qty * pages * poolRate * contractRate!;
+    const payment = t.bundleOrderId ? 0 : qty * pages * poolRate * platformRates.priceFor(t.doctype, null).rate;
     
     upcomingPayout += payment;
     upcomingTemplates += qty;
@@ -291,7 +363,6 @@ export default async function BillingStatementPage(props: {
     <div className="min-h-screen bg-white dark:bg-[#0d0e12] text-[#262626] dark:text-[#f4f4f5] transition-colors">
       <TopBar badgeLabel="BILLING" />
       <div className="flex min-h-[calc(100vh-56px)] flex-col md:flex-row">
-        <Sidebar currentSyncLog={latestSyncLog} />
 
         <main className="flex min-h-0 min-w-0 flex-1 md:ml-56 flex-col p-3 sm:p-6 md:p-8 bg-grid-pattern">
 
@@ -324,17 +395,34 @@ export default async function BillingStatementPage(props: {
                   }`}
                 >
                   <CheckSquare className={`w-4 h-4 shrink-0 transition-colors ${activeTab === 'approval-payroll' ? 'text-[#ff5e1f]' : 'text-gray-400 dark:text-gray-500'}`} />
-                  <span>Approval Payroll</span>
-                  {upcomingTasksData.length > 0 && (
+                  <span>Closing</span>
+                  {upcomingTasksData.length + bundleQueue.length > 0 && (
                     <span className={`rounded px-2 py-0.5 text-[10px] font-sans font-bold ${
                       activeTab === 'approval-payroll'
                         ? 'bg-[#ff5e1f]/10 text-[#ff5e1f]'
                         : 'bg-gray-200/60 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
                     }`}>
-                      {upcomingTasksData.length}
+                      {upcomingTasksData.length + bundleQueue.length}
                     </span>
                   )}
                   {activeTab === 'approval-payroll' && (
+                    <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#ff5e1f]" />
+                  )}
+                </Link>
+                <Link
+                  href={`?paymentMonth=${selectedMonth}&tab=order-bundle`}
+                  className={`relative flex items-center justify-center gap-2 px-5 sm:px-6 py-3.5 text-sm font-sans transition-all duration-150 cursor-pointer whitespace-nowrap ${
+                    activeTab === 'order-bundle'
+                      ? 'bg-white dark:bg-[#16181d] text-gray-900 dark:text-white font-bold'
+                      : 'bg-[#f8f9fa] dark:bg-[#0d0e12] text-gray-600 dark:text-gray-400 font-medium hover:bg-[#f0f1f3] dark:hover:bg-[#16181d]/50 hover:text-gray-900 dark:hover:text-white'
+                  }`}
+                >
+                  <Package className={`w-4 h-4 shrink-0 transition-colors ${activeTab === 'order-bundle' ? 'text-[#ff5e1f]' : 'text-gray-400 dark:text-gray-500'}`} />
+                  <span>Order Bundle</span>
+                  {bundleCurrent.rows.length > 0 && (
+                    <span className={`rounded px-2 py-0.5 text-[10px] font-sans font-bold ${activeTab === 'order-bundle' ? 'bg-[#ff5e1f]/10 text-[#ff5e1f]' : 'bg-gray-200/60 dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}>{bundleCurrent.rows.length}</span>
+                  )}
+                  {activeTab === 'order-bundle' && (
                     <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#ff5e1f]" />
                   )}
                 </Link>
@@ -361,7 +449,7 @@ export default async function BillingStatementPage(props: {
                   </div>
 
                   {/* Right Full-Height Table Cells */}
-                  <div className="flex items-stretch divide-x divide-[#f0f0f0] dark:divide-[#272a34] border-t md:border-t-0 md:border-l border-[#f0f0f0] dark:border-[#272a34] shrink-0 font-sans text-xs">
+                  <div className="grid grid-cols-2 lg:w-1/2 items-stretch divide-x divide-[#f0f0f0] dark:divide-[#272a34] border-t md:border-t-0 md:border-l border-[#f0f0f0] dark:border-[#272a34] shrink-0 font-sans text-xs">
                     <div className="flex items-center gap-2.5 px-3.5 sm:px-6 py-3 sm:py-4 bg-white dark:bg-[#0d0e12] text-gray-700 dark:text-gray-300 min-w-0">
                       <span className="w-2 h-2 rounded-full bg-[#ff5e1f] shrink-0 self-start sm:self-center mt-1 sm:mt-0" />
                       <div className="flex flex-col min-w-0">
@@ -377,16 +465,34 @@ export default async function BillingStatementPage(props: {
                       <span className="w-2 h-2 rounded-full bg-[#ff5e1f] shrink-0 self-start sm:self-center mt-1 sm:mt-0" />
                       <div className="flex flex-col min-w-0">
                         <span className="text-[10px] sm:text-[11px] font-sans font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-                          Rate/Pool:
+                          Tarif Dasar:
                         </span>
                         <strong className="text-xs sm:text-xs font-bold text-gray-900 dark:text-white truncate">
-                          IDR {contractRate!.toLocaleString('id-ID')}
+                          {platformRates.label}
                         </strong>
                       </div>
                     </div>
                   </div>
                 </div>
 
+                {/* Segmen: Freelance Kontrak vs Order Bundle + total gabungan */}
+                <div className="grid grid-cols-1 lg:grid-cols-4 items-stretch bg-white dark:bg-[#0d0e12] border-b border-[#f0f0f0] dark:border-[#272a34] font-sans">
+                  <div className="contents">
+                    {([['kontrak', 'Freelance Kontrak', formatCurrency(designers.reduce((n, d) => n + d.satuanPayroll, 0))], ['bundle', 'Order Bundle', formatCurrency(bundleCurrent.payoutTotal)]] as const).map(([key, label, amount]) => (
+                      <Link key={key} href={`?paymentMonth=${selectedMonth}&tab=summary&view=${key}`} className={`flex flex-col justify-center px-6 py-3 transition-colors border-b lg:border-b-0 lg:border-r border-[#f0f0f0] dark:border-[#272a34] ${view === key ? 'bg-[#16181d] text-white' : 'bg-gray-50/50 dark:bg-[#16181d]/40 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#16181d]'}`}>
+                        <span className="text-[11px] font-bold uppercase tracking-wider">{label}</span>
+                        <span className={`text-sm font-bold ${view === key ? 'text-white' : 'text-gray-900 dark:text-white'}`}>{amount}</span>
+                      </Link>
+                    ))}
+                  </div>
+                  <div className="hidden lg:block" />
+                  <div className="flex items-center justify-between gap-3 px-6 py-3 lg:border-l border-[#f0f0f0] dark:border-[#272a34]">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Total payout bulan ini</span>
+                    <span className="text-base font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(totalMonthlyPayout)}</span>
+                  </div>
+                </div>
+
+                {view === 'kontrak' && (<>
                 {/* Block 2: Continuous KPI Grid (Refrensi Image 3) */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 divide-y md:divide-y-0 divide-[#f0f0f0] dark:divide-[#272a34] bg-white dark:bg-[#0d0e12]">
                   
@@ -578,6 +684,19 @@ export default async function BillingStatementPage(props: {
 
                 </div>
 
+                {/* Block 2b: Per Production (Fase 7) */}
+                <ProductionBreakdown
+                  rows={productionCompareRows}
+                  curLabel={selectedMonth}
+                  cmpLabel={compareMonth || '-'}
+                  nextLabel={nextOfSelected}
+                  availableMonths={availableMonths}
+                />
+
+                </>)}
+                {/* Block 2c: Statistik Order Bundle */}
+                {view === 'bundle' && <BundleStats rows={bundleCurrent.rows} prevTotalPrice={(bundlePrev?.rows ?? []).reduce((n, r) => n + r.price, 0)} />}
+
                 {/* Block 3: Payout Breakdown Section */}
                 <div className="flex flex-col bg-white dark:bg-[#0d0e12] rounded-none">
                   {/* Toolbar Header (Full-Height Symmetrical Table Style) */}
@@ -609,6 +728,11 @@ export default async function BillingStatementPage(props: {
 
                   {/* Designer Payout Accordions */}
                   <div className="divide-y divide-[#f0f0f0] dark:divide-[#272a34] bg-white dark:bg-[#0d0e12] rounded-none">
+                    {view === 'kontrak' && (<>
+                    <div className="flex items-center justify-between gap-2 px-4 py-2.5 bg-[#fff7f2] dark:bg-[#ff5e1f]/5 font-sans text-xs font-bold text-gray-900 dark:text-white">
+                      <span>Satuan · Production Board <span className="font-medium text-gray-500">· {designers.filter(d => d.totalTasks > 0).length} designer · {totalTasks} task</span></span>
+                      <span className="flex items-center gap-3">{unpricedTasks > 0 && <span className="px-2 py-0.5 text-[10px] bg-amber-500/10 text-amber-700 dark:text-amber-400">{unpricedTasks} task belum ada harga</span>}<span className="text-emerald-600 dark:text-emerald-400">{formatCurrency(designers.reduce((n, d) => n + d.satuanPayroll, 0))}</span></span>
+                    </div>
                     {designers.filter(d => d.totalTasks > 0).map((designer) => (
                       <details key={designer.id} className={`group bg-white dark:bg-[#0d0e12] marker:content-[''] ${designer.status !== 'Active' ? 'opacity-60 grayscale-[50%]' : ''}`}>
                         <summary className="flex flex-col lg:flex-row items-start lg:items-center justify-between p-4 cursor-pointer hover:bg-gray-50/60 dark:hover:bg-[#16181d]/60 transition-colors list-none gap-4">
@@ -649,7 +773,7 @@ export default async function BillingStatementPage(props: {
                             </div>
                             <div className="flex flex-col items-center">
                               <span className="text-[10px] font-sans text-gray-400 dark:text-gray-500 uppercase">Total Payroll</span>
-                              <span className="font-sans font-bold text-emerald-600 dark:text-[#ff5e1f] text-xs">{formatCurrency(designer.totalPayroll)}</span>
+                              <span className="font-sans font-bold text-emerald-600 dark:text-[#ff5e1f] text-xs">{formatCurrency(designer.satuanPayroll)}</span>
                             </div>
                           </div>
 
@@ -712,10 +836,10 @@ export default async function BillingStatementPage(props: {
                                       {task.poolRate}
                                     </td>
                                     <td className="py-2.5 px-2 text-right text-gray-600 dark:text-gray-400">
-                                      {formatCurrency(contractRate!)}
+                                      {task.unpriced ? '-' : formatCurrency(task.rate)}
                                     </td>
                                     <td className="py-2.5 px-2 text-right text-emerald-600 dark:text-[#ff5e1f] font-bold">
-                                      {formatCurrency(task.payment)}
+                                      {task.unpriced ? <span className="text-amber-600 dark:text-amber-400 text-[11px]">Belum ada harga</span> : formatCurrency(task.payment)}
                                     </td>
                                   </tr>
                                 ))}
@@ -738,11 +862,26 @@ export default async function BillingStatementPage(props: {
                         No payroll data available for {selectedMonth}.
                       </div>
                     )}
+
+                    </>)}
+
+                    {view === 'bundle' && <BundlePayoutGroup rows={bundleCurrent.rows.filter((r) => r.inPayout)} tabHref={`?paymentMonth=${selectedMonth}&tab=order-bundle`} />}
                   </div>
                 </div>
               </>
+            ) : activeTab === 'order-bundle' ? (
+              <BundleOrdersSection
+                rows={bundleCurrent.rows}
+                periodLabel={selectedMonth}
+                bundles={bundleOptions}
+                designers={designerOptions}
+                months={availableMonths}
+              />
             ) : (
-              <ApprovalPayrollTable tasks={upcomingTasksData as any} allMonthOptions={approvalMonthOptions} />
+              <>
+                <BundleClosingQueue rows={bundleQueue} defaultMonth={selectedMonth} />
+                <ApprovalPayrollTable tasks={upcomingTasksData as any} allMonthOptions={approvalMonthOptions} />
+              </>
             )}
           </div>
         </main>

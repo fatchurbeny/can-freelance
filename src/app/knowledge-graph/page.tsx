@@ -1,6 +1,6 @@
+import { requireAccess } from '@/lib/access';
 import { Suspense } from 'react';
 import { getLatestSyncStatus } from '@/app/actions/sync';
-import Sidebar from '@/components/Sidebar';
 import TopBar from '@/components/TopBar';
 import KnowledgeGraphViewer from '@/components/KnowledgeGraphViewer';
 
@@ -10,6 +10,7 @@ export const metadata = {
 };
 
 export default async function KnowledgeGraphPage() {
+  await requireAccess(['integration.manage']);
   const latestSyncLog = await getLatestSyncStatus();
 
   return (
@@ -18,7 +19,6 @@ export default async function KnowledgeGraphPage() {
       <div className="flex min-h-[calc(100vh-56px)] flex-col md:flex-row">
         {/* Sidebar navigation */}
         <Suspense fallback={<div className="w-56 shrink-0 bg-white dark:bg-[#0d0e12]" />}>
-          <Sidebar currentSyncLog={latestSyncLog} />
         </Suspense>
 
         {/* Main content */}

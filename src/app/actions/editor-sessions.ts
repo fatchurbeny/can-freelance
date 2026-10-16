@@ -1,5 +1,6 @@
 'use server';
 
+import { denyUnless } from '@/lib/access';
 import fs from 'fs';
 import path from 'path';
 
@@ -21,6 +22,8 @@ export interface SessionLogItem {
 }
 
 export async function getKnowledgeGraphSessionsAction(): Promise<SessionLogItem[]> {
+  const denied = await denyUnless('integration.manage');
+  if (denied) return denied as never;
   const sessions: SessionLogItem[] = [];
 
   // 1. Current Active Session (Real-time from Antigravity Environment)

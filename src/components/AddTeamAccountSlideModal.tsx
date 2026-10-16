@@ -6,6 +6,9 @@ import { X, Plus, Users, Building2, FileText, CircleDot, Mail, Calendar, Phone, 
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import { createDesignerAction, createAccountAction } from '@/app/actions/designer';
+import { listPlatformsAction } from '@/app/actions/production-unit';
+
+const BRAND_SWATCHES = ['#F97316', '#EF4444', '#10B981', '#EC4899', '#8B5CF6', '#3B82F6', '#FAE48C', '#6646B1'];
 import DatePickerCell from './DatePickerCell';
 import RoleSelectCell from './RoleSelectCell';
 import BankSelectCell from './BankSelectCell';
@@ -33,6 +36,7 @@ export default function AddTeamAccountSlideModal({ open, onClose, onCreated }: P
   const [status, setStatus] = useState<string>('Active');
   const [role, setRole] = useState('Junior Designer');
   const [contractType, setContractType] = useState('Freelance');
+  const [isAgency, setIsAgency] = useState(false);
   
   const todayIso = new Date().toISOString().split('T')[0];
   const [contractStartDate, setContractStartDate] = useState(todayIso);
@@ -45,6 +49,17 @@ export default function AddTeamAccountSlideModal({ open, onClose, onCreated }: P
   const [bankName, setBankName] = useState('BCA');
   const [bankAccount, setBankAccount] = useState('');
   const [saving, setSaving] = useState(false);
+  const [platforms, setPlatforms] = useState<{ id: string; name: string }[]>([]);
+  const [platformId, setPlatformId] = useState('');
+  const [accountColor, setAccountColor] = useState(BRAND_SWATCHES[0]);
+
+  useEffect(() => {
+    if (!open) return;
+    listPlatformsAction().then((list: { id: string; name: string }[]) => {
+      setPlatforms(list);
+      setPlatformId((prev) => prev || list[0]?.id || '');
+    });
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -62,6 +77,7 @@ export default function AddTeamAccountSlideModal({ open, onClose, onCreated }: P
       setStatus('Active');
       setRole('Junior Designer');
       setContractType('Freelance');
+      setIsAgency(false);
       setContractStartDate(initialStart);
       setProbationEndDate(addThreeMonths(initialStart));
       setInactiveStartDate(initialStart);
@@ -116,9 +132,15 @@ export default function AddTeamAccountSlideModal({ open, onClose, onCreated }: P
         phone: phone.trim() || null,
         bankName: bankName.trim() || null,
         bankAccount: bankAccount.trim() || null,
+        isAgency,
       });
     } else {
-      res = await createAccountAction({ displayName: trimmedName });
+      if (!platformId) {
+        toast.error('Pilih platform terlebih dahulu');
+        setSaving(false);
+        return;
+      }
+      res = await createAccountAction({ displayName: trimmedName, color: accountColor, platformId });
     }
 
     setSaving(false);
@@ -163,7 +185,7 @@ export default function AddTeamAccountSlideModal({ open, onClose, onCreated }: P
                 Add Team / Account
               </h2>
               <p className="text-[10px] font-sans text-gray-500 dark:text-gray-400 truncate">
-                {category === 'designer' ? 'Add new Designer with contract dates & payment details' : 'Add new Canva Account (Brand)'}
+                {category === 'designer' ? 'Add new Designer with contract dates & payment details' : 'Add new Account / Brand per platform'}
               </p>
             </div>
           </div>
@@ -211,7 +233,7 @@ export default function AddTeamAccountSlideModal({ open, onClose, onCreated }: P
                     }`}
                   >
                     <Building2 className="w-3.5 h-3.5" />
-                    <span>Canva Account</span>
+                    <span>Account Platform</span>
                   </button>
                 </div>
               </div>
@@ -234,6 +256,57 @@ export default function AddTeamAccountSlideModal({ open, onClose, onCreated }: P
               </div>
             </div>
 
+            {/* Account Specific Fields: Platform & Warna Brand */}
+            {category === 'account' && (
+              <>
+                <div className="flex items-stretch text-xs font-sans min-h-[44px]">
+                  <div className="w-[110px] sm:w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-3 sm:px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
+                    <span>Platform</span>
+                  </div>
+                  <div className="flex-1 grid grid-cols-2 bg-white dark:bg-[#0d0e12]">
+                    {platforms.map((p) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => setPlatformId(p.id)}
+                        className={`h-full min-h-[44px] px-4 font-sans text-xs font-bold uppercase transition-colors cursor-pointer flex items-center justify-center ${
+                          platformId === p.id
+                            ? 'bg-[#7c3aed] text-white font-bold'
+                            : 'bg-gray-50/50 dark:bg-[#16181d]/50 hover:bg-gray-100 dark:hover:bg-[#16181d] text-gray-700 dark:text-gray-300'
+                        }`}
+                      >
+                        {p.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex items-stretch text-xs font-sans min-h-[44px]">
+                  <div className="w-[110px] sm:w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-3 sm:px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
+                    <span>Warna Brand</span>
+                  </div>
+                  <div className="flex-1 flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#0d0e12] flex-wrap">
+                    {BRAND_SWATCHES.map((c) => (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => setAccountColor(c)}
+                        aria-label={`Pilih warna ${c}`}
+                        className={`size-6 border ${accountColor === c ? 'ring-2 ring-offset-1 ring-[#ff5e1f]' : 'border-[#f0f0f0] dark:border-[#272a34]'} cursor-pointer`}
+                        style={{ backgroundColor: c }}
+                      />
+                    ))}
+                    <input
+                      type="text"
+                      value={accountColor}
+                      onChange={(e) => setAccountColor(e.target.value)}
+                      className="ml-auto w-24 h-8 px-2 border border-[#f0f0f0] dark:border-[#272a34] bg-transparent font-sans text-xs text-gray-900 dark:text-white outline-none focus:ring-1 focus:ring-[#ff5e1f]"
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+
             {/* Designer Specific Fields */}
             {category === 'designer' && (
               <>
@@ -249,6 +322,29 @@ export default function AddTeamAccountSlideModal({ open, onClose, onCreated }: P
                       onChange={setRole}
                       placeholder="Pilih Role / Jabatan..."
                     />
+                  </div>
+                </div>
+
+                {/* Row: Tipe Designer (Individu / Agency) */}
+                <div className="flex items-stretch text-xs font-sans min-h-[44px]">
+                  <div className="w-[110px] sm:w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-3 sm:px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
+                    <span>Tipe</span>
+                  </div>
+                  <div className="flex-1 grid grid-cols-2 divide-x divide-[#f0f0f0] dark:divide-[#272a34] bg-white dark:bg-[#0d0e12]">
+                    {[false, true].map((v) => (
+                      <button
+                        key={String(v)}
+                        type="button"
+                        onClick={() => setIsAgency(v)}
+                        className={`h-full min-h-[44px] px-2 font-sans text-xs font-bold uppercase transition-colors cursor-pointer flex items-center justify-center ${
+                          isAgency === v
+                            ? 'bg-indigo-600 text-white'
+                            : 'bg-gray-50/50 dark:bg-[#16181d]/50 hover:bg-gray-100 dark:hover:bg-[#16181d] text-gray-700 dark:text-gray-300'
+                        }`}
+                      >
+                        {v ? 'Agency' : 'Individu'}
+                      </button>
+                    ))}
                   </div>
                 </div>
 

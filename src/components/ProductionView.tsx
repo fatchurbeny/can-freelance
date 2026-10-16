@@ -10,22 +10,29 @@ import { useRouter } from 'next/navigation';
 import CreateTaskSlideModal from './CreateTaskSlideModal';
 
 interface Props {
+  productionUnitId: string;
   kanbanTasks: any[];
   issueTasks: any[];
   selectedMonths?: string[];
   accounts?: any[];
   unresolvedEmailCount?: number;
   onCreateTask?: () => void;
+  canCreateTask?: boolean;
+  /** false = sembunyikan tab Parameter Issue & Email Notifications. */
+  canSeeIssueTabs?: boolean;
 }
 
 export default function ProductionView({
+  productionUnitId,
   kanbanTasks,
   issueTasks,
   selectedMonths,
   accounts = [],
   unresolvedEmailCount = 0,
+  canCreateTask = true,
+  canSeeIssueTabs = true,
 }: Props) {
-  const [activeTab, setActiveTab] = useState<ProductionTab>('overview');
+  const [activeTab, setActiveTab] = useState<ProductionTab>(canSeeIssueTabs ? 'overview' : 'kanban');
   const [createOpen, setCreateOpen] = useState(false);
   const router = useRouter();
 
@@ -45,6 +52,7 @@ export default function ProductionView({
         onTabChange={setActiveTab}
         issueCount={issueTasks.length}
         emailIssueCount={unresolvedEmailCount}
+        hiddenTabs={canSeeIssueTabs ? [] : ['parameterIssue', 'emailNotification']}
       />
 
       {activeTab === 'overview' && (
@@ -52,18 +60,18 @@ export default function ProductionView({
       )}
 
       {activeTab === 'kanban' && (
-        <SortableTaskLists tasks={kanbanTasks} selectedMonths={selectedMonths} onCreateTask={() => setCreateOpen(true)} />
+        <SortableTaskLists tasks={kanbanTasks} selectedMonths={selectedMonths} onCreateTask={canCreateTask ? () => setCreateOpen(true) : undefined} />
       )}
 
-      {activeTab === 'parameterIssue' && (
+      {canSeeIssueTabs && activeTab === 'parameterIssue' && (
         <ParameterIssueTable initialTasks={issueTasks} onParametersUpdated={handleRefresh} />
       )}
 
-      {activeTab === 'emailNotification' && (
+      {canSeeIssueTabs && activeTab === 'emailNotification' && (
         <EmailNotificationView accounts={accounts} />
       )}
 
-      <CreateTaskSlideModal open={createOpen} onClose={() => setCreateOpen(false)} onCreated={handleTaskCreated} />
+      <CreateTaskSlideModal productionUnitId={productionUnitId} open={createOpen} onClose={() => setCreateOpen(false)} onCreated={handleTaskCreated} />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 'use server';
 
+import { denyUnless, denyWrite } from '@/lib/access';
 import prisma from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { Client } from '@notionhq/client';
@@ -16,6 +17,8 @@ async function getNotionClient() {
 }
 
 export async function getTasksWithParameterIssuesAction() {
+  const denied = await denyUnless('parameterIssue.view');
+  if (denied) return denied as never;
   try {
     const tasks = await prisma.task.findMany({
       where: {
@@ -44,6 +47,8 @@ export async function updateTaskParametersAction(
   taskIds: string[],
   data: { taskMonth?: string | null; poolScore?: number | null }
 ) {
+  const denied = await denyWrite('parameterIssue.view');
+  if (denied) return denied as never;
   try {
     if (!taskIds || taskIds.length === 0) {
       return { success: false, error: 'No task IDs provided' };
@@ -98,7 +103,7 @@ export async function updateTaskParametersAction(
       }
     });
 
-    revalidatePath('/production');
+    revalidatePath('/production', 'layout');
     return { success: true, notionSyncResults: {} as Record<string, { success: boolean; error?: string }> };
   } catch (error: any) {
     console.error('Failed to update task parameters:', error);
@@ -107,6 +112,8 @@ export async function updateTaskParametersAction(
 }
 
 export async function retryNotionSyncAction(taskId: string) {
+  const denied = await denyWrite('parameterIssue.view');
+  if (denied) return denied as never;
   try {
     const task = await prisma.task.findUnique({ where: { id: taskId } });
     if (!task) return { success: false, error: 'Task not found' };

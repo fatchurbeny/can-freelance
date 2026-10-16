@@ -1,10 +1,11 @@
 'use client';
 
+import { useAccess } from '@/context/AccessContext';
 import { useEffect, useRef, useState } from 'react';
 import {
-  X, ExternalLink, Send, Clock, Trash2, FileText, MessageSquare, CheckCircle,
+  X, ExternalLink, Clock, Trash2, FileText, CheckCircle,
   AlarmClock, CalendarDays, Gauge, Users, BookOpen, Building2, Languages, KeyRound,
-  CircleDot, Edit2, Save, Plus, Link as LinkIcon, Loader2, ChevronDown, Check
+  CircleDot, Edit2, Plus, Link as LinkIcon, Loader2, Check
 } from 'lucide-react';
 import {
   updateTaskStatusAction, addCommentAction, getTaskCommentsAction,
@@ -17,7 +18,7 @@ import toast from 'react-hot-toast';
 
 import CustomSelectCell from './CustomSelectCell';
 import MonthCalendarPicker from './MonthCalendarPicker';
-import TaskBodyEditor from './TaskBodyEditor';
+import DesignBriefSection from './task-detail/DesignBriefSection';
 import { PRIORITY_OPTIONS, LICENSE_OPTIONS, getPagesForDoctype } from './task-form-utils';
 
 interface QATask {
@@ -29,6 +30,10 @@ interface QATask {
   designStatus: { id: string; notionKey: string; displayName: string } | null;
   taskAccounts: { account: { id: string; displayName: string; color: string | null } }[];
   canvaLinks: { id: string; url: string }[];
+  uploadRequestUrl?: string | null;
+  outputUrl?: string | null;
+  customFields?: Record<string, unknown> | null;
+  productionUnit?: { platform: { outputType: string } } | null;
   comments?: { id: string; content: string; createdAt: string }[];
   qtySubmit: string | number | null;
   pages: string | number | null;
@@ -66,6 +71,10 @@ interface OptionItem {
 
 
 export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }: Props) {
+  const access = useAccess();
+  // Privasi per role: freelance tidak melihat brand/akun; Dropbox Link hanya untuk yang berhak.
+  const canSeeBrand = !access.enabled || access.permissions.includes('account.view');
+  const canSeeDropbox = !access.enabled || access.permissions.includes('dropboxLink.view');
   const [pending, setPending] = useState<string | null>(null);
   const [done, setDone] = useState<string | null>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -77,7 +86,8 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
 
   const [isEditingAll, setIsEditingAll] = useState(false);
   const [activeEditingField, setActiveEditingField] = useState<string | null>(null);
-  const [savingField, setSavingField] = useState<string | null>(null);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const [taskName, setTaskName] = useState('');
   const [designerId, setDesignerId] = useState<string>('');
@@ -92,6 +102,7 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
   const [bodyText, setBodyText] = useState<string>('');
   const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
   const [canvaUrls, setCanvaUrls] = useState<string[]>([]);
+  const [customValues, setCustomValues] = useState<Record<string, string>>({});
   const [newCanvaUrl, setNewCanvaUrl] = useState('');
   const [canvaLinkError, setCanvaLinkError] = useState('');
 
@@ -126,6 +137,13 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
     setBodyText(task.bodyText || '');
     setSelectedAccountIds(task?.taskAccounts?.map(ta => ta.account.id) || []);
     setCanvaUrls(task?.canvaLinks?.map(cl => cl.url) || []);
+    setCustomValues(
+      Object.fromEntries(
+        Object.entries(task?.customFields || {})
+          .filter(([, v]) => typeof v === 'string' || typeof v === 'number')
+          .map(([k, v]) => [k, String(v)])
+      )
+    );
     setNewCanvaUrl('');
     setCanvaLinkError('');
 
@@ -152,32 +170,25 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
   if (!task) return null;
 
 
-  const saveAllChanges = async () => {
-    setSavingField('all');
-    const payload: TaskUpdatePayload = {
-      name: taskName,
-      designerId: designerId || null,
-      doctypeId: doctypeId || null,
-      designStatusId: designStatusId || null,
-      qtySubmit: qtySubmit !== '' ? Number(qtySubmit) : null,
-      pages: pages !== '' ? Number(pages) : null,
-      languages,
-      priority: priority || null,
-      license: license || null,
-      taskMonth: taskMonth || null,
-      bodyText: bodyText || null,
-      accountIds: selectedAccountIds,
-      canvaLinks: canvaUrls.filter(u => u.trim().length > 0),
-    };
+  const triggerAutoSave = async (patch: Partial<TaskUpdatePayload>) => {
+    if (!task?.id) return;
+    setSaveStatus('saving');
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
 
-    const res = await updateTaskFieldsAction(task.id, payload);
-    setSavingField(null);
-    if (res.success) {
-      toast.success('All task properties updated!');
-      setIsEditingAll(false);
-      setActiveEditingField(null);
-    } else {
-      toast.error(res.error || 'Failed to save task properties');
+    try {
+      const res = await updateTaskFieldsAction(task.id, patch);
+      if (res.success) {
+        setSaveStatus('saved');
+        saveTimeoutRef.current = setTimeout(() => {
+          setSaveStatus('idle');
+        }, 2500);
+      } else {
+        setSaveStatus('error');
+        toast.error(res.error || 'Failed to auto-save field');
+      }
+    } catch (err: any) {
+      setSaveStatus('error');
+      toast.error(err?.message || 'Error auto-saving');
     }
   };
 
@@ -193,30 +204,33 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
     }
   };
 
-  const handleSubmitComment = async () => {
-    const trimmed = content.trim();
-    if (!trimmed) return;
+  const handleAddComment = async (commentText: string): Promise<boolean> => {
+    const trimmed = commentText.trim();
+    if (!trimmed) return false;
     setSending(true);
     const result = await addCommentAction(task.id, trimmed);
+    setSending(false);
     if (result.success) {
-      setContent('');
       const updated = await getTaskCommentsAction(task.id);
       setComments(updated);
+      return true;
     } else {
       toast.error(result.error || 'Failed to add comment');
+      return false;
     }
-    setSending(false);
   };
 
-  const handleDeleteComment = async (commentId: string) => {
-    if (!confirm('Delete this comment?')) return;
+  const handleDeleteComment = async (commentId: string): Promise<boolean> => {
+    if (!confirm('Delete this comment?')) return false;
     setComments((prev) => prev.filter((c) => c.id !== commentId));
     const result = await deleteCommentAction(commentId);
     if (!result.success) {
       toast.error(result.error || 'Failed to delete comment');
       const updated = await getTaskCommentsAction(task.id);
       setComments(updated);
+      return false;
     }
+    return true;
   };
 
   const commentCount = task.comments?.length ?? comments.length;
@@ -252,29 +266,22 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
                 type="text"
                 value={taskName}
                 onChange={(e) => setTaskName(e.target.value)}
+                onBlur={() => {
+                  if (taskName !== (task.name || '')) {
+                    triggerAutoSave({ name: taskName });
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.currentTarget.blur();
+                  }
+                }}
                 placeholder="Task Name"
                 className="w-full rounded-none border border-transparent bg-transparent hover:bg-white dark:hover:bg-[#0d0e12] focus:bg-white dark:focus:bg-[#0d0e12] focus:border-[#ff5e1f] px-2 py-1 font-sans text-sm font-bold text-gray-900 dark:text-white outline-none transition-colors"
               />
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <button
-              onClick={saveAllChanges}
-              disabled={savingField === 'all'}
-              className="flex items-center gap-1.5 h-8 px-4 rounded-none bg-[#ff5e1f] text-white hover:bg-[#ff7038] disabled:opacity-50 transition-colors font-sans text-xs font-bold uppercase tracking-wider"
-            >
-              {savingField === 'all' ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>Saving...</span>
-                </>
-              ) : (
-                <>
-                  <Save className="w-3.5 h-3.5" />
-                  <span>Save</span>
-                </>
-              )}
-            </button>
             {task.notionUrl && (
               <a
                 href={task.notionUrl}
@@ -299,15 +306,41 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
           </div>
         </div>
 
-        <div className="px-5 py-3 border-b border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/30 dark:bg-[#16181d]/30 flex items-center justify-between text-xs font-sans shrink-0">
+        <div className="px-5 py-2.5 border-b border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/30 dark:bg-[#16181d]/30 flex items-center justify-between text-xs font-sans shrink-0">
           <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 font-bold">
             <AlarmClock className="w-3.5 h-3.5 text-gray-400" />
             <span>Last Edited: <strong className="text-gray-700 dark:text-gray-300">{lastEditedLabel}</strong></span>
           </div>
+
+          {/* Auto-save Status Indicator */}
+          <div className="flex items-center gap-1.5 font-sans text-[11px] font-bold">
+            {saveStatus === 'saving' && (
+              <span className="flex items-center gap-1 text-amber-500 dark:text-amber-400">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                <span>Menyimpan…</span>
+              </span>
+            )}
+            {saveStatus === 'saved' && (
+              <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                <Check className="w-3 h-3" />
+                <span>Tersimpan ✓</span>
+              </span>
+            )}
+            {saveStatus === 'error' && (
+              <span className="flex items-center gap-1 text-red-500">
+                <span>Gagal menyimpan</span>
+              </span>
+            )}
+            {saveStatus === 'idle' && (
+              <span className="text-gray-400 dark:text-gray-500 text-[10px]">
+                Auto-save aktif
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Main Content Area — Full Edge-to-Edge Continuous Container with Smooth Vertical Scrolling */}
-        <div className="min-h-0 flex-1 overflow-y-auto pb-24 divide-y divide-[#f0f0f0] dark:divide-[#272a34] p-0 scroll-smooth [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-gray-300 dark:[&::-webkit-scrollbar-thumb]:bg-[#272a34]">
+        <div className="min-h-0 flex-1 overflow-y-auto flex flex-col divide-y divide-[#f0f0f0] dark:divide-[#272a34] p-0 scroll-smooth [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-gray-300 dark:[&::-webkit-scrollbar-thumb]:bg-[#272a34]">
           {done && (
             <div className="flex items-center gap-2 border-b border-emerald-300 bg-emerald-50 dark:bg-emerald-950/30 px-5 py-3 text-xs font-sans font-bold text-emerald-700 dark:text-emerald-400">
               <CheckCircle className="w-4 h-4" />
@@ -331,7 +364,8 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
                     options={designStatuses.map((s) => ({ id: s.id, label: s.displayName }))}
                     onChange={(nextId) => {
                       setDesignStatusId(nextId);
-                                          }}
+                      triggerAutoSave({ designStatusId: nextId || null });
+                    }}
                   />
                 ) : (
                   <div
@@ -361,7 +395,8 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
                     options={designers.map((d) => ({ id: d.id, label: d.displayName }))}
                     onChange={(nextId) => {
                       setDesignerId(nextId);
-                                          }}
+                      triggerAutoSave({ designerId: nextId || null });
+                    }}
                   />
                 ) : (
                   <div
@@ -400,8 +435,8 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
                       const selectedDoc = doctypes.find((d) => d.id === nextId);
                       const autoPages = getPagesForDoctype(selectedDoc);
                       setPages(autoPages);
-                      const payloadToSave: any = { doctypeId: nextId, pages: autoPages };
-                                          }}
+                      triggerAutoSave({ doctypeId: nextId || null, pages: autoPages });
+                    }}
                   />
                 ) : (
                   <div
@@ -431,9 +466,17 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
                       min="0"
                       value={qtySubmit}
                       onChange={(e) => setQtySubmit(e.target.value)}
+                      onBlur={() => {
+                        const val = qtySubmit !== '' ? Number(qtySubmit) : null;
+                        if (val !== (task.qtySubmit != null ? Number(task.qtySubmit) : null)) {
+                          triggerAutoSave({ qtySubmit: val });
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') e.currentTarget.blur();
+                      }}
                       className="w-full h-full min-h-[44px] rounded-none border-0 bg-gray-50/50 dark:bg-[#16181d]/50 px-5 font-sans text-xs font-bold text-gray-900 dark:text-white outline-none focus:bg-white dark:focus:bg-[#16181d] focus:ring-1 focus:ring-[#ff5e1f] transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
-                    
                   </div>
                 ) : (
                   <div
@@ -461,9 +504,17 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
                       min="0"
                       value={pages}
                       onChange={(e) => setPages(e.target.value)}
+                      onBlur={() => {
+                        const val = pages !== '' ? Number(pages) : null;
+                        if (val !== (task.pages != null ? Number(task.pages) : null)) {
+                          triggerAutoSave({ pages: val });
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') e.currentTarget.blur();
+                      }}
                       className="w-full h-full min-h-[44px] rounded-none border-0 bg-gray-50/50 dark:bg-[#16181d]/50 px-5 font-sans text-xs font-bold text-gray-900 dark:text-white outline-none focus:bg-white dark:focus:bg-[#16181d] focus:ring-1 focus:ring-[#ff5e1f] transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
-                    
                   </div>
                 ) : (
                   <div
@@ -497,7 +548,8 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
                               ? languages.filter(l => l !== lang)
                               : [...languages, lang];
                             setLanguages(next);
-                                                      }}
+                            triggerAutoSave({ languages: next });
+                          }}
                           className={`h-full min-h-[44px] px-4 font-sans text-xs font-bold uppercase transition-colors cursor-pointer flex items-center justify-center ${
                             isSelected
                               ? 'bg-[#7c3aed] text-white font-bold'
@@ -541,7 +593,8 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
                     options={PRIORITY_OPTIONS}
                     onChange={(nextP) => {
                       setPriority(nextP);
-                                          }}
+                      triggerAutoSave({ priority: nextP || null });
+                    }}
                   />
                 ) : (
                   <div
@@ -571,7 +624,8 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
                     options={LICENSE_OPTIONS}
                     onChange={(nextL) => {
                       setLicense(nextL);
-                                          }}
+                      triggerAutoSave({ license: nextL || null });
+                    }}
                   />
                 ) : (
                   <div
@@ -600,7 +654,8 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
                     placeholder="Select Month"
                     onChange={(nextM) => {
                       setTaskMonth(nextM);
-                                          }}
+                      triggerAutoSave({ taskMonth: nextM || null });
+                    }}
                   />
                 ) : (
                   <div
@@ -617,6 +672,7 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
             </div>
 
             {/* Brand (Accounts) Row */}
+            {canSeeBrand && (
             <div className="flex items-stretch text-xs font-sans min-h-[44px]">
               <div className="w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
                 <Building2 className="w-3.5 h-3.5 text-gray-400" />
@@ -636,7 +692,8 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
                               ? selectedAccountIds.filter(id => id !== acc.id)
                               : [...selectedAccountIds, acc.id];
                             setSelectedAccountIds(next);
-                                                      }}
+                            triggerAutoSave({ accountIds: next });
+                          }}
                           className={`px-2.5 py-1 text-[11px] font-bold rounded-none border transition-colors cursor-pointer ${
                             isSelected
                               ? 'bg-[#06b6d4] border-[#06b6d4] text-white'
@@ -663,10 +720,47 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
                 )}
               </div>
             </div>
+            )}
           </div>
 
 
-          {/* Canva Template Link Continuous Section */}
+          {/* Platform Dropbox: tampilkan Upload & Dropbox Link; selain itu Canva Template Link */}
+          {task?.productionUnit?.platform.outputType === 'dropbox_link' ? (
+          <div className="flex flex-col bg-white dark:bg-[#0d0e12]">
+            <div className="px-5 py-2.5 bg-gray-50/50 dark:bg-[#16181d]/50 border-b border-[#f0f0f0] dark:border-[#272a34]">
+              <h3 className="text-xs font-sans font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
+                <LinkIcon className="w-3.5 h-3.5" />
+                DROPBOX
+              </h3>
+            </div>
+            <div className="divide-y divide-[#f0f0f0] dark:divide-[#272a34]">
+              <div className="flex items-center justify-between gap-3 px-5 py-3 text-xs font-sans">
+                <span className="text-gray-500 dark:text-gray-400 shrink-0">Upload Link</span>
+                {task?.uploadRequestUrl ? (
+                  <a href={task.uploadRequestUrl} target="_blank" rel="noopener noreferrer" className="truncate font-bold text-[#ff5e1f] hover:underline inline-flex items-center gap-1.5 min-w-0">
+                    <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                    <span className="truncate">{task.uploadRequestUrl}</span>
+                  </a>
+                ) : (
+                  <span className="text-gray-400 dark:text-gray-500">Belum dibuat</span>
+                )}
+              </div>
+              {canSeeDropbox && (
+              <div className="flex items-center justify-between gap-3 px-5 py-3 text-xs font-sans">
+                <span className="text-gray-500 dark:text-gray-400 shrink-0">Dropbox Link</span>
+                {task?.outputUrl ? (
+                  <a href={task.outputUrl} target="_blank" rel="noopener noreferrer" className="truncate font-bold text-[#ff5e1f] hover:underline inline-flex items-center gap-1.5 min-w-0">
+                    <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                    <span className="truncate">{task.outputUrl}</span>
+                  </a>
+                ) : (
+                  <span className="text-gray-400 dark:text-gray-500">Menunggu file diunggah</span>
+                )}
+              </div>
+              )}
+            </div>
+          </div>
+          ) : (
           <div className="flex flex-col bg-white dark:bg-[#0d0e12]">
             <div className="px-5 py-2.5 bg-gray-50/50 dark:bg-[#16181d]/50 border-b border-[#f0f0f0] dark:border-[#272a34] flex items-center justify-between">
               <h3 className="text-xs font-sans font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
@@ -692,6 +786,7 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
                       onClick={() => {
                         const next = canvaUrls.filter((_, i) => i !== idx);
                         setCanvaUrls(next);
+                        triggerAutoSave({ canvaLinks: next });
                       }}
                       className="p-1 text-gray-400 hover:text-red-500 transition-colors cursor-pointer shrink-0"
                       title="Remove link"
@@ -733,6 +828,7 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
                       setCanvaUrls(next);
                       setNewCanvaUrl('');
                       setCanvaLinkError('');
+                      triggerAutoSave({ canvaLinks: next });
                     }}
                     disabled={!validateTemplateLink(newCanvaUrl).ok}
                     className="px-5 bg-[#ff5e1f] text-white font-sans text-xs font-bold uppercase tracking-wider hover:bg-[#ff7038] transition-colors cursor-pointer flex items-center justify-center gap-1 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -747,79 +843,45 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
               </div>
             </div>
           </div>
+          )}
 
-          {/* Task Body Content / Wireframe Editor Section */}
-          <div className="bg-white dark:bg-[#0d0e12] border-t border-[#f0f0f0] dark:border-[#272a34] p-5">
-            <TaskBodyEditor
-              value={bodyText}
-              onChange={(nextText) => {
-                setBodyText(nextText);
-              }}
-            />
-          </div>
-
-          {/* Comments Continuous Section */}
-          <div className="flex flex-col bg-white dark:bg-[#0d0e12]">
-            <div className="px-5 py-2 bg-gray-50/50 dark:bg-[#16181d]/50 border-b border-[#f0f0f0] dark:border-[#272a34]">
-              <h3 className="text-xs font-sans font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
-                <MessageSquare className="w-3.5 h-3.5" />
-                COMMENTS {commentCount > 0 && `(${commentCount})`}
-              </h3>
-            </div>
-            <div className="divide-y divide-[#f0f0f0] dark:divide-[#272a34]">
-              {!loaded ? (
-                <div className="flex justify-center py-4">
-                  <Loader2 className="w-4 h-4 animate-spin text-[#ff5e1f]" />
-                </div>
-              ) : comments.length === 0 ? (
-                <p className="px-5 py-3 text-center text-xs font-sans text-gray-400 dark:text-gray-500">
-                  Belum ada komentar
-                </p>
-              ) : (
-                comments.map((c) => (
-                  <div key={c.id} className="group relative px-5 py-2.5 bg-white dark:bg-[#0d0e12] hover:bg-gray-50/50 dark:hover:bg-[#16181d]/50 transition-colors">
-                    <button
-                      onClick={() => handleDeleteComment(c.id)}
-                      className="absolute right-4 top-2.5 p-1 text-gray-400 opacity-0 group-hover:opacity-100 hover:text-red-500 transition-all cursor-pointer"
-                      title="Hapus komentar"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                    <p className="text-xs font-sans text-gray-800 dark:text-gray-200 pr-6 whitespace-pre-wrap">{c.content}</p>
-                    <div className="mt-1 flex items-center gap-1 text-[10px] font-sans text-gray-400">
-                      <Clock className="w-3 h-3" />
-                      {new Date(c.createdAt).toLocaleDateString('id-ID', {
-                        day: 'numeric', month: 'short', year: 'numeric',
-                        hour: '2-digit', minute: '2-digit',
-                      })}
-                    </div>
+          {/* Custom Fields (properti Notion di luar skema inti) */}
+          {Object.keys(customValues).length > 0 && (
+            <div className="flex flex-col bg-white dark:bg-[#0d0e12]">
+              <div className="px-5 py-2.5 bg-gray-50/50 dark:bg-[#16181d]/50 border-b border-[#f0f0f0] dark:border-[#272a34]">
+                <h3 className="text-xs font-sans font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                  CUSTOM FIELDS
+                </h3>
+              </div>
+              <div className="divide-y divide-[#f0f0f0] dark:divide-[#272a34]">
+                {Object.entries(customValues).map(([key, value]) => (
+                  <div key={key} className="flex items-center gap-3 px-5 py-2.5 text-xs font-sans">
+                    <span className="w-40 shrink-0 truncate text-gray-500 dark:text-gray-400">{key}</span>
+                    <input
+                      value={value}
+                      onChange={(e) => setCustomValues((prev) => ({ ...prev, [key]: e.target.value }))}
+                      onBlur={() => triggerAutoSave({ customFields: { ...(task?.customFields || {}), ...customValues } as Record<string, string> })}
+                      className="flex-1 min-w-0 bg-transparent border-0 px-0 font-bold text-gray-900 dark:text-white outline-none focus:ring-0"
+                    />
                   </div>
-                ))
-              )}
+                ))}
+              </div>
             </div>
-          </div>
-        </div>
+          )}
 
-        {/* Comment Input Symmetrical 2-Column Footer (Slim h-11) */}
-        <div className="grid grid-cols-[1fr_auto] border-t border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] items-stretch h-11 shrink-0">
-          <textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSubmitComment();
+          {/* DESIGN BRIEF & COMMENTS TABBED INTERFACE */}
+          <DesignBriefSection
+            bodyText={bodyText}
+            onBodyTextChange={(nextText) => {
+              setBodyText(nextText);
+              triggerAutoSave({ bodyText: nextText });
             }}
-            placeholder="Tulis komentar... (Cmd/Ctrl + Enter untuk kirim)"
-            rows={1}
-            className="w-full h-full border-0 bg-transparent px-4 py-2.5 font-sans text-xs text-gray-900 dark:text-white placeholder:text-gray-400 outline-none resize-none focus:ring-0"
+            comments={comments}
+            commentsLoaded={loaded}
+            onAddComment={handleAddComment}
+            onDeleteComment={handleDeleteComment}
+            sendingComment={sending}
           />
-          <button
-            onClick={handleSubmitComment}
-            disabled={sending || !content.trim()}
-            className="h-full px-5 bg-[#ff5e1f] hover:bg-[#ff7038] font-sans text-xs font-bold uppercase tracking-wider text-white transition-colors disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer flex items-center justify-center gap-1.5 border-l border-[#f0f0f0] dark:border-[#272a34]"
-          >
-            {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-            <span>KIRIM</span>
-          </button>
         </div>
       </aside>
     </div>

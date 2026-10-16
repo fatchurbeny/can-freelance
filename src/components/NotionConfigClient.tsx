@@ -8,7 +8,6 @@ import {
   deleteNotionConfigAction,
 } from '@/app/actions/notion-config';
 import { getLatestSyncStatus } from '@/app/actions/sync';
-import Sidebar from '@/components/Sidebar';
 import TopBar from '@/components/TopBar';
 import { 
   Key, 
@@ -135,7 +134,6 @@ export default function NotionConfigClient({ initialSyncLog }: { initialSyncLog:
     <div className="min-h-screen bg-white dark:bg-[#0d0e12] text-[#262626] dark:text-[#f4f4f5] transition-colors">
       <TopBar badgeLabel="NOTION CONFIG" />
       <div className="flex min-h-[calc(100vh-56px)] flex-col md:flex-row">
-        <Sidebar currentSyncLog={latestSyncLog} />
 
         <main className="flex min-h-0 min-w-0 flex-1 md:ml-56 flex-col p-3 sm:p-6 md:p-8 space-y-6 overflow-x-hidden relative bg-grid-pattern">
 

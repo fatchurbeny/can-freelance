@@ -1,16 +1,33 @@
+import { requireAccess } from '@/lib/access';
 import { getDoctypes } from '@/lib/queries';
 import { getLatestSyncStatus } from '@/app/actions/sync';
 import { getContractRateAction } from '@/app/actions/notion-config';
-import Sidebar from '@/components/Sidebar';
 import TopBar from '@/components/TopBar';
 import { Gavel, Calendar } from 'lucide-react';
 import DoctypeTable from '@/components/DoctypeTable';
+import prisma from '@/lib/prisma';
+import { listPlatformsAction } from '@/app/actions/production-unit';
 import ContractRateEditor from '@/components/ContractRateEditor';
 
 export const dynamic = 'force-dynamic';
 
 export default async function RateCardPage() {
+  await requireAccess(['rateCard.view']);
   const doctypes = await getDoctypes();
+  const platforms = await listPlatformsAction();
+  const [bundles, bundleUnits, bundleDoctypes] = await Promise.all([
+    prisma.bundle.findMany({
+      orderBy: { updatedAt: 'desc' },
+      include: {
+        items: {
+          orderBy: { sortOrder: 'asc' },
+          include: { productionUnit: { include: { platform: true } }, doctype: { select: { displayName: true } } },
+        },
+      },
+    }),
+    prisma.productionUnit.findMany({ where: { isActive: true }, select: { id: true, name: true, platformId: true }, orderBy: { createdAt: 'asc' } }),
+    prisma.doctype.findMany({ where: { isActive: true, usage: { in: ['Bundle', 'Keduanya'] } }, select: { id: true, displayName: true, platformId: true, pages: true }, orderBy: { displayName: 'asc' } }),
+  ]);
   const latestSyncLog = await getLatestSyncStatus();
   const contractRateRes = await getContractRateAction();
   const contractRate = contractRateRes.success ? contractRateRes.contractRate : 15000;
@@ -19,7 +36,6 @@ export default async function RateCardPage() {
     <div className="min-h-screen bg-white dark:bg-[#0d0e12] text-[#262626] dark:text-[#f4f4f5] transition-colors">
       <TopBar badgeLabel="RATE CARD" />
       <div className="flex min-h-[calc(100vh-56px)] flex-col md:flex-row">
-        <Sidebar currentSyncLog={latestSyncLog} />
 
         <main className="flex min-h-0 min-w-0 flex-1 md:ml-56 flex-col p-3 sm:p-6 md:p-8 bg-grid-pattern">
           {/* Top Block Container: Contract Rules Banner (Image 1 Style) */}
@@ -63,7 +79,8 @@ export default async function RateCardPage() {
 
           {/* Bottom Block Container: Continuous Card for Tabs + Toolbar + Table */}
           <div className="w-full rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] divide-y divide-[#f0f0f0] dark:divide-[#272a34] shadow-none">
-            <DoctypeTable doctypes={doctypes as any} contractRate={contractRate ?? 15000} />
+            <DoctypeTable doctypes={doctypes as any} contractRate={contractRate ?? 15000} platforms={platforms}
+              bundles={JSON.parse(JSON.stringify(bundles))} bundleUnits={bundleUnits} bundleDoctypes={bundleDoctypes} />
           </div>
         </main>
       </div>

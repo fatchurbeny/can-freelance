@@ -53,7 +53,7 @@ export default function ContractRateEditor({
         id="edit-contract-rate-button"
       >
         <Banknote className="h-4 w-4 text-[#ff5e1f] shrink-0" />
-        <span>Rate/Pool: <strong className="font-bold text-gray-900 dark:text-white">IDR {new Intl.NumberFormat('id-ID').format(initialRate)}</strong></span>
+        <span>Tarif Dasar Default: <strong className="font-bold text-gray-900 dark:text-white">IDR {new Intl.NumberFormat('id-ID').format(initialRate)}</strong></span>
         <PencilLine className="h-3.5 w-3.5 text-gray-400 dark:text-gray-500 shrink-0 ml-1" />
       </button>
 
@@ -66,10 +66,10 @@ export default function ContractRateEditor({
                 <div className="p-4 sm:p-5 bg-gray-50/50 dark:bg-[#16181d]/50 flex items-start justify-between gap-4">
                   <div>
                     <h3 className="text-xs font-bold font-sans uppercase tracking-wider text-gray-900 dark:text-white">
-                      Edit Contract Rate
+                      Edit Tarif Dasar Default
                     </h3>
                     <p className="mt-1 text-xs font-sans text-gray-500 dark:text-gray-400">
-                      Simpan rate/pool di setting kontrak. Doctype tetap di tabel bawah.
+                      Tarif fallback untuk platform yang belum punya tarif dasar sendiri.
                     </p>
                   </div>
                   <button
@@ -84,7 +84,7 @@ export default function ContractRateEditor({
                 {/* Body Content Cell */}
                 <div className="p-4 sm:p-5 space-y-4 bg-white dark:bg-[#0d0e12]">
                   <label className="flex flex-col gap-2.5 text-xs font-sans font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">
-                    <span>Rate / Pool</span>
+                    <span>Tarif / Halaman</span>
                     <input
                       id="contract-rate-input"
                       type="number"
@@ -118,7 +118,7 @@ export default function ContractRateEditor({
                     disabled={isSaving}
                     className="w-full py-3.5 px-4 bg-[#ff5e1f] hover:bg-[#ff7038] font-sans text-xs font-bold uppercase tracking-wider text-white transition-colors disabled:opacity-50 cursor-pointer text-center"
                   >
-                    {isSaving ? 'Saving…' : 'Save Rate / Pool'}
+                    {isSaving ? 'Saving…' : 'Save Tarif'}
                   </button>
                 </div>
               </div>
