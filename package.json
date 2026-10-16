@@ -8,7 +8,9 @@
     "start": "NODE_ENV=production next start",
     "lint": "eslint",
     "postinstall": "prisma generate",
-    "graphify": "tsx scripts/graphify-parser.ts"
+    "prepare": "git config core.hooksPath .githooks 2>/dev/null || true",
+    "graphify": "tsx scripts/graphify-parser.ts",
+    "deploy:vps": "bash scripts/deploy-vps.sh"
   },
   "dependencies": {
     "@notionhq/client": "^5.22.0",

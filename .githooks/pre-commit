@@ -1,0 +1,21 @@
+#!/bin/sh
+# Regenerate graph.json before each commit so the Knowledge Graph never goes stale,
+# regardless of which editor or model made the change. Skip with: SKIP_GRAPHIFY=1 git commit ...
+[ -n "$SKIP_GRAPHIFY" ] && exit 0
+
+if ! npm run --silent graphify >/dev/null 2>&1; then
+  echo "pre-commit: 'npm run graphify' failed; committing without updating graph.json" >&2
+  exit 0
+fi
+
+# generatedAt changes on every run; only keep graph.json if nodes/links really changed.
+if git cat-file -e HEAD:graph.json 2>/dev/null; then
+  old=$(git show HEAD:graph.json | jq -S 'del(.generatedAt)' 2>/dev/null)
+  new=$(jq -S 'del(.generatedAt)' graph.json 2>/dev/null)
+  if [ -n "$old" ] && [ "$old" = "$new" ]; then
+    git checkout -- graph.json
+    exit 0
+  fi
+fi
+
+git add graph.json

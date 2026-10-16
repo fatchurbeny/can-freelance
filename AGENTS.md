@@ -59,10 +59,12 @@ Untuk efisiensi token, keakuratan saran, dan kontinuitas konteks antar LLM (Gemi
 1. **Mandatory Pre-Execution Knowledge Check (WAJIB Sebelum Eksekusi / Memberi Saran)**:
    - Sebelum LLM memberikan **saran arsitektur**, **menjawab pertanyaan teknis**, atau **melakukan eksekusi edit kode/perintah**, LLM WAJIB membaca [`docs/knowledge/index.md`](file:///Users/fatchurbeny/Documents/Project/can-freelance/docs/knowledge/index.md) dan [`docs/knowledge/session-handover.md`](file:///Users/fatchurbeny/Documents/Project/can-freelance/docs/knowledge/session-handover.md) terlebih dahulu.
    - LLM dilarang keras memberikan asumsi kode atau saran tanpa memeriksa histori pengerjaan terakhir dan aturan di Knowledge Graph.
+   - `session-handover.md` dijaga ±5 KB. Riwayat lengkap ada di `docs/knowledge/archive/` dan TIDAK boleh dibaca utuh; gunakan `grep` bila butuh keputusan lama.
 
 2. **On-Demand Retrieval Modul Pengetahuan**:
-   - Untuk aturan bisnis, skema data, dan gotchas, merujuk pada modul `docs/knowledge/*.md` yang relevan (`entities.md`, `modules.md`, `business-rules.md`, `issues-and-fixes.md`).
-   - Untuk penelusuran dependensi kode teknis (call graph/imports), merujuk pada `graph.json` (Graphify) jika tersedia.
+   - Untuk aturan bisnis, skema data, dan gotchas, buka hanya modul `docs/knowledge/*.md` yang relevan (`entities.md`, `modules.md`, `business-rules.md`, `issues-and-fixes.md`). Jangan membaca semua file.
+   - Untuk pertanyaan dampak/dependensi ("apa yang memakai X", "apa yang terdampak jika X berubah"), query `graph.json` lebih dulu dengan `jq` (jangan dibaca utuh, ±80 KB), contoh: `jq '.links[] | select(.target=="component:TopBar") | .source' graph.json`.
+   - `graph.json` diperbarui otomatis oleh git `pre-commit` hook (`.githooks/pre-commit`, aktif lewat `npm install`/`npm run prepare`). Bila terlihat usang, jalankan `npm run graphify`.
 
 3. **Mekanisme Update Sesi**:
    - Setelah menyelesaikan perubahan besar, bug fix, atau penambahan fitur, LLM WAJIB memperbarui `docs/knowledge/session-handover.md` (status aktif & catatan keputusan) dan `docs/knowledge/issues-and-fixes.md` (jika menemukan bug/edge case baru).

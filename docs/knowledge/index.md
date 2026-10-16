@@ -28,5 +28,16 @@ Untuk menghemat konsumsi token, **baca hanya modul yang relevan** dengan tugas y
    - Buka modul spesifik di atas sesuai fokus pengerjaan (contoh: jika mengerjakan UI/Komponen, baca `modules.md` & `issues-and-fixes.md`).
 2. **Penelusuran Kode Teknis (AST Call Graph)**:
    - Jika membutuhkan penelusuran panggilan fungsi atau dependensi import level rendah, periksa `graph.json` jika tersedia.
+   - Struktur: `nodes[]` (`id`, `label`, `type` = page|component|action|model|doc, `filepath`) dan `links[]` (`source`, `target`, `relation` = renders|invokes|queries|enforces|imports). Jangan dibaca utuh (±80 KB); filter dengan `jq`.
+   - Contoh: `jq '.links[] | select(.target=="component:TopBar") | .source' graph.json`
+   - Jika terlihat usang, jalankan `npm run graphify`.
 3. **Akhir Sesi**:
    - WAJIB perbarui [`docs/knowledge/session-handover.md`](file:///Users/fatchurbeny/Documents/Project/can-freelance/docs/knowledge/session-handover.md) sebelum menutup sesi percakapan.
+
+- [Multi-Production Plan](multi-production-plan.md) — rencana bertahap production per platform (Fase 1–7)
+- [Spec Tab Parameter Issue & Email Notification](production-tabs-spec.md) — konsep + akses Art Director / Project Manager
+- [Backlog: Resources Library](../backlog/resources-library.md) — katalog aset Canva per folder (tab Icon/Illustrasi); DITUNDA menunggu meeting soal MFA akun Canva
+- [Spec User Role & Login ID+PIN](user-role-spec.md) — 7 role berbasis permission, Membership per production, login ID+PIN, Lihat sebagai, Profil; wireframe: https://claude.ai/artifact/Fvq1og4yp9W5YTAz298HQL
+- [Backlog: Role kustom & matriks bisa diedit](../backlog/custom-roles-matrix.md) — rencana role kustom (tabel Role, editor matriks); BELUM dikerjakan
+- [Pola Dropdown Sidebar](sidebar-dropdown-pattern.md) — aturan grup/dropdown sidebar gaya tab Dia (hanya anak aktif, expand per grup)
+- [Arsip Session Handover](archive/session-handover-through-2026-10-16.md) — riwayat lengkap sampai 2026-10-16; JANGAN dibaca utuh, cukup `grep`
