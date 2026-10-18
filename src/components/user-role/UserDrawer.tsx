@@ -59,7 +59,12 @@ export default function UserDrawer({ mode, user, units, freeDesigners, meId, onC
   const setRow = (key: number, patch: Partial<Row>) => setRows((prev) => prev.map((r) => (r.key === key ? { ...r, ...patch } : r)));
   const changeRole = (key: number, roleKey: string) => {
     const scope = ROLE_SCOPE[roleKey as RoleKey];
-    setRow(key, { roleKey, unitId: scope === 'global' ? '' : scope === 'unit' ? units[0]?.id ?? '' : '' });
+    // Pertahankan production yang sudah dipilih bila masih valid untuk scope role baru.
+    setRows((prev) => prev.map((r) => {
+      if (r.key !== key) return r;
+      const unitId = scope === 'global' ? '' : scope === 'unit' ? r.unitId || units[0]?.id || '' : r.unitId;
+      return { ...r, roleKey, unitId };
+    }));
     if (DESIGNER_ROLES.includes(roleKey as RoleKey) && !isEdit) {
       setEmploymentType(roleKey === 'designer_fulltime' ? 'FULL_TIME' : 'FREELANCE');
     }

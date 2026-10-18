@@ -4,7 +4,9 @@ import { DEV_TOOLS_ENABLED } from '@/lib/dev-tools';
 import { Suspense } from 'react';
 import { getLatestSyncStatus } from '@/app/actions/sync';
 import TopBar from '@/components/TopBar';
-import KnowledgeGraphViewer from '@/components/KnowledgeGraphViewer';
+import fs from 'fs';
+import path from 'path';
+import KnowledgeGraphViewer, { type KnowledgeGraphStats } from '@/components/KnowledgeGraphViewer';
 
 // Di produksi halaman ini 404; jangan bocorkan judulnya ke tab browser.
 export const metadata = DEV_TOOLS_ENABLED
@@ -13,6 +15,22 @@ export const metadata = DEV_TOOLS_ENABLED
       description: 'Visualisasi Knowledge Graph, Peta Modul, Rumus Bisnis SaaS, & Log Handover Konteks Sesi.',
     }
   : { title: 'Halaman Tidak Ditemukan | CAN-Freelance' };
+
+/** Ringkasan jumlah node graph.json per jenis (lihat scripts/graphify-parser.ts). */
+function readGraphStats(): KnowledgeGraphStats | null {
+  try {
+    const graph = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'graph.json'), 'utf-8')) as { nodes: { id: string }[] };
+    const count = (...prefixes: string[]) => graph.nodes.filter((n) => prefixes.some((p) => n.id.startsWith(p))).length;
+    return {
+      models: count('model:'),
+      pages: count('page:'),
+      actions: count('action:', 'lib:', 'api:'),
+      rules: count('rule:'),
+    };
+  } catch {
+    return null;
+  }
+}
 
 export default async function KnowledgeGraphPage() {
   if (!DEV_TOOLS_ENABLED) notFound();
@@ -30,7 +48,7 @@ export default async function KnowledgeGraphPage() {
         {/* Main content */}
         <main className="flex-1 md:ml-56 p-3 sm:p-6 md:p-8 space-y-6 overflow-x-hidden bg-grid-pattern">
           <Suspense fallback={<div className="p-6 font-mono text-xs text-gray-500">Loading Knowledge Graph...</div>}>
-            <KnowledgeGraphViewer />
+            <KnowledgeGraphViewer stats={readGraphStats()} />
           </Suspense>
         </main>
       </div>
