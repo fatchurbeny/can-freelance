@@ -20,6 +20,7 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 * Ganti PIN admin `FT-001` (menunggu user).
 * Pastikan Nginx Basic Auth di VPS (`portal.fatchurbeny.com.conf`) sudah dimatikan agar freelance bisa menjangkau `/login` — dihapus dari daftar oleh sesi 2026-10-17 tanpa catatan perubahan Nginx; belum diverifikasi.
 * Merge `chore/knowledge-token-savings` ke `main` (kode yang berjalan di VPS saat ini).
+* **Analisa 2026-10-18 (Claude Code)**: (1) gerbang login di VPS kemungkinan tidak aktif — `/can-freelance` 307 ke unit & `/production` 200 tanpa sesi; cek `AUTH_MODE`/`SESSION_SECRET` terbaca PM2 (`.env` dikecualikan dari tar, standalone membaca `.env` di `.next/standalone/`). Di lokal gerbang berfungsi. (2) graphify: **diperbaiki** (lihat sesi 2026-10-18).
 * Belum diuji di browser: edit keanggotaan multi-baris, Reset PIN/Nonaktifkan dari `/user-role`; print/download statement dengan bundle; simpan toggle `isAgency`.
 * Sync `Dropbox Link` ke Notion (perlu file diunggah ke File Request).
 * Tab Email Notifications & Overview di production Elements masih konten Canva.
@@ -35,6 +36,10 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 
 ## 📝 Sesi Terakhir
 
+### 2026-10-18 — Graphify auto-discovery (Claude Code, `🏛️ [Architecture & Knowledge Ops]`)
+* `graphify-parser.ts` kini menemukan otomatis: page/layout, semua `src/app/actions/*` (`action:`), route handler (`api:`), komponen di subfolder + yang ditaruh di `src/app`, semua `src/lib/*` (`lib:`), dan 25 model dari `schema.prisma`. Link dari import yang di-resolve ke file (termasuk `import()`), plus `prisma.<model>.` → `queries`. Link manual yang target-nya hilang dibuang dengan peringatan; script exit 1 bila gagal.
+* Sebelumnya file `src/app/actions/*.ts` & `route.ts` tercatat salah sebagai `page:`; model `Brand`/`ContractRate`/`BillingStatement` (sudah tidak ada) dihapus. Hasil: 239 node, 545 link, semua model punya link; output deterministik.
+
 ### 2026-10-17 — DevOps & Release Deployment to Biznet GIO (Antigravity, `🛡️ [DevOps & Release]`)
 * Production build Next.js 16 standalone sukses dikompilasi dari branch `chore/knowledge-token-savings`.
 * Database PostgreSQL VPS Biznet GIO (`103.89.5.148`) dimigrasikan via `vps_migration_step.sql` (hanya di VPS, tidak ada di repo) + `prisma db push`: menambahkan tabel `platforms`, `production_units`, `dropbox_connections`, `bundles`, `bundle_items`, `bundle_orders`, `users`, `memberships`, `sessions`.
@@ -42,13 +47,6 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 * Inisialisasi user Admin pertama `FT-001` via `scripts/create-admin.ts`.
 * Rilis standalone diekstrak ke `/www/wwwroot/can-freelance-app/.next/standalone`, static chunks Nginx disinkronkan, upload persisten ditautkan (`storage/uploads`), dan reload PM2 berjalan zero-downtime.
 * Verifikasi endpoint live via HTTPS Cloudflare: `/can-freelance` (307 redirect ke unit Lamongan), `/production` (200 OK), `/billing-statement` (200 OK).
-
-### 2026-10-16 — Architecture & Knowledge Ops (Claude Code)
-* Handover dipangkas dari 187 KB ke ringkasan ini untuk menghemat token awal sesi; isi lengkap dipindah ke `archive/`.
-* Aturan baca di `CLAUDE.md` dan `index.md` diubah: baca `index.md` + bagian relevan saja, dan telusuri `graph.json` (via `jq`) untuk pertanyaan dampak/dependensi.
-* Git `pre-commit` hook (`.githooks/pre-commit`, diaktifkan lewat script `prepare` → `core.hooksPath`) menjalankan `npm run graphify` dan hanya men-stage `graph.json` bila node/relasi berubah (abaikan `generatedAt`). Lewati dengan `SKIP_GRAPHIFY=1`. `graph.json` di-commit ke git.
-* `AGENTS.md` (sumber aturan bersama) dan `.cursorrules` diperbarui dengan aturan baca-sesuai-kebutuhan + query `graph.json` via `jq`.
-* Belum diuji: jalur "tidak ada perubahan" di hook secara end-to-end, dan hook di VPS (`npm install` menjalankan `prepare`).
 
 ---
 
