@@ -10,15 +10,16 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 
 ## 📌 Status Aktif
 
-* **Branch**: `main` · **Peran terakhir**: `⚙️ [Backend & Database]`, `🎨 [Frontend & UI/UX]`, `🏛️ [Architecture & Knowledge Ops]`
+* **Branch**: `chore/knowledge-token-savings` (sudah dirilis ke VPS, belum di-merge ke `main`) · **Peran terakhir**: `🛡️ [DevOps & Release]`, `🏛️ [Architecture & Knowledge Ops]`
 * **Multi-Production**: Fase 1–8 sebagian besar selesai (Production Hub, platform per production, Dropbox File Request untuk Envato Elements, Bundle & Order Bundle, tarif per platform). Detail rencana: [`multi-production-plan.md`](multi-production-plan.md).
-* **User Role Fase 1**: login ID + PIN 6 digit, role berbasis permission, Membership per ProductionUnit, "Lihat sebagai", halaman `/user-role`, `/profile`. Spec: [`user-role-spec.md`](user-role-spec.md). `AUTH_MODE=session` aktif di `.env` lokal.
+* **User Role Fase 1**: login ID + PIN 6 digit, role berbasis permission, Membership per ProductionUnit, "Lihat sebagai", halaman `/user-role`, `/profile`. Spec: [`user-role-spec.md`](user-role-spec.md). `AUTH_MODE=session` aktif di `.env` lokal dan VPS Biznet GIO.
 * **Sidebar**: pindah ke `layout.tsx` (`AppSidebar`), grup dropdown gaya pohon. Pola baku: [`sidebar-dropdown-pattern.md`](sidebar-dropdown-pattern.md).
 
 ## ⏳ Belum Selesai / Menunggu
 
 * Ganti PIN admin `FT-001` (menunggu user).
-* Nginx Basic Auth di VPS harus dimatikan agar freelance bisa menjangkau `/login`.
+* Pastikan Nginx Basic Auth di VPS (`portal.fatchurbeny.com.conf`) sudah dimatikan agar freelance bisa menjangkau `/login` — dihapus dari daftar oleh sesi 2026-10-17 tanpa catatan perubahan Nginx; belum diverifikasi.
+* Merge `chore/knowledge-token-savings` ke `main` (kode yang berjalan di VPS saat ini).
 * Belum diuji di browser: edit keanggotaan multi-baris, Reset PIN/Nonaktifkan dari `/user-role`; print/download statement dengan bundle; simpan toggle `isAgency`.
 * Sync `Dropbox Link` ke Notion (perlu file diunggah ke File Request).
 * Tab Email Notifications & Overview di production Elements masih konten Canva.
@@ -33,6 +34,14 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 * Ubah UI/role → perbarui wireframe: https://claude.ai/artifact/Fvq1og4yp9W5YTAz298HQL
 
 ## 📝 Sesi Terakhir
+
+### 2026-10-17 — DevOps & Release Deployment to Biznet GIO (Antigravity, `🛡️ [DevOps & Release]`)
+* Production build Next.js 16 standalone sukses dikompilasi dari branch `chore/knowledge-token-savings`.
+* Database PostgreSQL VPS Biznet GIO (`103.89.5.148`) dimigrasikan via `vps_migration_step.sql` (hanya di VPS, tidak ada di repo) + `prisma db push`: menambahkan tabel `platforms`, `production_units`, `dropbox_connections`, `bundles`, `bundle_items`, `bundle_orders`, `users`, `memberships`, `sessions`.
+* Menjalankan backfill data awal idempoten (`scripts/backfill-multi-production.ts`): 316 tasks, 20 doctypes, 5 accounts terhubung ke Platform Canva & Production Unit Freelance Lamongan.
+* Inisialisasi user Admin pertama `FT-001` via `scripts/create-admin.ts`.
+* Rilis standalone diekstrak ke `/www/wwwroot/can-freelance-app/.next/standalone`, static chunks Nginx disinkronkan, upload persisten ditautkan (`storage/uploads`), dan reload PM2 berjalan zero-downtime.
+* Verifikasi endpoint live via HTTPS Cloudflare: `/can-freelance` (307 redirect ke unit Lamongan), `/production` (200 OK), `/billing-statement` (200 OK).
 
 ### 2026-10-16 — Architecture & Knowledge Ops (Claude Code)
 * Handover dipangkas dari 187 KB ke ringkasan ini untuk menghemat token awal sesi; isi lengkap dipindah ke `archive/`.
