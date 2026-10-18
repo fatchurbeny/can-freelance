@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "generatedAt": "2026-10-18T13:37:40.969Z",
+  "generatedAt": "2026-10-18T13:58:44.538Z",
   "nodes": [
     {
       "id": "page:/account-team",
@@ -1299,6 +1299,14 @@
       "details": "React UI Component in src/app/error.tsx"
     },
     {
+      "id": "component:not-found",
+      "label": "not-found",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/app/not-found.tsx",
+      "details": "React UI Component in src/app/not-found.tsx"
+    },
+    {
       "id": "lib:access",
       "label": "access.ts",
       "type": "action",
@@ -1345,6 +1353,14 @@
       "group": "Server Actions & Lib",
       "filepath": "src/lib/color-extractor.ts",
       "details": "Server/shared library in src/lib/color-extractor.ts"
+    },
+    {
+      "id": "lib:dev-tools",
+      "label": "dev-tools.ts",
+      "type": "action",
+      "group": "Server Actions & Lib",
+      "filepath": "src/lib/dev-tools.ts",
+      "details": "Server/shared library in src/lib/dev-tools.ts"
     },
     {
       "id": "lib:doctype-presets",
@@ -2745,6 +2761,12 @@
       "confidence": "EXTRACTED"
     },
     {
+      "source": "api:/knowledge-graph",
+      "target": "lib:dev-tools",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
       "source": "api:/notion/databases",
       "target": "lib:notion",
       "relation": "invokes",
@@ -2973,8 +2995,20 @@
       "confidence": "EXTRACTED"
     },
     {
+      "source": "page:/content-access",
+      "target": "lib:base-path",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
       "source": "page:/knowledge-graph",
       "target": "lib:access",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/knowledge-graph",
+      "target": "lib:dev-tools",
       "relation": "invokes",
       "confidence": "EXTRACTED"
     },
@@ -3975,6 +4009,12 @@
       "confidence": "EXTRACTED"
     },
     {
+      "source": "component:GraphifyVisualizer",
+      "target": "lib:base-path",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
       "source": "component:Header",
       "target": "component:PeriodPicker",
       "relation": "renders",
@@ -4401,6 +4441,12 @@
       "confidence": "EXTRACTED"
     },
     {
+      "source": "component:Sidebar",
+      "target": "lib:dev-tools",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
       "source": "component:SortableTaskLists",
       "target": "lib:period-utils",
       "relation": "invokes",
@@ -4649,6 +4695,12 @@
     {
       "source": "component:MonthFilter",
       "target": "component:MonthCalendarPicker",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:not-found",
+      "target": "component:TopBar",
       "relation": "renders",
       "confidence": "EXTRACTED"
     },

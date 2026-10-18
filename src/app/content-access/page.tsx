@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Database } from 'lucide-react';
 import TopBar from '@/components/TopBar';
+import { APP_BASE_PATH } from '@/lib/base-path';
 
 export default function ContentAccessPage() {
   const [databases, setDatabases] = useState<any[]>([]);
@@ -12,7 +13,7 @@ export default function ContentAccessPage() {
   useEffect(() => {
     async function fetchDatabases() {
       try {
-        const res = await fetch('/api/notion/databases');
+        const res = await fetch(`${APP_BASE_PATH}/api/notion/databases`);
         if (!res.ok) throw new Error('Failed to fetch databases');
         const data = await res.json();
         setDatabases(data.results);
