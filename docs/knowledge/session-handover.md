@@ -19,7 +19,9 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 
 * Ganti PIN admin `FT-001` (menunggu user).
 * Merge `chore/knowledge-token-savings` ke `main` (kode yang berjalan di VPS saat ini).
-* Belum diuji di browser: edit keanggotaan multi-baris, Reset PIN/Nonaktifkan dari `/user-role`; print/download statement dengan bundle; simpan toggle `isAgency`.
+* Tombol "Download all Statement" di `/billing-statement` mengarah ke `/api/billing/download-all` yang tidak ada (dan `<a>` tanpa basePath) → selalu 404.
+* Print statement (`/billing-statement/print`) tidak memuat payout bundle; begitu order bundle completed, total di halaman billing akan lebih besar dari total print. Print juga memanggil `window.print()` otomatis.
+* Escape saat dropdown terbuka di drawer `/user-role` menutup seluruh drawer (isian hilang).
 * Sync `Dropbox Link` ke Notion (perlu file diunggah ke File Request).
 * Tab Email Notifications & Overview di production Elements masih konten Canva.
 * Kanban per platform masih didiskusikan.
@@ -41,6 +43,7 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 
 ### 2026-10-18 — Graphify auto-discovery & Knowledge Graph hanya lokal (Claude Code) — detail di archive.
 * Lanjutan (branch `chore/kg-stats-api-review`): statistik header Knowledge Graph dihitung dari `graph.json`. `/api/palette/strip` & `/api/uploads/[filename]` sengaja publik (diambil Notion tanpa cookie); uploads kini hanya melayani webp/png/jpg + `nosniff`.
+* Uji browser lokal: edit keanggotaan multi-baris, Reset PIN, Nonaktifkan, dan toggle `isAgency` lolos. Fix: ganti role di drawer tidak lagi me-reset production ke unit pertama. Akun uji `FL-002` (QA Test Lokal, nonaktif) ada di DB lokal.
 
 ---
 
