@@ -3,7 +3,7 @@
 import { denyUnless, denyWrite } from '@/lib/access';
 import prisma from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
-import { createTaskAction } from '@/app/actions/qa';
+import { createTaskAction, updateTaskFieldsAction } from '@/app/actions/qa';
 
 export interface CreateBundleOrderInput {
   bundleId: string;
@@ -165,5 +165,41 @@ export async function recordBundleOrderDpAction(orderId: string, amount: number)
     return { success: true };
   } catch {
     return { success: false, error: 'DP gagal dicatat karena terjadi kesalahan pada sistem. Silakan coba lagi.' };
+  }
+}
+
+/**
+ * Ganti designer/agency order bundle. Order adalah sumber utama: semua task bundle ikut diganti
+ * (lewat updateTaskFieldsAction agar tersinkron ke Notion). Bila pembayaran sudah dicatat, pemanggil harus
+ * mengonfirmasi (`confirmPaid`) bahwa catatan pembayaran ikut pindah ke designer baru (koreksi data).
+ */
+export async function updateBundleOrderDesignerAction(orderId: string, designerId: string, confirmPaid = false) {
+  const denied = await denyWrite('billing.view');
+  if (denied) return denied as never;
+  try {
+    const order = await prisma.bundleOrder.findUnique({ where: { id: orderId }, include: { tasks: { select: { id: true } } } });
+    if (!order) return { success: false, error: 'Order tidak ditemukan.' };
+    if ((order.dpPaidAt || order.paidAt) && !confirmPaid) {
+      return { success: false, needsConfirm: true, error: 'Order ini sudah punya pembayaran tercatat; catatan itu ikut pindah ke designer baru.' };
+    }
+    const designer = await prisma.designer.findUnique({ where: { id: designerId }, select: { id: true, status: true } });
+    if (!designer) return { success: false, error: 'Designer tidak ditemukan.' };
+    if (designer.status === 'Resign') return { success: false, error: 'Designer sudah resign.' };
+
+    if (order.designerId !== designerId) {
+      await prisma.bundleOrder.update({ where: { id: orderId }, data: { designerId } });
+    }
+    const failures: string[] = [];
+    for (const task of order.tasks) {
+      const res = await updateTaskFieldsAction(task.id, { designerId });
+      if (!res.success) failures.push(res.error || task.id);
+    }
+
+    revalidatePath('/billing-statement');
+    revalidatePath('/production', 'layout');
+    if (failures.length) return { success: false, error: `Order diperbarui, tetapi sebagian task gagal: ${failures.join('; ')}` };
+    return { success: true };
+  } catch {
+    return { success: false, error: 'Designer gagal diganti karena terjadi kesalahan pada sistem. Silakan coba lagi.' };
   }
 }

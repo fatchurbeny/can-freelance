@@ -698,7 +698,7 @@ export async function syncNotionData(mode: NotionSyncMode = 'incremental') {
           // Upsert Task
           const existingTask = await prisma.task.findUnique({
             where: { notionPageId },
-            select: { id: true, lastEditedTime: true, syncStatus: true },
+            select: { id: true, lastEditedTime: true, syncStatus: true, bundleOrder: { select: { designerId: true } } },
           });
           // Page body changed in Notion since our last sync → re-read its blocks
           const pageEditedSinceLastSync =
@@ -712,9 +712,11 @@ export async function syncNotionData(mode: NotionSyncMode = 'incremental') {
             newRecords++;
           }
 
+          // Task bundle: designer selalu mengikuti order bundle, bukan nilai Designer di Notion.
+          const updateData = existingTask?.bundleOrder ? { ...taskData, designerId: existingTask.bundleOrder.designerId } : taskData;
           const task = await prisma.task.upsert({
             where: { notionPageId },
-            update: taskData,
+            update: updateData,
             create: {
               notionPageId,
               notionUrl,

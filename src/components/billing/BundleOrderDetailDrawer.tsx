@@ -3,6 +3,7 @@
 import { useEffect, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Package, X } from 'lucide-react';
+import PlatformSelectCell from '../PlatformSelectCell';
 import type { BundleOrderRow } from './BundleOrdersSection';
 
 const money = (n: number) => `IDR ${n.toLocaleString('id-ID')}`;
@@ -25,7 +26,14 @@ function SectionTitle({ children }: { children: ReactNode }) {
 }
 
 /** Detail satu order bundle dalam slide drawer: info, pembayaran, task per board, dan aksi. */
-export default function BundleOrderDetailDrawer({ row, onClose, actions }: { row: BundleOrderRow | null; onClose: () => void; actions: ReactNode }) {
+export default function BundleOrderDetailDrawer({ row, onClose, actions, designers, onChangeDesigner }: {
+  row: BundleOrderRow | null;
+  onClose: () => void;
+  actions: ReactNode;
+  designers: { id: string; displayName: string; isAgency: boolean }[];
+  /** Ganti designer order; semua task bundle ikut diganti. */
+  onChangeDesigner: (designerId: string) => void;
+}) {
   useEffect(() => {
     if (!row) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -58,7 +66,17 @@ export default function BundleOrderDetailDrawer({ row, onClose, actions }: { row
           <Row label="Tipe Order">
             <span className={`px-2 py-0.5 text-[10px] font-bold ${row.orderType === 'Kontrak' ? 'bg-violet-500/10 text-violet-600 dark:text-violet-400' : 'bg-amber-500/10 text-amber-700 dark:text-amber-400'}`}>{row.orderType === 'Kontrak' ? 'KONTRAK' : 'TRIAL'}</span>
           </Row>
-          <Row label="Designer">{row.designerName}{row.isAgency && <span className="px-1.5 py-0.5 text-[10px] font-bold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">AGENCY</span>}</Row>
+          <div className="flex items-stretch text-xs min-h-[44px]">
+            <div className={LABEL}>Designer / Agency</div>
+            <div className="flex-1 min-w-0">
+              <PlatformSelectCell
+                value={row.designerId ?? ''}
+                options={designers.map((d) => ({ slug: d.id, name: d.isAgency ? `${d.displayName} (Agency)` : d.displayName }))}
+                placeholder="Pilih Designer..."
+                onChange={onChangeDesigner}
+              />
+            </div>
+          </div>
           <Row label="Periode Order">{row.period || '-'}</Row>
           <Row label="Payout Month">{row.payoutMonth || <span className="font-medium text-amber-600">Belum diset · masuk antrian Closing</span>}</Row>
           <Row label="Status Task">
