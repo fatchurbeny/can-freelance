@@ -16,16 +16,19 @@ import {
   Activity
 } from 'lucide-react';
 
-interface KnowledgeGraphViewerProps {
-  initialStats?: {
-    totalEntities?: number;
-    totalModules?: number;
-    totalRules?: number;
-    lastUpdated?: string;
-  };
+export interface KnowledgeGraphStats {
+  models: number;
+  pages: number;
+  actions: number;
+  rules: number;
 }
 
-export default function KnowledgeGraphViewer({ initialStats }: KnowledgeGraphViewerProps) {
+interface KnowledgeGraphViewerProps {
+  /** Dihitung dari graph.json di server; null bila graph.json belum ada. */
+  stats: KnowledgeGraphStats | null;
+}
+
+export default function KnowledgeGraphViewer({ stats }: KnowledgeGraphViewerProps) {
   const [activeTab, setActiveTab] = useState<'visual' | 'entities' | 'modules' | 'rules' | 'sync' | 'issues' | 'handover'>('visual');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshSuccess, setRefreshSuccess] = useState(false);
@@ -93,7 +96,7 @@ export default function KnowledgeGraphViewer({ initialStats }: KnowledgeGraphVie
               </div>
             </div>
             <span className="text-base sm:text-lg font-sans font-bold text-gray-900 dark:text-white mt-3 block">
-              9 Models
+              {stats ? `${stats.models} Models` : '–'}
             </span>
           </div>
 
@@ -106,7 +109,7 @@ export default function KnowledgeGraphViewer({ initialStats }: KnowledgeGraphVie
               </div>
             </div>
             <span className="text-base sm:text-lg font-sans font-bold text-gray-900 dark:text-white mt-3 block">
-              7 Routes & 3 Actions
+              {stats ? `${stats.pages} Routes & ${stats.actions} Server Modules` : '–'}
             </span>
           </div>
 
@@ -119,7 +122,7 @@ export default function KnowledgeGraphViewer({ initialStats }: KnowledgeGraphVie
               </div>
             </div>
             <span className="text-base sm:text-lg font-sans font-bold text-gray-900 dark:text-white mt-3 block">
-              4 SaaS Formulas
+              {stats ? `${stats.rules} SaaS Formulas` : '–'}
             </span>
           </div>
 

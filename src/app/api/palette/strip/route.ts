@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
+// Sengaja publik (tanpa authorizeApi): gambar strip ini ditanam di body Notion (lihat actions/qa.ts)
+// dan diambil Notion tanpa cookie sesi. Input dibatasi ke hex 6 digit, jadi SVG tidak bisa disisipi.
+
 function isLight(hex: string): boolean {
   const clean = hex.replace('#', '');
   const r = parseInt(clean.substring(0, 2), 16) || 0;
