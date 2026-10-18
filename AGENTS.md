@@ -63,7 +63,7 @@ Untuk efisiensi token, keakuratan saran, dan kontinuitas konteks antar LLM (Gemi
 
 2. **On-Demand Retrieval Modul Pengetahuan**:
    - Untuk aturan bisnis, skema data, dan gotchas, buka hanya modul `docs/knowledge/*.md` yang relevan (`entities.md`, `modules.md`, `business-rules.md`, `issues-and-fixes.md`). Jangan membaca semua file.
-   - Untuk pertanyaan dampak/dependensi ("apa yang memakai X", "apa yang terdampak jika X berubah"), query `graph.json` lebih dulu dengan `jq` (jangan dibaca utuh, ±80 KB), contoh: `jq '.links[] | select(.target=="component:TopBar") | .source' graph.json`.
+   - Untuk pertanyaan dampak/dependensi ("apa yang memakai X", "apa yang terdampak jika X berubah"), query `graph.json` lebih dulu dengan `jq` (jangan dibaca utuh, ±150 KB), contoh: `jq '.links[] | select(.target=="component:TopBar") | .source' graph.json`.
    - `graph.json` diperbarui otomatis oleh git `pre-commit` hook (`.githooks/pre-commit`, aktif lewat `npm install`/`npm run prepare`). Bila terlihat usang, jalankan `npm run graphify`.
 
 3. **Mekanisme Update Sesi**:

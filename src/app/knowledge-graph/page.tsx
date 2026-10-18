@@ -1,15 +1,21 @@
+import { notFound } from 'next/navigation';
 import { requireAccess } from '@/lib/access';
+import { DEV_TOOLS_ENABLED } from '@/lib/dev-tools';
 import { Suspense } from 'react';
 import { getLatestSyncStatus } from '@/app/actions/sync';
 import TopBar from '@/components/TopBar';
 import KnowledgeGraphViewer from '@/components/KnowledgeGraphViewer';
 
-export const metadata = {
-  title: 'Knowledge Graph & System Architecture | CAN-Freelance',
-  description: 'Visualisasi Knowledge Graph, Peta Modul, Rumus Bisnis SaaS, & Log Handover Konteks Sesi.',
-};
+// Di produksi halaman ini 404; jangan bocorkan judulnya ke tab browser.
+export const metadata = DEV_TOOLS_ENABLED
+  ? {
+      title: 'Knowledge Graph & System Architecture | CAN-Freelance',
+      description: 'Visualisasi Knowledge Graph, Peta Modul, Rumus Bisnis SaaS, & Log Handover Konteks Sesi.',
+    }
+  : { title: 'Halaman Tidak Ditemukan | CAN-Freelance' };
 
 export default async function KnowledgeGraphPage() {
+  if (!DEV_TOOLS_ENABLED) notFound();
   await requireAccess(['integration.manage']);
   const latestSyncLog = await getLatestSyncStatus();
 

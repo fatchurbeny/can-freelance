@@ -2,8 +2,10 @@ import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 import { authorizeApi } from '@/lib/api-auth';
+import { DEV_TOOLS_ENABLED } from '@/lib/dev-tools';
 
 export async function GET() {
+  if (!DEV_TOOLS_ENABLED) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   const denied = await authorizeApi('integration.manage');
   if (denied) return denied;
   try {

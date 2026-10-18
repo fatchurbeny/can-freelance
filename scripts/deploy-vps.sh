@@ -26,8 +26,8 @@ mkdir -p .next/standalone/.next
 cp -r .next/static .next/standalone/.next/
 cp -r public .next/standalone/
 
-# Pack standalone release TANPA menyertakan .env dev lokal
-tar -czf "$ARCHIVE_NAME" --exclude='.env' --exclude='./.env' -C .next/standalone .
+# Pack standalone release TANPA .env dev lokal dan graph.json (Knowledge Graph hanya untuk lokal)
+tar -czf "$ARCHIVE_NAME" --exclude='.env' --exclude='./.env' --exclude='./graph.json' -C .next/standalone .
 echo "✅ Paket rilis siap: $ARCHIVE_NAME ($(du -h "$ARCHIVE_NAME" | cut -f1))"
 
 echo "📤 [3/5] Mengunggah paket rilis ke VPS Biznet GIO ($VPS_HOST)..."

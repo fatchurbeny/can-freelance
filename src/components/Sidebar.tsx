@@ -22,6 +22,7 @@ import SyncButton from './SyncButton';
 import AccountSwitcher from './AccountSwitcher';
 import { getProductionUnitsAction } from '@/app/actions/production-unit';
 import { NAV_REQUIREMENTS, type AccessInfo } from '@/lib/permissions';
+import { DEV_TOOLS_ENABLED } from '@/lib/dev-tools';
 
 interface ProductionUnitNav {
   id: string;
@@ -103,8 +104,10 @@ export default function Sidebar({ currentSyncLog, access }: SidebarProps) {
   ];
 
   // Menu yang tidak diizinkan untuk role ini tidak ditampilkan (server tetap menjaga akses).
+  // Knowledge Graph hanya alat developer lokal (lihat lib/dev-tools.ts).
   const visibleMenuItems = menuItems.filter((i) =>
-    i.href === '/profile' ? access.enabled && access.hasProfile : (NAV_REQUIREMENTS[i.href] ?? []).some(allows),
+    i.href === '/knowledge-graph' && !DEV_TOOLS_ENABLED ? false
+    : i.href === '/profile' ? access.enabled && access.hasProfile : (NAV_REQUIREMENTS[i.href] ?? []).some(allows),
   );
 
   // Group items by category

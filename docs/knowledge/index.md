@@ -28,7 +28,7 @@ Untuk menghemat konsumsi token, **baca hanya modul yang relevan** dengan tugas y
    - Buka modul spesifik di atas sesuai fokus pengerjaan (contoh: jika mengerjakan UI/Komponen, baca `modules.md` & `issues-and-fixes.md`).
 2. **Penelusuran Kode Teknis (AST Call Graph)**:
    - Jika membutuhkan penelusuran panggilan fungsi atau dependensi import level rendah, periksa `graph.json` jika tersedia.
-   - Struktur: `nodes[]` (`id`, `label`, `type` = page|component|action|model|doc, `filepath`) dan `links[]` (`source`, `target`, `relation` = renders|invokes|queries|enforces|imports). Jangan dibaca utuh (±80 KB); filter dengan `jq`.
+   - Struktur: `nodes[]` (`id`, `label`, `type` = page|component|action|model|doc, `filepath`) dan `links[]` (`source`, `target`, `relation` = renders|invokes|queries|enforces|imports). Prefix id: `page:/route`, `layout:/route`, `component:Nama`, `action:<file actions>`, `lib:<file src/lib>` (kecuali `action:sync-notion`/`action:queries`), `api:/route`, `model:NamaPrisma`. Ditemukan otomatis oleh `scripts/graphify-parser.ts`. Jangan dibaca utuh (±150 KB); filter dengan `jq`.
    - Contoh: `jq '.links[] | select(.target=="component:TopBar") | .source' graph.json`
    - Jika terlihat usang, jalankan `npm run graphify`.
 3. **Akhir Sesi**:
