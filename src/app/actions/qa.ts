@@ -835,6 +835,14 @@ export async function updateTaskFieldsAction(taskId: string, payload: TaskUpdate
 
     if (!existingTask) return { success: false, error: 'Task not found' };
 
+    // Designer task bundle mengikuti order bundle (sumber utama); ubah lewat drawer order di Billing Statement.
+    if (payload.designerId !== undefined && existingTask.bundleOrderId) {
+      const order = await prisma.bundleOrder.findUnique({ where: { id: existingTask.bundleOrderId }, select: { designerId: true } });
+      if (order && (payload.designerId || null) !== order.designerId) {
+        return { success: false, error: 'Designer task bundle mengikuti order bundle. Ubah lewat Billing Statement → Order Bundle.' };
+      }
+    }
+
     // Task di platform Dropbox tidak memakai link Canva
     const taskUnit = await prisma.productionUnit.findUnique({
       where: { id: existingTask.productionUnitId },

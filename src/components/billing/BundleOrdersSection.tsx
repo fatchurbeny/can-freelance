@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { Package, Plus, Trash2, X } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { createBundleOrderAction, deleteBundleOrderAction, updateBundleOrderPaymentAction, convertBundleOrderToContractAction, recordBundleOrderDpAction } from '@/app/actions/bundle-order';
+import { createBundleOrderAction, deleteBundleOrderAction, updateBundleOrderPaymentAction, convertBundleOrderToContractAction, recordBundleOrderDpAction, updateBundleOrderDesignerAction } from '@/app/actions/bundle-order';
 import PlatformSelectCell from '../PlatformSelectCell';
 import MonthCalendarPicker from '../MonthCalendarPicker';
 import BundleOrderDetailDrawer from './BundleOrderDetailDrawer';
@@ -146,6 +146,19 @@ export default function BundleOrdersSection({ rows, periodLabel, bundles, design
     );
   };
 
+  /** Designer order = sumber utama; task bundle di tiap board ikut diganti oleh server. */
+  const changeDesigner = async (r: BundleOrderRow, nextId: string) => {
+    if (!nextId || nextId === r.designerId) return;
+    let res = await updateBundleOrderDesignerAction(r.id, nextId);
+    if (!res.success && 'needsConfirm' in res && res.needsConfirm) {
+      if (!window.confirm(`${res.error} Lanjutkan?`)) return;
+      res = await updateBundleOrderDesignerAction(r.id, nextId, true);
+    }
+    if (!res.success) return void toast.error(res.error || 'Gagal mengganti designer.');
+    toast.success('Designer order dan semua task bundle diperbarui.');
+    router.refresh();
+  };
+
   const remove = async (id: string) => {
     if (!window.confirm('Hapus order bundle ini?')) return;
     const res = await deleteBundleOrderAction(id);
@@ -254,7 +267,13 @@ export default function BundleOrdersSection({ rows, periodLabel, bundles, design
         );
       })()}
 
-      <BundleOrderDetailDrawer row={rows.find((r) => r.id === detailId) ?? null} onClose={() => setDetailId(null)} actions={(() => { const r = rows.find((x) => x.id === detailId); return r ? actionButtons(r, 'button') : null; })()} />
+      <BundleOrderDetailDrawer
+        row={rows.find((r) => r.id === detailId) ?? null}
+        onClose={() => setDetailId(null)}
+        actions={(() => { const r = rows.find((x) => x.id === detailId); return r ? actionButtons(r, 'button') : null; })()}
+        designers={designers}
+        onChangeDesigner={(id) => { const r = rows.find((x) => x.id === detailId); if (r) void changeDesigner(r, id); }}
+      />
 
       {open && typeof window !== 'undefined' && createPortal(
         <div className="fixed inset-0 z-70">

@@ -43,6 +43,8 @@ interface QATask {
   taskMonth?: string | null;
   bodyText?: string | null;
   lastEditedTime?: string | number | null;
+  /** Diisi bila task bagian dari order bundle; designer-nya mengikuti order. */
+  bundleOrderId?: string | null;
 }
 
 interface Props {
@@ -388,7 +390,21 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
                 <span>Designer</span>
               </div>
               <div className="flex-1 p-0 flex items-stretch min-h-[44px] bg-white dark:bg-[#0d0e12]">
-                {true ? (
+                {task.bundleOrderId ? (
+                  // Task bundle: designer mengikuti order bundle (ubah lewat Billing Statement → Order Bundle).
+                  <div className="flex items-center gap-2 flex-wrap w-full px-5 py-2.5">
+                    <span
+                      className="px-2.5 py-0.5 text-[11px] font-bold rounded"
+                      style={{
+                        backgroundColor: `${activeDesigner?.avatarColor || '#ec4899'}25`,
+                        color: activeDesigner?.avatarColor || '#ec4899',
+                      }}
+                    >
+                      {activeDesigner?.displayName || 'Unassigned'}
+                    </span>
+                    <span className="text-[11px] text-gray-400">Mengikuti order bundle · ubah di Billing Statement</span>
+                  </div>
+                ) : true ? (
                   <CustomSelectCell
                     value={designerId}
                     placeholder="Select Designer"

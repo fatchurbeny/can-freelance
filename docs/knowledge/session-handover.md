@@ -29,6 +29,7 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 
 ## ⚠️ Gotcha yang Masih Berlaku
 
+* **Designer task bundle = designer order bundle** (sumber utama). Ganti hanya lewat drawer order di Billing Statement → Order Bundle (`updateBundleOrderDesignerAction`, ikut ubah semua task + Notion). `updateTaskFieldsAction` menolak designer berbeda, task drawer menampilkannya read-only, dan sync Notion tidak menimpa designer task bundle.
 * Setelah `db push`, **restart dev server** (client Prisma lama memberi error "Unknown argument").
 * Dropdown di dalam container `overflow-*` terpotong; render lewat portal `fixed`.
 * Push body Notion memakai antrean in-memory per `pageId` (`src/lib/notion-body-push.ts`); efektif untuk 1 proses PM2, cluster >1 butuh lock DB.

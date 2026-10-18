@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "generatedAt": "2026-10-18T13:58:44.538Z",
+  "generatedAt": "2026-10-18T15:42:21.476Z",
   "nodes": [
     {
       "id": "page:/account-team",
@@ -2149,6 +2149,12 @@
       "confidence": "EXTRACTED"
     },
     {
+      "source": "action:bundle-order",
+      "target": "model:Designer",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
       "source": "action:bundle",
       "target": "lib:access",
       "relation": "invokes",
@@ -2553,6 +2559,12 @@
     {
       "source": "action:qa",
       "target": "model:Account",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:qa",
+      "target": "model:BundleOrder",
       "relation": "queries",
       "confidence": "EXTRACTED"
     },
@@ -3627,6 +3639,12 @@
     {
       "source": "component:BundleClosingQueue",
       "target": "component:BundleOrdersSection",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:BundleOrderDetailDrawer",
+      "target": "component:PlatformSelectCell",
       "relation": "renders",
       "confidence": "EXTRACTED"
     },
