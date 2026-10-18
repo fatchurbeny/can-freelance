@@ -71,16 +71,31 @@ ssh $SSH_OPTS "$VPS_USER@$VPS_HOST" bash -c "'
 echo "🧹 [5/5] Membersihkan arsip lokal dan menjalankan Healthcheck..."
 rm -f "$ARCHIVE_NAME"
 
-# Uji loopback di server
-HEALTH_CHECK=$(ssh $SSH_OPTS "$VPS_USER@$VPS_HOST" "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3002/can-freelance")
+# Uji loopback di server: tanpa cookie, /production harus 307 ke /can-freelance/login dan API harus 401.
+# Gerbang login mati (200, atau 307 ke tempat lain) = deploy gagal.
+HEALTH=$(ssh $SSH_OPTS "$VPS_USER@$VPS_HOST" bash -s <<'REMOTE'
+CODE=000
+for _ in 1 2 3 4 5 6 7 8 9 10; do
+  HEADERS=$(curl -s -o /dev/null -D - --max-time 10 http://127.0.0.1:3002/can-freelance/production | tr -d '\r' || true)
+  CODE=$(printf '%s\n' "$HEADERS" | sed -n 's/^HTTP\/[0-9.]* \([0-9]*\).*/\1/p' | tail -1)
+  CODE=${CODE:-000}
+  [ "$CODE" != "000" ] && [ "$CODE" != "502" ] && break
+  sleep 2
+done
+LOCATION=$(printf '%s\n' "$HEADERS" | sed -n 's/^[Ll]ocation: *//p' | tail -1)
+API=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 http://127.0.0.1:3002/can-freelance/api/notion/databases || true)
+echo "$CODE|$LOCATION|$API"
+REMOTE
+)
+IFS='|' read -r PAGE_CODE PAGE_LOCATION API_STATUS <<< "$HEALTH"
 
-
-if [ "$HEALTH_CHECK" = "200" ] || [ "$HEALTH_CHECK" = "307" ] || [ "$HEALTH_CHECK" = "401" ]; then
+if [ "$PAGE_CODE" = "307" ] && [[ "$PAGE_LOCATION" =~ ^(https?://[^/]+)?/can-freelance/login([?#].*)?$ ]] && [ "$API_STATUS" = "401" ]; then
   echo "=============================================================================="
-  echo "🎉 DEPLOYMENT SUKSES! Aplikasi aktif (HTTP $HEALTH_CHECK) di:"
+  echo "🎉 DEPLOYMENT SUKSES! Gerbang login aktif (/production → 307 $PAGE_LOCATION, API → 401) di:"
   echo "👉 https://portal.fatchurbeny.com/can-freelance"
   echo "=============================================================================="
 else
-  echo "⚠️ PERINGATAN: Healthcheck mengembalikan status HTTP $HEALTH_CHECK. Periksa log: pm2 logs can-freelance"
+  echo "❌ GERBANG LOGIN TIDAK AKTIF: /can-freelance/production tanpa sesi → HTTP $PAGE_CODE ${PAGE_LOCATION:+(Location: $PAGE_LOCATION)}, API → HTTP $API_STATUS"
+  echo "   Harus 307 ke /can-freelance/login dan API 401. Periksa AUTH_MODE/SESSION_SECRET yang terbaca PM2 dan: pm2 logs can-freelance"
   exit 1
 fi
