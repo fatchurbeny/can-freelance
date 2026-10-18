@@ -4,18 +4,20 @@ import { useEffect, useState } from 'react';
 import {
   X, Plus, FileText, CircleDot, Users, Gauge,
   CalendarDays, Link as LinkIcon, BookOpen, Building2,
-  Languages, KeyRound, ExternalLink, Trash2
+  Languages, KeyRound, ExternalLink, Trash2, Palette
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { createTaskAction, fetchTaskMetadataOptionsAction } from '@/app/actions/qa';
 import CustomSelectCell from './CustomSelectCell';
 import MonthCalendarPicker from './MonthCalendarPicker';
 import TaskBodyEditor from './TaskBodyEditor';
+import ImageColorPalettePicker from './ImageColorPalettePicker';
 import { PRIORITY_OPTIONS, LICENSE_OPTIONS, getPagesForDoctype } from './task-form-utils';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { parseTaskMonthToKey, currentTaskMonth } from '@/lib/period-utils';
 
 interface Props {
+  productionUnitId: string;
   open: boolean;
   onClose: () => void;
   onCreated?: () => void;
@@ -28,7 +30,7 @@ interface OptionItem {
   poolRate?: number | null;
 }
 
-export default function CreateTaskSlideModal({ open, onClose, onCreated }: Props) {
+export default function CreateTaskSlideModal({ productionUnitId, open, onClose, onCreated }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
@@ -55,14 +57,17 @@ export default function CreateTaskSlideModal({ open, onClose, onCreated }: Props
   const [designStatuses, setDesignStatuses] = useState<OptionItem[]>([]);
   const [accounts, setAccounts] = useState<OptionItem[]>([]);
 
+  const [outputType, setOutputType] = useState<string>('canva_link');
+
   useEffect(() => {
     if (!open) return;
-    fetchTaskMetadataOptionsAction().then((res) => {
+    fetchTaskMetadataOptionsAction(productionUnitId).then((res) => {
       if (res.success && res.data) {
         setDesigners(res.data.designers || []);
         setDoctypes(res.data.doctypes || []);
         setDesignStatuses(res.data.designStatuses || []);
         setAccounts(res.data.accounts || []);
+        setOutputType(res.data.outputType || 'canva_link');
       }
     });
 
@@ -84,7 +89,7 @@ export default function CreateTaskSlideModal({ open, onClose, onCreated }: Props
       setNewCanvaUrl('');
       setSaving(false);
     }
-  }, [open]);
+  }, [open, productionUnitId]);
 
   const handleDoctypeChange = (newDoctypeId: string) => {
     setDoctypeId(newDoctypeId);
@@ -120,6 +125,7 @@ export default function CreateTaskSlideModal({ open, onClose, onCreated }: Props
 
     setSaving(true);
     const res = await createTaskAction({
+      productionUnitId,
       name,
       designerId: designerId || null,
       doctypeId: doctypeId || null,
@@ -390,7 +396,13 @@ export default function CreateTaskSlideModal({ open, onClose, onCreated }: Props
 
           </div>
 
-          {/* Canva Template Link Section */}
+          {outputType === 'dropbox_link' ? (
+            <div className="p-5 bg-white dark:bg-[#0d0e12] font-sans text-xs text-gray-600 dark:text-gray-300">
+              <span className="font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Output Dropbox</span>
+              <p className="mt-2">Upload Request Dropbox dibuat otomatis per task setelah Fase 6. Link Canva tidak dipakai untuk platform ini.</p>
+            </div>
+          ) : (
+          /* Canva Template Link Section */
           <div className="p-5 space-y-3 bg-white dark:bg-[#0d0e12]">
             <div className="flex items-center gap-2 text-xs font-sans font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
               <LinkIcon className="w-3.5 h-3.5" />
@@ -448,6 +460,29 @@ export default function CreateTaskSlideModal({ open, onClose, onCreated }: Props
                 <Plus className="w-3.5 h-3.5" />
                 <span>Add Link</span>
               </button>
+            </div>
+          </div>
+
+          )}
+
+          {/* Color Palette Extractor Section */}
+          <div className="flex flex-col sm:flex-row items-stretch text-xs font-sans min-h-[44px] border-t border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12]">
+            <div className="w-[110px] sm:w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-3 sm:px-5 py-3 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
+              <Palette className="w-3.5 h-3.5 text-[#ff5e1f]" />
+              <span>Color Palette</span>
+            </div>
+            <div className="flex-1 p-3 bg-white dark:bg-[#0d0e12]">
+              <ImageColorPalettePicker
+                onInsertPalette={(paletteMarkdown) => {
+                  setBodyText((prev) => {
+                    const cleaned = (prev || '')
+                      .replace(/##\s*🖼️\s*Reference Image[\s\S]*?(?=##|$)/gi, '')
+                      .replace(/##\s*🎨\s*Color Palette[\s\S]*?(?=##|$)/gi, '')
+                      .trim();
+                    return cleaned ? `${cleaned}\n\n${paletteMarkdown}` : paletteMarkdown;
+                  });
+                }}
+              />
             </div>
           </div>
 

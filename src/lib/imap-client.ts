@@ -11,7 +11,8 @@ export interface ImapConnectionConfig {
 
 export async function fetchCanvaEmailsFromImap(
   config: ImapConnectionConfig,
-  accounts: Array<{ id: string; displayName: string }>
+  accounts: Array<{ id: string; displayName: string }>,
+  subjectTriggers?: string[]
 ): Promise<ParsedCanvaEmail[]> {
   return new Promise((resolve, reject) => {
     const socket = tls.connect(config.port, config.host, { rejectUnauthorized: false }, () => {
@@ -54,8 +55,19 @@ export async function fetchCanvaEmailsFromImap(
         step = 'SELECT';
       } else if (step === 'SELECT' && buffer.includes(`${currentTag} OK`)) {
         buffer = '';
-        // Search ALL emails (UNREAD & READ) with Canva subject
-        currentTag = send('SEARCH SUBJECT "issues with your template"');
+        const validTriggers = (subjectTriggers || [])
+          .map((s) => s.trim().replace(/"/g, ''))
+          .filter(Boolean);
+        const primary = validTriggers[0] || 'issues with your template';
+        let searchCmd = `SEARCH SUBJECT "${primary}"`;
+        if (validTriggers.length > 1) {
+          const orChain = validTriggers.reduce((acc, t, idx) => {
+            if (idx === 0) return `SUBJECT "${t}"`;
+            return `OR (${acc}) (SUBJECT "${t}")`;
+          }, '');
+          searchCmd = `SEARCH ${orChain}`;
+        }
+        currentTag = send(searchCmd);
         step = 'SEARCH';
       } else if (step === 'SEARCH' && buffer.includes(`${currentTag} OK`)) {
         const searchLines = buffer.split('\r\n').filter((l) => l.startsWith('* SEARCH'));

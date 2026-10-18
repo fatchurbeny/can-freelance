@@ -20,6 +20,9 @@ interface Props {
   inline?: boolean;
   multiSelect?: boolean;
   rangeSelect?: boolean;
+  align?: 'left' | 'right';
+  /** false = sembunyikan tombol "Semua Bulan" (mis. untuk memilih satu bulan pembanding). */
+  showAllOption?: boolean;
 }
 
 export function normalizeDisplayMonth(value?: string | null) {
@@ -88,6 +91,8 @@ export default function MonthCalendarPicker({
   inline = false,
   multiSelect = false,
   rangeSelect = false,
+  align = 'left',
+  showAllOption = true,
 }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -232,31 +237,31 @@ export default function MonthCalendarPicker({
   const calendarGridContent = (
     <div className="rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] p-0 shadow-2xl font-sans text-xs w-full overflow-hidden">
       {/* Year Switcher Bar */}
-      <div className="flex items-center justify-between px-3 py-2 border-b border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 shrink-0">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 shrink-0">
         <button
           type="button"
           onClick={() => setViewYear((y) => y - 1)}
-          className="w-6 h-6 flex items-center justify-center rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] text-[#ff5e1f] hover:bg-gray-50 dark:hover:bg-[#20232b] transition-colors cursor-pointer"
+          className="w-8 h-8 flex items-center justify-center rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] text-[#ff5e1f] hover:bg-gray-50 dark:hover:bg-[#20232b] transition-colors cursor-pointer"
         >
-          <ChevronLeft className="w-3.5 h-3.5" />
+          <ChevronLeft className="w-4 h-4" />
         </button>
 
-        <span className="font-sans text-xs font-bold text-gray-900 dark:text-white tracking-wider">
+        <span className="font-sans text-sm font-bold text-gray-900 dark:text-white tracking-wider">
           {viewYear}
         </span>
 
         <button
           type="button"
           onClick={() => setViewYear((y) => y + 1)}
-          className="w-6 h-6 flex items-center justify-center rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] text-[#ff5e1f] hover:bg-gray-50 dark:hover:bg-[#20232b] transition-colors cursor-pointer"
+          className="w-8 h-8 flex items-center justify-center rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] text-[#ff5e1f] hover:bg-gray-50 dark:hover:bg-[#20232b] transition-colors cursor-pointer"
         >
-          <ChevronRight className="w-3.5 h-3.5" />
+          <ChevronRight className="w-4 h-4" />
         </button>
       </div>
 
       {/* Month Buttons Grid */}
-      <div className="p-2 space-y-2 bg-white dark:bg-[#0d0e12]">
-        <div className="grid grid-cols-3 gap-1.5">
+      <div className="p-3 space-y-3 bg-white dark:bg-[#0d0e12]">
+        <div className="grid grid-cols-3 gap-2">
           {INDONESIAN_SHORT_MONTHS.map((mShort, idx) => {
             const optionKey = `${viewYear}-${String(idx + 1).padStart(2, '0')}`;
             const optionFullString = `${INDONESIAN_FULL_MONTHS[idx]}-${viewYear}`;
@@ -273,7 +278,7 @@ export default function MonthCalendarPicker({
                 key={mShort}
                 type="button"
                 onClick={() => handleSelectMonth(idx)}
-                className={`h-8.5 px-1 rounded-none border text-center font-sans text-xs font-semibold transition-all cursor-pointer relative ${
+                className={`h-11 px-1 rounded-none border text-center font-sans text-sm font-semibold transition-all cursor-pointer relative ${
                   isSelected
                     ? 'bg-[#ff5e1f] border-[#ff5e1f] text-white font-bold shadow-sm'
                     : isCurrentCalendarMonth
@@ -293,22 +298,22 @@ export default function MonthCalendarPicker({
         </div>
 
         {/* Symmetrical 2-Column Footer */}
-        <div className="grid grid-cols-2 gap-1.5 pt-0.5">
-          <button
+        <div className={`grid ${showAllOption ? 'grid-cols-2' : 'grid-cols-1'} gap-2 pt-0.5`}>
+          {showAllOption && <button
             type="button"
             onClick={handleSelectAllMonths}
-            className={`py-1.5 px-1 rounded-none border font-sans text-[10px] font-bold uppercase tracking-wider text-center transition-colors cursor-pointer ${
+            className={`py-3 px-2 rounded-none border font-sans text-[11px] font-bold uppercase tracking-wider text-center transition-colors cursor-pointer ${
               selectedKeySet.size === 0 || (!rangeStartKey && !rangeEndKey)
                 ? 'bg-[#ff5e1f] border-[#ff5e1f] text-white shadow-sm'
                 : 'bg-gray-50 dark:bg-[#0d0e12] hover:bg-gray-100 dark:hover:bg-[#20232b] border-[#f0f0f0] dark:border-[#272a34] text-gray-700 dark:text-gray-300'
             }`}
           >
             SEMUA BULAN
-          </button>
+          </button>}
           <button
             type="button"
             onClick={handleSelectCurrentMonth}
-            className="py-1.5 px-1 bg-gray-50 dark:bg-[#0d0e12] hover:bg-gray-100 dark:hover:bg-[#20232b] border border-[#f0f0f0] dark:border-[#272a34] font-sans text-[10px] font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider text-center transition-colors cursor-pointer truncate"
+            className="py-3 px-2 bg-gray-50 dark:bg-[#0d0e12] hover:bg-gray-100 dark:hover:bg-[#20232b] border border-[#f0f0f0] dark:border-[#272a34] font-sans text-[11px] font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider text-center transition-colors cursor-pointer truncate"
           >
             BULAN INI ({INDONESIAN_SHORT_MONTHS[currentMonthIdx]})
           </button>
@@ -337,7 +342,7 @@ export default function MonthCalendarPicker({
       </button>
 
       {isOpen && (
-        <div className="absolute left-0 top-full z-50 mt-0 w-56 sm:w-60 min-w-[220px]">
+        <div className={`absolute ${align === 'right' ? 'right-0' : 'left-0 sm:left-0'} top-full z-50 mt-0 w-72 sm:w-80 min-w-[280px] max-w-[calc(100vw-32px)]`}>
           {calendarGridContent}
         </div>
       )}

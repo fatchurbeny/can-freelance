@@ -1,7 +1,9 @@
 'use server';
 
+import { denyUnless, denyWrite } from '@/lib/access';
 import prisma from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
+import { syncPlatformOptionsToNotion } from '@/app/actions/production-unit';
 
 export async function updateDesignerStatusAction(
   designerId: string,
@@ -12,6 +14,8 @@ export async function updateDesignerStatusAction(
     resignDate?: string | null;
   }
 ) {
+  const denied = await denyWrite('accountTeam.view');
+  if (denied) return denied as never;
   try {
     const validStatuses = ['Active', 'Inactive', 'Resign'];
     if (!validStatuses.includes(status)) {
@@ -54,8 +58,10 @@ export async function createDesignerAction({
   phone,
   bankName,
   bankAccount,
+  isAgency = false,
 }: {
   displayName: string;
+  isAgency?: boolean;
   status?: string;
   role?: string;
   contractType?: string;
@@ -69,6 +75,8 @@ export async function createDesignerAction({
   bankName?: string | null;
   bankAccount?: string | null;
 }) {
+  const denied = await denyWrite('accountTeam.view');
+  if (denied) return denied as never;
   try {
     const name = displayName.trim();
     if (!name) {
@@ -102,12 +110,16 @@ export async function createDesignerAction({
         phone: phone?.trim() || null,
         bankName: bankName?.trim() || null,
         bankAccount: bankAccount?.trim() || null,
+        isAgency,
       },
     });
 
+    // Multi-production hook: Designer adalah master → opsi di semua unit
+    await syncPlatformOptionsToNotion({ kind: 'designer', names: [newDesigner.displayName] }).catch(() => {});
+
     revalidatePath('/account-team');
     revalidatePath('/billing-statement');
-    revalidatePath('/production');
+    revalidatePath('/production', 'layout');
 
     return { success: true, designer: JSON.parse(JSON.stringify(newDesigner)) };
   } catch (error: any) {
@@ -125,6 +137,8 @@ export async function promoteDesignerAction({
   newRole: string;
   promotionDate?: string | null;
 }) {
+  const denied = await denyWrite('accountTeam.view');
+  if (denied) return denied as never;
   try {
     const roleTitle = newRole.trim();
     if (!roleTitle) {
@@ -158,8 +172,10 @@ export async function updateDesignerProfileAction({
   contractStartDate,
   probationEndDate,
   role,
+  isAgency,
 }: {
   designerId: string;
+  isAgency?: boolean;
   displayName?: string;
   email?: string | null;
   phone?: string | null;
@@ -170,6 +186,8 @@ export async function updateDesignerProfileAction({
   probationEndDate?: string | null;
   role?: string | null;
 }) {
+  const denied = await denyWrite('accountTeam.view');
+  if (denied) return denied as never;
   try {
     const updateData: any = {};
     if (displayName?.trim()) updateData.displayName = displayName.trim();
@@ -181,6 +199,7 @@ export async function updateDesignerProfileAction({
     if (contractStartDate) updateData.contractStartDate = new Date(contractStartDate);
     if (probationEndDate !== undefined) updateData.probationEndDate = probationEndDate ? new Date(probationEndDate) : null;
     if (role?.trim()) updateData.role = role.trim();
+    if (isAgency !== undefined) updateData.isAgency = isAgency;
 
     const updated = await prisma.designer.update({
       where: { id: designerId },
@@ -198,10 +217,14 @@ export async function updateDesignerProfileAction({
 export async function createAccountAction({
   displayName,
   color,
+  platformId,
 }: {
   displayName: string;
   color?: string;
+  platformId: string;
 }) {
+  const denied = await denyWrite('accountTeam.view');
+  if (denied) return denied as never;
   try {
     const name = displayName.trim();
     if (!name) {
@@ -215,17 +238,24 @@ export async function createAccountAction({
     const brandColors = ['#F97316', '#EF4444', '#10B981', '#EC4899', '#8B5CF6', '#3B82F6'];
     const finalColor = color || brandColors[Math.floor(Math.random() * brandColors.length)];
 
+    const platform = await prisma.platform.findUnique({ where: { id: platformId } });
+    if (!platform) return { success: false, error: 'Platform tidak ditemukan.' };
+
     const newAccount = await prisma.account.create({
       data: {
+        platformId: platform.id,
         notionKey,
         displayName: name,
         color: finalColor,
       },
     });
 
+    // Multi-production hook: opsi Brand ke database Task unit di platform akun ini
+    await syncPlatformOptionsToNotion({ platformId: newAccount.platformId, kind: 'account', names: [newAccount.displayName] }).catch(() => {});
+
     revalidatePath('/account-team');
     revalidatePath('/billing-statement');
-    revalidatePath('/production');
+    revalidatePath('/production', 'layout');
 
     return { success: true, account: JSON.parse(JSON.stringify(newAccount)) };
   } catch (error: any) {
@@ -243,6 +273,8 @@ export async function updateAccountAction({
   displayName: string;
   color?: string;
 }) {
+  const denied = await denyWrite('accountTeam.view');
+  if (denied) return denied as never;
   try {
     const name = displayName.trim();
     if (!name) {
@@ -266,6 +298,8 @@ export async function updateAccountAction({
 }
 
 export async function getDesignerCareerLogsAction(designerId: string) {
+  const denied = await denyUnless('accountTeam.view');
+  if (denied) return denied as never;
   try {
     const logs = await prisma.designerCareerLog.findMany({
       where: { designerId },
@@ -290,6 +324,8 @@ export async function addCareerLogAction({
   description?: string;
   eventDate?: string;
 }) {
+  const denied = await denyWrite('accountTeam.view');
+  if (denied) return denied as never;
   try {
     const cleanTitle = title.trim();
     if (!cleanTitle) {

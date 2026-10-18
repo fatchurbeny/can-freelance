@@ -19,9 +19,12 @@ import {
 } from 'lucide-react';
 import PeriodPicker from './PeriodPicker';
 import AccountSwitcher from './AccountSwitcher';
+import { useAccess } from '@/context/AccessContext';
 
 interface TopBarProps {
   badgeLabel?: string;
+  /** Breadcrumb di judul halaman, mis. [{label:'Production', href:'/production'}, {label:'Slides-Colony'}]. Menggantikan badgeLabel. */
+  breadcrumb?: { label: string; href?: string }[];
   activeNav?: string;
   periods?: string[];
   currentPeriod?: string;
@@ -39,11 +42,13 @@ interface TopBarProps {
 
 export default function TopBar({
   badgeLabel = 'DASHBOARD',
+  breadcrumb,
   periods,
   currentPeriod,
   actionButton,
   rightAction,
 }: TopBarProps) {
+  const access = useAccess();
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
   const [isDark, setIsDark] = useState<boolean>(true);
@@ -104,18 +109,36 @@ export default function TopBar({
           {/* Page Section Label next to vertical divider (Matching Sidebar Icon) */}
           <div className="flex items-center gap-1.5 shrink-0 min-w-0">
             {pathname === '/' ? <LayoutDashboard className="w-4 h-4 text-[#ff5e1f] shrink-0" /> : null}
-            {pathname === '/production' ? <Files className="w-4 h-4 text-[#ff5e1f] shrink-0" /> : null}
+            {pathname === '/production' || pathname.startsWith('/production/') ? <Files className="w-4 h-4 text-[#ff5e1f] shrink-0" /> : null}
             {pathname === '/account-team' ? <Users className="w-4 h-4 text-[#ff5e1f] shrink-0" /> : null}
             {pathname === '/rate-card' ? <CreditCard className="w-4 h-4 text-[#ff5e1f] shrink-0" /> : null}
             {pathname === '/billing-statement' ? <FileText className="w-4 h-4 text-[#ff5e1f] shrink-0" /> : null}
             {pathname === '/knowledge-graph' ? <Network className="w-4 h-4 text-[#ff5e1f] shrink-0" /> : null}
             {pathname === '/notion-config' ? <Settings className="w-4 h-4 text-[#ff5e1f] shrink-0" /> : null}
-            {!['/', '/production', '/account-team', '/rate-card', '/billing-statement', '/knowledge-graph', '/notion-config'].includes(pathname) ? (
+            {!['/', '/production', '/account-team', '/rate-card', '/billing-statement', '/knowledge-graph', '/notion-config'].includes(pathname) && !pathname.startsWith('/production/') ? (
               <LayoutDashboard className="w-4 h-4 text-[#ff5e1f] shrink-0" />
             ) : null}
-            <span className="font-sans text-xs sm:text-sm font-semibold tracking-wide text-[#262626] dark:text-white truncate max-w-[80px] xs:max-w-[120px] sm:max-w-none">
-              {badgeLabel}
-            </span>
+            {breadcrumb && breadcrumb.length > 0 ? (
+              <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 min-w-0 font-sans text-xs sm:text-sm tracking-wide">
+                {breadcrumb.map((crumb, i) => {
+                  const isLast = i === breadcrumb.length - 1;
+                  return (
+                    <React.Fragment key={`${crumb.label}-${i}`}>
+                      {i > 0 && <span className="text-gray-300 dark:text-gray-600 select-none">/</span>}
+                      {crumb.href && !isLast ? (
+                        <Link href={crumb.href} className="font-semibold text-gray-500 dark:text-gray-400 hover:text-[#ff5e1f] dark:hover:text-[#ff5e1f] transition-colors whitespace-nowrap">{crumb.label}</Link>
+                      ) : (
+                        <span aria-current={isLast ? 'page' : undefined} className={`font-semibold truncate max-w-[140px] sm:max-w-[260px] ${isLast ? 'text-[#262626] dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>{crumb.label}</span>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+              </nav>
+            ) : (
+              <span className="font-sans text-xs sm:text-sm font-semibold tracking-wide text-[#262626] dark:text-white truncate max-w-[150px] sm:max-w-none">
+                {badgeLabel}
+              </span>
+            )}
           </div>
 
           {/* Tools & Actions (Search, Theme Toggle, PeriodPicker Dropdown, AccountSwitcher) */}
@@ -143,8 +166,8 @@ export default function TopBar({
               )}
             </button>
 
-            {/* Period Picker Dropdown (Hidden on mobile < md) */}
-            <div className="hidden md:flex items-center">
+            {/* Period Picker Dropdown (Accessible on all screen sizes) */}
+            <div className="flex items-center">
               {periods && periods.length > 0 ? (
                 <Suspense fallback={<div className="w-[80px] sm:w-[120px] h-[34px] bg-gray-100 dark:bg-[#16181d] rounded-lg animate-pulse" />}>
                   <PeriodPicker periods={periods} currentPeriod={currentPeriod || ''} />
@@ -174,10 +197,12 @@ export default function TopBar({
             </div>
 
             {/* Vertical Separator & Account Switcher (Hidden on mobile < md) */}
-            <div className="hidden md:flex items-center gap-2">
-              <div className="w-px h-4 bg-[#f0f0f0] dark:bg-[#272a34] shrink-0 mx-0.5" />
-              <AccountSwitcher />
-            </div>
+            {access.enabled && access.userCode && (
+              <div className="hidden md:flex items-center gap-2">
+                <div className="w-px h-4 bg-[#f0f0f0] dark:bg-[#272a34] shrink-0 mx-0.5" />
+                <AccountSwitcher />
+              </div>
+            )}
           </div>
         </div>
       </div>

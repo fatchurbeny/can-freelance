@@ -24,11 +24,25 @@ function headerValue(headers: any[] | undefined, name: string) {
 
 export async function fetchCanvaEmailsFromGmailApi(
   accessToken: string,
-  accounts: Array<{ id: string; displayName: string }>
+  accounts: Array<{ id: string; displayName: string }>,
+  subjectTriggers?: string[]
 ): Promise<ParsedCanvaEmail[]> {
   const searchUrl = new URL('https://gmail.googleapis.com/gmail/v1/users/me/messages');
-  searchUrl.searchParams.set('q', 'from:(no-reply@canva.com OR notifications@canva.com) subject:("issues with your template")');
-  searchUrl.searchParams.set('maxResults', '20');
+  
+  const validTriggers = (subjectTriggers || [])
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  const subjectClause =
+    validTriggers.length > 0
+      ? `(${validTriggers.map((t) => `subject:("${t.replace(/"/g, '')}")`).join(' OR ')})`
+      : 'subject:("issues with your template")';
+
+  searchUrl.searchParams.set(
+    'q',
+    `from:(no-reply@canva.com OR notifications@canva.com) ${subjectClause}`
+  );
+  searchUrl.searchParams.set('maxResults', '30');
 
   const listResponse = await fetch(searchUrl, {
     headers: { Authorization: `Bearer ${accessToken}` },

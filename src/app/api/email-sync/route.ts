@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server';
 import { syncCanvaEmailsAction, getEmailNotificationsAction } from '@/app/actions/email-notification';
+import { authorizeApi } from '@/lib/api-auth';
 
-export async function GET() {
+export async function GET(request: Request) {
+  const denied = await authorizeApi('emailNotification.view', { request, allowCronSecret: true });
+  if (denied) return denied;
   try {
     const result = await syncCanvaEmailsAction();
     const data = await getEmailNotificationsAction();
@@ -20,7 +23,9 @@ export async function GET() {
   }
 }
 
-export async function POST() {
+export async function POST(request: Request) {
+  const denied = await authorizeApi('emailNotification.view', { request, allowCronSecret: true });
+  if (denied) return denied;
   try {
     const result = await syncCanvaEmailsAction();
     const data = await getEmailNotificationsAction();

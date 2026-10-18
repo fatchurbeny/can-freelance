@@ -8,37 +8,81 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email        String   @unique
-  passwordHash String   @map("password_hash")
-  name         String?
-  role         String   @default("manager")
-  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email          String?      @unique
+  passwordHash   String?      @map("password_hash")
+  name           String?
+  role           String       @default("manager")
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  /// Login ID + PIN (docs/knowledge/user-role-spec.md): "FT-001" full-time, "FL-014" freelance.
+  userCode       String?      @unique @map("user_code")
+  employmentType String?      @map("employment_type") // FULL_TIME | FREELANCE
+  pinHash        String?      @map("pin_hash")
+  pinMustChange  Boolean      @default(true) @map("pin_must_change")
+  pinChangedAt   DateTime?    @map("pin_changed_at") @db.Timestamptz(6)
+  failedAttempts Int          @default(0) @map("failed_attempts")
+  lockedUntil    DateTime?    @map("locked_until") @db.Timestamptz(6)
+  isActive       Boolean      @default(true) @map("is_active")
+  lastLoginAt    DateTime?    @map("last_login_at") @db.Timestamptz(6)
+  designerId     String?      @unique @map("designer_id") @db.Uuid
+  designer       Designer?    @relation(fields: [designerId], references: [id])
+  memberships    Membership[]
+  sessions       Session[]
 
   @@map("users")
 }
 
+/// Role melekat pada keanggotaan di production; productionUnitId null = global.
+/// Role & permission didefinisikan di src/lib/permissions.ts (roleKey).
+model Membership {
+  id               String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId           String          @map("user_id") @db.Uuid
+  roleKey          String          @map("role_key")
+  productionUnitId String?         @map("production_unit_id") @db.Uuid
+  createdAt        DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productionUnit   ProductionUnit? @relation(fields: [productionUnitId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("memberships")
+}
+
+model Session {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  tokenHash String   @unique @map("token_hash")
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
 model Designer {
-  id                String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  notionKey         String          @unique @map("notion_key")
-  displayName       String          @map("display_name")
-  avatarColor       String?         @map("avatar_color")
-  status            String          @default("Active")
-  role              String?         @default("Junior Designer")
-  contractType      String?         @default("Freelance") @map("contract_type")
-  contractStartDate DateTime?       @map("contract_start_date") @db.Date
-  probationEndDate  DateTime?       @map("probation_end_date") @db.Date
-  inactiveStartDate DateTime?       @map("inactive_start_date") @db.Date
-  inactiveNote      String?         @map("inactive_note")
-  resignDate        DateTime?       @map("resign_date") @db.Date
-  promotionDate     DateTime?       @map("promotion_date") @db.Date
+  id                String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  notionKey         String              @unique @map("notion_key")
+  displayName       String              @map("display_name")
+  avatarColor       String?             @map("avatar_color")
+  status            String              @default("Active")
+  role              String?             @default("Junior Designer")
+  contractType      String?             @default("Freelance") @map("contract_type")
+  contractStartDate DateTime?           @map("contract_start_date") @db.Date
+  probationEndDate  DateTime?           @map("probation_end_date") @db.Date
+  inactiveStartDate DateTime?           @map("inactive_start_date") @db.Date
+  inactiveNote      String?             @map("inactive_note")
+  resignDate        DateTime?           @map("resign_date") @db.Date
+  promotionDate     DateTime?           @map("promotion_date") @db.Date
   email             String?
   phone             String?
-  bankName          String?         @map("bank_name")
-  bankAccount       String?         @map("bank_account")
+  bankName          String?             @map("bank_name")
+  bankAccount       String?             @map("bank_account")
   payrollStatuses   PayrollStatus[]
+  isAgency          Boolean             @default(false) @map("is_agency")
   tasks             Task[]
   careerLogs        DesignerCareerLog[]
+  bundleOrders      BundleOrder[]
+  user              User?
 
   @@map("designers")
 }
@@ -52,38 +96,47 @@ model DesignerCareerLog {
   eventDate   DateTime @map("event_date") @db.Date
   createdAt   DateTime @default(now()) @map("created_at")
 
-  designer    Designer @relation(fields: [designerId], references: [id], onDelete: Cascade)
+  designer Designer @relation(fields: [designerId], references: [id], onDelete: Cascade)
 
   @@map("designer_career_logs")
 }
 
 model Doctype {
-  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  notionKey       String   @unique @map("notion_key")
-  displayName     String   @map("display_name")
-  isTopSpecialist Boolean  @default(false) @map("is_top_specialist")
-  sortOrder       Int      @default(0) @map("sort_order")
-  poolRate        Float    @default(1.0) @map("pool_rate")
+  id              String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  notionKey       String       @map("notion_key")
+  platformId      String       @map("platform_id") @db.Uuid
+  displayName     String       @map("display_name")
+  isTopSpecialist Boolean      @default(false) @map("is_top_specialist")
+  sortOrder       Int          @default(0) @map("sort_order")
+  poolRate        Float        @default(1.0) @map("pool_rate")
   pages           Float?
-  category        String?  @default("Infografis")
-  dimensions      String?  @default("1920x1080 px")
-  aspectRatio     String?  @default("16:9") @map("aspect_ratio")
+  category        String?      @default("Infografis")
+  dimensions      String?      @default("1920x1080 px")
+  aspectRatio     String?      @default("16:9") @map("aspect_ratio")
   notes           String?
-  isActive        Boolean  @default(true) @map("is_active")
-  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  isActive        Boolean      @default(true) @map("is_active")
+  /// Kegunaan: "Kontrak" (pool score + tarif platform), "Bundle" (harga paket, pool score 0), atau "Keduanya".
+  usage           String       @default("Kontrak")
+  updatedAt       DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   tasks           Task[]
+  platform        Platform     @relation(fields: [platformId], references: [id])
+  bundleItems     BundleItem[]
 
+  @@unique([platformId, notionKey])
   @@map("doctypes")
 }
 
 model Account {
-  id           String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  notionKey    String        @unique @map("notion_key")
-  displayName  String        @map("display_name")
-  color        String?
-  taskAccounts TaskAccount[]
+  id                 String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  notionKey          String                   @map("notion_key")
+  platformId         String                   @map("platform_id") @db.Uuid
+  displayName        String                   @map("display_name")
+  color              String?
+  taskAccounts       TaskAccount[]
   emailNotifications CanvaEmailNotification[]
+  platform           Platform                 @relation(fields: [platformId], references: [id])
 
+  @@unique([platformId, notionKey])
   @@map("accounts")
 }
 
@@ -101,39 +154,52 @@ model DesignStatus {
 }
 
 model Task {
-  id             String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  notionPageId   String          @unique @map("notion_page_id")
-  notionUrl      String?         @map("notion_url")
-  name           String?
-  designerId     String?         @map("designer_id") @db.Uuid
-  doctypeId      String?         @map("doctype_id") @db.Uuid
-  designStatusId String?         @map("design_status_id") @db.Uuid
-  pages          Decimal?        @db.Decimal
-  qtySubmit      Decimal?        @map("qty_submit") @db.Decimal
-  license        String?
-  languages      String[]
-  dateApproved   DateTime?       @map("date_approved") @db.Date
-  taskMonth      String?         @map("task_month")
-  payrollMonth   String?         @map("payroll_month")
-  priority       String?
-  createdTime    DateTime        @map("created_time") @db.Timestamptz(6)
-  syncedAt       DateTime        @default(now()) @map("synced_at") @db.Timestamptz(6)
-  dateCompleted  DateTime?       @map("date_completed") @db.Date
-  datePO         DateTime?       @map("date_po") @db.Date
-  dateReject     DateTime?       @map("date_reject") @db.Date
-  dateStarted    DateTime?       @map("date_started") @db.Date
-  lastEditedTime DateTime        @default(now()) @map("last_edited_time") @db.Timestamptz(6)
-  poolScore      Decimal?        @map("pool_score") @db.Decimal
-  bodyText       String?         @map("body_text")
-  syncStatus     String          @default("SYNCED") @map("sync_status")
-  lastSyncedAt   DateTime?       @map("last_synced_at") @db.Timestamptz(6)
-  taskAccounts   TaskAccount[]
-  canvaLinks     TaskCanvaLink[]
-  comments       TaskComment[]
-  designStatus   DesignStatus?   @relation(fields: [designStatusId], references: [id])
-  designer       Designer?       @relation(fields: [designerId], references: [id])
-  doctype        Doctype?        @relation(fields: [doctypeId], references: [id])
+  id               String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  notionPageId     String          @unique @map("notion_page_id")
+  notionUrl        String?         @map("notion_url")
+  name             String?
+  designerId       String?         @map("designer_id") @db.Uuid
+  doctypeId        String?         @map("doctype_id") @db.Uuid
+  designStatusId   String?         @map("design_status_id") @db.Uuid
+  pages            Decimal?        @db.Decimal
+  qtySubmit        Decimal?        @map("qty_submit") @db.Decimal
+  license          String?
+  languages        String[]
+  dateApproved     DateTime?       @map("date_approved") @db.Date
+  taskMonth        String?         @map("task_month")
+  payrollMonth     String?         @map("payroll_month")
+  priority         String?
+  createdTime      DateTime        @map("created_time") @db.Timestamptz(6)
+  syncedAt         DateTime        @default(now()) @map("synced_at") @db.Timestamptz(6)
+  dateCompleted    DateTime?       @map("date_completed") @db.Date
+  datePO           DateTime?       @map("date_po") @db.Date
+  dateReject       DateTime?       @map("date_reject") @db.Date
+  dateStarted      DateTime?       @map("date_started") @db.Date
+  lastEditedTime   DateTime        @default(now()) @map("last_edited_time") @db.Timestamptz(6)
+  poolScore        Decimal?        @map("pool_score") @db.Decimal
+  bodyText         String?         @map("body_text")
+  syncStatus       String          @default("SYNCED") @map("sync_status")
+  lastSyncedAt     DateTime?       @map("last_synced_at") @db.Timestamptz(6)
+  productionUnitId String          @map("production_unit_id") @db.Uuid
+  customFields     Json?           @map("custom_fields")
+  outputUrl        String?         @map("output_url")
+  uploadRequestUrl String?         @map("upload_request_url")
+  bundleId         String?         @map("bundle_id") @db.Uuid
+  bundleItemId     String?         @map("bundle_item_id") @db.Uuid
+  bundleOrderId    String?         @map("bundle_order_id") @db.Uuid
+  bundle           Bundle?         @relation(fields: [bundleId], references: [id])
+  bundleItem       BundleItem?     @relation(fields: [bundleItemId], references: [id])
+  bundleOrder      BundleOrder?    @relation(fields: [bundleOrderId], references: [id])
+  productionUnit   ProductionUnit  @relation(fields: [productionUnitId], references: [id])
+  taskAccounts     TaskAccount[]
+  canvaLinks       TaskCanvaLink[]
+  comments         TaskComment[]
+  designStatus     DesignStatus?   @relation(fields: [designStatusId], references: [id])
+  designer         Designer?       @relation(fields: [designerId], references: [id])
+  doctype          Doctype?        @relation(fields: [doctypeId], references: [id])
 
+  @@index([productionUnitId])
+  @@index([bundleOrderId])
   @@map("tasks")
 }
 
@@ -239,20 +305,140 @@ model CanvaEmailNotification {
 }
 
 model EmailConfig {
-  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  provider           String    @default("IMAP") // "IMAP" | "GMAIL_OAUTH"
-  email              String
-  imapHost           String?   @map("imap_host")
-  imapPort           Int?      @default(993) @map("imap_port")
-  encryptedPassword  String?   @map("encrypted_password")
-  encryptedOAuthToken String?  @map("encrypted_oauth_token")
-  iv                 String?
-  authStatus         String    @default("DISCONNECTED") @map("auth_status")
-  lastAuthErrorCode  String?   @map("last_auth_error_code")
-  lastAuthError      String?   @map("last_auth_error")
-  autoSync           Boolean   @default(true) @map("auto_sync")
-  lastSyncedAt       DateTime? @map("last_synced_at") @db.Timestamptz(6)
-  updatedAt          DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  provider            String    @default("IMAP") // "IMAP" | "GMAIL_OAUTH"
+  email               String
+  imapHost            String?   @map("imap_host")
+  imapPort            Int?      @default(993) @map("imap_port")
+  encryptedPassword   String?   @map("encrypted_password")
+  encryptedOAuthToken String?   @map("encrypted_oauth_token")
+  iv                  String?
+  authStatus          String    @default("DISCONNECTED") @map("auth_status")
+  lastAuthErrorCode   String?   @map("last_auth_error_code")
+  lastAuthError       String?   @map("last_auth_error")
+  autoSync            Boolean   @default(true) @map("auto_sync")
+  lastSyncedAt        DateTime? @map("last_synced_at") @db.Timestamptz(6)
+  updatedAt           DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   @@map("email_configs")
+}
+
+model SyncSubjectTrigger {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  subject     String   @unique
+  isActive    Boolean  @default(true) @map("is_active")
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("sync_subject_triggers")
+}
+
+// ── Multi-Production (docs/knowledge/multi-production-plan.md) ──
+model Platform {
+  id                String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name              String
+  slug              String           @unique
+  outputType        String           @default("canva_link") @map("output_type") // "canva_link" | "dropbox_link"
+  baseRate          Int?             @map("base_rate") // tarif dasar per halaman; null = fallback NotionConfig.contractRate
+  contractStartDate DateTime?        @map("contract_start_date") @db.Date
+  createdAt         DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  productionUnits   ProductionUnit[]
+  doctypes          Doctype[]
+  accounts          Account[]
+
+  @@map("platforms")
+}
+
+model ProductionUnit {
+  id                 String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name               String
+  slug               String       @unique
+  platformId         String       @map("platform_id") @db.Uuid
+  notionTaskDbId     String       @map("notion_task_db_id")
+  notionParentPageId String?      @map("notion_parent_page_id")
+  fieldMapping       Json         @default("{}") @map("field_mapping")
+  dropboxRoot        String?      @map("dropbox_root")
+  isActive           Boolean      @default(true) @map("is_active")
+  createdAt          DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  platform           Platform     @relation(fields: [platformId], references: [id])
+  tasks              Task[]
+  bundleItems        BundleItem[]
+  memberships        Membership[]
+
+  @@map("production_units")
+}
+
+// ── Dropbox (multi-production Fase 6) ──
+// Satu koneksi akun Dropbox untuk seluruh app. Refresh token dienkripsi (lib/encryption.ts).
+model DropboxConnection {
+  id                    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId             String   @map("account_id")
+  accountEmail          String?  @map("account_email")
+  encryptedRefreshToken String   @map("encrypted_refresh_token")
+  iv                    String
+  connectedAt           DateTime @default(now()) @map("connected_at") @db.Timestamptz(6)
+  updatedAt             DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("dropbox_connections")
+}
+
+/// Kontrak multi-platform: satu harga paket (bayaran designer) untuk beberapa komponen.
+model Bundle {
+  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name          String
+  price         Decimal       @db.Decimal(14, 2)
+  effectiveFrom DateTime?     @map("effective_from") @db.Date
+  notes         String?
+  isActive      Boolean       @default(true) @map("is_active")
+  createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  items         BundleItem[]
+  orders        BundleOrder[]
+  tasks         Task[]
+
+  @@map("bundles")
+}
+
+/// Komponen bundle = satu task di satu board (ProductionUnit).
+model BundleItem {
+  id               String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  bundleId         String         @map("bundle_id") @db.Uuid
+  productionUnitId String         @map("production_unit_id") @db.Uuid
+  doctypeId        String         @map("doctype_id") @db.Uuid
+  pages            Float
+  sortOrder        Int            @default(0) @map("sort_order")
+  bundle           Bundle         @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  productionUnit   ProductionUnit @relation(fields: [productionUnitId], references: [id])
+  doctype          Doctype        @relation(fields: [doctypeId], references: [id])
+  tasks            Task[]
+
+  @@index([bundleId])
+  @@map("bundle_items")
+}
+
+/// Satu pemesanan bundle; harga di-snapshot saat order dibuat. Tampil di Billing Statement seksi Bundle.
+model BundleOrder {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  bundleId    String    @map("bundle_id") @db.Uuid
+  designerId  String?   @map("designer_id") @db.Uuid
+  period      String?
+  price       Decimal   @db.Decimal(14, 2)
+  status      String    @default("Open")
+  /// "Full" = lunas sekali bayar; "DP" = bayar uang muka dulu, sisanya saat pelunasan.
+  /// "Trial" atau "Kontrak" (kontrak = order manual per periode setelah trial oke).
+  orderType   String    @default("Trial") @map("order_type")
+  /// Bulan payout ke designer; null = belum diset, masuk antrian Closing. Bisa sama/beda dengan `period`.
+  payoutMonth String?   @map("payout_month")
+  paymentType String    @default("Full") @map("payment_type")
+  dpAmount    Decimal   @default(0) @map("dp_amount") @db.Decimal(14, 2)
+  dpPaidAt    DateTime? @map("dp_paid_at") @db.Timestamptz(6)
+  paidAt      DateTime? @map("paid_at") @db.Timestamptz(6)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  bundle      Bundle    @relation(fields: [bundleId], references: [id])
+  designer    Designer? @relation(fields: [designerId], references: [id])
+  tasks       Task[]
+
+  @@index([bundleId])
+  @@map("bundle_orders")
 }

@@ -33,9 +33,18 @@ interface DesignerProps {
   isLeaderboardWinner?: boolean;
 }
 
-export default function DesignerCareerTimeline({ designer }: { designer: DesignerProps }) {
-  const [logs, setLogs] = useState<CareerLogItem[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function DesignerCareerTimeline({
+  designer,
+  readOnly = false,
+  initialLogs,
+}: {
+  designer: DesignerProps;
+  /** Tampilan milik sendiri: tanpa tambah milestone/promosi, log diberikan dari server. */
+  readOnly?: boolean;
+  initialLogs?: CareerLogItem[];
+}) {
+  const [logs, setLogs] = useState<CareerLogItem[]>(initialLogs ?? []);
+  const [loading, setLoading] = useState(!readOnly);
 
   // Form states for manual log addition & promotion
   const [showAddForm, setShowAddForm] = useState(false);
@@ -47,6 +56,7 @@ export default function DesignerCareerTimeline({ designer }: { designer: Designe
   const [saving, setSaving] = useState(false);
 
   const fetchLogs = async () => {
+    if (readOnly) return;
     setLoading(true);
     const res = await getDesignerCareerLogsAction(designer.id);
     if (res.success && res.logs) {
@@ -191,6 +201,7 @@ export default function DesignerCareerTimeline({ designer }: { designer: Designe
           </p>
         </div>
 
+        {!readOnly && (
         <button
           type="button"
           onClick={() => setShowAddForm(!showAddForm)}
@@ -199,10 +210,11 @@ export default function DesignerCareerTimeline({ designer }: { designer: Designe
           <Plus className="w-3.5 h-3.5 stroke-[3]" />
           <span>Tambah Milestone</span>
         </button>
+        )}
       </div>
 
       {/* Manual Add Log Form Drawer */}
-      {showAddForm && (
+      {!readOnly && showAddForm && (
         <div className="p-3.5 border border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 space-y-3">
           <span className="font-bold text-xs text-gray-900 dark:text-white uppercase tracking-wider block">
             Catat Achievement / Milestone Kustom

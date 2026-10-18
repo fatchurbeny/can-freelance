@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useRef, useEffect } from 'react';
 import {
   Search, SlidersHorizontal, ChevronDown, Check, User, FileText, Building2, Calendar, ChevronLeft, X, Loader2,
 } from 'lucide-react';
@@ -57,25 +58,74 @@ export default function PayrollToolbar({
   selectedIdsCount, totalFilteredCount,
   batchMonth, setBatchMonth, batchOpen, setBatchOpen, batchRef, allMonthOptions, handleBatchAssign, isPending,
 }: PayrollToolbarProps) {
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (searchOpen) {
+      searchInputRef.current?.focus();
+    }
+  }, [searchOpen]);
   return (
-    <div className="w-full h-11 border-b border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] flex items-stretch justify-between divide-x divide-[#f0f0f0] dark:divide-[#272a34] font-sans text-xs select-none p-0 overflow-visible">
-      {/* Left Tools Group: Search + Sort + Filter */}
-      <div className="flex items-stretch divide-x divide-[#f0f0f0] dark:divide-[#272a34] min-w-0">
-        {/* Search Cell */}
-        <div className="relative w-44 sm:w-56 flex items-center h-full">
-          <Search className="absolute left-3 w-3.5 h-3.5 text-gray-400 dark:text-gray-500 pointer-events-none" />
-          <input
-            id="approval-payroll-search"
-            type="search"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search..."
-            className="w-full h-full pl-8 pr-3 bg-transparent text-xs font-sans text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none border-none"
-          />
-        </div>
+    <div className="w-full flex flex-col divide-y divide-[#f0f0f0] dark:divide-[#272a34] bg-white dark:bg-[#0d0e12] font-sans text-xs select-none p-0 relative z-50 overflow-visible">
+      {/* ROW 2: Search, Sort, Filter */}
+      <div className="w-full h-11 flex items-stretch justify-between divide-x divide-[#f0f0f0] dark:divide-[#272a34] min-w-0 relative z-50 overflow-visible">
+        {/* Left Tools Group: Search + Sort + Filter (STRICTLY OVERFLOW-VISIBLE) */}
+        <div className="flex items-stretch divide-x divide-[#f0f0f0] dark:divide-[#272a34] shrink-0 overflow-visible">
+          {/* Search Cell: Mobile-Responsive Expandable */}
+          {!searchOpen ? (
+            /* Collapsed: Icon Search Only */
+            <button
+              type="button"
+              onClick={() => setSearchOpen(true)}
+              className="h-full px-3.5 flex items-center justify-center gap-1.5 text-gray-500 hover:text-[#ff5e1f] hover:bg-gray-50 dark:hover:bg-[#16181d] transition-colors cursor-pointer outline-none shrink-0"
+              title="Search tasks..."
+              aria-label="Open search input"
+            >
+              <Search className="w-4 h-4" />
+              {searchQuery && (
+                <span className="w-1.5 h-1.5 rounded-full bg-[#ff5e1f]" />
+              )}
+            </button>
+          ) : (
+            /* Expanded: Search input with autofocus & close button */
+            <div className="relative w-44 sm:w-60 flex items-center h-full px-3 bg-white dark:bg-[#0d0e12] gap-2 shrink-0 animate-[fadeIn_120ms_ease-in]">
+              <Search className="w-4 h-4 text-[#ff5e1f] shrink-0" />
+              <input
+                ref={searchInputRef}
+                id="approval-payroll-search"
+                type="search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') setSearchOpen(false);
+                }}
+                placeholder="Search tasks..."
+                className="w-full h-full bg-transparent text-xs font-sans text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none border-none min-w-0"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-xs px-1"
+                  title="Clear text"
+                >
+                  ✕
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setSearchOpen(false)}
+                className="p-1 rounded text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-xs shrink-0 cursor-pointer"
+                title="Close search"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
 
         {/* Sort Dropdown */}
-        <div className="relative h-full" ref={sortRef}>
+        <div className={`relative h-full ${sortOpen ? 'z-60' : 'z-40'}`} ref={sortRef}>
           <button
             type="button"
             onClick={() => setSortOpen(!sortOpen)}
@@ -86,7 +136,7 @@ export default function PayrollToolbar({
             <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform ${sortOpen ? 'rotate-180' : ''}`} />
           </button>
           {sortOpen && (
-            <div className="absolute left-0 top-full z-50 mt-0 w-40 rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] p-1.5 shadow-xl">
+            <div className="absolute left-0 top-full z-60 mt-0 w-40 rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] p-1.5 shadow-2xl">
               {(['last-edited', 'az', 'za'] as SortKey[]).map((key) => {
                 const isChecked = sortKey === key;
                 return (
@@ -116,7 +166,7 @@ export default function PayrollToolbar({
         </div>
 
         {/* Filter Popover */}
-        <div className="relative h-full" ref={filterRef}>
+        <div className={`relative h-full ${filterOpen ? 'z-60' : 'z-40'}`} ref={filterRef}>
           <button
             type="button"
             onClick={() => { setFilterOpen(!filterOpen); setActiveCategory(null); }}
@@ -137,7 +187,13 @@ export default function PayrollToolbar({
           </button>
 
           {filterOpen && (
-            <div className="absolute left-0 top-full z-50 mt-0 min-w-[220px] max-h-72 overflow-y-auto rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] p-1.5 shadow-xl font-sans text-xs">
+            <div className={`absolute left-0 sm:left-0 z-60 mt-0 ${
+              !activeCategory 
+                ? 'w-40' 
+                : activeCategory === 'taskMonths' 
+                  ? 'w-56 sm:w-60' 
+                  : 'w-48 sm:w-52'
+            } max-w-[calc(100vw-32px)] max-h-72 overflow-y-auto rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] p-1.5 shadow-2xl font-sans text-xs`}>
               {!activeCategory ? (
                 <div className="space-y-0.5">
                   <button
@@ -290,7 +346,7 @@ export default function PayrollToolbar({
                     })}
 
                     {activeCategory === 'taskMonths' && (
-                      <div className="w-56 sm:w-60">
+                      <div className="w-full">
                         <MonthCalendarPicker
                           inline
                           value={taskMonthFilter}
@@ -310,68 +366,86 @@ export default function PayrollToolbar({
             </div>
           )}
         </div>
+        </div>
 
-        {designerFilter && (
-          <div className="flex items-center px-3.5 h-full bg-gray-100 dark:bg-[#1f222b] text-gray-900 dark:text-white text-xs font-sans font-bold gap-1.5">
-            <span>Designer: {designerFilter}</span>
-            <button type="button" onClick={() => setDesignerFilter('')} className="text-gray-400 hover:text-red-500 transition-colors cursor-pointer">
-              <X className="w-3 h-3" />
-            </button>
+        {/* Active Filter Chips (Scrollable without clipping dropdowns) */}
+        {(designerFilter || doctypeFilter || brandFilter || taskMonthFilter) && (
+          <div className="flex items-stretch divide-x divide-[#f0f0f0] dark:divide-[#272a34] overflow-x-auto [&::-webkit-scrollbar]:hidden min-w-0">
+            {designerFilter && (
+              <div className="flex items-center px-3.5 h-full bg-gray-100 dark:bg-[#1f222b] text-gray-900 dark:text-white text-xs font-sans font-bold gap-1.5 shrink-0 whitespace-nowrap">
+                <span>Designer: {designerFilter}</span>
+                <button type="button" onClick={() => setDesignerFilter('')} className="text-gray-400 hover:text-red-500 transition-colors cursor-pointer">
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            )}
+            {doctypeFilter && (
+              <div className="flex items-center px-3.5 h-full bg-gray-100 dark:bg-[#1f222b] text-gray-900 dark:text-white text-xs font-sans font-bold gap-1.5 shrink-0 whitespace-nowrap">
+                <span>Doctype: {doctypeFilter}</span>
+                <button type="button" onClick={() => setDoctypeFilter('')} className="text-gray-400 hover:text-red-500 transition-colors cursor-pointer">
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            )}
+            {brandFilter && (
+              <div className="flex items-center px-3.5 h-full bg-gray-100 dark:bg-[#1f222b] text-gray-900 dark:text-white text-xs font-sans font-bold gap-1.5 shrink-0 whitespace-nowrap">
+                <span>Brand: {brandFilter}</span>
+                <button type="button" onClick={() => setBrandFilter('')} className="text-gray-400 hover:text-red-500 transition-colors cursor-pointer">
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            )}
+            {taskMonthFilter && (
+              <div className="flex items-center px-3.5 h-full bg-gray-100 dark:bg-[#1f222b] text-gray-900 dark:text-white text-xs font-sans font-bold gap-1.5 shrink-0 whitespace-nowrap">
+                <span>Task Month: {taskMonthFilter}</span>
+                <button type="button" onClick={() => setTaskMonthFilter('')} className="text-gray-400 hover:text-red-500 transition-colors cursor-pointer">
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            )}
           </div>
         )}
-        {doctypeFilter && (
-          <div className="flex items-center px-3.5 h-full bg-gray-100 dark:bg-[#1f222b] text-gray-900 dark:text-white text-xs font-sans font-bold gap-1.5">
-            <span>Doctype: {doctypeFilter}</span>
-            <button type="button" onClick={() => setDoctypeFilter('')} className="text-gray-400 hover:text-red-500 transition-colors cursor-pointer">
-              <X className="w-3 h-3" />
-            </button>
-          </div>
-        )}
-        {brandFilter && (
-          <div className="flex items-center px-3.5 h-full bg-gray-100 dark:bg-[#1f222b] text-gray-900 dark:text-white text-xs font-sans font-bold gap-1.5">
-            <span>Brand: {brandFilter}</span>
-            <button type="button" onClick={() => setBrandFilter('')} className="text-gray-400 hover:text-red-500 transition-colors cursor-pointer">
-              <X className="w-3 h-3" />
-            </button>
-          </div>
-        )}
-        {taskMonthFilter && (
-          <div className="flex items-center px-3.5 h-full bg-gray-100 dark:bg-[#1f222b] text-gray-900 dark:text-white text-xs font-sans font-bold gap-1.5">
-            <span>Task Month: {taskMonthFilter}</span>
-            <button type="button" onClick={() => setTaskMonthFilter('')} className="text-gray-400 hover:text-red-500 transition-colors cursor-pointer">
-              <X className="w-3 h-3" />
-            </button>
-          </div>
-        )}
+
+        {/* Right side of Row 2: Total Tasks overview */}
+        <div className="hidden sm:flex items-center px-4 text-xs font-sans text-gray-400 dark:text-gray-500 whitespace-nowrap shrink-0">
+          <span>Total <strong className="text-gray-800 dark:text-gray-200 font-bold">{totalFilteredCount}</strong> Tasks</span>
+        </div>
       </div>
 
-      {/* Right Tools Group: Count + Batch Month Picker + Assign Selected Button */}
-      <div className="flex items-stretch divide-x divide-[#f0f0f0] dark:divide-[#272a34]">
-        <div className="flex items-center px-3.5 text-xs font-sans text-gray-400 dark:text-gray-500 whitespace-nowrap">
-          <span>{selectedIdsCount} of {totalFilteredCount} selected</span>
+      {/* ROW 3: Total Data Viewes (0 of 7 selected), Date Picker & CTA Assign Selected */}
+      <div className="w-full h-11 flex items-stretch justify-between divide-x divide-[#f0f0f0] dark:divide-[#272a34] bg-gray-50/50 dark:bg-[#0d0e12] relative z-20 overflow-visible">
+        {/* Left: Total data / selected count */}
+        <div className="flex items-center px-4 text-xs font-sans text-gray-700 dark:text-gray-300 min-w-0">
+          <span className={selectedIdsCount > 0 ? "font-bold text-[#ff5e1f]" : "text-gray-500 dark:text-gray-400"}>
+            {selectedIdsCount} of {totalFilteredCount} selected
+          </span>
         </div>
 
-        {/* Batch Month Picker Cell */}
-        <div className="w-[150px] sm:w-[160px] h-full align-stretch">
-          <MonthCalendarPicker
-            value={batchMonth}
-            placeholder="Pilih Bulan..."
-            availableMonths={allMonthOptions}
-            mode="payroll"
-            onChange={(m) => setBatchMonth(m)}
-          />
-        </div>
+        {/* Right: Date Picker & Assign Selected Button */}
+        <div className="flex items-stretch divide-x divide-[#f0f0f0] dark:divide-[#272a34] shrink-0">
+          {/* Batch Month Picker Cell */}
+          <div className="w-[140px] sm:w-[160px] h-full align-stretch">
+            <MonthCalendarPicker
+              align="right"
+              value={batchMonth}
+              placeholder="Pilih Bulan..."
+              availableMonths={allMonthOptions}
+              mode="payroll"
+              onChange={(m) => setBatchMonth(m)}
+            />
+          </div>
 
-        {/* Assign Selected Cell */}
-        <button
-          type="button"
-          onClick={handleBatchAssign}
-          disabled={selectedIdsCount === 0 || !batchMonth || isPending}
-          className="h-full px-4 bg-[#ff5e1f] hover:bg-[#ff7038] disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-sans font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap shadow-none"
-        >
-          {isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-          <span>Assign Selected</span>
-        </button>
+          {/* Assign Selected Cell */}
+          <button
+            type="button"
+            onClick={handleBatchAssign}
+            disabled={selectedIdsCount === 0 || !batchMonth || isPending}
+            className="h-full px-4 bg-[#ff5e1f] hover:bg-[#ff7038] disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-sans font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap shadow-none"
+          >
+            {isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+            <span>Assign Selected</span>
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Brand Squircle (#ff5e1f) matching TopBar.tsx rounded-lg -->
+  <rect width="512" height="512" rx="144" fill="#FF5E1F" />
+  
+  <!-- Crisp Bold White Monogram "IS" (Inter / system-ui sans-serif) -->
+  <text 
+    x="256" 
+    y="256" 
+    text-anchor="middle" 
+    dominant-baseline="central" 
+    fill="#FFFFFF" 
+    font-family="Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" 
+    font-weight="800" 
+    font-size="240" 
+    letter-spacing="-6"
+  >IS</text>
+</svg>

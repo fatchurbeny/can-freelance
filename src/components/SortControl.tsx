@@ -16,12 +16,14 @@ interface Props {
   value: SortKey;
   onChange: (value: SortKey) => void;
   disabled?: boolean;
+  /** Subset of sort options to offer. Defaults to all. */
+  options?: readonly { value: SortKey; label: string }[];
 }
 
 /** A-Z / Z-A carry their own direction, so the arrow only reflects the date sorts. */
 const ASCENDING: SortKey[] = ['nameAsc'];
 
-export default function SortControl({ value, onChange, disabled }: Props) {
+export default function SortControl({ value, onChange, disabled, options = SORT_OPTIONS }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -33,7 +35,7 @@ export default function SortControl({ value, onChange, disabled }: Props) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const selected = SORT_OPTIONS.find((o) => o.value === value);
+  const selected = options.find((o) => o.value === value);
   const Arrow = ASCENDING.includes(value) ? ArrowUp : ArrowDown;
 
   return (
@@ -44,7 +46,7 @@ export default function SortControl({ value, onChange, disabled }: Props) {
         disabled={disabled}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
-        className="h-full px-4 border-r border-[#f0f0f0] dark:border-[#272a34] flex items-center gap-2 text-xs font-sans font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#16181d]/50 transition-colors disabled:opacity-50 cursor-pointer select-none outline-none focus:outline-none focus-visible:outline-none"
+        className="h-full px-2.5 sm:px-4 border-r border-[#f0f0f0] dark:border-[#272a34] flex items-center gap-1.5 sm:gap-2 text-xs font-sans font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#16181d]/50 transition-colors disabled:opacity-50 cursor-pointer select-none outline-none focus:outline-none focus-visible:outline-none whitespace-nowrap"
       >
         <Arrow className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
         <span>{selected?.label}</span>
@@ -56,7 +58,7 @@ export default function SortControl({ value, onChange, disabled }: Props) {
           role="listbox"
           className="absolute left-0 top-full z-50 mt-0 min-w-[160px] rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] p-1.5 shadow-xl font-sans text-xs"
         >
-          {SORT_OPTIONS.map((opt) => {
+          {options.map((opt) => {
             const isChecked = value === opt.value;
             return (
               <button

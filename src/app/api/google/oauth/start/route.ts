@@ -2,10 +2,14 @@ import crypto from 'crypto';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import { buildGoogleOAuthUrl, getGoogleOAuthConfig } from '@/lib/google-oauth';
+import { authorizeApi } from '@/lib/api-auth';
 
 export async function GET(request: NextRequest) {
+  const denied = await authorizeApi('integration.manage');
+  if (denied) return denied;
   const origin = request.nextUrl.origin;
-  const returnUrl = new URL('/notion-config', origin);
+  const basePath = request.nextUrl.basePath || (origin.includes('portal.fatchurbeny.com') ? '/can-freelance' : '');
+  const returnUrl = new URL(`${basePath}/notion-config`, origin);
   const email = request.nextUrl.searchParams.get('email')?.trim() || '';
   const { clientId, redirectUri } = getGoogleOAuthConfig(origin);
 

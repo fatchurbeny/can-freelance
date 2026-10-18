@@ -1,9 +1,10 @@
 import prisma from '@/lib/prisma';
+import { requireAccess } from '@/lib/access';
+
 import { getLatestSyncStatus } from '@/app/actions/sync';
-import { getContractRateAction } from '@/app/actions/notion-config';
+import { getPlatformRates } from '@/lib/queries';
 
 export const dynamic = 'force-dynamic';
-import Sidebar from '@/components/Sidebar';
 import TopBar from '@/components/TopBar';
 import DesignerStatusSelect from '@/components/DesignerStatusSelect';
 import AddTeamAccountButton from '@/components/AddTeamAccountButton';
@@ -28,9 +29,9 @@ function getBrandColor(name: string) {
 }
 
 export default async function AccountTeamPage() {
+  const access = await requireAccess(['accountTeam.view']);
   const latestSyncLog = await getLatestSyncStatus();
-  const contractRateRes = await getContractRateAction();
-  const contractRate = contractRateRes.success ? contractRateRes.contractRate : 15000;
+  const platformRates = await getPlatformRates();
 
   const designersData = await prisma.designer.findMany({
     include: {
@@ -74,8 +75,22 @@ export default async function AccountTeamPage() {
     return b.approved - a.approved;
   });
 
+  const [loginUsers, productionUnits] = await Promise.all([
+    prisma.user.findMany({ where: { designerId: { not: null } }, include: { memberships: true } }),
+    prisma.productionUnit.findMany({ where: { isActive: true }, orderBy: { createdAt: 'asc' }, select: { id: true, name: true } }),
+  ]);
+  const accountByDesigner = new Map(loginUsers.map((u) => [u.designerId as string, {
+    userId: u.id,
+    userCode: u.userCode,
+    isActive: u.isActive,
+    pinMustChange: u.pinMustChange,
+    lastLoginAt: u.lastLoginAt ? u.lastLoginAt.toISOString() : null,
+    unitIds: u.memberships.map((m) => m.productionUnitId).filter((id): id is string => !!id),
+  }]));
+
   const accountsData = await prisma.account.findMany({
     include: {
+      platform: true,
       taskAccounts: {
         include: { task: true }
       }
@@ -96,7 +111,6 @@ export default async function AccountTeamPage() {
     <div className="min-h-screen bg-white dark:bg-[#0d0e12] text-[#262626] dark:text-[#f4f4f5] transition-colors">
       <TopBar badgeLabel="ACCOUNT & TEAM" />
       <div className="flex min-h-[calc(100vh-56px)] flex-col md:flex-row">
-        <Sidebar currentSyncLog={latestSyncLog} />
 
         <main className="flex-1 md:ml-56 p-3 sm:p-6 md:p-8 space-y-8 overflow-x-hidden bg-grid-pattern">
 
@@ -121,13 +135,27 @@ export default async function AccountTeamPage() {
 
             {/* Right Full-Height Table Cells (Column 2 - 50%) */}
             <div className="flex items-stretch divide-x divide-[#f0f0f0] dark:divide-[#272a34] font-sans text-xs min-w-0">
-              <div className="flex-1 flex items-center justify-center gap-2 px-4 py-4 bg-white dark:bg-[#0d0e12] text-gray-700 dark:text-gray-300">
-                <CircleDot className="w-3.5 h-3.5 text-[#ff5e1f] shrink-0" />
-                <span className="whitespace-nowrap">Kalender: <strong className="font-bold text-gray-900 dark:text-white">25 Hari Kerja/Bulan</strong></span>
+              <div className="flex-1 flex items-center gap-2.5 px-3.5 sm:px-5 py-3 sm:py-3.5 bg-white dark:bg-[#0d0e12] text-gray-700 dark:text-gray-300 min-w-0">
+                <CircleDot className="w-3.5 h-3.5 text-[#ff5e1f] shrink-0 self-start sm:self-center mt-0.5 sm:mt-0" />
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[10px] sm:text-[11px] font-sans font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                    Kalender:
+                  </span>
+                  <strong className="text-xs sm:text-xs font-bold text-gray-900 dark:text-white truncate">
+                    25 Hari Kerja/Bulan
+                  </strong>
+                </div>
               </div>
-              <div className="flex-1 flex items-center justify-center gap-2 px-4 py-4 bg-white dark:bg-[#0d0e12] text-gray-700 dark:text-gray-300">
-                <CircleDot className="w-3.5 h-3.5 text-[#ff5e1f] shrink-0" />
-                <span className="whitespace-nowrap">Rate/Pool: <strong className="font-bold text-gray-900 dark:text-white">IDR {contractRate!.toLocaleString('id-ID')}</strong></span>
+              <div className="flex-1 flex items-center gap-2.5 px-3.5 sm:px-5 py-3 sm:py-3.5 bg-white dark:bg-[#0d0e12] text-gray-700 dark:text-gray-300 min-w-0">
+                <CircleDot className="w-3.5 h-3.5 text-[#ff5e1f] shrink-0 self-start sm:self-center mt-0.5 sm:mt-0" />
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[10px] sm:text-[11px] font-sans font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                    Tarif Dasar:
+                  </span>
+                  <strong className="text-xs sm:text-xs font-bold text-gray-900 dark:text-white truncate">
+                    {platformRates.label}
+                  </strong>
+                </div>
               </div>
             </div>
           </div>
@@ -142,6 +170,7 @@ export default async function AccountTeamPage() {
               role: d.role,
               status: d.status,
               contractType: d.contractType,
+              isAgency: d.isAgency,
               contractStartDate: d.contractStartDate ? new Date(d.contractStartDate).toISOString() : null,
               probationEndDate: d.probationEndDate ? new Date(d.probationEndDate).toISOString() : null,
               inactiveStartDate: d.inactiveStartDate ? new Date(d.inactiveStartDate).toISOString() : null,
@@ -157,12 +186,16 @@ export default async function AccountTeamPage() {
               pages: d.pages,
               specializations: d.specializations,
               specializationText: d.specializationText,
+              account: accountByDesigner.get(d.id) ?? null,
             }))}
+            productionUnits={productionUnits}
+            canManageUsers={access.allows('user.manage')}
             accounts={accounts.map((a) => ({
               id: a.id,
               displayName: a.displayName,
               color: a.color,
               notionKey: a.notionKey,
+              platformName: a.platform.name,
               doctypes: a.doctypes,
               templates: a.templates,
               pages: a.pages,

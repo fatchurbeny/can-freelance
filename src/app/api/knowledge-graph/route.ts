@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+import { authorizeApi } from '@/lib/api-auth';
 
 export async function GET() {
+  const denied = await authorizeApi('integration.manage');
+  if (denied) return denied;
   try {
     const filePath = path.join(process.cwd(), 'graph.json');
     if (!fs.existsSync(filePath)) {

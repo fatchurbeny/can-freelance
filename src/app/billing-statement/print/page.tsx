@@ -1,6 +1,9 @@
 import prisma from '@/lib/prisma';
 import AutoPrint from '@/components/AutoPrint';
 import React from 'react';
+import { getAccess, landingPath } from '@/lib/access';
+import { redirect } from 'next/navigation';
+import { getPlatformRates } from '@/lib/queries';
 
 function formatCurrency(amount: number) {
   return `IDR ${amount.toLocaleString('id-ID')}`;
@@ -12,16 +15,27 @@ export default async function PrintStatementPage(props: {
   const searchParams = await props.searchParams;
   const { designerId, paymentMonth } = searchParams;
 
+  const access = await getAccess();
+  if (access.enabled) {
+    if (!access.user) redirect('/login');
+    const ownOnly = !access.allows('billing.view') && access.allows('billing.view.own');
+    if (!access.allows('billing.view') && !(ownOnly && designerId && designerId === access.user.designerId)) {
+      redirect(await landingPath(access));
+    }
+  }
+
   if (!designerId || !paymentMonth) {
     return <div className="p-8 text-red-500">Missing designerId or paymentMonth</div>;
   }
 
+  const platformRates = await getPlatformRates();
   const designer = await prisma.designer.findUnique({
     where: { id: designerId },
     include: {
       tasks: {
         where: {
           payrollMonth: paymentMonth,
+          bundleOrderId: null,
           designStatus: { countsAsApproved: true }
         },
         include: {
@@ -44,7 +58,8 @@ export default async function PrintStatementPage(props: {
     const qty = Number(t.qtySubmit || 0);
     const pages = Number(t.pages || 0);
     const poolRate = Number(t.doctype?.poolRate || 0);
-    const payment = qty * pages * poolRate * 15000;
+    const price = platformRates.priceFor(t.doctype, t.payrollMonth);
+    const payment = price.priced ? qty * pages * poolRate * price.rate : 0;
 
     totalTemplates += qty;
     totalPages += qty * pages;

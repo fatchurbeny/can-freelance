@@ -2,10 +2,11 @@
 
 import { useState } from 'react';
 import TopBar from './TopBar';
-import Sidebar from './Sidebar';
 import ProductionView from './ProductionView';
 
 interface Props {
+  productionUnitId: string;
+  productionName?: string;
   periods: string[];
   currentPeriod: string;
   latestSyncLog: any;
@@ -14,9 +15,13 @@ interface Props {
   selectedMonths: string[];
   accounts?: any[];
   unresolvedEmailCount?: number;
+  canCreateTask?: boolean;
+  canSeeIssueTabs?: boolean;
 }
 
 export default function ProductionPageClient({
+  productionUnitId,
+  productionName,
   periods,
   currentPeriod,
   latestSyncLog,
@@ -25,6 +30,8 @@ export default function ProductionPageClient({
   selectedMonths,
   accounts = [],
   unresolvedEmailCount = 0,
+  canCreateTask = true,
+  canSeeIssueTabs = true,
 }: Props) {
   const [createOpen, setCreateOpen] = useState(false);
 
@@ -32,23 +39,26 @@ export default function ProductionPageClient({
     <div className="min-h-screen bg-white dark:bg-[#0d0e12] text-[#262626] dark:text-[#f4f4f5] transition-colors">
       <TopBar
         badgeLabel="PRODUCTION"
+        breadcrumb={productionName ? [{ label: 'Production', href: '/production' }, { label: productionName }] : undefined}
         periods={periods}
         currentPeriod={currentPeriod}
-        createTaskAction={{
+        createTaskAction={canCreateTask ? {
           label: 'Add New Task',
           onClick: () => setCreateOpen(true),
-        }}
+        } : undefined}
       />
       <div className="flex min-h-[calc(100vh-56px)] flex-col md:flex-row">
-        <Sidebar currentSyncLog={latestSyncLog} />
 
         <main className="flex min-h-0 min-w-0 flex-1 md:ml-56 flex-col gap-4 p-3 sm:p-6 md:p-8 bg-grid-pattern">
           <ProductionView
+            productionUnitId={productionUnitId}
             kanbanTasks={kanbanTasks}
             issueTasks={issueTasks}
             selectedMonths={selectedMonths}
             accounts={accounts}
             unresolvedEmailCount={unresolvedEmailCount}
+            canCreateTask={canCreateTask}
+            canSeeIssueTabs={canSeeIssueTabs}
           />
         </main>
       </div>

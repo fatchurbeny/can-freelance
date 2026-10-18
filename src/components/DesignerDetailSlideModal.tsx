@@ -10,6 +10,7 @@ import DatePickerCell from './DatePickerCell';
 import RoleSelectCell from './RoleSelectCell';
 import BankSelectCell from './BankSelectCell';
 import DesignerCareerTimeline from './DesignerCareerTimeline';
+import DesignerLoginAccountSection, { type DesignerLoginAccount } from './DesignerLoginAccountSection';
 
 export interface DesignerItem {
   id: string;
@@ -17,6 +18,7 @@ export interface DesignerItem {
   role?: string | null;
   status: string;
   contractType?: string | null;
+  isAgency?: boolean;
   contractStartDate?: string | null;
   probationEndDate?: string | null;
   inactiveStartDate?: string | null;
@@ -32,6 +34,7 @@ export interface DesignerItem {
   pages?: number;
   specializations?: string[];
   specializationText?: string;
+  account?: DesignerLoginAccount | null;
 }
 
 interface Props {
@@ -39,6 +42,8 @@ interface Props {
   designer: DesignerItem | null;
   initialTab?: 'profile' | 'timeline';
   onClose: () => void;
+  productionUnits?: { id: string; name: string }[];
+  canManageUsers?: boolean;
 }
 
 function addThreeMonths(dateStr: string): string {
@@ -51,13 +56,14 @@ function addThreeMonths(dateStr: string): string {
   return `${y}-${m}-${day}`;
 }
 
-export default function DesignerDetailSlideModal({ open, designer, initialTab = 'profile', onClose }: Props) {
+export default function DesignerDetailSlideModal({ open, designer, initialTab = 'profile', onClose, productionUnits = [], canManageUsers = false }: Props) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'profile' | 'timeline'>(initialTab);
   const [displayName, setDisplayName] = useState('');
   const [role, setRole] = useState('Junior Designer');
   const [status, setStatus] = useState('Active');
   const [contractType, setContractType] = useState('Freelance');
+  const [isAgency, setIsAgency] = useState(false);
 
   const todayIso = new Date().toISOString().split('T')[0];
   const [contractStartDate, setContractStartDate] = useState(todayIso);
@@ -93,6 +99,7 @@ export default function DesignerDetailSlideModal({ open, designer, initialTab = 
     setRole(designer.role || 'Junior Designer');
     setStatus(designer.status || 'Active');
     setContractType(designer.contractType || 'Freelance');
+    setIsAgency(Boolean(designer.isAgency));
 
     const cStart = designer.contractStartDate ? new Date(designer.contractStartDate).toISOString().split('T')[0] : todayStr;
     setContractStartDate(cStart);
@@ -161,6 +168,7 @@ export default function DesignerDetailSlideModal({ open, designer, initialTab = 
       contractStartDate,
       probationEndDate: contractType === 'Probation' ? probationEndDate : null,
       role: role.trim(),
+      isAgency,
     });
 
     // 3. Update Role & Promotion Date if changed
@@ -319,6 +327,29 @@ export default function DesignerDetailSlideModal({ open, designer, initialTab = 
                   onChange={setRole}
                   placeholder="Pilih Role / Jabatan..."
                 />
+              </div>
+            </div>
+
+            {/* Row: Tipe Designer (Individu / Agency) */}
+            <div className="flex items-stretch text-xs font-sans min-h-[44px]">
+              <div className="w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-3 sm:px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
+                <span>Tipe</span>
+              </div>
+              <div className="flex-1 grid grid-cols-2 divide-x divide-[#f0f0f0] dark:divide-[#272a34] bg-white dark:bg-[#0d0e12]">
+                {[false, true].map((v) => (
+                  <button
+                    key={String(v)}
+                    type="button"
+                    onClick={() => setIsAgency(v)}
+                    className={`h-full min-h-[44px] px-2 font-sans text-xs font-bold uppercase transition-colors cursor-pointer flex items-center justify-center ${
+                      isAgency === v
+                        ? 'bg-indigo-600 text-white'
+                        : 'bg-gray-50/50 dark:bg-[#16181d]/50 hover:bg-gray-100 dark:hover:bg-[#16181d] text-gray-700 dark:text-gray-300'
+                    }`}
+                  >
+                    {v ? 'Agency' : 'Individu'}
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -533,6 +564,15 @@ export default function DesignerDetailSlideModal({ open, designer, initialTab = 
                 </div>
               </div>
             </div>
+
+            {/* Row 9: Akun Login (ID + PIN) */}
+            {canManageUsers && designer && (
+              <DesignerLoginAccountSection
+                designerId={designer.id}
+                account={designer.account}
+                productionUnits={productionUnits}
+              />
+            )}
 
           </div>
           )}

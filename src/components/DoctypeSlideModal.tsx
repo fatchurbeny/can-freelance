@@ -20,23 +20,27 @@ import {
   CheckCircle2,
   Save
 } from 'lucide-react';
+import { listPlatformsAction } from '@/app/actions/production-unit';
 import { createDoctypeAction, updateDoctypeRateCardAction } from '@/app/actions/rate-card';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 
 import CategorySelectCell from './CategorySelectCell';
+import PlatformSelectCell from './PlatformSelectCell';
 
 export interface DoctypeItem {
   id: string;
   notionKey: string;
   displayName: string;
   poolRate: number;
+  usage?: string | null;
   pages: number | null;
   category?: string | null;
   dimensions?: string | null;
   aspectRatio?: string | null;
   notes?: string | null;
   isActive?: boolean;
+  platform?: { slug: string; name: string } | null;
   updatedAt: Date | string;
 }
 
@@ -87,6 +91,8 @@ export default function DoctypeSlideModal({
   const isEditing = Boolean(doctypeToEdit);
   const router = useRouter();
 
+  const [platforms, setPlatforms] = useState<{ slug: string; name: string }[]>([]);
+  const [platformSlug, setPlatformSlug] = useState('canva');
   const [name, setName] = useState('');
   const [notionKey, setNotionKey] = useState('');
   const [category, setCategory] = useState('Infografis');
@@ -94,11 +100,16 @@ export default function DoctypeSlideModal({
   const [aspectRatio, setAspectRatio] = useState('16:9');
   const [poolRate, setPoolRate] = useState('1.5');
   const [pages, setPages] = useState('1');
+  const [usage, setUsage] = useState<'Kontrak' | 'Bundle' | 'Keduanya'>('Kontrak');
   const [notes, setNotes] = useState('');
   const [isActive, setIsActive] = useState(true);
 
   const [error, setError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (open && !isEditing) listPlatformsAction().then(setPlatforms).catch(() => {});
+  }, [open, isEditing]);
 
   useEffect(() => {
     if (doctypeToEdit) {
@@ -109,9 +120,11 @@ export default function DoctypeSlideModal({
       setAspectRatio(doctypeToEdit.aspectRatio || '16:9');
       setPoolRate(String(doctypeToEdit.poolRate ?? 1.5));
       setPages(String(doctypeToEdit.pages ?? 1));
+      setUsage((doctypeToEdit.usage as 'Kontrak' | 'Bundle' | 'Keduanya') || 'Kontrak');
       setNotes(doctypeToEdit.notes || '');
       setIsActive(doctypeToEdit.isActive ?? true);
     } else {
+      setPlatformSlug('canva');
       setName('');
       setNotionKey('');
       setCategory('Infografis');
@@ -119,6 +132,7 @@ export default function DoctypeSlideModal({
       setAspectRatio('16:9');
       setPoolRate('1.5');
       setPages('1');
+      setUsage('Kontrak');
       setNotes('');
       setIsActive(true);
     }
@@ -163,7 +177,7 @@ export default function DoctypeSlideModal({
       return;
     }
 
-    if (numericPoolRate < 0 || numericPages < 1) {
+    if ((usage !== 'Bundle' && numericPoolRate < 0) || numericPages < 1) {
       setError('Pool Score dan QTY Halaman tidak valid.');
       toast.error('Pool Score dan QTY Halaman tidak valid.');
       return;
@@ -179,7 +193,8 @@ export default function DoctypeSlideModal({
         category,
         dimensions,
         aspectRatio,
-        poolRate: numericPoolRate,
+        poolRate: usage === 'Bundle' ? 0 : numericPoolRate,
+        usage,
         pages: numericPages,
         notes,
         isActive,
@@ -195,12 +210,14 @@ export default function DoctypeSlideModal({
       toast.success(`Doctype "${nextName}" berhasil diperbarui!`);
     } else {
       const res = await createDoctypeAction({
+        platformSlug,
         name: nextName,
         notionKey: nextNotionKey,
         category,
         dimensions,
         aspectRatio,
-        poolRate: numericPoolRate,
+        poolRate: usage === 'Bundle' ? 0 : numericPoolRate,
+        usage,
         pages: numericPages,
         notes,
         isActive,
@@ -262,6 +279,23 @@ export default function DoctypeSlideModal({
         {/* Main Form Body — Edge-to-Edge Continuous 2-Column Symmetrical Grid */}
         <div className="min-h-0 flex-1 overflow-y-auto divide-y divide-[#f0f0f0] dark:divide-[#272a34] p-0 scroll-smooth [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-gray-300 dark:[&::-webkit-scrollbar-thumb]:bg-[#272a34]">
           <div className="divide-y divide-[#f0f0f0] dark:divide-[#272a34] bg-white dark:bg-[#0d0e12]">
+
+            {/* Row 0: Platform (hanya saat membuat) */}
+            {!isEditing && (
+              <div className="flex items-stretch text-xs font-sans min-h-[44px]">
+                <div className="w-[110px] sm:w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-3 sm:px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none whitespace-nowrap">
+                  <Layers className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                  <span>Platform</span>
+                </div>
+                <div className="flex-1 p-0 flex items-stretch min-h-[44px] bg-white dark:bg-[#0d0e12]">
+                  <PlatformSelectCell
+                    value={platformSlug}
+                    options={platforms.length ? platforms : [{ slug: 'canva', name: 'Canva' }]}
+                    onChange={setPlatformSlug}
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Row 1: Nama Format Doctype */}
             <div className="flex items-stretch text-xs font-sans min-h-[44px]">
@@ -358,6 +392,23 @@ export default function DoctypeSlideModal({
               </div>
             </div>
 
+            {/* Kegunaan: Kontrak / Bundle / Keduanya */}
+            <div className="flex items-stretch text-xs font-sans min-h-[44px]">
+              <div className="w-[110px] sm:w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-3 sm:px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
+                <span>Kegunaan</span>
+              </div>
+              <div className="flex-1 grid grid-cols-3 divide-x divide-[#f0f0f0] dark:divide-[#272a34] bg-white dark:bg-[#0d0e12]">
+                {(['Kontrak', 'Bundle', 'Keduanya'] as const).map((v) => (
+                  <button key={v} type="button" onClick={() => setUsage(v)}
+                    className={`min-h-[44px] text-xs font-bold uppercase tracking-wider cursor-pointer transition-colors ${usage === v ? 'bg-emerald-600 text-white' : 'bg-gray-50/50 dark:bg-[#16181d]/50 text-gray-500 hover:text-gray-900 dark:hover:text-white'}`}>{v}</button>
+                ))}
+              </div>
+            </div>
+            {usage === 'Bundle' && (
+              <div className="px-5 py-3 bg-emerald-50/60 dark:bg-emerald-500/5 text-[11px] text-gray-600 dark:text-gray-400 border-y border-[#f0f0f0] dark:border-[#272a34]">Doctype khusus bundle tidak memakai pool score dan tarif. Harganya ikut harga paket di tab Bundle; jumlah halaman diatur per komponen bundle.</div>
+            )}
+
+            {usage !== 'Bundle' && (<>
             {/* Row 6: Section Divider — SKEMA TARIF KONTRAK FREELANCE */}
             <div className="px-5 py-3 bg-[#ff5e1f]/5 dark:bg-[#ff5e1f]/10 border-y border-[#f0f0f0] dark:border-[#272a34] flex items-center justify-between text-xs font-sans">
               <div className="flex items-center gap-2 font-bold uppercase tracking-wider text-[#ff5e1f]">
@@ -412,6 +463,7 @@ export default function DoctypeSlideModal({
               </div>
             </div>
 
+            </>)}
             {/* Row 8: Default QTY Halaman / Slides */}
             <div className="flex items-stretch text-xs font-sans min-h-[44px]">
               <div className="w-[110px] sm:w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-3 sm:px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
@@ -430,6 +482,7 @@ export default function DoctypeSlideModal({
               </div>
             </div>
 
+            {usage !== 'Bundle' && (<>
             {/* Row 9: Rate / Pages (Rp) */}
             <div className="flex items-stretch text-xs font-sans min-h-[44px]">
               <div className="w-[110px] sm:w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-3 sm:px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
@@ -457,6 +510,7 @@ export default function DoctypeSlideModal({
               </div>
             </div>
 
+            </>)}
             {/* Row 11: Catatan Produksi & Panduan Template */}
             <div className="flex items-stretch text-xs font-sans min-h-[80px]">
               <div className="w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-5 py-3 flex items-start gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">

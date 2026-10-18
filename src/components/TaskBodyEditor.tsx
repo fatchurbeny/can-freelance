@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
+import { sortByBriefOrder } from './task-detail/brief-parser';
 import {
   FileText,
   Plus,
@@ -15,6 +16,12 @@ interface Props {
   onChange?: (value: string) => void;
   readOnly?: boolean;
   label?: string;
+  /** Display & compile sections in Design Brief canonical order */
+  orderSections?: boolean;
+  /** Hide the internal header bar (when the parent renders its own toolbar) */
+  hideHeader?: boolean;
+  /** Extra UI rendered under a section's textarea (e.g. palette picker) */
+  renderSectionExtra?: (heading: string) => ReactNode;
 }
 
 interface Section {
@@ -74,14 +81,21 @@ export default function TaskBodyEditor({
   onChange,
   readOnly = false,
   label = 'Content Wireframe & Design References',
+  orderSections = false,
+  hideHeader = false,
+  renderSectionExtra,
 }: Props) {
+  const parse = (md: string) => {
+    const parsed = parseMarkdownToSections(md);
+    return orderSections ? sortByBriefOrder(parsed, (s) => s.heading) : parsed;
+  };
   const [copied, setCopied] = useState(false);
   const [sections, setSections] = useState<Section[]>([]);
 
   useEffect(() => {
     const compiled = compileSectionsToMarkdown(sections);
     if (value !== compiled) {
-      setSections(parseMarkdownToSections(value || ''));
+      setSections(parse(value || ''));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
@@ -123,6 +137,7 @@ export default function TaskBodyEditor({
 
   return (
     <div className="w-full rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] divide-y divide-[#f0f0f0] dark:divide-[#272a34] font-sans text-xs flex flex-col h-full min-h-[300px]">
+      {!hideHeader && (
       <div className="flex shrink-0 items-center justify-between p-3 sm:px-4 bg-gray-50/50 dark:bg-[#16181d]/50">
         <div className="flex items-center gap-2 font-bold text-gray-700 dark:text-gray-300">
           <FileText className="w-4 h-4 text-[#ff5e1f]" />
@@ -141,6 +156,7 @@ export default function TaskBodyEditor({
           )}
         </div>
       </div>
+      )}
 
       <div className="flex-1 p-0 bg-white dark:bg-[#0d0e12] overflow-y-auto">
         <div className="p-4 space-y-6">
@@ -187,6 +203,7 @@ export default function TaskBodyEditor({
                   className="w-full min-h-[80px] p-3 rounded border border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 text-gray-900 dark:text-gray-200 outline-none focus:border-[#ff5e1f] focus:ring-1 focus:ring-[#ff5e1f]/50 transition-colors resize-y font-mono text-[11px] leading-relaxed"
                   readOnly={readOnly}
                 />
+                {renderSectionExtra?.(section.heading)}
               </div>
             ))
           )}

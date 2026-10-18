@@ -1,11 +1,12 @@
+import { requireAccess } from '@/lib/access';
 import { Suspense } from 'react';
+import { redirect } from 'next/navigation';
 import prisma from '@/lib/prisma';
 import { 
   getAvailablePeriods, 
   getDashboardData 
 } from '@/lib/queries';
 import { getLatestSyncStatus } from './actions/sync';
-import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 import TopBar from '@/components/TopBar';
 import BrandTabs from '@/components/BrandTabs';
@@ -24,19 +25,39 @@ interface PageProps {
 }
 
 export default async function DashboardPage({ searchParams }: PageProps) {
+  await requireAccess(['overview.view']);
   // Await searchParams as required in Next.js 15+
   const resolvedSearchParams = await searchParams;
   
   // Extract and sanitize active filters
   const activeBrand = typeof resolvedSearchParams.brand === 'string' ? resolvedSearchParams.brand : 'Semua Brand';
+  const activeProduction = typeof resolvedSearchParams.production === 'string' ? resolvedSearchParams.production : null;
   const activePeriod = typeof resolvedSearchParams.period === 'string' ? resolvedSearchParams.period : null;
+
+  // Root Overview belum punya halaman sendiri: arahkan ke production pertama.
+  if (!activeProduction) {
+    const first = await prisma.productionUnit.findFirst({
+      where: { isActive: true },
+      orderBy: { createdAt: 'asc' },
+      select: { slug: true },
+    });
+    if (first) redirect(`/?production=${encodeURIComponent(first.slug)}${activePeriod ? `&period=${encodeURIComponent(activePeriod)}` : ''}`);
+  }
 
   // 1. Fetch metadata & filter options from DB with defensive fallbacks
   let periods: string[] = [];
   let brandsList: string[] = [];
+  let productionUnit: { id: string; name: string; platformId: string } | null = null;
   try {
     periods = await getAvailablePeriods();
+    if (activeProduction) {
+      productionUnit = await prisma.productionUnit.findUnique({
+        where: { slug: activeProduction },
+        select: { id: true, name: true, platformId: true },
+      });
+    }
     const accounts = await prisma.account.findMany({
+      where: productionUnit ? { platformId: productionUnit.platformId } : undefined,
       orderBy: { displayName: 'asc' }
     });
     brandsList = accounts.map((acc) => acc.displayName);
@@ -56,6 +77,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   try {
     dashboardData = await getDashboardData({
       brandName: activeBrand,
+      productionUnitId: productionUnit?.id ?? null,
       selectedPeriod: selectedPeriod,
     });
   } catch (error) {
@@ -68,11 +90,10 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   return (
     <div className="min-h-screen bg-white dark:bg-[#0d0e12] text-[#262626] dark:text-[#f4f4f5] transition-colors">
       {/* Top Global Cloudflare Title Bar */}
-      <TopBar badgeLabel="DASHBOARD" periods={periods} currentPeriod={selectedPeriod} />
+      <TopBar badgeLabel={productionUnit ? `DASHBOARD · ${productionUnit.name.toUpperCase()}` : "DASHBOARD"} periods={periods} currentPeriod={selectedPeriod} />
 
       <div className="flex flex-col md:flex-row min-h-[calc(100vh-56px)]">
         {/* Sidebar navigation */}
-        <Sidebar currentSyncLog={latestSyncLog} />
 
         {/* Main dashboard content */}
         <main className="flex min-h-0 min-w-0 flex-1 md:ml-56 flex-col p-3 sm:p-6 md:p-8 bg-grid-pattern">

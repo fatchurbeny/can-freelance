@@ -142,8 +142,8 @@ export default function ApprovalPayrollTable({ tasks, allMonthOptions }: Props) 
 
   return (
     <div className="flex flex-col bg-white dark:bg-[#0d0e12]">
-      {/* Sticky Header Group: Row 2 (Payroll Toolbar) + Row 3 (Table Header) */}
-      <div className="sticky top-[97px] z-30 bg-white dark:bg-[#0d0e12] divide-y divide-[#f0f0f0] dark:divide-[#272a34] shadow-sm">
+      {/* Sticky Header Group: Row 2 (Search, Sort, Filter) + Row 3 (Selection, Date Picker, CTA) + Table Header */}
+      <div className="sticky top-[104px] z-30 bg-white dark:bg-[#0d0e12] divide-y divide-[#f0f0f0] dark:divide-[#272a34] shadow-sm">
         <PayrollToolbar
           searchQuery={searchQuery} setSearchQuery={setSearchQuery}
           sortKey={sortKey} setSortKey={setSortKey} sortOpen={sortOpen} setSortOpen={setSortOpen} sortRef={sortRef} SORT_LABELS={SORT_LABELS}
@@ -155,7 +155,7 @@ export default function ApprovalPayrollTable({ tasks, allMonthOptions }: Props) 
           batchMonth={batchMonth} setBatchMonth={setBatchMonth} batchOpen={batchOpen} setBatchOpen={setBatchOpen} batchRef={batchRef} allMonthOptions={allMonthOptions} handleBatchAssign={handleBatchAssign} isPending={isPending}
         />
 
-        <div className="overflow-x-auto bg-gray-50/50 dark:bg-[#0d0e12]">
+        <div className="overflow-x-auto bg-gray-50/50 dark:bg-[#0d0e12] relative z-10">
           <table className="w-full border-collapse text-left font-sans text-xs min-w-[950px]">
             <thead>
               <tr className="border-b border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#0d0e12] text-[11px] font-sans font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">

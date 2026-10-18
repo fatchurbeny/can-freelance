@@ -12,6 +12,7 @@ export interface AccountItem {
   displayName: string;
   color?: string | null;
   notionKey?: string | null;
+  platformName?: string;
   doctypes?: number;
   templates?: number;
   pages?: number;
@@ -104,7 +105,7 @@ export default function AccountDetailSlideModal({ open, account, onClose }: Prop
                 {account.displayName}
               </h2>
               <p className="text-xs font-sans text-gray-500 dark:text-gray-400 truncate">
-                Canva Account / Brand Profile
+                Account / Brand Profile
               </p>
             </div>
           </div>

@@ -223,7 +223,7 @@ export default function EmailConfigCard() {
         {!googleOAuthConfigured && (
           <div className="mt-3 p-3 rounded-lg border text-xs font-sans bg-gray-50 dark:bg-[#16181d] border-[#f0f0f0] dark:border-[#272a34] text-gray-600 dark:text-gray-300">
             <div className="font-bold text-gray-900 dark:text-white mb-1">Google OAuth Setup Required</div>
-            <div>Set `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, dan `EMAIL_TOKEN_SECRET`, lalu daftarkan callback URL: `/api/google/oauth/callback`.</div>
+            <div>Set `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, dan `EMAIL_TOKEN_SECRET`, lalu daftarkan callback URL: `/can-freelance/api/google/oauth/callback`.</div>
           </div>
         )}
       </div>

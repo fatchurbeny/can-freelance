@@ -1,119 +1,40 @@
+import { requireAccess } from '@/lib/access';
+import { redirect } from 'next/navigation';
 import prisma from '@/lib/prisma';
 import { getLatestSyncStatus } from '@/app/actions/sync';
-import { getAvailablePeriods } from '@/lib/queries';
-import ProductionPageClient from '@/components/ProductionPageClient';
+import ProductionHubClient from '@/components/ProductionHubClient';
 
 export const dynamic = 'force-dynamic';
-
-/** Every status the board renders as a column. "Aproved" is Notion's spelling. */
-const BOARD_STATUSES = [
-  'QA',
-  'qa',
-  'Q&A',
-  'q&a',
-  'In QA',
-  'in qa',
-  'QA Process',
-  'Quality Assurance',
-  'Testing/QA',
-  'QA/Testing',
-  'In Review',
-  'In review',
-  'Aproved',
-  'Approved',
-  'Aproved-Profile Only',
-  'Approved-Profile Only',
-  'In Progress',
-  'In progress',
-  'Not Started',
-  'Not started',
-  'Reject',
-  'reject',
-  'Draft',
-  'draft',
-];
-
-const INDONESIAN_MONTHS = [
-  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-];
-
-function periodToTaskMonth(periodStr: string): string {
-  const parts = periodStr.split('-');
-  if (parts.length !== 2) return periodStr;
-  const [year, month] = parts;
-  const monthIdx = parseInt(month, 10) - 1;
-  if (monthIdx >= 0 && monthIdx < 12) {
-    return `${INDONESIAN_MONTHS[monthIdx]}-${year}`;
-  }
-  return periodStr;
-}
 
 interface PageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-export default async function ProductionPage({ searchParams }: PageProps) {
-  const resolvedSearchParams = await searchParams;
-  const activePeriod = typeof resolvedSearchParams.period === 'string' ? resolvedSearchParams.period : '';
+export default async function ProductionHubPage({ searchParams }: PageProps) {
+  await requireAccess(['production.create']);
+  const params = await searchParams;
 
-  const [tasks, issueTasks, latestSyncLog, periods, accounts, unresolvedEmailCount] = await Promise.all([
-    prisma.task.findMany({
-      where: {
-        OR: [
-          { designStatusId: null },
-          { designStatus: { notionKey: { in: BOARD_STATUSES } } },
-        ],
-      },
-      include: {
-        designer: true,
-        doctype: true,
-        taskAccounts: { include: { account: true } },
-        canvaLinks: { orderBy: { createdAt: 'asc' } },
-        designStatus: true,
-        comments: { select: { id: true } },
-      },
-      orderBy: { lastEditedTime: 'desc' },
-    }),
-    prisma.task.findMany({
-      where: {
-        OR: [
-          { taskMonth: null },
-          { poolScore: null },
-        ],
-      },
-      include: {
-        designer: true,
-        doctype: true,
-        designStatus: true,
-        taskAccounts: { include: { account: true } },
-      },
-      orderBy: { createdTime: 'desc' },
-    }),
-    getLatestSyncStatus(),
-    getAvailablePeriods(),
-    prisma.account.findMany({
-      orderBy: { displayName: 'asc' },
-    }),
-    prisma.canvaEmailNotification.count({
-      where: { status: 'UNRESOLVED' },
-    }),
-  ]);
+  const units = await prisma.productionUnit.findMany({
+    include: { platform: true, _count: { select: { tasks: true } } },
+    orderBy: { createdAt: 'asc' },
+  });
 
-  const isAll = !activePeriod || activePeriod === 'all';
-  const currentPeriod = isAll ? 'all' : activePeriod;
-  const selectedPeriods = isAll ? periods : activePeriod.split(',').filter(Boolean);
+  // Bookmark lama `/production?period=…` dialihkan ke unit pertama, membawa query-nya.
+  const legacyQuery = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (typeof value === 'string') legacyQuery.set(key, value);
+  }
+  const activeUnits = units.filter((u) => u.isActive);
+  if (activeUnits.length > 0 && legacyQuery.toString()) {
+    redirect(`/production/${activeUnits[0].slug}?${legacyQuery.toString()}`);
+  }
+
+  const latestSyncLog = await getLatestSyncStatus();
 
   return (
-    <ProductionPageClient
-      periods={periods}
-      currentPeriod={currentPeriod}
+    <ProductionHubClient
+      units={JSON.parse(JSON.stringify(units))}
       latestSyncLog={latestSyncLog}
-      kanbanTasks={JSON.parse(JSON.stringify(tasks))}
-      issueTasks={JSON.parse(JSON.stringify(issueTasks))}
-      selectedMonths={selectedPeriods}
-      accounts={JSON.parse(JSON.stringify(accounts))}
-      unresolvedEmailCount={unresolvedEmailCount}
     />
   );
 }
