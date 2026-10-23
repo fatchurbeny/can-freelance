@@ -3,7 +3,7 @@ import AutoPrint from '@/components/AutoPrint';
 import React from 'react';
 import { getAccess, landingPath } from '@/lib/access';
 import { redirect } from 'next/navigation';
-import { getPlatformRates } from '@/lib/queries';
+import { getBundleOrdersForPeriod, getPlatformRates } from '@/lib/queries';
 
 function formatCurrency(amount: number) {
   return `IDR ${amount.toLocaleString('id-ID')}`;
@@ -49,6 +49,11 @@ export default async function PrintStatementPage(props: {
     return <div className="p-8 text-red-500">Designer not found</div>;
   }
 
+  // Order bundle yang masuk payout bulan ini (aturan sama dengan halaman billing).
+  const bundle = await getBundleOrdersForPeriod(paymentMonth);
+  const bundleRows = bundle.rows.filter((r) => r.designerId === designer.id && r.inPayout && r.completed && !r.resigned);
+  const bundleTotal = bundle.payoutByDesigner.get(designer.id) ?? 0;
+
   let totalPayroll = 0;
   const totalTasks = designer.tasks.length;
   let totalTemplates = 0;
@@ -59,7 +64,7 @@ export default async function PrintStatementPage(props: {
     const pages = Number(t.pages || 0);
     const poolRate = Number(t.doctype?.poolRate || 0);
     const price = platformRates.priceFor(t.doctype, t.payrollMonth);
-    const payment = price.priced ? qty * pages * poolRate * price.rate : 0;
+    const payment = designer.status === 'Resign' || !price.priced ? 0 : qty * pages * poolRate * price.rate;
 
     totalTemplates += qty;
     totalPages += qty * pages;
@@ -68,7 +73,8 @@ export default async function PrintStatementPage(props: {
     return {
       ...t,
       calculatedPayment: payment,
-      poolRate: poolRate
+      poolRate: poolRate,
+      rate: price.priced ? price.rate : null,
     };
   });
 
@@ -110,7 +116,7 @@ export default async function PrintStatementPage(props: {
           </div>
           <div className="text-center border-l-2 border-gray-200 pl-8 ml-4">
             <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Total Payout</p>
-            <p className="text-xl font-bold text-green-600">{formatCurrency(totalPayroll)}</p>
+            <p className="text-xl font-bold text-green-600">{formatCurrency(totalPayroll + bundleTotal)}</p>
           </div>
         </div>
       </div>
@@ -141,7 +147,7 @@ export default async function PrintStatementPage(props: {
                 <td className="py-3 px-2 text-gray-900 font-medium text-center">{Number(task.qtySubmit || 0)}</td>
                 <td className="py-3 px-2 text-gray-600 text-center">{Number(task.pages || 0)}</td>
                 <td className="py-3 px-2 text-indigo-600 font-semibold text-center">{task.poolRate}</td>
-                <td className="py-3 px-2 text-gray-600 text-right">{formatCurrency(15000)}</td>
+                <td className="py-3 px-2 text-gray-600 text-right">{task.rate === null ? '-' : formatCurrency(task.rate)}</td>
                 <td className="py-3 pr-0 pl-2 text-green-600 font-medium text-right">{formatCurrency(task.calculatedPayment)}</td>
               </tr>
             ))
@@ -156,12 +162,50 @@ export default async function PrintStatementPage(props: {
         <tfoot>
           <tr className="border-t-2 border-gray-200">
             <td colSpan={7} className="py-4 pr-0 pl-2 text-right">
-              <span className="font-bold text-gray-900 mr-3">Total Calculation:</span>
+              <span className="font-bold text-gray-900 mr-3">{bundleRows.length > 0 ? 'Subtotal Satuan:' : 'Total Calculation:'}</span>
               <span className="font-bold text-green-600 text-lg">{formatCurrency(totalPayroll)}</span>
             </td>
           </tr>
         </tfoot>
       </table>
+
+      {bundleRows.length > 0 && (
+        <>
+          <h2 className="mt-10 mb-3 text-sm font-bold text-gray-700 uppercase tracking-wider">Order Bundle</h2>
+          <table className="w-full text-left border-collapse table-fixed">
+            <thead>
+              <tr className="border-b-2 border-gray-200">
+                <th className="py-3 px-2 text-xs font-bold text-gray-700 uppercase tracking-wider w-[50%]">Bundle</th>
+                <th className="py-3 px-2 text-xs font-bold text-gray-700 uppercase tracking-wider text-center w-[20%]">Tasks</th>
+                <th className="py-3 pr-0 pl-2 text-xs font-bold text-gray-700 uppercase tracking-wider text-right w-[30%]">Harga Paket</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y-2 divide-gray-200">
+              {bundleRows.map((r) => (
+                <tr key={r.id} className="text-sm">
+                  <td className="py-3 px-2 text-gray-900 font-medium">{r.bundleName}</td>
+                  <td className="py-3 px-2 text-gray-600 text-center">{r.totalTasks}</td>
+                  <td className="py-3 pr-0 pl-2 text-green-600 font-medium text-right">{formatCurrency(r.price)}</td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr className="border-t-2 border-gray-200">
+                <td colSpan={3} className="py-4 pr-0 pl-2 text-right">
+                  <span className="font-bold text-gray-900 mr-3">Subtotal Bundle:</span>
+                  <span className="font-bold text-green-600 text-lg">{formatCurrency(bundleTotal)}</span>
+                </td>
+              </tr>
+              <tr>
+                <td colSpan={3} className="py-4 pr-0 pl-2 text-right border-t-2 border-gray-900">
+                  <span className="font-bold text-gray-900 mr-3">Total Calculation:</span>
+                  <span className="font-bold text-green-600 text-lg">{formatCurrency(totalPayroll + bundleTotal)}</span>
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </>
+      )}
     </div>
   );
 }
