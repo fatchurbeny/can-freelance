@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "generatedAt": "2026-10-18T15:42:21.476Z",
+  "generatedAt": "2026-10-23T17:23:00.208Z",
   "nodes": [
     {
       "id": "page:/account-team",
@@ -537,6 +537,14 @@
       "group": "React Components",
       "filepath": "src/components/billing/OwnBillingView.tsx",
       "details": "React UI Component in src/components/billing/OwnBillingView.tsx"
+    },
+    {
+      "id": "component:OwnMonthSelect",
+      "label": "OwnMonthSelect",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/billing/OwnMonthSelect.tsx",
+      "details": "React UI Component in src/components/billing/OwnMonthSelect.tsx"
     },
     {
       "id": "component:ProductionBreakdown",
@@ -1185,6 +1193,14 @@
       "group": "React Components",
       "filepath": "src/components/task-detail/brief-parser.ts",
       "details": "React UI Component in src/components/task-detail/brief-parser.ts"
+    },
+    {
+      "id": "component:DesignBriefEditorDrawer",
+      "label": "DesignBriefEditorDrawer",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/task-detail/DesignBriefEditorDrawer.tsx",
+      "details": "React UI Component in src/components/task-detail/DesignBriefEditorDrawer.tsx"
     },
     {
       "id": "component:DesignBriefPreview",
@@ -3692,6 +3708,12 @@
     },
     {
       "source": "component:OwnBillingView",
+      "target": "component:OwnMonthSelect",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:OwnBillingView",
       "target": "lib:prisma",
       "relation": "invokes",
       "confidence": "EXTRACTED"
@@ -3712,6 +3734,12 @@
       "source": "component:OwnBillingView",
       "target": "model:Designer",
       "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:OwnMonthSelect",
+      "target": "component:SelectDropdown",
+      "relation": "renders",
       "confidence": "EXTRACTED"
     },
     {
@@ -3770,13 +3798,19 @@
     },
     {
       "source": "component:CreateTaskSlideModal",
-      "target": "component:TaskBodyEditor",
+      "target": "component:DesignBriefPreview",
       "relation": "renders",
       "confidence": "EXTRACTED"
     },
     {
       "source": "component:CreateTaskSlideModal",
-      "target": "component:ImageColorPalettePicker",
+      "target": "component:DesignBriefEditorDrawer",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:CreateTaskSlideModal",
+      "target": "component:brief-parser",
       "relation": "renders",
       "confidence": "EXTRACTED"
     },
@@ -4543,6 +4577,24 @@
       "confidence": "EXTRACTED"
     },
     {
+      "source": "component:DesignBriefEditorDrawer",
+      "target": "component:TaskBodyEditor",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:DesignBriefEditorDrawer",
+      "target": "component:ImageColorPalettePicker",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:DesignBriefEditorDrawer",
+      "target": "component:brief-parser",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
       "source": "component:DesignBriefPreview",
       "target": "component:brief-parser",
       "relation": "renders",
@@ -4556,13 +4608,7 @@
     },
     {
       "source": "component:DesignBriefSection",
-      "target": "component:TaskBodyEditor",
-      "relation": "renders",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:DesignBriefSection",
-      "target": "component:ImageColorPalettePicker",
+      "target": "component:DesignBriefEditorDrawer",
       "relation": "renders",
       "confidence": "EXTRACTED"
     },

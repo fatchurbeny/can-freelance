@@ -1,13 +1,12 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Eye, Edit3, Copy, Check, Clock, Trash2, Send, Loader2, MessageSquare, Palette } from 'lucide-react';
+import { Edit3, Copy, Check, Clock, Trash2, Send, Loader2, MessageSquare } from 'lucide-react';
 import toast from 'react-hot-toast';
 import DesignBriefPreview from './DesignBriefPreview';
 import { useAccess } from '@/context/AccessContext';
-import TaskBodyEditor from '../TaskBodyEditor';
-import ImageColorPalettePicker from '../ImageColorPalettePicker';
-import { classifyHeading, NOTES_HEADING } from './brief-parser';
+import DesignBriefEditorDrawer, { mergePaletteMarkdown } from './DesignBriefEditorDrawer';
+import { NOTES_HEADING, shufflePaletteMarkdown } from './brief-parser';
 
 interface Comment {
   id: string;
@@ -23,6 +22,8 @@ interface Props {
   onAddComment: (content: string) => Promise<boolean>;
   onDeleteComment: (commentId: string) => Promise<boolean>;
   sendingComment: boolean;
+  /** Dipanggil saat drawer Edit Brief (kanan) dibuka/ditutup, agar drawer task bergeser ke kiri. */
+  onEditorOpenChange?: (open: boolean) => void;
 }
 
 const BODY_DEBOUNCE_MS = 1500;
@@ -35,6 +36,7 @@ export default function DesignBriefSection({
   onAddComment,
   onDeleteComment,
   sendingComment,
+  onEditorOpenChange,
 }: Props) {
   const access = useAccess();
   // Brief hanya diubah oleh role manajemen (task.edit); designer hanya membaca & berkomentar.
@@ -84,6 +86,13 @@ export default function DesignBriefSection({
     setViewMode(viewMode === 'edit' ? 'preview' : 'edit');
   };
 
+  const editorOpen = canEditBrief && viewMode === 'edit';
+
+  useEffect(() => {
+    onEditorOpenChange?.(editorOpen);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editorOpen]);
+
   const handleCopyBrief = () => {
     if (!draftBody.trim()) {
       toast.error('Brief masih kosong');
@@ -96,15 +105,16 @@ export default function DesignBriefSection({
   };
 
   const handleInsertPalette = (paletteMarkdown: string) => {
-    // Only replace the existing Reference Image when the new insert carries one
-    const hasNewImage = /##\s*🖼️\s*Reference Image/i.test(paletteMarkdown);
-    const base = hasNewImage
-      ? (draftBody || '').replace(/##\s*🖼️\s*Reference Image[\s\S]*?(?=##|$)/gi, '')
-      : (draftBody || '');
-    const cleaned = base
-      .replace(/##\s*🎨\s*Color Palette[\s\S]*?(?=##|$)/gi, '')
-      .trim();
-    const next = cleaned ? `${cleaned}\n\n${paletteMarkdown}` : paletteMarkdown;
+    const next = mergePaletteMarkdown(draftBody, paletteMarkdown);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    pendingRef.current = null;
+    setDraftBody(next);
+    onBodyTextChange(next);
+  };
+
+  const handleShufflePalette = () => {
+    const next = shufflePaletteMarkdown(draftBody);
+    if (!next) return;
     if (timerRef.current) clearTimeout(timerRef.current);
     pendingRef.current = null;
     setDraftBody(next);
@@ -122,8 +132,6 @@ export default function DesignBriefSection({
     if (!trimmed) return;
     if (await onAddComment(trimmed)) setCommentInput('');
   };
-
-  const hasPaletteSection = /^##\s*.*(palette|warna)/im.test(draftBody || '');
 
   const tabClass = (active: boolean) =>
     `h-[46px] flex items-center justify-center gap-2 font-sans text-xs font-bold uppercase tracking-wider border-b-2 transition-colors cursor-pointer ${
@@ -170,42 +178,17 @@ export default function DesignBriefSection({
                   : 'bg-white dark:bg-[#0d0e12] border-[#f0f0f0] dark:border-[#272a34] text-gray-700 dark:text-gray-300 hover:border-[#ff5e1f]'
               }`}
             >
-              {viewMode === 'edit' ? <Eye className="w-3.5 h-3.5" /> : <Edit3 className="w-3.5 h-3.5 text-[#ff5e1f]" />}
-              <span>{viewMode === 'edit' ? 'Preview' : 'Edit'}</span>
+              <Edit3 className={`w-3.5 h-3.5 ${viewMode === 'edit' ? '' : 'text-[#ff5e1f]'}`} />
+              <span>{viewMode === 'edit' ? 'Editing' : 'Edit'}</span>
             </button>
             )}
           </div>
 
-          {viewMode === 'preview' || !canEditBrief ? (
-            <DesignBriefPreview bodyText={draftBody} onAddNotes={canEditBrief ? handleAddNotes : undefined} />
-          ) : (
-            <div className="flex flex-col gap-4">
-              {!hasPaletteSection && (
-                <div className="bg-white dark:bg-[#0d0e12] border border-[#f0f0f0] dark:border-[#272a34]">
-                  <div className="flex items-center gap-2 px-4 py-3 border-b border-[#f0f0f0] dark:border-[#272a34] text-[13px] font-bold text-gray-900 dark:text-white">
-                    <Palette className="w-3.5 h-3.5 text-[#ff5e1f]" />
-                    Reference Image &amp; Color Palette
-                  </div>
-                  <div className="p-3">
-                    <ImageColorPalettePicker onInsertPalette={handleInsertPalette} />
-                  </div>
-                </div>
-              )}
-              <TaskBodyEditor
-                value={draftBody}
-                onChange={handleDraftChange}
-                orderSections
-                hideHeader
-                renderSectionExtra={(heading) =>
-                  classifyHeading(heading) === 'palette' ? (
-                    <div className="border border-dashed border-[#f0f0f0] dark:border-[#272a34] p-3">
-                      <ImageColorPalettePicker onInsertPalette={handleInsertPalette} />
-                    </div>
-                  ) : null
-                }
-              />
-            </div>
-          )}
+          <DesignBriefPreview
+            bodyText={draftBody}
+            onAddNotes={canEditBrief ? handleAddNotes : undefined}
+            onShufflePalette={canEditBrief ? handleShufflePalette : undefined}
+          />
         </div>
       )}
 
@@ -265,6 +248,15 @@ export default function DesignBriefSection({
             </button>
           </div>
         </div>
+      )}
+      {editorOpen && (
+        <DesignBriefEditorDrawer
+          value={draftBody}
+          onChange={handleDraftChange}
+          onInsertPalette={handleInsertPalette}
+          onClose={toggleMode}
+          subtitle="Tersimpan otomatis · preview di drawer task"
+        />
       )}
     </div>
   );

@@ -79,6 +79,7 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
   const canSeeDropbox = !access.enabled || access.permissions.includes('dropboxLink.view');
   const [pending, setPending] = useState<string | null>(null);
   const [done, setDone] = useState<string | null>(null);
+  const [briefEditing, setBriefEditing] = useState(false);
   const closeRef = useRef<HTMLButtonElement>(null);
 
   const [content, setContent] = useState('');
@@ -104,7 +105,6 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
   const [bodyText, setBodyText] = useState<string>('');
   const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
   const [canvaUrls, setCanvaUrls] = useState<string[]>([]);
-  const [customValues, setCustomValues] = useState<Record<string, string>>({});
   const [newCanvaUrl, setNewCanvaUrl] = useState('');
   const [canvaLinkError, setCanvaLinkError] = useState('');
 
@@ -139,13 +139,6 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
     setBodyText(task.bodyText || '');
     setSelectedAccountIds(task?.taskAccounts?.map(ta => ta.account.id) || []);
     setCanvaUrls(task?.canvaLinks?.map(cl => cl.url) || []);
-    setCustomValues(
-      Object.fromEntries(
-        Object.entries(task?.customFields || {})
-          .filter(([, v]) => typeof v === 'string' || typeof v === 'number')
-          .map(([k, v]) => [k, String(v)])
-      )
-    );
     setNewCanvaUrl('');
     setCanvaLinkError('');
 
@@ -258,7 +251,7 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
         role="dialog"
         aria-modal="true"
         aria-label={`Task details: ${taskName || 'Untitled Task'}`}
-        className="absolute inset-y-0 right-0 flex w-full max-w-[540px] flex-col h-full max-h-screen border-l border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] divide-y divide-[#f0f0f0] dark:divide-[#272a34] shadow-2xl overflow-hidden font-sans"
+        className={`absolute inset-y-0 right-0 flex w-full max-w-[540px] transition-[right] duration-200 ease-out ${briefEditing ? 'min-[1100px]:right-[540px]' : ''} flex-col h-full max-h-screen border-l border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] divide-y divide-[#f0f0f0] dark:divide-[#272a34] shadow-2xl overflow-hidden font-sans`}
       >
         <div className="flex shrink-0 items-center justify-between border-b border-[#f0f0f0] dark:border-[#272a34] p-4 sm:p-5 bg-gray-50/50 dark:bg-[#16181d]/50 gap-4">
           <div className="flex items-center gap-2.5 min-w-0 flex-1">
@@ -861,30 +854,6 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
           </div>
           )}
 
-          {/* Custom Fields (properti Notion di luar skema inti) */}
-          {Object.keys(customValues).length > 0 && (
-            <div className="flex flex-col bg-white dark:bg-[#0d0e12]">
-              <div className="px-5 py-2.5 bg-gray-50/50 dark:bg-[#16181d]/50 border-b border-[#f0f0f0] dark:border-[#272a34]">
-                <h3 className="text-xs font-sans font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                  CUSTOM FIELDS
-                </h3>
-              </div>
-              <div className="divide-y divide-[#f0f0f0] dark:divide-[#272a34]">
-                {Object.entries(customValues).map(([key, value]) => (
-                  <div key={key} className="flex items-center gap-3 px-5 py-2.5 text-xs font-sans">
-                    <span className="w-40 shrink-0 truncate text-gray-500 dark:text-gray-400">{key}</span>
-                    <input
-                      value={value}
-                      onChange={(e) => setCustomValues((prev) => ({ ...prev, [key]: e.target.value }))}
-                      onBlur={() => triggerAutoSave({ customFields: { ...(task?.customFields || {}), ...customValues } as Record<string, string> })}
-                      className="flex-1 min-w-0 bg-transparent border-0 px-0 font-bold text-gray-900 dark:text-white outline-none focus:ring-0"
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
           {/* DESIGN BRIEF & COMMENTS TABBED INTERFACE */}
           <DesignBriefSection
             bodyText={bodyText}
@@ -897,6 +866,7 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
             onAddComment={handleAddComment}
             onDeleteComment={handleDeleteComment}
             sendingComment={sending}
+            onEditorOpenChange={setBriefEditing}
           />
         </div>
       </aside>

@@ -4,14 +4,15 @@ import { useEffect, useState } from 'react';
 import {
   X, Plus, FileText, CircleDot, Users, Gauge,
   CalendarDays, Link as LinkIcon, BookOpen, Building2,
-  Languages, KeyRound, ExternalLink, Trash2, Palette
+  Languages, KeyRound, ExternalLink, Trash2, Edit3
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { createTaskAction, fetchTaskMetadataOptionsAction } from '@/app/actions/qa';
 import CustomSelectCell from './CustomSelectCell';
 import MonthCalendarPicker from './MonthCalendarPicker';
-import TaskBodyEditor from './TaskBodyEditor';
-import ImageColorPalettePicker from './ImageColorPalettePicker';
+import DesignBriefPreview from './task-detail/DesignBriefPreview';
+import DesignBriefEditorDrawer, { BRIEF_EDITOR_SHIFT_CLASS, mergePaletteMarkdown } from './task-detail/DesignBriefEditorDrawer';
+import { shufflePaletteMarkdown } from './task-detail/brief-parser';
 import { PRIORITY_OPTIONS, LICENSE_OPTIONS, getPagesForDoctype } from './task-form-utils';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { parseTaskMonthToKey, currentTaskMonth } from '@/lib/period-utils';
@@ -51,6 +52,7 @@ export default function CreateTaskSlideModal({ productionUnitId, open, onClose, 
   const [canvaLinks, setCanvaLinks] = useState<string[]>([]);
   const [newCanvaUrl, setNewCanvaUrl] = useState('');
   const [saving, setSaving] = useState(false);
+  const [briefEditing, setBriefEditing] = useState(false);
 
   const [designers, setDesigners] = useState<OptionItem[]>([]);
   const [doctypes, setDoctypes] = useState<OptionItem[]>([]);
@@ -88,6 +90,7 @@ export default function CreateTaskSlideModal({ productionUnitId, open, onClose, 
       setCanvaLinks([]);
       setNewCanvaUrl('');
       setSaving(false);
+      setBriefEditing(false);
     }
   }, [open, productionUnitId]);
 
@@ -167,7 +170,7 @@ export default function CreateTaskSlideModal({ productionUnitId, open, onClose, 
   return (
     <div className="fixed inset-0 z-70">
       <button type="button" onClick={onClose} className="absolute inset-0 bg-black/40 cursor-pointer" aria-label="Close modal" />
-      <div className="absolute right-0 top-0 h-full w-full max-w-140 bg-white dark:bg-[#0d0e12] border-l border-[#f0f0f0] dark:border-[#272a34] shadow-2xl flex flex-col font-sans animate-[slideInRight_180ms_ease-out]">
+      <div className={`absolute right-0 top-0 h-full w-full max-w-140 bg-white dark:bg-[#0d0e12] border-l border-[#f0f0f0] dark:border-[#272a34] shadow-2xl flex flex-col font-sans animate-[slideInRight_180ms_ease-out] transition-[right] duration-200 ease-out ${briefEditing ? BRIEF_EDITOR_SHIFT_CLASS : ''}`}>
         
         {/* Header Bar — Title Input + Close Button */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50">
@@ -465,32 +468,29 @@ export default function CreateTaskSlideModal({ productionUnitId, open, onClose, 
 
           )}
 
-          {/* Color Palette Extractor Section */}
-          <div className="flex flex-col sm:flex-row items-stretch text-xs font-sans min-h-[44px] border-t border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12]">
-            <div className="w-[110px] sm:w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-3 sm:px-5 py-3 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
-              <Palette className="w-3.5 h-3.5 text-[#ff5e1f]" />
-              <span>Color Palette</span>
+          {/* Design Brief — preview di sini, edit di drawer bersusun sebelah kanan */}
+          <div className="flex flex-col gap-4 bg-[#f8f9fb] dark:bg-[#16181d]/60 px-5 pt-5 pb-8 border-t border-[#f0f0f0] dark:border-[#272a34]">
+            <div className="flex items-center gap-3">
+              <div className="flex-1 min-w-0">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">Design Brief</p>
+                <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Wireframe, referensi &amp; palet untuk designer</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setBriefEditing((v) => !v)}
+                className={`flex items-center gap-1.5 h-8 px-3 border text-[11px] font-bold uppercase tracking-wider transition-colors cursor-pointer ${
+                  briefEditing
+                    ? 'bg-[#ff5e1f] border-[#ff5e1f] text-white hover:bg-[#ff7038]'
+                    : 'bg-white dark:bg-[#0d0e12] border-[#f0f0f0] dark:border-[#272a34] text-gray-700 dark:text-gray-300 hover:border-[#ff5e1f]'
+                }`}
+              >
+                <Edit3 className={`w-3.5 h-3.5 ${briefEditing ? '' : 'text-[#ff5e1f]'}`} />
+                <span>{briefEditing ? 'Editing' : 'Edit'}</span>
+              </button>
             </div>
-            <div className="flex-1 p-3 bg-white dark:bg-[#0d0e12]">
-              <ImageColorPalettePicker
-                onInsertPalette={(paletteMarkdown) => {
-                  setBodyText((prev) => {
-                    const cleaned = (prev || '')
-                      .replace(/##\s*🖼️\s*Reference Image[\s\S]*?(?=##|$)/gi, '')
-                      .replace(/##\s*🎨\s*Color Palette[\s\S]*?(?=##|$)/gi, '')
-                      .trim();
-                    return cleaned ? `${cleaned}\n\n${paletteMarkdown}` : paletteMarkdown;
-                  });
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Body Content Editor Section */}
-          <div className="p-5 bg-white dark:bg-[#0d0e12] border-t border-[#f0f0f0] dark:border-[#272a34]">
-            <TaskBodyEditor
-              value={bodyText}
-              onChange={setBodyText}
+            <DesignBriefPreview
+              bodyText={bodyText}
+              onShufflePalette={() => setBodyText((prev) => shufflePaletteMarkdown(prev) ?? prev)}
             />
           </div>
 
@@ -517,6 +517,17 @@ export default function CreateTaskSlideModal({ productionUnitId, open, onClose, 
         </div>
 
       </div>
+
+      {briefEditing && (
+        <DesignBriefEditorDrawer
+          value={bodyText}
+          onChange={setBodyText}
+          onInsertPalette={(paletteMarkdown) => setBodyText((prev) => mergePaletteMarkdown(prev, paletteMarkdown))}
+          onClose={() => setBriefEditing(false)}
+          subtitle="Tersimpan saat Save Task · preview di kiri"
+          zClassName="z-80"
+        />
+      )}
     </div>
   );
 }
