@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "generatedAt": "2026-10-24T13:29:15.652Z",
+  "generatedAt": "2026-10-24T13:30:08.013Z",
   "nodes": [
     {
       "id": "page:/account-team",
@@ -145,6 +145,14 @@
       "group": "Server Actions & Lib",
       "filepath": "src/app/actions/sync.ts",
       "details": "Server Actions in src/app/actions/sync.ts"
+    },
+    {
+      "id": "action:task-share",
+      "label": "task-share.ts",
+      "type": "action",
+      "group": "Server Actions & Lib",
+      "filepath": "src/app/actions/task-share.ts",
+      "details": "Server Actions in src/app/actions/task-share.ts"
     },
     {
       "id": "action:user-management",
@@ -385,6 +393,14 @@
       "group": "App Router Pages",
       "filepath": "src/app/rate-card/page.tsx",
       "details": "Next.js 16 App Router Page (/rate-card)"
+    },
+    {
+      "id": "page:/share/t/[token]",
+      "label": "[token] Page",
+      "type": "page",
+      "group": "App Router Pages",
+      "filepath": "src/app/share/t/[token]/page.tsx",
+      "details": "Next.js 16 App Router Page (/share/t/[token])"
     },
     {
       "id": "page:/user-role",
@@ -1435,6 +1451,14 @@
       "details": "React UI Component in src/components/task-detail/DesignBriefSection.tsx"
     },
     {
+      "id": "component:TaskShareButton",
+      "label": "TaskShareButton",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/task-detail/TaskShareButton.tsx",
+      "details": "React UI Component in src/components/task-detail/TaskShareButton.tsx"
+    },
+    {
       "id": "component:task-form-utils",
       "label": "task-form-utils",
       "type": "component",
@@ -1945,6 +1969,14 @@
       "group": "Prisma DB Models",
       "filepath": "prisma/schema.prisma",
       "details": "Notion Task card record (qtySubmit, pages, status)"
+    },
+    {
+      "id": "model:TaskShareLink",
+      "label": "TaskShareLink Model",
+      "type": "model",
+      "group": "Prisma DB Models",
+      "filepath": "prisma/schema.prisma",
+      "details": "Prisma model TaskShareLink (table task_share_links)"
     },
     {
       "id": "model:TaskCanvaLink",
@@ -3255,6 +3287,30 @@
       "confidence": "EXTRACTED"
     },
     {
+      "source": "action:task-share",
+      "target": "lib:access",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:task-share",
+      "target": "lib:prisma",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:task-share",
+      "target": "model:Task",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:task-share",
+      "target": "model:TaskShareLink",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
       "source": "action:user-management",
       "target": "lib:prisma",
       "relation": "invokes",
@@ -4061,6 +4117,30 @@
     {
       "source": "page:/rate-card",
       "target": "model:Doctype",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/share/t/[token]",
+      "target": "lib:prisma",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/share/t/[token]",
+      "target": "component:DesignBriefPreview",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/share/t/[token]",
+      "target": "component:FieldValueDisplay",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/share/t/[token]",
+      "target": "model:TaskShareLink",
       "relation": "queries",
       "confidence": "EXTRACTED"
     },
@@ -5829,6 +5909,18 @@
       "confidence": "EXTRACTED"
     },
     {
+      "source": "component:TaskShareButton",
+      "target": "lib:base-path",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:TaskShareButton",
+      "target": "action:task-share",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
       "source": "component:task-form-utils",
       "target": "lib:doctype-presets",
       "relation": "invokes",
@@ -5879,6 +5971,12 @@
     {
       "source": "component:TaskDetailSheet",
       "target": "component:CustomFieldsSection",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:TaskDetailSheet",
+      "target": "component:TaskShareButton",
       "relation": "renders",
       "confidence": "EXTRACTED"
     },

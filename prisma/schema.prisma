@@ -196,6 +196,7 @@ model Task {
   canvaLinks       TaskCanvaLink[]
   assetLinks       TaskAsset[]
   comments         TaskComment[]
+  shareLinks       TaskShareLink[]
   designStatus     DesignStatus?   @relation(fields: [designStatusId], references: [id])
   designer         Designer?       @relation(fields: [designerId], references: [id])
   doctype          Doctype?        @relation(fields: [doctypeId], references: [id])
@@ -203,6 +204,20 @@ model Task {
   @@index([productionUnitId])
   @@index([bundleOrderId])
   @@map("tasks")
+}
+
+/// Link publik view-only untuk satu task (/share/t/<token>). Tanpa kedaluwarsa; dicabut via revokedAt.
+model TaskShareLink {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  taskId      String    @map("task_id") @db.Uuid
+  token       String    @unique
+  createdById String?   @map("created_by_id") @db.Uuid
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  revokedAt   DateTime? @map("revoked_at") @db.Timestamptz(6)
+  task        Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@map("task_share_links")
 }
 
 model TaskCanvaLink {

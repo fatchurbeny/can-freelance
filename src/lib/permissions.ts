@@ -18,6 +18,7 @@ export type Permission =
   | 'task.create'
   | 'task.edit'
   | 'task.edit.own'
+  | 'task.share' // buat/cabut link publik view-only task
   | 'parameterIssue.view'
   | 'emailNotification.view'
   | 'uploadLink.view'
@@ -35,7 +36,7 @@ export type Permission =
   | 'asset.manage'; // tambah/edit/arsip aset & kategori
 
 const ALL: readonly Permission[] = [
-  'overview.view', 'kanban.view', 'task.create', 'task.edit', 'task.edit.own',
+  'overview.view', 'kanban.view', 'task.create', 'task.edit', 'task.edit.own', 'task.share',
   'parameterIssue.view', 'emailNotification.view', 'uploadLink.view', 'dropboxLink.view',
   'account.view', 'accountTeam.view', 'rateCard.view', 'rateCard.edit',
   'billing.view', 'billing.view.own', 'integration.manage', 'user.manage', 'production.create',
@@ -43,7 +44,7 @@ const ALL: readonly Permission[] = [
 ];
 
 const MANAGEMENT: readonly Permission[] = [
-  'overview.view', 'kanban.view', 'task.create', 'task.edit',
+  'overview.view', 'kanban.view', 'task.create', 'task.edit', 'task.share',
   'parameterIssue.view', 'emailNotification.view', 'uploadLink.view', 'dropboxLink.view',
   'account.view', 'accountTeam.view', 'rateCard.view', 'rateCard.edit',
   'asset.view', 'asset.manage',
@@ -195,6 +196,7 @@ export const FEATURE_MATRIX: FeatureRow[] = [
     label: 'Detail task › Ubah status & field task',
     level: (_r, p) => (has(p, 'task.edit') ? 'full' : has(p, 'task.edit.own') ? 'limited' : 'none'),
   },
+  { label: 'Detail task › Share link publik (view-only)', level: (_r, p) => (has(p, 'task.share') ? 'full' : 'none') },
   { label: 'Buat / duplikat / hapus task', level: (_r, p) => (has(p, 'task.create') ? 'full' : 'none') },
   { label: 'Detail task › Upload Link', level: (_r, p) => (has(p, 'uploadLink.view') ? 'full' : 'none') },
   { label: 'Detail task › Dropbox Link (view)', level: (_r, p) => (has(p, 'dropboxLink.view') ? 'full' : 'none') },

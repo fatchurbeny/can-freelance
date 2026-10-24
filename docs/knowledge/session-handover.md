@@ -43,6 +43,9 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 * Skema lokal diterapkan lewat SQL tambahan saja (tabel `task_share_links` sesi lain jangan terhapus). **VPS perlu `prisma db push`**.
 * Notion: database "Asset Library" di Impro-Freelance (uji) + relation `Assets` hanya di SC-Canva. Belum diuji: drawer Jadikan Kontrak bundle di browser (tak ada trial approved lokal), brief → relation `Assets`, gating role "Lihat sebagai". Wireframe role belum diperbarui.
 
+### 2026-10-24 — Share link publik task (Claude Code, `⚙️ [Backend & Database]` + `🎨 [Frontend & UI/UX]`)
+* Model `TaskShareLink` + permission `task.share` (Admin, AD, PM); halaman publik `/share/t/[token]` (view-only, dikecualikan dari proxy). Di-merge ke `feat/asset-library`. Rincian di arsip.
+
 ---
 
 ## Catatan untuk LLM / Editor Selanjutnya
