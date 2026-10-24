@@ -10,7 +10,7 @@ import {
   checkNotionDatabaseAction,
   addMissingDatabasePropertiesAction,
 } from '@/app/actions/production-unit';
-import StepSchema from './production-wizard/StepSchema';
+import ProductionFieldsPanel from './production-fields/ProductionFieldsPanel';
 import StepOutput from './production-wizard/StepOutput';
 import { INITIAL_DATA } from './production-wizard/types';
 
@@ -40,7 +40,7 @@ const LABEL = 'w-[110px] sm:w-[150px] shrink-0 border-r border-[#f0f0f0] dark:bo
 const INPUT = 'w-full min-w-0 flex-1 min-h-[44px] rounded-none border-0 bg-gray-50/50 dark:bg-[#16181d]/50 px-5 font-sans text-xs font-bold text-gray-900 dark:text-white outline-none focus:bg-white dark:focus:bg-[#16181d] focus:ring-1 focus:ring-[#ff5e1f] transition-colors';
 const SECTION = 'px-5 py-2.5 text-[11px] font-bold uppercase tracking-wider text-gray-400 bg-gray-50/50 dark:bg-[#16181d]/50';
 
-/** Drawer edit production: bagian sama dengan wizard setup (Info, Notion Database, Skema Field, Output). */
+/** Drawer edit production: Info, Notion Database, Struktur Field, Field Tambahan, Output. */
 export default function EditProductionDrawer({ unit, onClose }: Props) {
   const router = useRouter();
   const [name, setName] = useState('');
@@ -152,10 +152,9 @@ export default function EditProductionDrawer({ unit, onClose }: Props) {
             </div>
           )}
 
-          <div className={SECTION}>3 · Skema Field</div>
-          <div className="p-4"><StepSchema /></div>
+          <ProductionFieldsPanel unitId={unit.id} unitName={unit.name} platformName={unit.platform.name} sectionClassName={SECTION} />
 
-          <div className={SECTION}>4 · Output</div>
+          <div className={SECTION}>5 · Output</div>
           <div className="p-4">
             <StepOutput
               data={{ ...INITIAL_DATA, dropboxRoot }}

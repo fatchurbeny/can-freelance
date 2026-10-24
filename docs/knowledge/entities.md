@@ -62,3 +62,12 @@ Kredensial database Notion ID, API Key, dan histori log eksekusi sync (`status`,
 | `Status` | `status` / `select` | `Task.designStatusId` | Pemetaan status alias & title-case |
 | `QTY Submit` | `number` | `Task.qtySubmit` | Coerce ke `Decimal` Prisma |
 | `Pages` | `number` | `Task.pages` | Coerce ke `Decimal` Prisma |
+
+## 🧩 Struktur Field per Production (Notion dinamis)
+
+* **`ProductionUnit.fieldMapping`** (Json): nama properti Notion kustom per `FieldKey` inti. Hanya disimpan bila beda dari nama default (`DEFAULT_FIELD_ALIASES` di `src/lib/production-field-mapping.ts`).
+* **`ProductionUnit.disabledFields`** (String[]): `FieldKey` inti yang dimatikan. Field wajib (`REQUIRED_FIELD_KEYS`: name, designer, doctype, designStatus, pages, qtySubmit, payrollMonth) tidak boleh masuk. Disarankan: taskMonth, brand.
+* **`ProductionField`** (tabel `production_fields`): field tambahan per production. Kolom: `name` (= nama properti Notion = key di `Task.customFields`), `notionPropertyId` (mengenali rename di Notion), `type`, `options`, `source` (`app`/`notion`), `visible`, `editable`, `filterable` (dipakai filter board, putaran berikutnya), `missingInNotion`.
+* Katalog tipe & konversi nilai: `src/lib/notion-field-types.ts`. Kelola lewat `src/app/actions/production-field.ts` (drawer Edit Production → Struktur Field & Field Tambahan).
+* **`NotionPage`** (tabel `notion_pages`): page induk untuk database Task baru, satu `isDefault`. Diatur di Notion Config → Pages & Databases (Tambah Page, Default, Pindai, Lepas). Wizard production memakai dropdown page (default terpilih) + opsi "Page lain…" (bisa disimpan ke daftar). Input menerima ID atau link (`normalizeNotionId`).
+* **`NotionDatabase.archived` / `parentPageId`**: database terdaftar otomatis dari production; "Pindai" mendaftarkan database lama di dalam page. Arsip = disembunyikan & tidak dipakai sebagai database default QA/Doctype, tetap terdaftar. Database milik production (aktif maupun diarsipkan) mengikuti status production-nya dan diatur di Production Hub (aksi di tabel = link Production Hub); tombol Arsipkan hanya untuk database tanpa production, dan server menolak mengarsipkan database milik production. Tombol Add Database & Delete dihapus.

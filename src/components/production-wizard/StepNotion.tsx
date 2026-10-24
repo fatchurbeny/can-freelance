@@ -1,11 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, Loader2, Plus } from 'lucide-react';
 import {
   checkNotionDatabaseAction,
   addMissingDatabasePropertiesAction,
+  listParentPagesAction,
 } from '@/app/actions/production-unit';
+import { addNotionPageAction } from '@/app/actions/notion-config';
+import PortalSelect from '../production-fields/PortalSelect';
 import type { WizardData } from './types';
 
 interface Report {
@@ -29,6 +32,37 @@ export default function StepNotion({ data, platformId, onChange, onReadyChange }
   const [report, setReport] = useState<Report | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [pages, setPages] = useState<{ pageId: string; name: string; isDefault: boolean }[] | null>(null);
+  const [otherPage, setOtherPage] = useState(false);
+  const [makeDefault, setMakeDefault] = useState(false);
+  const [savingPage, setSavingPage] = useState(false);
+
+  // Page induk dari Notion Config → Pages; page default terpilih otomatis bila belum diisi
+  useEffect(() => {
+    listParentPagesAction().then((res) => {
+      const list = res?.success ? res.pages : [];
+      setPages(list);
+      const current = data.parentPageId.trim().replace(/-/g, '').toLowerCase();
+      if (!current && list.length > 0) onChange({ parentPageId: (list.find((p) => p.isDefault) ?? list[0]).pageId });
+      else if (current && !list.some((p) => p.pageId === current)) setOtherPage(true);
+      if (list.length === 0) setOtherPage(true);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function savePage() {
+    setSavingPage(true);
+    setMessage(null);
+    const res = await addNotionPageAction({ page: data.parentPageId, makeDefault });
+    setSavingPage(false);
+    if (!res.success || !res.page) { setMessage(res.error ?? 'Gagal menyimpan page.'); return; }
+    const saved = res.page;
+    setPages((prev) => [...(prev ?? []).map((p) => (makeDefault ? { ...p, isDefault: false } : p)).filter((p) => p.pageId !== saved.pageId), saved]);
+    onChange({ parentPageId: saved.pageId });
+    setOtherPage(false);
+    setMakeDefault(false);
+    setMessage(`Page "${saved.name}" disimpan ke daftar page${saved.isDefault ? ' sebagai default' : ''}.`);
+  }
 
   // Mode create: cukup isi parent page. Mode connect: harus lolos validasi skema.
   useEffect(() => {
@@ -89,14 +123,57 @@ export default function StepNotion({ data, platformId, onChange, onReadyChange }
         {data.notionMode === 'create' ? (
           <>
             <p className="text-xs text-gray-600 dark:text-gray-300">
-              Database Task baru dibuat di dalam page Notion ini. Pastikan page sudah di-share ke integrasi (•••  → Connections).
+              Database Task baru dibuat di dalam page Notion yang dipilih. Daftar page diatur di Notion Config → Pages &amp; Databases; pastikan page sudah di-share ke integrasi (••• → Connections).
             </p>
-            <input
-              className={fieldClass}
-              placeholder="Parent page ID (32 karakter)"
-              value={data.parentPageId}
-              onChange={(e) => onChange({ parentPageId: e.target.value })}
-            />
+            {pages === null ? (
+              <p className="flex items-center gap-2 text-xs text-gray-500"><Loader2 className="w-4 h-4 animate-spin" />Memuat daftar page…</p>
+            ) : (
+              <>
+                {pages.length > 0 && (
+                  <div className="border border-[#f0f0f0] dark:border-[#272a34]">
+                    <PortalSelect
+                      ariaLabel="Page induk"
+                      value={otherPage ? '__other' : data.parentPageId}
+                      options={[
+                        ...pages.map((p) => ({ value: p.pageId, label: p.isDefault ? `${p.name} (default)` : p.name, hint: p.pageId })),
+                        { value: '__other', label: 'Page lain…', hint: 'Tempel link atau ID page Notion' },
+                      ]}
+                      onChange={(value) => {
+                        setMessage(null);
+                        if (value === '__other') { setOtherPage(true); onChange({ parentPageId: '' }); return; }
+                        setOtherPage(false);
+                        onChange({ parentPageId: value });
+                      }}
+                    />
+                  </div>
+                )}
+                {otherPage && (
+                  <>
+                    <input
+                      className={fieldClass}
+                      aria-label="Parent page ID"
+                      placeholder="Link page Notion atau ID 32 karakter"
+                      value={data.parentPageId}
+                      onChange={(e) => onChange({ parentPageId: e.target.value })}
+                    />
+                    <div className="flex flex-wrap items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={savePage}
+                        disabled={savingPage || !data.parentPageId.trim()}
+                        className="h-9 px-3 border border-[#f0f0f0] dark:border-[#272a34] text-xs font-semibold cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+                      >
+                        {savingPage ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}Simpan ke daftar page
+                      </button>
+                      <label className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300 cursor-pointer">
+                        <input type="checkbox" checked={makeDefault} onChange={(e) => setMakeDefault(e.target.checked)} className="w-4 h-4 accent-gray-900" />Jadikan default
+                      </label>
+                    </div>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400">Tanpa disimpan, page ini hanya dipakai untuk production ini.</p>
+                  </>
+                )}
+              </>
+            )}
           </>
         ) : (
           <>

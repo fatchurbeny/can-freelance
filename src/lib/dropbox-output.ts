@@ -14,8 +14,9 @@ import {
 } from '@/lib/dropbox';
 import { ensureUrlProperty, setNotionPageUrl } from '@/lib/notion-provision';
 
-export const UPLOAD_LINK_PROPERTY = 'Upload Link';
-export const DROPBOX_LINK_PROPERTY = 'Dropbox Link';
+import { UPLOAD_LINK_PROPERTY, DROPBOX_LINK_PROPERTY } from '@/lib/notion-field-types';
+
+export { UPLOAD_LINK_PROPERTY, DROPBOX_LINK_PROPERTY };
 
 export async function attachUploadRequest(taskId: string): Promise<void> {
   const task = await prisma.task.findUnique({

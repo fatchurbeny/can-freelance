@@ -7,7 +7,14 @@
 import { Client } from '@notionhq/client';
 import prisma from '@/lib/prisma';
 import { decrypt } from '@/lib/encryption';
-import { DEFAULT_FIELD_ALIASES, type FieldKey } from '@/lib/production-field-mapping';
+import {
+  DEFAULT_FIELD_ALIASES,
+  isFieldEnabled,
+  knownPropertyNames,
+  type FieldKey,
+  type FieldMapping,
+} from '@/lib/production-field-mapping';
+import { APP_MANAGED_PROPERTIES, IGNORED_FIELD_TYPES, optionsFromNotionSchema, toNotionPropertySchema } from '@/lib/notion-field-types';
 
 type CoreType = 'title' | 'select' | 'multi_select' | 'status' | 'number' | 'date' | 'created_time' | 'url';
 
@@ -119,11 +126,28 @@ export interface ProvisionInput {
   platformId: string;
 }
 
-/** Membuat database Task baru di bawah parentPageId. Mengembalikan id database. */
-export async function createTaskDatabase(parentPageId: string, unit: ProvisionInput): Promise<string> {
+export interface CustomPropertyInput {
+  name: string;
+  type: string;
+  options?: { name: string; color?: string }[];
+}
+
+/**
+ * Membuat database Task baru di bawah parentPageId. Mengembalikan id database.
+ * Field inti yang dimatikan (`disabled`) tidak dibuat; `customFields` ikut dibuat.
+ */
+export async function createTaskDatabase(
+  parentPageId: string,
+  unit: ProvisionInput,
+  opts: { disabled?: string[]; customFields?: CustomPropertyInput[] } = {},
+): Promise<string> {
   const client = await getNotionClient();
   const properties: Record<string, any> = {};
+  for (const field of opts.customFields ?? []) {
+    properties[field.name] = toNotionPropertySchema(field.type, field.options);
+  }
   for (const prop of CORE_PROPERTIES) {
+    if (!isFieldEnabled(prop.key, opts.disabled)) continue;
     const options = OPTION_TYPES.has(prop.type) ? await optionsFor(prop, unit.platformId) : [];
     properties[prop.name] = toNotionConfig(prop, options);
   }
@@ -156,20 +180,31 @@ async function retrieveSchema(client: Client, databaseId: string): Promise<Recor
   return ds.properties || {};
 }
 
-/** Bandingkan database Notion yang ada dengan skema inti. Hanya membaca. */
-export async function validateExistingDatabase(databaseId: string): Promise<SchemaReport> {
+/** Nama kandidat untuk properti inti: mapping production dulu, lalu nama default dan aliasnya. */
+function coreCandidates(prop: CoreProperty, mapping?: FieldMapping | null): string[] {
+  const configured = mapping?.[prop.key];
+  const custom = Array.isArray(configured) ? configured : configured ? [configured] : [];
+  return [...custom, prop.name, ...aliasesOf(prop)];
+}
+
+/**
+ * Bandingkan database Notion yang ada dengan skema inti. Hanya membaca.
+ * `mapping` = nama kustom per field inti; field inti yang `disabled` tidak dihitung hilang.
+ */
+export async function validateExistingDatabase(
+  databaseId: string,
+  opts: { mapping?: FieldMapping | null; disabled?: string[] } = {},
+): Promise<SchemaReport> {
   const client = await getNotionClient();
   const actual = await retrieveSchema(client, databaseId);
   const report: SchemaReport = { matched: [], aliased: [], missing: [], typeMismatch: [], extra: [] };
   const claimed = new Set<string>();
 
   for (const prop of CORE_PROPERTIES) {
-    let foundName: string | undefined;
-    if (actual[prop.name]) foundName = prop.name;
-    else foundName = aliasesOf(prop).find((alias) => actual[alias]);
+    const foundName = coreCandidates(prop, opts.mapping).find((name) => actual[name]);
 
     if (!foundName) {
-      if (!prop.optional) report.missing.push(prop.name);
+      if (!prop.optional && isFieldEnabled(prop.key, opts.disabled)) report.missing.push(prop.name);
       continue;
     }
     claimed.add(foundName);
@@ -254,4 +289,102 @@ export async function setNotionPageUrl(pageId: string, propertyName: string, url
     page_id: pageId,
     properties: { [propertyName]: { url } },
   } as any);
+}
+
+export interface NotionPropertyInfo {
+  id: string;
+  name: string;
+  type: string;
+  options: { name: string; color?: string }[] | null;
+}
+
+/** Semua properti database (nama, id, tipe, opsi). Hanya membaca. */
+export async function listDatabaseProperties(databaseId: string): Promise<NotionPropertyInfo[]> {
+  const client = await getNotionClient();
+  const actual = await retrieveSchema(client, databaseId);
+  return Object.entries(actual).map(([name, prop]: [string, any]) => ({
+    id: prop.id,
+    name,
+    type: prop.type,
+    options: optionsFromNotionSchema(prop),
+  }));
+}
+
+/** Properti di luar field inti (kandidat field tambahan). Tipe khusus Notion dan properti output Dropbox dilewati. */
+export async function readExtraProperties(databaseId: string, mapping?: FieldMapping | null): Promise<NotionPropertyInfo[]> {
+  const known = knownPropertyNames(mapping);
+  const props = await listDatabaseProperties(databaseId);
+  return props.filter((p) => !known.has(p.name) && !IGNORED_FIELD_TYPES.has(p.type) && !APP_MANAGED_PROPERTIES.has(p.name));
+}
+
+/**
+ * Pastikan properti field tambahan ada. Idempotent: nama yang sudah ada dengan tipe sama dipakai apa adanya
+ * (opsi baru digabung); tipe berbeda → error. Mengembalikan id properti Notion.
+ */
+export async function ensureCustomProperty(databaseId: string, field: CustomPropertyInput): Promise<string | null> {
+  const client = await getNotionClient();
+  const actual = await retrieveSchema(client, databaseId);
+  const existing = actual[field.name];
+  if (existing) {
+    if (existing.type !== field.type) {
+      throw new Error(`Properti "${field.name}" sudah ada di Notion dengan tipe ${existing.type}.`);
+    }
+    if (field.options?.length) await ensureSelectOptions(databaseId, field.name, field.options.map((o) => o.name));
+    return existing.id ?? null;
+  }
+  const dataSourceId = await resolveDataSourceId(client, databaseId);
+  await (client as any).dataSources.update({
+    data_source_id: dataSourceId,
+    properties: { [field.name]: toNotionPropertySchema(field.type, field.options) },
+  });
+  const after = await retrieveSchema(client, databaseId);
+  return after[field.name]?.id ?? null;
+}
+
+/** Ganti nama properti di Notion. Data di kolom itu tetap utuh. */
+export async function renameProperty(databaseId: string, oldName: string, newName: string): Promise<void> {
+  const client = await getNotionClient();
+  const actual = await retrieveSchema(client, databaseId);
+  if (!actual[oldName]) throw new Error(`Properti "${oldName}" tidak ditemukan di Notion.`);
+  if (actual[newName]) throw new Error(`Nama "${newName}" sudah dipakai properti lain di Notion.`);
+  const dataSourceId = await resolveDataSourceId(client, databaseId);
+  await (client as any).dataSources.update({
+    data_source_id: dataSourceId,
+    properties: { [oldName]: { name: newName } },
+  });
+}
+
+/** Ambil ID Notion (32 hex) dari ID atau link halaman; null bila tidak ada ID yang valid. */
+export function normalizeNotionId(input: string): string | null {
+  const compact = input.trim().split('?')[0].replace(/-/g, '');
+  const match = compact.match(/[0-9a-f]{32}(?![0-9a-f])/i);
+  return match ? match[0].toLowerCase() : null;
+}
+
+/** Pastikan halaman induk bisa dibaca integrasi. Mengembalikan judul halaman. */
+export async function checkParentPage(pageId: string): Promise<string> {
+  const client = await getNotionClient();
+  let page: any;
+  try {
+    page = await client.pages.retrieve({ page_id: pageId });
+  } catch {
+    throw new Error('Page tidak bisa dibuka. Pastikan page sudah di-share ke integrasi (••• → Connections).');
+  }
+  const titleProp: any = Object.values(page.properties ?? {}).find((p: any) => p.type === 'title');
+  return titleProp?.title?.map((t: any) => t.plain_text).join('') || 'Tanpa judul';
+}
+
+/** Database yang ada langsung di dalam page (blok child_database). Hanya membaca. */
+export async function listChildDatabases(pageId: string): Promise<{ id: string; title: string }[]> {
+  const client = await getNotionClient();
+  const found: { id: string; title: string }[] = [];
+  let cursor: string | undefined;
+  do {
+    const res: any = await client.blocks.children.list({ block_id: pageId, start_cursor: cursor, page_size: 100 });
+    for (const block of res.results) {
+      if (block.type === 'child_database') found.push({ id: block.id, title: block.child_database?.title || 'Tanpa judul' });
+    }
+    cursor = res.has_more ? res.next_cursor : undefined;
+  } while (cursor);
+  return found;
 }

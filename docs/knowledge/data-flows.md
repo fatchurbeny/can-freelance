@@ -46,3 +46,10 @@ Nilai status dari Notion API bisa bervariasi dalam penulisan huruf kapital maupu
 * **Dukungan Varian QA**:
   * Mengakomodasi varian `['QA', 'qa', 'Q&A', 'q&a', 'In QA', 'in qa', 'QA Process', 'Quality Assurance']`.
 * **Mapping Cerdas**: `syncNotionData` secara otomatis menormalisasi nama status ke entitas `DesignStatus` kanonikal yang sudah ada.
+
+## 🧩 Nama Properti & Field Tambahan (per production)
+
+* **Tulis ke Notion** selalu lewat `resolveWriteName(schemaProps, key, unit.fieldMapping)`: mapping production dulu, lalu alias default; properti yang tidak ada di database dilewati. Dipakai di `createTaskAction`, `updateTaskFieldsAction`, `updateTaskStatusAction` (`qa.ts`), `pushPendingLocalChangesToNotion` (`sync-notion.ts`), Parameter Issue, dan `syncPlatformOptionsToNotion`. Jangan menulis nama properti hardcoded lagi.
+* **Field tambahan**: pull menyimpan semua properti non-inti ke `Task.customFields` (`extractCustomFields`). Edit dari app mengirim patch `customFields` (digabung, nilai kosong menghapus key) dan push hanya field `ProductionField` yang `editable`, dikonversi `toNotionPropertyValue` sesuai tipe di skema Notion.
+* **Membuat/ganti nama properti** dari app: `ensureCustomProperty` / `renameProperty` (`notion-provision.ts`, via `dataSources.update`). Rename ikut mengganti key di `tasks.custom_fields` (SQL jsonb). App tidak pernah menghapus properti Notion.
+* Pull menimpa `customFields` dengan nilai Notion setiap sync (sama seperti field inti), jadi push harus selesai lebih dulu.

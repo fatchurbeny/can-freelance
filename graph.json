@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "generatedAt": "2026-10-23T17:23:00.208Z",
+  "generatedAt": "2026-10-24T01:43:20.345Z",
   "nodes": [
     {
       "id": "page:/account-team",
@@ -97,6 +97,14 @@
       "group": "Server Actions & Lib",
       "filepath": "src/app/actions/payroll-status.ts",
       "details": "Server Actions in src/app/actions/payroll-status.ts"
+    },
+    {
+      "id": "action:production-field",
+      "label": "production-field.ts",
+      "type": "action",
+      "group": "Server Actions & Lib",
+      "filepath": "src/app/actions/production-field.ts",
+      "details": "Server Actions in src/app/actions/production-field.ts"
     },
     {
       "id": "action:production-unit",
@@ -635,6 +643,22 @@
       "details": "React UI Component in src/components/CreateTaskSlideModal.tsx"
     },
     {
+      "id": "component:FieldValueDisplay",
+      "label": "FieldValueDisplay",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/custom-fields/FieldValueDisplay.tsx",
+      "details": "React UI Component in src/components/custom-fields/FieldValueDisplay.tsx"
+    },
+    {
+      "id": "component:FieldValueInput",
+      "label": "FieldValueInput",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/custom-fields/FieldValueInput.tsx",
+      "details": "React UI Component in src/components/custom-fields/FieldValueInput.tsx"
+    },
+    {
       "id": "component:CustomSelectCell",
       "label": "CustomSelectCell",
       "type": "component",
@@ -971,6 +995,46 @@
       "details": "React UI Component in src/components/PreviewBanner.tsx"
     },
     {
+      "id": "component:AddFieldDrawer",
+      "label": "AddFieldDrawer",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/production-fields/AddFieldDrawer.tsx",
+      "details": "React UI Component in src/components/production-fields/AddFieldDrawer.tsx"
+    },
+    {
+      "id": "component:CoreFieldStructure",
+      "label": "CoreFieldStructure",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/production-fields/CoreFieldStructure.tsx",
+      "details": "React UI Component in src/components/production-fields/CoreFieldStructure.tsx"
+    },
+    {
+      "id": "component:CustomFieldManager",
+      "label": "CustomFieldManager",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/production-fields/CustomFieldManager.tsx",
+      "details": "React UI Component in src/components/production-fields/CustomFieldManager.tsx"
+    },
+    {
+      "id": "component:PortalSelect",
+      "label": "PortalSelect",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/production-fields/PortalSelect.tsx",
+      "details": "React UI Component in src/components/production-fields/PortalSelect.tsx"
+    },
+    {
+      "id": "component:ProductionFieldsPanel",
+      "label": "ProductionFieldsPanel",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/production-fields/ProductionFieldsPanel.tsx",
+      "details": "React UI Component in src/components/production-fields/ProductionFieldsPanel.tsx"
+    },
+    {
       "id": "component:ProductionWizard",
       "label": "ProductionWizard",
       "type": "component",
@@ -1193,6 +1257,14 @@
       "group": "React Components",
       "filepath": "src/components/task-detail/brief-parser.ts",
       "details": "React UI Component in src/components/task-detail/brief-parser.ts"
+    },
+    {
+      "id": "component:CustomFieldsSection",
+      "label": "CustomFieldsSection",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/task-detail/CustomFieldsSection.tsx",
+      "details": "React UI Component in src/components/task-detail/CustomFieldsSection.tsx"
     },
     {
       "id": "component:DesignBriefEditorDrawer",
@@ -1443,12 +1515,28 @@
       "details": "Server/shared library in src/lib/notion-body-push.ts"
     },
     {
+      "id": "lib:notion-field-types",
+      "label": "notion-field-types.ts",
+      "type": "action",
+      "group": "Server Actions & Lib",
+      "filepath": "src/lib/notion-field-types.ts",
+      "details": "Server/shared library in src/lib/notion-field-types.ts"
+    },
+    {
       "id": "lib:notion-provision",
       "label": "notion-provision.ts",
       "type": "action",
       "group": "Server Actions & Lib",
       "filepath": "src/lib/notion-provision.ts",
       "details": "Server/shared library in src/lib/notion-provision.ts"
+    },
+    {
+      "id": "lib:notion-task-properties",
+      "label": "notion-task-properties.ts",
+      "type": "action",
+      "group": "Server Actions & Lib",
+      "filepath": "src/lib/notion-task-properties.ts",
+      "details": "Server/shared library in src/lib/notion-task-properties.ts"
     },
     {
       "id": "lib:notion",
@@ -1699,6 +1787,14 @@
       "details": "Prisma model NotionDatabase (table notion_databases)"
     },
     {
+      "id": "model:NotionPage",
+      "label": "NotionPage Model",
+      "type": "model",
+      "group": "Prisma DB Models",
+      "filepath": "prisma/schema.prisma",
+      "details": "Prisma model NotionPage (table notion_pages)"
+    },
+    {
       "id": "model:NotionConfig",
       "label": "NotionConfig Model",
       "type": "model",
@@ -1745,6 +1841,14 @@
       "group": "Prisma DB Models",
       "filepath": "prisma/schema.prisma",
       "details": "Prisma model ProductionUnit (table production_units)"
+    },
+    {
+      "id": "model:ProductionField",
+      "label": "ProductionField Model",
+      "type": "model",
+      "group": "Prisma DB Models",
+      "filepath": "prisma/schema.prisma",
+      "details": "Prisma model ProductionField (table production_fields)"
     },
     {
       "id": "model:DropboxConnection",
@@ -2358,7 +2462,25 @@
     },
     {
       "source": "action:notion-config",
+      "target": "lib:notion-provision",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:notion-config",
       "target": "model:NotionConfig",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:notion-config",
+      "target": "model:ProductionUnit",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:notion-config",
+      "target": "model:NotionPage",
       "relation": "queries",
       "confidence": "EXTRACTED"
     },
@@ -2394,6 +2516,12 @@
     },
     {
       "source": "action:parameter-issue",
+      "target": "lib:notion-task-properties",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:parameter-issue",
       "target": "model:NotionConfig",
       "relation": "queries",
       "confidence": "EXTRACTED"
@@ -2423,6 +2551,48 @@
       "confidence": "EXTRACTED"
     },
     {
+      "source": "action:production-field",
+      "target": "lib:prisma",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:production-field",
+      "target": "lib:access",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:production-field",
+      "target": "lib:notion-provision",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:production-field",
+      "target": "lib:production-field-mapping",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:production-field",
+      "target": "lib:notion-field-types",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:production-field",
+      "target": "model:ProductionUnit",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:production-field",
+      "target": "model:ProductionField",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
       "source": "action:production-unit",
       "target": "lib:prisma",
       "relation": "invokes",
@@ -2431,6 +2601,12 @@
     {
       "source": "action:production-unit",
       "target": "lib:access",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:production-unit",
+      "target": "lib:encryption",
       "relation": "invokes",
       "confidence": "EXTRACTED"
     },
@@ -2448,6 +2624,12 @@
     },
     {
       "source": "action:production-unit",
+      "target": "lib:production-field-mapping",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:production-unit",
       "target": "lib:dropbox",
       "relation": "invokes",
       "confidence": "EXTRACTED"
@@ -2460,7 +2642,25 @@
     },
     {
       "source": "action:production-unit",
+      "target": "model:NotionConfig",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:production-unit",
+      "target": "model:NotionDatabase",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:production-unit",
       "target": "model:Platform",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:production-unit",
+      "target": "model:NotionPage",
       "relation": "queries",
       "confidence": "EXTRACTED"
     },
@@ -2532,6 +2732,18 @@
     },
     {
       "source": "action:qa",
+      "target": "lib:production-field-mapping",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:qa",
+      "target": "lib:notion-task-properties",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:qa",
       "target": "model:NotionConfig",
       "relation": "queries",
       "confidence": "EXTRACTED"
@@ -2593,6 +2805,12 @@
     {
       "source": "action:qa",
       "target": "model:TaskCanvaLink",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:qa",
+      "target": "model:ProductionField",
       "relation": "queries",
       "confidence": "EXTRACTED"
     },
@@ -3090,7 +3308,7 @@
     },
     {
       "source": "page:/notion-config/databases",
-      "target": "action:sync",
+      "target": "lib:access",
       "relation": "invokes",
       "confidence": "EXTRACTED"
     },
@@ -3804,6 +4022,18 @@
     },
     {
       "source": "component:CreateTaskSlideModal",
+      "target": "component:CustomFieldsSection",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:CreateTaskSlideModal",
+      "target": "component:FieldValueDisplay",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:CreateTaskSlideModal",
       "target": "component:DesignBriefEditorDrawer",
       "relation": "renders",
       "confidence": "EXTRACTED"
@@ -3824,6 +4054,30 @@
       "source": "component:CreateTaskSlideModal",
       "target": "lib:period-utils",
       "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:FieldValueInput",
+      "target": "component:CustomSelectCell",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:FieldValueInput",
+      "target": "component:DatePickerCell",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:FieldValueInput",
+      "target": "lib:notion-field-types",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:FieldValueInput",
+      "target": "component:FieldValueDisplay",
+      "relation": "renders",
       "confidence": "EXTRACTED"
     },
     {
@@ -4008,7 +4262,7 @@
     },
     {
       "source": "component:EditProductionDrawer",
-      "target": "component:StepSchema",
+      "target": "component:ProductionFieldsPanel",
       "relation": "renders",
       "confidence": "EXTRACTED"
     },
@@ -4152,12 +4406,6 @@
     },
     {
       "source": "component:NotionDatabasesClient",
-      "target": "action:sync",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:NotionDatabasesClient",
       "target": "component:TopBar",
       "relation": "renders",
       "confidence": "EXTRACTED"
@@ -4226,6 +4474,78 @@
       "source": "component:PreviewBanner",
       "target": "lib:base-path",
       "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:AddFieldDrawer",
+      "target": "action:production-field",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:AddFieldDrawer",
+      "target": "lib:notion-field-types",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:CoreFieldStructure",
+      "target": "action:production-field",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:CoreFieldStructure",
+      "target": "lib:production-field-mapping",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:CoreFieldStructure",
+      "target": "component:PortalSelect",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:CustomFieldManager",
+      "target": "action:production-field",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:CustomFieldManager",
+      "target": "lib:notion-field-types",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:ProductionFieldsPanel",
+      "target": "action:production-field",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:ProductionFieldsPanel",
+      "target": "lib:production-field-mapping",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:ProductionFieldsPanel",
+      "target": "component:CoreFieldStructure",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:ProductionFieldsPanel",
+      "target": "component:CustomFieldManager",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:ProductionFieldsPanel",
+      "target": "component:AddFieldDrawer",
+      "relation": "renders",
       "confidence": "EXTRACTED"
     },
     {
@@ -4298,6 +4618,18 @@
       "source": "component:StepNotion",
       "target": "action:production-unit",
       "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:StepNotion",
+      "target": "action:notion-config",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:StepNotion",
+      "target": "component:PortalSelect",
+      "relation": "renders",
       "confidence": "EXTRACTED"
     },
     {
@@ -4577,6 +4909,18 @@
       "confidence": "EXTRACTED"
     },
     {
+      "source": "component:CustomFieldsSection",
+      "target": "component:FieldValueInput",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:CustomFieldsSection",
+      "target": "component:FieldValueDisplay",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
       "source": "component:DesignBriefEditorDrawer",
       "target": "component:TaskBodyEditor",
       "relation": "renders",
@@ -4663,6 +5007,18 @@
     {
       "source": "component:TaskDetailSheet",
       "target": "component:DesignBriefSection",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:TaskDetailSheet",
+      "target": "component:CustomFieldsSection",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:TaskDetailSheet",
+      "target": "component:FieldValueDisplay",
       "relation": "renders",
       "confidence": "EXTRACTED"
     },
@@ -4830,6 +5186,12 @@
     },
     {
       "source": "lib:dropbox-output",
+      "target": "lib:notion-field-types",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:dropbox-output",
       "target": "model:Task",
       "relation": "queries",
       "confidence": "EXTRACTED"
@@ -4884,6 +5246,12 @@
     },
     {
       "source": "lib:notion-provision",
+      "target": "lib:notion-field-types",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:notion-provision",
       "target": "model:NotionConfig",
       "relation": "queries",
       "confidence": "EXTRACTED"
@@ -4909,6 +5277,36 @@
     {
       "source": "lib:notion-provision",
       "target": "model:Account",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:notion-task-properties",
+      "target": "lib:prisma",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:notion-task-properties",
+      "target": "lib:production-field-mapping",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:notion-task-properties",
+      "target": "lib:notion-field-types",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:notion-task-properties",
+      "target": "model:ProductionField",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:notion-task-properties",
+      "target": "model:Task",
       "relation": "queries",
       "confidence": "EXTRACTED"
     },

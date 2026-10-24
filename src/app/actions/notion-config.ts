@@ -5,6 +5,7 @@ import prisma from '@/lib/prisma';
 import { Client } from '@notionhq/client';
 import { encrypt, decrypt } from '@/lib/encryption';
 import { revalidatePath } from 'next/cache';
+import { checkParentPage, listChildDatabases, normalizeNotionId } from '@/lib/notion-provision';
 
 const API_KEY_MASK = '••••••••••••••••';
 const DOCTYPE_PROPERTY_NAME = 'Doctype';
@@ -16,8 +17,10 @@ function maskText(text: string, visibleStart = 4, visibleEnd = 4): string {
 }
 
 async function getConfig() {
-  return prisma.notionConfig.findFirst({ include: { databases: true } });
+  return prisma.notionConfig.findFirst({ include: { databases: true, pages: { orderBy: { createdAt: 'asc' } } } });
 }
+
+const compactId = (id: string) => id.replace(/-/g, '').toLowerCase();
 
 export async function getContractRateAction() {
   try {
@@ -68,7 +71,8 @@ export async function getNotionConfigAction() {
       maskedApiKey: maskText(apiKey, 6, 4),
       autoSync: config.autoSync,
       syncInterval: config.syncInterval,
-      databases: config.databases.map((db) => ({ id: db.id, name: db.name, maskedDatabaseId: maskText(decrypt(db.encryptedDatabaseId, db.iv), 4, 4) })),
+      databases: config.databases.filter((db) => !db.archived).map((db) => ({ id: db.id, name: db.name, maskedDatabaseId: maskText(decrypt(db.encryptedDatabaseId, db.iv), 4, 4) })),
+      pageCount: config.pages.length,
       contractRate: config.contractRate,
     };
   } catch (error) {
@@ -100,23 +104,6 @@ export async function saveNotionWorkspaceAction(workspaceName: string, apiKey: s
   } catch (error: any) {
     console.error('Error saving Notion workspace config:', error);
     return { success: false, error: error.message || 'Failed to save workspace configuration' };
-  }
-}
-
-export async function addNotionDatabaseAction(name: string, databaseId: string) {
-  const denied = await denyWrite('integration.manage');
-  if (denied) return denied as never;
-  try {
-    if (!name || !databaseId) throw new Error('Database Name and ID are required');
-    const config = await prisma.notionConfig.findFirst();
-    if (!config) throw new Error('Please configure Notion API Key first.');
-    const { iv, encryptedData: encDatabaseId } = encrypt(databaseId);
-    await prisma.notionDatabase.create({ data: { name, encryptedDatabaseId: encDatabaseId, iv, configId: config.id } });
-    revalidatePath('/notion-config');
-    return { success: true };
-  } catch (error: any) {
-    console.error('Error adding Notion database:', error);
-    return { success: false, error: error.message || 'Failed to add database' };
   }
 }
 
@@ -158,22 +145,8 @@ export async function deleteNotionConfigAction() {
   }
 }
 
-export async function deleteNotionDatabaseAction(dbId: string) {
-  const denied = await denyWrite('integration.manage');
-  if (denied) return denied as never;
-  try {
-    await prisma.notionDatabase.delete({ where: { id: dbId } });
-    revalidatePath('/notion-config');
-    revalidatePath('/notion-config/databases');
-    return { success: true };
-  } catch (error: any) {
-    console.error('Error deleting Notion database:', error);
-    return { success: false, error: error.message || 'Failed to delete database' };
-  }
-}
-
 export async function syncDoctypeOptionToNotion(doctypeName: string) {
-  const config = await prisma.notionConfig.findFirst({ include: { databases: true } });
+  const config = await prisma.notionConfig.findFirst({ include: { databases: { where: { archived: false } } } });
   if (!config || config.databases.length === 0) return { success: false, error: 'Notion configuration missing.' };
   const apiKey = decrypt(config.encryptedApiKey, config.iv);
   const notion = new Client({ auth: apiKey });
@@ -200,61 +173,155 @@ export async function syncDoctypeOptionToNotion(doctypeName: string) {
   }
 }
 
-export async function testNotionConnectionAction(databaseId: string) {
+function revalidateNotionConfig() {
+  try {
+    revalidatePath('/notion-config', 'layout');
+  } catch {}
+}
+
+/**
+ * Isi halaman Notion Config → Pages & Databases: page induk (satu default) dan database terdaftar,
+ * lengkap dengan production yang memakainya.
+ */
+export async function getNotionPagesAndDatabasesAction() {
   const denied = await denyUnless('integration.manage');
   if (denied) return denied as never;
   try {
-    if (!databaseId) throw new Error('Database ID is required');
-    const existingConfig = await prisma.notionConfig.findFirst();
-    if (!existingConfig) throw new Error('Please configure Notion API Key first before testing database connection.');
-    const finalApiKey = decrypt(existingConfig.encryptedApiKey, existingConfig.iv);
-    const notion = new Client({ auth: finalApiKey });
-    const dbMetadata = (await notion.databases.retrieve({ database_id: databaseId })) as any;
-    const dataSourceId = dbMetadata.data_sources?.[0]?.id || dbMetadata.id;
-    let properties: any = {};
-    try { properties = (await notion.dataSources.retrieve({ data_source_id: dataSourceId }))?.properties || {}; } catch { properties = dbMetadata.properties || {}; }
-    const dbTitle = dbMetadata.title?.map((t: any) => t.plain_text).join('') || 'Untitled Notion Database';
-    const schemaSpecs = [
-      { key: 'Name', label: 'Task Name', types: ['title'], isRequired: true },
-      { key: 'Designer', label: 'Designer Name', types: ['select'], isRequired: true },
-      { key: 'Doctype', label: 'Doctype Output', types: ['select'], isRequired: true },
-      { key: 'Pages', label: 'Pages Count', types: ['number'], isRequired: true, aliases: ['pages'] },
-      { key: 'QTY-Submit', label: 'Submitted Quantity', types: ['number'], isRequired: true },
-      { key: 'Design Status', label: 'Status Grouping', types: ['status', 'select'], isRequired: true },
-      { key: 'License', label: 'Free / Pro Assets', types: ['select'], isRequired: false },
-      { key: 'IND/ENG', label: 'Languages Selection', types: ['multi_select', 'select'], isRequired: false },
-      { key: 'Date Aproved', label: 'Approved Date', types: ['date'], isRequired: false },
-      { key: 'Task Month', label: 'Task Period', types: ['select'], isRequired: false },
-      { key: 'Payroll Month', label: 'Payroll Period', types: ['select'], isRequired: false },
-      { key: 'Priority', label: 'Task Priority', types: ['select'], isRequired: false },
-      { key: 'Created', label: 'Created Time Tracker', types: ['date', 'created_time'], isRequired: false, aliases: ['Created date', 'Created Date', 'Created Time'] },
-      { key: 'Brand', label: 'Brand / Client Account', types: ['multi_select', 'select'], isRequired: false, aliases: ['Account'] },
-    ];
-    const schemaComparison = schemaSpecs.map((spec) => {
-      let actualPropName = properties[spec.key] ? spec.key : null;
-      if (!actualPropName && spec.aliases) for (const alias of spec.aliases) if (properties[alias]) { actualPropName = alias; break; }
-      const actualProp = actualPropName ? properties[actualPropName] : null;
-      const actualType = actualProp ? actualProp.type : null;
-      const status: 'match' | 'mismatch' | 'missing' = actualType ? (spec.types.includes(actualType) ? 'match' : 'mismatch') : 'missing';
-      return { key: spec.key, label: spec.label, expectedType: spec.types.join(' or '), actualType: actualType || null, actualName: actualPropName || null, status, isRequired: spec.isRequired };
+    const config = await getConfig();
+    if (!config) return { success: true, exists: false, pages: [], databases: [] };
+    const units = await prisma.productionUnit.findMany({ select: { name: true, isActive: true, notionTaskDbId: true } });
+    const pageNames = new Map(config.pages.map((p) => [p.pageId, p.name]));
+    const databases = config.databases.map((db) => {
+      const databaseId = decrypt(db.encryptedDatabaseId, db.iv);
+      const used = units.filter((u) => compactId(u.notionTaskDbId) === compactId(databaseId));
+      return {
+        id: db.id,
+        name: db.name,
+        maskedDatabaseId: maskText(compactId(databaseId), 4, 4),
+        // Database milik production mengikuti status production-nya (diatur di Production Hub)
+        archived: used.length > 0 ? used.every((u) => !u.isActive) : db.archived,
+        managedByProduction: used.length > 0,
+        parentPageId: db.parentPageId,
+        parentPageName: db.parentPageId ? pageNames.get(db.parentPageId) ?? null : null,
+        productions: used.map((u) => ({ name: u.name, isActive: u.isActive })),
+      };
     });
-    const isSchemaCompatible = !schemaComparison.some((s) => s.isRequired && s.status !== 'match');
-    const capabilities = ['Read-Content'];
-    try {
-      const testPage = await notion.pages.create({ parent: { database_id: databaseId }, properties: {} });
-      capabilities.push('Insert-Content');
-      await notion.pages.update({ page_id: testPage.id, archived: true });
-      capabilities.push('Update-Content');
-    } catch (err: any) {
-      if (err.status === 400) {
-        capabilities.push('Insert-Content');
-        capabilities.push('Update-Content');
-      }
-    }
-    return { success: true, dbTitle, schemaComparison, isSchemaCompatible, maskedDatabaseId: databaseId.substring(0, 4) + '...'.padEnd(16, '*') + databaseId.slice(-4), capabilities };
+    const pages = config.pages.map((p) => ({
+      id: p.id,
+      name: p.name,
+      pageId: p.pageId,
+      isDefault: p.isDefault,
+      databaseCount: databases.filter((db) => db.parentPageId === p.pageId && !db.archived).length,
+    }));
+    return { success: true, exists: true, workspaceName: config.workspaceName, maskedApiKey: maskText(decrypt(config.encryptedApiKey, config.iv), 6, 4), pages, databases };
   } catch (error: any) {
-    console.error('Error testing Notion connection:', error);
-    return { success: false, error: error.message || 'Failed to test connection' };
+    return { success: false, error: error.message || 'Gagal memuat page dan database.' };
   }
 }
 
+/** Tambah page induk (ID atau link). Akses integrasi dicek dulu; page pertama otomatis jadi default. */
+export async function addNotionPageAction(input: { page: string; makeDefault?: boolean }) {
+  const denied = await denyWrite('integration.manage', 'production.create');
+  if (denied) return denied as never;
+  try {
+    const config = await prisma.notionConfig.findFirst({ include: { pages: true } });
+    if (!config) throw new Error('Isi API key Notion dulu.');
+    const pageId = normalizeNotionId(input.page);
+    if (!pageId) throw new Error('Page tidak valid. Tempel link page Notion atau ID 32 karakter.');
+    const name = await checkParentPage(pageId);
+    const makeDefault = input.makeDefault || config.pages.length === 0;
+    const page = await prisma.$transaction(async (tx) => {
+      if (makeDefault) await tx.notionPage.updateMany({ where: { configId: config.id }, data: { isDefault: false } });
+      return tx.notionPage.upsert({
+        where: { pageId },
+        create: { configId: config.id, name, pageId, isDefault: makeDefault },
+        update: { name, ...(makeDefault ? { isDefault: true } : {}) },
+      });
+    });
+    revalidateNotionConfig();
+    return { success: true, page: { id: page.id, name: page.name, pageId: page.pageId, isDefault: page.isDefault } };
+  } catch (error: any) {
+    return { success: false, error: error.message || 'Gagal menambah page.' };
+  }
+}
+
+/** Jadikan page default untuk database baru di wizard production. */
+export async function setDefaultNotionPageAction(id: string) {
+  const denied = await denyWrite('integration.manage', 'production.create');
+  if (denied) return denied as never;
+  try {
+    const page = await prisma.notionPage.findUnique({ where: { id } });
+    if (!page) throw new Error('Page tidak ditemukan.');
+    await prisma.$transaction([
+      prisma.notionPage.updateMany({ where: { configId: page.configId }, data: { isDefault: false } }),
+      prisma.notionPage.update({ where: { id }, data: { isDefault: true } }),
+    ]);
+    revalidateNotionConfig();
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message || 'Gagal menjadikan page default.' };
+  }
+}
+
+/** Lepas page dari daftar (page & database di Notion tidak disentuh). Default pindah ke page tertua yang tersisa. */
+export async function removeNotionPageAction(id: string) {
+  const denied = await denyWrite('integration.manage');
+  if (denied) return denied as never;
+  try {
+    const page = await prisma.notionPage.delete({ where: { id } });
+    if (page.isDefault) {
+      const next = await prisma.notionPage.findFirst({ where: { configId: page.configId }, orderBy: { createdAt: 'asc' } });
+      if (next) await prisma.notionPage.update({ where: { id: next.id }, data: { isDefault: true } });
+    }
+    revalidateNotionConfig();
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message || 'Gagal melepas page.' };
+  }
+}
+
+/** Daftarkan database yang sudah ada di dalam page (mis. database lama) agar tercatat di platform. */
+export async function scanNotionPageDatabasesAction(id: string) {
+  const denied = await denyWrite('integration.manage');
+  if (denied) return denied as never;
+  try {
+    const page = await prisma.notionPage.findUnique({ where: { id }, include: { config: { include: { databases: true } } } });
+    if (!page) throw new Error('Page tidak ditemukan.');
+    const children = await listChildDatabases(page.pageId);
+    const registered = new Map(page.config.databases.map((db) => [compactId(decrypt(db.encryptedDatabaseId, db.iv)), db]));
+    let added = 0;
+    for (const child of children) {
+      const existing = registered.get(compactId(child.id));
+      if (existing) {
+        if (!existing.parentPageId) await prisma.notionDatabase.update({ where: { id: existing.id }, data: { parentPageId: page.pageId } });
+        continue;
+      }
+      const { iv, encryptedData } = encrypt(compactId(child.id));
+      await prisma.notionDatabase.create({ data: { name: child.title, encryptedDatabaseId: encryptedData, iv, configId: page.configId, parentPageId: page.pageId } });
+      added++;
+    }
+    revalidateNotionConfig();
+    return { success: true, found: children.length, added };
+  } catch (error: any) {
+    return { success: false, error: error.message || 'Gagal memindai page.' };
+  }
+}
+
+/** Arsipkan / pulihkan database terdaftar yang tidak dipakai production. Database milik production mengikuti status production-nya. */
+export async function setNotionDatabaseArchivedAction(input: { id: string; archived: boolean }) {
+  const denied = await denyWrite('integration.manage');
+  if (denied) return denied as never;
+  try {
+    const db = await prisma.notionDatabase.findUnique({ where: { id: input.id } });
+    if (!db) throw new Error('Database tidak ditemukan.');
+    const databaseId = compactId(decrypt(db.encryptedDatabaseId, db.iv));
+    const units = await prisma.productionUnit.findMany({ select: { name: true, notionTaskDbId: true } });
+    const owner = units.find((u) => compactId(u.notionTaskDbId) === databaseId);
+    if (owner) throw new Error(`Database ini dipakai production "${owner.name}". Arsipkan atau pulihkan lewat Production Hub.`);
+    await prisma.notionDatabase.update({ where: { id: db.id }, data: { archived: input.archived } });
+    revalidateNotionConfig();
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message || 'Gagal mengubah database.' };
+  }
+}

@@ -19,6 +19,8 @@ import toast from 'react-hot-toast';
 import CustomSelectCell from './CustomSelectCell';
 import MonthCalendarPicker from './MonthCalendarPicker';
 import DesignBriefSection from './task-detail/DesignBriefSection';
+import CustomFieldsSection from './task-detail/CustomFieldsSection';
+import type { CustomFieldDef } from './custom-fields/FieldValueDisplay';
 import { PRIORITY_OPTIONS, LICENSE_OPTIONS, getPagesForDoctype } from './task-form-utils';
 
 interface QATask {
@@ -33,6 +35,7 @@ interface QATask {
   uploadRequestUrl?: string | null;
   outputUrl?: string | null;
   customFields?: Record<string, unknown> | null;
+  productionUnitId?: string;
   productionUnit?: { platform: { outputType: string } } | null;
   comments?: { id: string; content: string; createdAt: string }[];
   qtySubmit: string | number | null;
@@ -113,6 +116,11 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
   const [designStatuses, setDesignStatuses] = useState<OptionItem[]>([]);
   const [accounts, setAccounts] = useState<OptionItem[]>([]);
   const [optionsLoaded, setOptionsLoaded] = useState(false);
+  // Field tambahan production + field inti yang dimatikan
+  const [customFieldDefs, setCustomFieldDefs] = useState<CustomFieldDef[]>([]);
+  const [disabledFields, setDisabledFields] = useState<string[]>([]);
+  const [customValues, setCustomValues] = useState<Record<string, unknown>>({});
+  const isOff = (key: string) => disabledFields.includes(key);
 
   const taskId = task?.id;
 
@@ -141,15 +149,20 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
     setCanvaUrls(task?.canvaLinks?.map(cl => cl.url) || []);
     setNewCanvaUrl('');
     setCanvaLinkError('');
+    setCustomValues({ ...(task.customFields ?? {}) });
+    setCustomFieldDefs([]);
+    setDisabledFields([]);
 
     getTaskCommentsAction(task.id).then(setComments).finally(() => setLoaded(true));
     
-    fetchTaskMetadataOptionsAction().then((res) => {
+    fetchTaskMetadataOptionsAction(task.productionUnitId).then((res) => {
       if (res.success && res.data) {
         setDesigners(res.data.designers || []);
         setDoctypes(res.data.doctypes || []);
         setDesignStatuses(res.data.designStatuses || []);
         setAccounts(res.data.accounts || []);
+        setCustomFieldDefs(res.data.fields || []);
+        setDisabledFields(res.data.disabledFields || []);
       }
       setOptionsLoaded(true);
     });
@@ -538,6 +551,7 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
             </div>
 
             {/* IND/ENG Languages Row */}
+            {!isOff('languages') && (
             <div className="flex items-stretch text-xs font-sans min-h-[44px]">
               <div className="w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
                 <Languages className="w-3.5 h-3.5 text-gray-400" />
@@ -588,7 +602,10 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
               </div>
             </div>
 
+            )}
+
             {/* Priority Row */}
+            {!isOff('priority') && (
             <div className="flex items-stretch text-xs font-sans min-h-[44px]">
               <div className="w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
                 <Gauge className="w-3.5 h-3.5 text-gray-400" />
@@ -619,7 +636,10 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
               </div>
             </div>
 
+            )}
+
             {/* License Row */}
+            {!isOff('license') && (
             <div className="flex items-stretch text-xs font-sans min-h-[44px]">
               <div className="w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
                 <KeyRound className="w-3.5 h-3.5 text-gray-400" />
@@ -650,7 +670,10 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
               </div>
             </div>
 
+            )}
+
             {/* Task Month Row */}
+            {!isOff('taskMonth') && (
             <div className="flex items-stretch text-xs font-sans min-h-[44px]">
               <div className="w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
                 <CalendarDays className="w-3.5 h-3.5 text-gray-400" />
@@ -680,8 +703,10 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
               </div>
             </div>
 
+            )}
+
             {/* Brand (Accounts) Row */}
-            {canSeeBrand && (
+            {canSeeBrand && !isOff('brand') && (
             <div className="flex items-stretch text-xs font-sans min-h-[44px]">
               <div className="w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
                 <Building2 className="w-3.5 h-3.5 text-gray-400" />
@@ -769,7 +794,7 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
               )}
             </div>
           </div>
-          ) : (
+          ) : isOff('canvaLink') ? null : (
           <div className="flex flex-col bg-white dark:bg-[#0d0e12]">
             <div className="px-5 py-2.5 bg-gray-50/50 dark:bg-[#16181d]/50 border-b border-[#f0f0f0] dark:border-[#272a34] flex items-center justify-between">
               <h3 className="text-xs font-sans font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
@@ -853,6 +878,16 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
             </div>
           </div>
           )}
+
+          {/* Field tambahan per production (Notion) */}
+          <CustomFieldsSection
+            fields={customFieldDefs}
+            values={customValues}
+            onChange={(name, value) => {
+              setCustomValues((prev) => ({ ...prev, [name]: value }));
+              triggerAutoSave({ customFields: { [name]: value } });
+            }}
+          />
 
           {/* DESIGN BRIEF & COMMENTS TABBED INTERFACE */}
           <DesignBriefSection

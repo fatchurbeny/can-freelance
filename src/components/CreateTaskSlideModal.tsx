@@ -11,6 +11,8 @@ import { createTaskAction, fetchTaskMetadataOptionsAction } from '@/app/actions/
 import CustomSelectCell from './CustomSelectCell';
 import MonthCalendarPicker from './MonthCalendarPicker';
 import DesignBriefPreview from './task-detail/DesignBriefPreview';
+import CustomFieldsSection from './task-detail/CustomFieldsSection';
+import { type CustomFieldDef, isEmptyFieldValue } from './custom-fields/FieldValueDisplay';
 import DesignBriefEditorDrawer, { BRIEF_EDITOR_SHIFT_CLASS, mergePaletteMarkdown } from './task-detail/DesignBriefEditorDrawer';
 import { shufflePaletteMarkdown } from './task-detail/brief-parser';
 import { PRIORITY_OPTIONS, LICENSE_OPTIONS, getPagesForDoctype } from './task-form-utils';
@@ -60,6 +62,11 @@ export default function CreateTaskSlideModal({ productionUnitId, open, onClose, 
   const [accounts, setAccounts] = useState<OptionItem[]>([]);
 
   const [outputType, setOutputType] = useState<string>('canva_link');
+  // Field tambahan production + field inti yang dimatikan
+  const [customFieldDefs, setCustomFieldDefs] = useState<CustomFieldDef[]>([]);
+  const [disabledFields, setDisabledFields] = useState<string[]>([]);
+  const [customValues, setCustomValues] = useState<Record<string, unknown>>({});
+  const isOff = (key: string) => disabledFields.includes(key);
 
   useEffect(() => {
     if (!open) return;
@@ -70,6 +77,8 @@ export default function CreateTaskSlideModal({ productionUnitId, open, onClose, 
         setDesignStatuses(res.data.designStatuses || []);
         setAccounts(res.data.accounts || []);
         setOutputType(res.data.outputType || 'canva_link');
+        setCustomFieldDefs(res.data.fields || []);
+        setDisabledFields(res.data.disabledFields || []);
       }
     });
 
@@ -91,6 +100,7 @@ export default function CreateTaskSlideModal({ productionUnitId, open, onClose, 
       setNewCanvaUrl('');
       setSaving(false);
       setBriefEditing(false);
+      setCustomValues({});
     }
   }, [open, productionUnitId]);
 
@@ -126,6 +136,11 @@ export default function CreateTaskSlideModal({ productionUnitId, open, onClose, 
   const handleSave = async () => {
     if (!name.trim()) return toast.error('Task name is required');
 
+    // Hanya kirim field tambahan yang terisi (checkbox false = default)
+    const filledCustomFields = Object.fromEntries(
+      Object.entries(customValues).filter(([, v]) => !isEmptyFieldValue(v) && v !== false)
+    );
+
     setSaving(true);
     const res = await createTaskAction({
       productionUnitId,
@@ -143,6 +158,7 @@ export default function CreateTaskSlideModal({ productionUnitId, open, onClose, 
       notionUrl: notionUrl.trim() || null,
       accountIds,
       canvaLinks: canvaLinks.length > 0 ? canvaLinks : undefined,
+      customFields: Object.keys(filledCustomFields).length > 0 ? filledCustomFields : undefined,
     });
     setSaving(false);
 
@@ -285,6 +301,7 @@ export default function CreateTaskSlideModal({ productionUnitId, open, onClose, 
             </div>
 
             {/* Row 6: IND/ENG Languages */}
+            {!isOff('languages') && (
             <div className="flex items-stretch text-xs font-sans min-h-[44px]">
               <div className="w-[110px] sm:w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-3 sm:px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
                 <Languages className="w-3.5 h-3.5 text-gray-400" />
@@ -317,7 +334,10 @@ export default function CreateTaskSlideModal({ productionUnitId, open, onClose, 
               </div>
             </div>
 
+            )}
+
             {/* Row 7: Priority */}
+            {!isOff('priority') && (
             <div className="flex items-stretch text-xs font-sans min-h-[44px]">
               <div className="w-[110px] sm:w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-3 sm:px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
                 <Gauge className="w-3.5 h-3.5 text-gray-400" />
@@ -333,7 +353,10 @@ export default function CreateTaskSlideModal({ productionUnitId, open, onClose, 
               </div>
             </div>
 
+            )}
+
             {/* Row 8: License */}
+            {!isOff('license') && (
             <div className="flex items-stretch text-xs font-sans min-h-[44px]">
               <div className="w-[110px] sm:w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-3 sm:px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
                 <KeyRound className="w-3.5 h-3.5 text-gray-400" />
@@ -349,7 +372,10 @@ export default function CreateTaskSlideModal({ productionUnitId, open, onClose, 
               </div>
             </div>
 
+            )}
+
             {/* Row 9: Task Month */}
+            {!isOff('taskMonth') && (
             <div className="flex items-stretch text-xs font-sans min-h-[44px]">
               <div className="w-[110px] sm:w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-3 sm:px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
                 <CalendarDays className="w-3.5 h-3.5 text-gray-400" />
@@ -364,7 +390,10 @@ export default function CreateTaskSlideModal({ productionUnitId, open, onClose, 
               </div>
             </div>
 
+            )}
+
             {/* Row 10: Brand / Account */}
+            {!isOff('brand') && (
             <div className="flex items-stretch text-xs font-sans min-h-[44px]">
               <div className="w-[110px] sm:w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-3 sm:px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
                 <Building2 className="w-3.5 h-3.5 text-gray-400" />
@@ -396,6 +425,7 @@ export default function CreateTaskSlideModal({ productionUnitId, open, onClose, 
                 </div>
               </div>
             </div>
+            )}
 
           </div>
 
@@ -404,7 +434,7 @@ export default function CreateTaskSlideModal({ productionUnitId, open, onClose, 
               <span className="font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Output Dropbox</span>
               <p className="mt-2">Upload Request Dropbox dibuat otomatis per task setelah Fase 6. Link Canva tidak dipakai untuk platform ini.</p>
             </div>
-          ) : (
+          ) : isOff('canvaLink') ? null : (
           /* Canva Template Link Section */
           <div className="p-5 space-y-3 bg-white dark:bg-[#0d0e12]">
             <div className="flex items-center gap-2 text-xs font-sans font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
@@ -467,6 +497,13 @@ export default function CreateTaskSlideModal({ productionUnitId, open, onClose, 
           </div>
 
           )}
+
+          {/* Field tambahan per production (Notion) — dikirim saat Save Task */}
+          <CustomFieldsSection
+            fields={customFieldDefs}
+            values={customValues}
+            onChange={(name, value) => setCustomValues((prev) => ({ ...prev, [name]: value }))}
+          />
 
           {/* Design Brief — preview di sini, edit di drawer bersusun sebelah kanan */}
           <div className="flex flex-col gap-4 bg-[#f8f9fb] dark:bg-[#16181d]/60 px-5 pt-5 pb-8 border-t border-[#f0f0f0] dark:border-[#272a34]">

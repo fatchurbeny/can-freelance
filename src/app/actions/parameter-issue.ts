@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache';
 import { Client } from '@notionhq/client';
 import { decrypt } from '@/lib/encryption';
 import { runInBackground } from '@/lib/background-sync';
+import { pagePropertyNames } from '@/lib/notion-task-properties';
 
 async function getNotionClient() {
   const activeConfig = await prisma.notionConfig.findFirst({
@@ -82,16 +83,18 @@ export async function updateTaskParametersAction(
 
         try {
           const propertiesToUpdate: any = {};
-          if (data.taskMonth !== undefined) {
-            propertiesToUpdate['Task Month'] = data.taskMonth
+          const names = await pagePropertyNames(notionClient, task.notionPageId, ['taskMonth', 'poolScore']);
+          if (data.taskMonth !== undefined && names.taskMonth) {
+            propertiesToUpdate[names.taskMonth] = data.taskMonth
               ? { select: { name: data.taskMonth } }
               : { select: null };
           }
-          if (data.poolScore !== undefined) {
-            propertiesToUpdate['Pool Score'] = data.poolScore !== null
+          if (data.poolScore !== undefined && names.poolScore) {
+            propertiesToUpdate[names.poolScore] = data.poolScore !== null
               ? { number: Number(data.poolScore) }
               : { number: null };
           }
+          if (Object.keys(propertiesToUpdate).length === 0) continue;
 
           await notionClient.pages.update({
             page_id: task.notionPageId,
@@ -128,12 +131,14 @@ export async function retryNotionSyncAction(taskId: string) {
     }
 
     const propertiesToUpdate: any = {};
-    if (task.taskMonth) {
-      propertiesToUpdate['Task Month'] = { select: { name: task.taskMonth } };
+    const names = await pagePropertyNames(notionClient, task.notionPageId, ['taskMonth', 'poolScore']);
+    if (task.taskMonth && names.taskMonth) {
+      propertiesToUpdate[names.taskMonth] = { select: { name: task.taskMonth } };
     }
-    if (task.poolScore !== null && task.poolScore !== undefined) {
-      propertiesToUpdate['Pool Score'] = { number: Number(task.poolScore) };
+    if (task.poolScore !== null && task.poolScore !== undefined && names.poolScore) {
+      propertiesToUpdate[names.poolScore] = { number: Number(task.poolScore) };
     }
+    if (Object.keys(propertiesToUpdate).length === 0) return { success: true };
 
     await notionClient.pages.update({
       page_id: task.notionPageId,

@@ -12,10 +12,12 @@ import { orderBriefMarkdown } from '@/components/task-detail/brief-parser';
 import { pushBodyToNotion } from '@/lib/notion-body-push';
 import { runInBackground } from '@/lib/background-sync';
 import { attachUploadRequest } from '@/lib/dropbox-output';
+import { resolveWriteName, type FieldKey, type FieldMapping } from '@/lib/production-field-mapping';
+import { customFieldProperties, titlePropertyName } from '@/lib/notion-task-properties';
 
 async function getNotionClientAndDatabase(databaseIdOverride?: string | null) {
   const activeConfig = await prisma.notionConfig.findFirst({
-    include: { databases: true },
+    include: { databases: { where: { archived: false } } },
   });
   if (!activeConfig) return null;
   const activeApiKey = decrypt(activeConfig.encryptedApiKey, activeConfig.iv);
@@ -115,26 +117,26 @@ async function getNotionDatabaseSchemaProperties(client: Client, databaseId: str
   }
 }
 
-async function getNotionPageStatusProperty(notionClient: Client, page: any) {
+async function getNotionPageStatusProperty(notionClient: Client, page: any, propertyName = 'Design Status') {
   try {
     if (page.parent?.type === 'data_source_id') {
       const dataSource: any = await notionClient.dataSources.retrieve({
         data_source_id: page.parent.data_source_id,
       });
-      return dataSource.properties?.['Design Status'] || null;
+      return dataSource.properties?.[propertyName] || null;
     }
     if (page.parent?.type === 'database_id') {
       const db: any = await notionClient.databases.retrieve({
         database_id: page.parent.database_id,
       });
-      if (db.properties?.['Design Status']) {
-        return db.properties['Design Status'];
+      if (db.properties?.[propertyName]) {
+        return db.properties[propertyName];
       }
       if (db.data_sources?.[0]?.id) {
         const ds: any = await notionClient.dataSources.retrieve({
           data_source_id: db.data_sources[0].id,
         });
-        return ds.properties?.['Design Status'] || null;
+        return ds.properties?.[propertyName] || null;
       }
     }
   } catch (err) {
@@ -412,7 +414,7 @@ export async function updateTaskStatusAction(taskId: string, statusNotionKey: st
     await assertCanEditTask(taskId);
     const [status, task] = await Promise.all([
       findPrismaDesignStatus(statusNotionKey),
-      prisma.task.findUnique({ where: { id: taskId } }),
+      prisma.task.findUnique({ where: { id: taskId }, include: { productionUnit: { select: { fieldMapping: true } } } }),
     ]);
 
     if (!status) return { success: false, error: `Status "${statusNotionKey}" not found` };
@@ -437,7 +439,9 @@ export async function updateTaskStatusAction(taskId: string, statusNotionKey: st
         const page = await notionClient.pages.retrieve({ page_id: task.notionPageId });
         if (!('properties' in page)) return;
 
-        const statusProperty = await getNotionPageStatusProperty(notionClient, page);
+        const statusKey = resolveWriteName(page.properties, 'designStatus', task.productionUnit.fieldMapping as FieldMapping);
+        if (!statusKey) return;
+        const statusProperty = await getNotionPageStatusProperty(notionClient, page, statusKey);
         const statusOption = statusProperty?.type === 'status' && statusProperty.status?.options
           ? findNotionStatusOption(statusProperty.status.options, status.notionKey || status.displayName || statusNotionKey)
           : null;
@@ -449,7 +453,7 @@ export async function updateTaskStatusAction(taskId: string, statusNotionKey: st
         await notionClient.pages.update({
           page_id: task.notionPageId,
           properties: {
-            'Design Status': {
+            [statusKey]: {
               status: statusPayload,
             },
           },
@@ -541,6 +545,8 @@ export interface CreateTaskPayload {
   languages?: string[];
   accountIds?: string[];
   canvaLinks?: string[];
+  /** Nilai field tambahan production (key = nama properti Notion). */
+  customFields?: Record<string, unknown> | null;
 }
 
 export async function createTaskAction(payload: CreateTaskPayload) {
@@ -615,99 +621,82 @@ export async function createTaskAction(payload: CreateTaskPayload) {
     if (notionConfig && notionConfig.databaseId) {
       try {
         const schemaProps = await getNotionDatabaseSchemaProperties(notionConfig.client, notionConfig.databaseId);
+        const mapping = targetUnit.fieldMapping as FieldMapping;
+        const w = (key: FieldKey) => resolveWriteName(schemaProps, key, mapping);
         const notionProperties: any = {
-          Name: { title: [{ text: { content: name } }] },
+          [titlePropertyName(schemaProps, mapping)]: { title: [{ text: { content: name } }] },
         };
 
-        // QTY-Submit
-        if (schemaProps['QTY-Submit']) {
-          notionProperties['QTY-Submit'] = { number: effectiveQtySubmit };
-        } else if (schemaProps['QTY Submit']) {
-          notionProperties['QTY Submit'] = { number: effectiveQtySubmit };
-        }
+        const qtyKey = w('qtySubmit');
+        if (qtyKey) notionProperties[qtyKey] = { number: effectiveQtySubmit };
 
-        // Pages
-        if (effectivePages !== null && schemaProps['Pages']) {
-          notionProperties['Pages'] = { number: Number(effectivePages) };
-        }
+        const pagesKey = w('pages');
+        if (effectivePages !== null && pagesKey) notionProperties[pagesKey] = { number: Number(effectivePages) };
 
-        // Pool Score
-        if (poolScore !== null && schemaProps['Pool Score']) {
-          notionProperties['Pool Score'] = { number: Number(poolScore) };
-        }
+        const poolKey = w('poolScore');
+        if (poolScore !== null && poolKey) notionProperties[poolKey] = { number: Number(poolScore) };
 
-        // Task Month
-        if (payload.taskMonth && schemaProps['Task Month']) {
-          if (schemaProps['Task Month'].type === 'date') {
+        const taskMonthKey = w('taskMonth');
+        if (payload.taskMonth && taskMonthKey) {
+          if (schemaProps[taskMonthKey].type === 'date') {
             const dateStr = formatTaskMonthToDateString(payload.taskMonth);
-            if (dateStr) notionProperties['Task Month'] = { date: { start: dateStr } };
+            if (dateStr) notionProperties[taskMonthKey] = { date: { start: dateStr } };
           } else {
-            notionProperties['Task Month'] = { select: { name: payload.taskMonth } };
+            notionProperties[taskMonthKey] = { select: { name: payload.taskMonth } };
           }
         }
 
-        // Priority
-        if (payload.priority && schemaProps['Priority']) {
-          notionProperties['Priority'] = { select: { name: payload.priority } };
-        }
+        const priorityKey = w('priority');
+        if (payload.priority && priorityKey) notionProperties[priorityKey] = { select: { name: payload.priority } };
 
-        // License
-        if (payload.license && schemaProps['License']) {
-          notionProperties['License'] = { select: { name: payload.license } };
-        }
+        const licenseKey = w('license');
+        if (payload.license && licenseKey) notionProperties[licenseKey] = { select: { name: payload.license } };
 
-        // Doctype
-        if (selectedDoctype?.displayName && schemaProps['Doctype']) {
-          notionProperties['Doctype'] = { select: { name: selectedDoctype.displayName } };
-        }
+        const doctypeKey = w('doctype');
+        if (selectedDoctype?.displayName && doctypeKey) notionProperties[doctypeKey] = { select: { name: selectedDoctype.displayName } };
 
-        // Design Status
-        if (selectedStatus && schemaProps['Design Status']) {
-          const statusOption = schemaProps['Design Status']?.status?.options
-            ? findNotionStatusOption(schemaProps['Design Status'].status.options, selectedStatus.notionKey || selectedStatus.displayName)
+        const statusKey = w('designStatus');
+        if (selectedStatus && statusKey) {
+          const statusOption = schemaProps[statusKey]?.status?.options
+            ? findNotionStatusOption(schemaProps[statusKey].status.options, selectedStatus.notionKey || selectedStatus.displayName)
             : null;
-          notionProperties['Design Status'] = statusOption
+          notionProperties[statusKey] = statusOption
             ? { status: { id: statusOption.id } }
             : { status: { name: selectedStatus.notionKey } };
         }
 
-        // Designer
-        if (selectedDesigner?.displayName && schemaProps['Designer']) {
-          notionProperties['Designer'] = { select: { name: selectedDesigner.displayName } };
-          if (selectedDesigner.status && schemaProps['Designer Status']) {
-            notionProperties['Designer Status'] = { select: { name: selectedDesigner.status } };
+        const designerKey = w('designer');
+        if (selectedDesigner?.displayName && designerKey) {
+          notionProperties[designerKey] = { select: { name: selectedDesigner.displayName } };
+          const designerStatusKey = w('designerStatus');
+          if (selectedDesigner.status && designerStatusKey) {
+            notionProperties[designerStatusKey] = { select: { name: selectedDesigner.status } };
           }
         }
 
-        // IND/ENG
-        if (payload.languages && payload.languages.length > 0) {
-          if (schemaProps['IND/ENG']) {
-            notionProperties['IND/ENG'] = { multi_select: payload.languages.map((l) => ({ name: l })) };
-          } else if (schemaProps['IND\\ENG']) {
-            notionProperties['IND\\ENG'] = { multi_select: payload.languages.map((l) => ({ name: l })) };
-          }
+        const langKey = w('languages');
+        if (payload.languages && payload.languages.length > 0 && langKey) {
+          notionProperties[langKey] = { multi_select: payload.languages.map((l) => ({ name: l })) };
         }
 
-        // Brand / Account
-        if (selectedAccounts && selectedAccounts.length > 0) {
-          if (schemaProps['Brand']) {
-            notionProperties['Brand'] = { multi_select: selectedAccounts.map((a) => ({ name: a.displayName })) };
-          } else if (schemaProps['Account']) {
-            notionProperties['Account'] = { multi_select: selectedAccounts.map((a) => ({ name: a.displayName })) };
-          }
+        const brandKey = w('brand');
+        if (selectedAccounts && selectedAccounts.length > 0 && brandKey) {
+          notionProperties[brandKey] = { multi_select: selectedAccounts.map((a) => ({ name: a.displayName })) };
         }
 
-        // Template Link
         const templateLinkUrl = validatedCanvaLinks[0]?.normalizedUrl || payload.notionUrl?.trim() || null;
-        if (templateLinkUrl && schemaProps['Template Link']) {
-          if (schemaProps['Template Link'].type === 'files') {
-            notionProperties['Template Link'] = {
+        const templateKey = w('canvaLink');
+        if (templateLinkUrl && templateKey) {
+          if (schemaProps[templateKey].type === 'files') {
+            notionProperties[templateKey] = {
               files: [{ name: 'Template Link', external: { url: templateLinkUrl } }],
             };
           } else {
-            notionProperties['Template Link'] = { url: templateLinkUrl };
+            notionProperties[templateKey] = { url: templateLinkUrl };
           }
         }
+
+        Object.assign(notionProperties, await customFieldProperties(targetUnit.id, payload.customFields, schemaProps));
 
         const newNotionPage: any = await notionConfig.client.pages.create({
           parent: { database_id: notionConfig.databaseId },
@@ -757,6 +746,9 @@ export async function createTaskAction(payload: CreateTaskPayload) {
         priority: payload.priority || 'Medium',
         license: payload.license || 'Free',
         taskMonth: payload.taskMonth?.trim() || null,
+        customFields: payload.customFields && Object.keys(payload.customFields).length > 0
+          ? (payload.customFields as Prisma.InputJsonObject)
+          : undefined,
         bodyText: payload.bodyText ? orderBriefMarkdown(payload.bodyText) : null,
         languages: payload.languages || [],
         taskAccounts: payload.accountIds?.length
@@ -814,8 +806,8 @@ export interface TaskUpdatePayload {
   languages?: string[];
   accountIds?: string[];
   canvaLinks?: string[];
-  /** Custom field dari Notion (disimpan lokal; belum ditulis balik ke Notion). */
-  customFields?: Record<string, string> | null;
+  /** Patch field tambahan production (key = nama properti Notion); digabung ke nilai lama lalu dikirim ke Notion. */
+  customFields?: Record<string, unknown> | null;
 }
 
 export async function updateTaskFieldsAction(taskId: string, payload: TaskUpdatePayload) {
@@ -870,10 +862,14 @@ export async function updateTaskFieldsAction(taskId: string, payload: TaskUpdate
     if (payload.license !== undefined) updateData.license = payload.license;
     if (payload.taskMonth !== undefined) updateData.taskMonth = payload.taskMonth;
     if (payload.bodyText !== undefined) updateData.bodyText = payload.bodyText ? orderBriefMarkdown(payload.bodyText) : payload.bodyText;
-    if (payload.customFields !== undefined) {
-      updateData.customFields = payload.customFields && Object.keys(payload.customFields).length > 0
-        ? payload.customFields
-        : Prisma.DbNull;
+    if (payload.customFields) {
+      const merged: Record<string, unknown> = { ...((existingTask.customFields as Record<string, unknown> | null) ?? {}) };
+      for (const [key, value] of Object.entries(payload.customFields)) {
+        const empty = value === null || value === undefined || value === '' || (Array.isArray(value) && value.length === 0);
+        if (empty) delete merged[key];
+        else merged[key] = value;
+      }
+      updateData.customFields = Object.keys(merged).length > 0 ? (merged as Prisma.InputJsonObject) : Prisma.DbNull;
     }
     if (payload.languages !== undefined) updateData.languages = payload.languages;
 
@@ -944,55 +940,61 @@ export async function updateTaskFieldsAction(taskId: string, payload: TaskUpdate
 
         const page: any = await notionClient.pages.retrieve({ page_id: existingTask.notionPageId });
         const schemaProps = page.properties || {};
+        const mapping = (taskUnit?.fieldMapping ?? {}) as FieldMapping;
+        const w = (key: FieldKey) => resolveWriteName(schemaProps, key, mapping);
         const notionProperties: any = {};
 
-        if (payload.name !== undefined && schemaProps['Name']) {
-          notionProperties['Name'] = {
+        const titleKey = w('name');
+        if (payload.name !== undefined && titleKey) {
+          notionProperties[titleKey] = {
             title: [{ text: { content: payload.name || '' } }],
           };
         }
-        if (payload.qtySubmit !== undefined) {
-          if (schemaProps['QTY-Submit']) {
-            notionProperties['QTY-Submit'] = { number: payload.qtySubmit ?? null };
-          } else if (schemaProps['QTY Submit']) {
-            notionProperties['QTY Submit'] = { number: payload.qtySubmit ?? null };
-          }
+        const qtyKey = w('qtySubmit');
+        if (payload.qtySubmit !== undefined && qtyKey) {
+          notionProperties[qtyKey] = { number: payload.qtySubmit ?? null };
         }
-        if ((payload.pages !== undefined || updateData.pages !== undefined) && schemaProps['Pages']) {
-          notionProperties['Pages'] = { number: updateData.pages ?? payload.pages ?? null };
+        const pagesKey = w('pages');
+        if ((payload.pages !== undefined || updateData.pages !== undefined) && pagesKey) {
+          notionProperties[pagesKey] = { number: updateData.pages ?? payload.pages ?? null };
         }
-        if (updateData.poolScore !== undefined && schemaProps['Pool Score']) {
-          notionProperties['Pool Score'] = { number: Number(updateData.poolScore) };
+        const poolKey = w('poolScore');
+        if (updateData.poolScore !== undefined && poolKey) {
+          notionProperties[poolKey] = { number: Number(updateData.poolScore) };
         }
-        if (payload.taskMonth !== undefined && schemaProps['Task Month']) {
-          if (schemaProps['Task Month'].type === 'date') {
+        const taskMonthKey = w('taskMonth');
+        if (payload.taskMonth !== undefined && taskMonthKey) {
+          if (schemaProps[taskMonthKey].type === 'date') {
             const dateStr = formatTaskMonthToDateString(payload.taskMonth);
-            notionProperties['Task Month'] = dateStr ? { date: { start: dateStr } } : { date: null };
+            notionProperties[taskMonthKey] = dateStr ? { date: { start: dateStr } } : { date: null };
           } else {
-            notionProperties['Task Month'] = payload.taskMonth ? { select: { name: payload.taskMonth } } : { select: null };
+            notionProperties[taskMonthKey] = payload.taskMonth ? { select: { name: payload.taskMonth } } : { select: null };
           }
         }
-        if (payload.priority !== undefined && schemaProps['Priority']) {
-          notionProperties['Priority'] = payload.priority
+        const priorityKey = w('priority');
+        if (payload.priority !== undefined && priorityKey) {
+          notionProperties[priorityKey] = payload.priority
             ? { select: { name: payload.priority } }
             : { select: null };
         }
-        if (payload.license !== undefined && schemaProps['License']) {
-          notionProperties['License'] = payload.license
+        const licenseKey = w('license');
+        if (payload.license !== undefined && licenseKey) {
+          notionProperties[licenseKey] = payload.license
             ? { select: { name: payload.license } }
             : { select: null };
         }
 
         // Sync Design Status
-        if (payload.designStatusId !== undefined && schemaProps['Design Status']) {
+        const statusKey = w('designStatus');
+        if (payload.designStatusId !== undefined && statusKey) {
           if (payload.designStatusId) {
             const statusRecord = await prisma.designStatus.findUnique({ where: { id: payload.designStatusId } });
             if (statusRecord) {
-              const statusProperty = await getNotionPageStatusProperty(notionClient, page);
+              const statusProperty = await getNotionPageStatusProperty(notionClient, page, statusKey);
               const statusOption = statusProperty?.type === 'status' && statusProperty.status?.options
                 ? findNotionStatusOption(statusProperty.status.options, statusRecord.notionKey || statusRecord.displayName)
                 : null;
-              notionProperties['Design Status'] = statusOption
+              notionProperties[statusKey] = statusOption
                 ? { status: { id: statusOption.id } }
                 : { status: { name: statusRecord.displayName || statusRecord.notionKey } };
             }
@@ -1000,66 +1002,67 @@ export async function updateTaskFieldsAction(taskId: string, payload: TaskUpdate
         }
 
         // Sync Designer
-        if (payload.designerId !== undefined && schemaProps['Designer']) {
+        const designerKey = w('designer');
+        if (payload.designerId !== undefined && designerKey) {
           if (payload.designerId) {
             const designerRecord = await prisma.designer.findUnique({ where: { id: payload.designerId } });
             if (designerRecord) {
-              notionProperties['Designer'] = { select: { name: designerRecord.displayName } };
-              if (designerRecord.status && schemaProps['Designer Status']) {
-                notionProperties['Designer Status'] = { select: { name: designerRecord.status } };
+              notionProperties[designerKey] = { select: { name: designerRecord.displayName } };
+              const designerStatusKey = w('designerStatus');
+              if (designerRecord.status && designerStatusKey) {
+                notionProperties[designerStatusKey] = { select: { name: designerRecord.status } };
               }
             }
           } else {
-            notionProperties['Designer'] = { select: null };
+            notionProperties[designerKey] = { select: null };
           }
         }
 
         // Sync Doctype
-        if (payload.doctypeId !== undefined && schemaProps['Doctype']) {
+        const doctypeKey = w('doctype');
+        if (payload.doctypeId !== undefined && doctypeKey) {
           if (payload.doctypeId) {
             const doctypeRecord = await prisma.doctype.findUnique({ where: { id: payload.doctypeId } });
             if (doctypeRecord) {
-              notionProperties['Doctype'] = { select: { name: doctypeRecord.displayName } };
+              notionProperties[doctypeKey] = { select: { name: doctypeRecord.displayName } };
             }
           } else {
-            notionProperties['Doctype'] = { select: null };
+            notionProperties[doctypeKey] = { select: null };
           }
         }
 
         // Sync Brand / Account
-        if (payload.accountIds !== undefined) {
-          const targetProp = schemaProps['Brand'] ? 'Brand' : schemaProps['Account'] ? 'Account' : null;
-          if (targetProp) {
-            if (payload.accountIds.length > 0) {
-              const accounts = await prisma.account.findMany({ where: { id: { in: payload.accountIds } } });
-              const acctList = accounts.map((a) => ({ name: a.displayName }));
-              notionProperties[targetProp] = { multi_select: acctList };
-            } else {
-              notionProperties[targetProp] = { multi_select: [] };
-            }
+        const brandKey = w('brand');
+        if (payload.accountIds !== undefined && brandKey) {
+          if (payload.accountIds.length > 0) {
+            const accounts = await prisma.account.findMany({ where: { id: { in: payload.accountIds } } });
+            notionProperties[brandKey] = { multi_select: accounts.map((a) => ({ name: a.displayName })) };
+          } else {
+            notionProperties[brandKey] = { multi_select: [] };
           }
         }
 
         // Sync Languages
-        if (payload.languages !== undefined) {
-          const targetLangProp = schemaProps['IND/ENG'] ? 'IND/ENG' : schemaProps['IND\\ENG'] ? 'IND\\ENG' : null;
-          if (targetLangProp) {
-            const langList = (payload.languages || []).map((l) => ({ name: l }));
-            notionProperties[targetLangProp] = { multi_select: langList };
-          }
+        const langKey = w('languages');
+        if (payload.languages !== undefined && langKey) {
+          notionProperties[langKey] = { multi_select: (payload.languages || []).map((l) => ({ name: l })) };
         }
 
         // Sync Template Link
-        if (payload.canvaLinks !== undefined && !isDropboxTask && schemaProps['Template Link']) {
+        const templateKey = w('canvaLink');
+        if (payload.canvaLinks !== undefined && !isDropboxTask && templateKey) {
           const linkUrl = payload.canvaLinks[0] || null;
-          if (schemaProps['Template Link'].type === 'files') {
-            notionProperties['Template Link'] = linkUrl
+          if (schemaProps[templateKey].type === 'files') {
+            notionProperties[templateKey] = linkUrl
               ? { files: [{ name: 'Template Link', external: { url: linkUrl } }] }
               : { files: [] };
           } else {
-            notionProperties['Template Link'] = { url: linkUrl };
+            notionProperties[templateKey] = { url: linkUrl };
           }
         }
+
+        // Field tambahan production
+        Object.assign(notionProperties, await customFieldProperties(existingTask.productionUnitId, payload.customFields, schemaProps));
 
         if (Object.keys(notionProperties).length > 0) {
           await notionClient.pages.update({
@@ -1096,7 +1099,7 @@ export async function fetchTaskMetadataOptionsAction(productionUnitId?: string) 
       : null;
     const platformScope = unit ? { platformId: unit.platformId } : {};
 
-    const [designers, doctypes, designStatuses, accounts] = await Promise.all([
+    const [designers, doctypes, designStatuses, accounts, fields] = await Promise.all([
       prisma.designer.findMany({
         where: { status: 'Active' },
         select: { id: true, displayName: true, avatarColor: true },
@@ -1121,6 +1124,14 @@ export async function fetchTaskMetadataOptionsAction(productionUnitId?: string) 
             orderBy: { displayName: 'asc' },
           })
         : Promise.resolve([]),
+      // Field tambahan production yang ditampilkan di task drawer / buat task
+      productionUnitId
+        ? prisma.productionField.findMany({
+            where: { productionUnitId, visible: true, missingInNotion: false },
+            select: { id: true, name: true, type: true, options: true, editable: true },
+            orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+          })
+        : Promise.resolve([]),
     ]);
 
     return {
@@ -1131,6 +1142,8 @@ export async function fetchTaskMetadataOptionsAction(productionUnitId?: string) 
           doctypes,
           designStatuses,
           accounts,
+          fields,
+          disabledFields: unit?.disabledFields ?? [],
           outputType: unit?.platform.outputType ?? 'canva_link',
         })
       ),

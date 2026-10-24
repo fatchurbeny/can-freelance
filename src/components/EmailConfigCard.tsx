@@ -119,7 +119,7 @@ export default function EmailConfigCard() {
   return (
     <div className="w-full flex flex-col font-sans bg-white dark:bg-[#0d0e12]">
       {/* Header Bar matching Figma Node 474:22 */}
-      <div className="w-full bg-white dark:bg-[#0d0e12] flex items-center justify-between p-4 border-b border-[#f0f0f0] dark:border-[#272a34] gap-4">
+      <div className="w-full bg-white dark:bg-[#0d0e12] flex flex-wrap items-center justify-between p-4 border-b border-[#f0f0f0] dark:border-[#272a34] gap-x-4 gap-y-3">
         {/* Left: Icon + Title */}
         <div className="flex items-center gap-2">
           <Mail className="w-6 h-6 text-gray-900 dark:text-white shrink-0" />
@@ -128,7 +128,7 @@ export default function EmailConfigCard() {
           </h3>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={handleOpenOAuth}
@@ -165,9 +165,9 @@ export default function EmailConfigCard() {
             <span className="text-[11px] font-sans font-medium opacity-50 text-gray-900 dark:text-white whitespace-nowrap">
               Email Account
             </span>
-            <div className="flex items-center gap-1.5 shrink-0">
-              <AtSign className="w-4 h-4 text-gray-800 dark:text-gray-200" />
-              <span className="text-xs font-sans font-medium text-gray-900 dark:text-white whitespace-nowrap">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <AtSign className="w-4 h-4 shrink-0 text-gray-800 dark:text-gray-200" />
+              <span className="text-xs font-sans font-medium text-gray-900 dark:text-white truncate">
                 {isDisconnected ? 'Belum terhubung' : email}
               </span>
             </div>

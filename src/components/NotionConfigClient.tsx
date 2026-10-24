@@ -42,6 +42,7 @@ export default function NotionConfigClient({ initialSyncLog }: { initialSyncLog:
   const [workspaceName, setWorkspaceName] = useState('');
   const [maskedApiKey, setMaskedApiKey] = useState('');
   const [databases, setDatabases] = useState<any[]>([]);
+  const [pageCount, setPageCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   // Modals state
@@ -70,6 +71,7 @@ export default function NotionConfigClient({ initialSyncLog }: { initialSyncLog:
         setWorkspaceName(config.workspaceName || '');
         setMaskedApiKey(config.maskedApiKey || '');
         setDatabases(config.databases || []);
+        setPageCount(config.pageCount ?? 0);
       }
       setAutoSync(config.autoSync ?? false);
       setSyncInterval(config.syncInterval ?? '24_hours');
@@ -145,44 +147,44 @@ export default function NotionConfigClient({ initialSyncLog }: { initialSyncLog:
         ) : (
           <div className="space-y-6">
             <div className="w-full rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] divide-y divide-[#f0f0f0] dark:divide-[#272a34] shadow-none">
-              <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-[#f0f0f0] dark:divide-[#272a34] bg-white dark:bg-[#0d0e12]">
+              <div className="grid grid-cols-1 xl:grid-cols-2 divide-y xl:divide-y-0 xl:divide-x divide-[#f0f0f0] dark:divide-[#272a34] bg-white dark:bg-[#0d0e12]">
                 
                 <div className="flex flex-col divide-y divide-[#f0f0f0] dark:divide-[#272a34]">
                   <div 
                     onClick={() => {
                       if (configExists) router.push('/notion-config/databases');
                     }}
-                    className={`p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors ${configExists ? 'cursor-pointer hover:bg-gray-50/80 dark:hover:bg-[#16181d]/80' : ''}`}
+                    className={`p-5 sm:p-6 flex flex-wrap items-center justify-between gap-4 transition-colors ${configExists ? 'cursor-pointer hover:bg-gray-50/80 dark:hover:bg-[#16181d]/80' : ''}`}
                   >
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4 min-w-[220px] flex-1">
                       <div className="w-12 h-12 bg-gray-50 dark:bg-[#16181d] rounded-lg flex items-center justify-center shrink-0 border border-[#f0f0f0] dark:border-[#272a34]">
                         <NotionLogo />
                       </div>
-                      <div>
-                        <h3 className="text-base font-bold text-gray-900 dark:text-white">
+                      <div className="min-w-0">
+                        <h3 className="text-base font-bold text-gray-900 dark:text-white truncate">
                           {configExists && workspaceName ? workspaceName : 'Notion Workspace'}
                         </h3>
                         <p className="text-xs font-sans text-gray-500 dark:text-gray-400 mt-0.5">
-                          {databases.length > 0 ? databases.map(db => db.name).join(', ') : 'No databases connected'}
+                          {configExists ? `${pageCount} ${pageCount === 1 ? 'page' : 'pages'} · ${databases.length} ${databases.length === 1 ? 'database' : 'databases'} registered` : 'Not connected'}
                         </p>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4 shrink-0">
                       <button
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           if (configExists) router.push('/notion-config/databases');
                         }}
-                        className={`inline-flex items-center gap-2 px-3 py-1.5 font-sans text-[10px] font-bold uppercase tracking-wider rounded-full transition-colors ${
+                        className={`inline-flex items-center gap-2 px-3 py-1.5 font-sans text-[10px] font-bold uppercase tracking-wider whitespace-nowrap rounded-full transition-colors ${
                           configExists 
                             ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 cursor-pointer' 
                             : 'text-gray-500 bg-gray-100 dark:bg-[#16181d] border border-[#f0f0f0] dark:border-[#272a34] cursor-default'
                         }`}
                       >
                         <span className={`w-1.5 h-1.5 rounded-full ${configExists ? 'bg-emerald-500' : 'bg-gray-500'}`}></span>
-                        {databases.length > 0 ? `${databases.length} Database` : (configExists ? '0 Database' : 'No Connection')}
+                        {configExists ? 'Pages & Databases' : 'No Connection'}
                       </button>
 
                       <button
@@ -202,7 +204,7 @@ export default function NotionConfigClient({ initialSyncLog }: { initialSyncLog:
                             }
                           }
                         }}
-                        className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none cursor-pointer ${
+                        className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors focus:outline-none cursor-pointer ${
                           configExists ? 'bg-[#ff5e1f]' : 'bg-gray-400 dark:bg-gray-700'
                         }`}
                       >
@@ -259,19 +261,19 @@ export default function NotionConfigClient({ initialSyncLog }: { initialSyncLog:
                           Create Integration
                         </h3>
                         <p className="pl-7 text-[11px] leading-relaxed text-gray-500 dark:text-gray-400">
-                          Go to <span className="text-[#ff5e1f] font-semibold">notion.so/my-integrations</span>, create an internal integration, and copy the **Internal Integration Secret** (starts with <code className="font-mono text-gray-800 dark:text-gray-200">secret_</code>).
+                          Go to <span className="text-[#ff5e1f] font-semibold">notion.so/my-integrations</span>, create an internal integration, and copy the <strong className="font-semibold text-gray-700 dark:text-gray-200">Internal Integration Secret</strong> (starts with <code className="font-mono text-gray-800 dark:text-gray-200">secret_</code>).
                         </p>
                       </div>
 
                       <div className="space-y-1.5">
                         <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2 text-xs">
                           <span className="w-5 h-5 rounded bg-[#ff5e1f]/10 text-[#ff5e1f] border border-[#ff5e1f]/20 flex items-center justify-center font-sans text-[10px] font-bold shrink-0">2</span>
-                          Find Database ID
+                          Add a Parent Page
                         </h3>
                         <p className="pl-7 text-[11px] leading-relaxed text-gray-500 dark:text-gray-400">
-                          Open your task database page in Notion and copy its URL. The database ID is the 32-character string in the URL path after workspace name:
+                          Open <span className="font-semibold text-gray-700 dark:text-gray-200">Pages &amp; Databases</span> and paste the link of the Notion page where task databases should live. Star one page as default: the production wizard creates each new database inside it, so you never need a database ID.
                           <code className="block mt-2 p-3 bg-gray-50 dark:bg-[#16181d] border border-[#f0f0f0] dark:border-[#272a34] rounded-lg font-mono text-[10px] break-all text-gray-700 dark:text-gray-300">
-                            notion.so/workspace/<span className="font-bold text-[#ff5e1f]">2f40e19aa1358026a0e1d9caab5cdbb7</span>?v=...
+                            notion.so/workspace/Page-Name-<span className="font-bold text-[#ff5e1f]">2f40e19aa1358026a0e1d9caab5cdbb7</span>
                           </code>
                         </p>
                       </div>
@@ -282,7 +284,7 @@ export default function NotionConfigClient({ initialSyncLog }: { initialSyncLog:
                           Grant Connections
                         </h3>
                         <p className="pl-7 text-[11px] leading-relaxed text-gray-500 dark:text-gray-400">
-                          Inside Notion, click the three dots <code className="font-mono text-gray-800 dark:text-gray-200">...</code> at top right of database. Click **Add Connections** and search for the integration created in step 1.
+                          Inside Notion, open the parent page, click the three dots <code className="font-mono text-gray-800 dark:text-gray-200">...</code> at top right, choose <strong className="font-semibold text-gray-700 dark:text-gray-200">Connections</strong> and add the integration from step 1. Databases inside the page inherit the access.
                         </p>
                       </div>
                     </div>
