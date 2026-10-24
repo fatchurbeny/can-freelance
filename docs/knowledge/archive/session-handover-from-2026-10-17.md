@@ -33,3 +33,26 @@ Entri yang dipindah dari `session-handover.md`. Cari dengan `grep`; jangan dibac
 * Tombol **Acak** di kartu Color Palette (preview brief, hanya role `task.edit`): `shufflePaletteMarkdown` di `brief-parser.ts` mengacak urutan hex lalu menulis ulang baris `Swatches` + role (Primary, Accent, Secondary, Neutral, Background). Di task drawer langsung tersimpan (autosave + push Notion); di buat task tersimpan saat Save Task. Diuji di drawer buat task.
 * Semua belum di-commit (user cek sendiri dulu).
 * **Dirilis ke VPS 2026-10-20** (`npm run deploy:vps`, `🛡️ [DevOps & Release]`) dari working tree `feat/bundle-order-designer` termasuk perubahan di atas yang belum di-commit; healthcheck gerbang login lolos. Tanpa perubahan skema Prisma.
+
+### 2026-10-24 — Field Notion dinamis per production, putaran 1 (Claude Code, `⚙️ [Backend & Database]`)
+* Production yang baru ditambahkan (wizard, buat database, atau ganti database di Edit Production) otomatis terdaftar di Notion Config → Databases (`registerNotionDatabase`). Halaman Notion Config dipertahankan. Backfill SC-Element & SC-Canva baru dilakukan di DB lokal, **VPS belum**.
+* Skema baru: `ProductionUnit.disabledFields`, model `ProductionField`. Detail di `entities.md` dan `data-flows.md` (bagian "Nama Properti & Field Tambahan").
+* Semua push ke Notion kini memakai `resolveWriteName` + `fieldMapping`. Dicek read-only: untuk ketiga production, nama properti sama persis dengan nama lama.
+* Edit Production: bagian "Struktur Field" (pilih nama properti, matikan field opsional) dan "Field Tambahan" (tambah field → dibuat di Notion, ganti nama, baca ulang skema, buat ulang yang hilang). Task drawer & modal buat task: section "Field Tambahan" per tipe (`custom-fields/*`), baris field inti yang dimatikan disembunyikan.
+* Task drawer kini memanggil `fetchTaskMetadataOptionsAction(task.productionUnitId)`, sehingga daftar doctype/akun ikut platform production.
+* Pembagian field disetujui user: wajib = name, designer, doctype, designStatus, pages, qtySubmit, payrollMonth; disarankan = taskMonth, brand.
+* Desain: https://claude.ai/artifact/8vPphPxA2HkpuGhdomBXpR. **Putaran 2 belum**: langkah wizard "Struktur Field" + filter board untuk field `filterable`.
+* Diuji di browser lokal, data uji sudah dikembalikan:
+  * Struktur Field: mematikan Priority di SC-Canva → baris Priority hilang dari task drawer. Dropdown portal dan Escape bekerja.
+  * Baca ulang skema dan menampilkan field tambahan di task drawer.
+  * Drawer Tambah Field: opsi hanya muncul untuk tipe select; Escape hanya menutup drawer itu.
+  * `Upload Link`/`Dropbox Link` dikecualikan dari field tambahan (`APP_MANAGED_PROPERTIES`).
+* **Uji tulis ke Notion lolos** di production uji `UJI Field Dinamis` (database di page "Impro-Freelance"; sudah diarsipkan). Yang diuji:
+  * buat field Select & Tanggal → properti muncul di Notion
+  * buat task dengan nilai field → nilai masuk Notion
+  * edit dari drawer → nilai masuk Notion
+  * ubah di Notion + sync incremental → app ikut berubah
+  * ganti nama field → nama di Notion dan key `customFields` ikut berganti
+* Database uji di Notion dan barisnya di Notion Config → Databases boleh dihapus manual.
+* **Notion Config → Pages & Databases** (pengganti halaman Databases, tabel gaya Production Hub, copy Bahasa Indonesia): daftar page induk (`NotionPage`, default = Impro-Freelance) + database terdaftar. Status arsip database milik production mengikuti production (Production Hub); Arsipkan/Pulihkan hanya untuk database tanpa production. Halaman Notion Config responsif (2 kolom mulai `xl`). `NotionConfig.defaultParentPageId` dihapus. Lokal: test, test-1, test-2 didaftarkan lewat Pindai (Belum dipakai, tidak diarsipkan). VPS perlu `db push` + isi page.
+* Belum di-commit.

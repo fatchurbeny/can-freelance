@@ -13,6 +13,7 @@ Dokumen ini memetakan struktur modul aplikasi Next.js 16 (App Router), Server Ac
 * **`/rate-card`**: Editor tarif kontrak desainer & doctype.
 * **`/account-team`**: Manajemen desainer dan status keanggotaan.
 * **`/notion-config`**: Konfigurasi Notion Database ID & API token.
+* **`/share/t/[token]`** (publik, tanpa login): halaman view-only satu task ala Notion "Share to web". Dikecualikan di `src/proxy.ts` (`isPublicPath`) dan dari sidebar (`AppSidebar`). Hanya field allowlist (status, doctype, brand, pages, qty, task month, bahasa, priority, license, field tambahan non-link) + Design Brief; tanpa komentar, designer, payroll, pool score, link Canva/Dropbox/upload. Token dibuat/dicabut lewat `src/app/actions/task-share.ts` (permission `task.share`) dari tombol Share di task drawer (`task-detail/TaskShareButton.tsx`).
 
 ---
 

@@ -37,6 +37,19 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 
 ## 📝 Sesi Terakhir
 
+### 2026-10-24 — Share link publik task (Claude Code, `⚙️ [Backend & Database]` + `🎨 [Frontend & UI/UX]`)
+* Model baru `TaskShareLink` (db push lokal sudah; **VPS perlu `prisma db push`**), permission `task.share` (Admin, AD, PM).
+* Tombol Share di header task drawer → buat/salin/cabut link `/can-freelance/share/t/<token>`; satu link aktif per task, tanpa kedaluwarsa. Escape menutup panel saja.
+* Halaman publik `/share/t/[token]` (proxy & sidebar dikecualikan, `noindex`): field allowlist + Design Brief. Detail di `modules.md`.
+* Drawer menandai task ber-link publik: badge **Public view** di baris Last Edited + titik hijau di tombol Share (status dimuat saat drawer dibuka). Cabut link memakai konfirmasi inline (`confirm()` bawaan tertutup otomatis di browser in-app → cabut tidak jalan). Diuji di browser (Admin): cabut → 404, buat ulang, Escape hanya menutup panel.
+* Dev server kedua: `npm run dev` membaca `PORT` (default 3002) & `next.config` membaca `NEXT_DIST_DIR`; preview `.claude/launch.json` memakai `.next-preview` + `autoPort` (Next 16 menolak 2 `next dev` di distDir sama).
+* Diuji di build produksi lokal (port 3003): link aktif 200, token salah/dicabut 404, rute lain tetap 307 ke login; desktop + mobile 375px tanpa scroll horizontal. Dev server chat lain di 3002 perlu restart (Prisma client lama). Belum di-commit.
+
+### 2026-10-24 — Asset Library: jalur manual, tahap desain (Claude Code, `🏛️ [Architecture & Knowledge Ops]`)
+* User memilih jalur **manual** (link edit + public view link, preview iframe `?embed`, tanpa Canva API/MFA). Rencana & skema di [`../backlog/resources-library.md`](../backlog/resources-library.md).
+* Notion **opsi B** disetujui: app = input utama, database Notion "Asset Library" = mirror dua arah, relation "Assets" di database task untuk hitungan pemakaian.
+* Desain 4 artboard: https://claude.ai/artifact/HKviEpNcfcL5V7MD3iYjLj. Belum ada kode/skema; menunggu review desain.
+
 ### 2026-10-24 — Designer bisa download statement sendiri (Claude Code, `🎨 [Frontend & UI/UX]`)
 * `OwnBillingView` (billing untuk role designer) kini punya tombol **Download Statement** → `/billing-statement/print?designerId=<milik sendiri>&paymentMonth=…` (tab baru). Guard di print page sudah membatasi `billing.view.own` ke `designerId` sendiri.
 * Print page: Rate/Poll tidak lagi hardcode `15000` (pakai `priceFor`, `-` bila belum ada harga); payout 0 untuk designer `Resign` (sama dengan halaman billing).
@@ -45,29 +58,6 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 * Tombol pakai `next/link` (bukan `<a>`) agar basePath `/can-freelance` ikut; `<a>` biasa → 404.
 * Diuji lokal (Admin "Lihat sebagai" Putery): tombol muncul, print Putery Sept-2026 = IDR 2.700.000 (sama dengan billing), print designer lain dialihkan. Tabel bundle belum teruji visual: satu-satunya order lokal (Slides-Colony) task-nya masih Draft. Belum di-commit.
 * Catatan: panel Notion Sync di sidebar sudah admin-only (`integration.manage`); PM/AD multi-production = beberapa baris Membership (by design).
-
-### 2026-10-24 — Field Notion dinamis per production, putaran 1 (Claude Code, `⚙️ [Backend & Database]`)
-* Production yang baru ditambahkan (wizard, buat database, atau ganti database di Edit Production) otomatis terdaftar di Notion Config → Databases (`registerNotionDatabase`). Halaman Notion Config dipertahankan. Backfill SC-Element & SC-Canva baru dilakukan di DB lokal, **VPS belum**.
-* Skema baru: `ProductionUnit.disabledFields`, model `ProductionField`. Detail di `entities.md` dan `data-flows.md` (bagian "Nama Properti & Field Tambahan").
-* Semua push ke Notion kini memakai `resolveWriteName` + `fieldMapping`. Dicek read-only: untuk ketiga production, nama properti sama persis dengan nama lama.
-* Edit Production: bagian "Struktur Field" (pilih nama properti, matikan field opsional) dan "Field Tambahan" (tambah field → dibuat di Notion, ganti nama, baca ulang skema, buat ulang yang hilang). Task drawer & modal buat task: section "Field Tambahan" per tipe (`custom-fields/*`), baris field inti yang dimatikan disembunyikan.
-* Task drawer kini memanggil `fetchTaskMetadataOptionsAction(task.productionUnitId)`, sehingga daftar doctype/akun ikut platform production.
-* Pembagian field disetujui user: wajib = name, designer, doctype, designStatus, pages, qtySubmit, payrollMonth; disarankan = taskMonth, brand.
-* Desain: https://claude.ai/artifact/8vPphPxA2HkpuGhdomBXpR. **Putaran 2 belum**: langkah wizard "Struktur Field" + filter board untuk field `filterable`.
-* Diuji di browser lokal, data uji sudah dikembalikan:
-  * Struktur Field: mematikan Priority di SC-Canva → baris Priority hilang dari task drawer. Dropdown portal dan Escape bekerja.
-  * Baca ulang skema dan menampilkan field tambahan di task drawer.
-  * Drawer Tambah Field: opsi hanya muncul untuk tipe select; Escape hanya menutup drawer itu.
-  * `Upload Link`/`Dropbox Link` dikecualikan dari field tambahan (`APP_MANAGED_PROPERTIES`).
-* **Uji tulis ke Notion lolos** di production uji `UJI Field Dinamis` (database di page "Impro-Freelance"; sudah diarsipkan). Yang diuji:
-  * buat field Select & Tanggal → properti muncul di Notion
-  * buat task dengan nilai field → nilai masuk Notion
-  * edit dari drawer → nilai masuk Notion
-  * ubah di Notion + sync incremental → app ikut berubah
-  * ganti nama field → nama di Notion dan key `customFields` ikut berganti
-* Database uji di Notion dan barisnya di Notion Config → Databases boleh dihapus manual.
-* **Notion Config → Pages & Databases** (pengganti halaman Databases, tabel gaya Production Hub, copy Bahasa Indonesia): daftar page induk (`NotionPage`, default = Impro-Freelance) + database terdaftar. Status arsip database milik production mengikuti production (Production Hub); Arsipkan/Pulihkan hanya untuk database tanpa production. Halaman Notion Config responsif (2 kolom mulai `xl`). `NotionConfig.defaultParentPageId` dihapus. Lokal: test, test-1, test-2 didaftarkan lewat Pindai (Belum dipakai, tidak diarsipkan). VPS perlu `db push` + isi page.
-* Belum di-commit.
 
 ---
 

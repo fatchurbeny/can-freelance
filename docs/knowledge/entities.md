@@ -21,6 +21,8 @@ Entitas utama yang merepresentasikan Notion Card / Tugas Pekerjaan Desain.
   * `poolScore`: Decimal (`@default(0)`) — Skor pool freelancer
   * `createdTime`, `lastEditedTime`: DateTime
 
+* **`TaskShareLink`** (Tabel `task_share_links`): link publik view-only per task — `token` unik (acak 24 byte base64url), `createdById?`, `revokedAt?` (null = aktif; tanpa kedaluwarsa). Cascade saat task dihapus.
+
 ### 2. `Designer` (Tabel `designers`)
 Entitas desainer / freelancer.
 * **Kolom Utama**: `id`, `displayName`, `notionKey`, `status` (`'Active'` | `'Inactive'` | `'Resign'`), `role` (Jabatan), `contractType` (`Probation` | `Freelance` | `Fulltime`), `contractStartDate` (DateTime/Date), `inactiveStartDate` (DateTime/Date), `inactiveNote` (String), `resignDate` (DateTime/Date), `promotionDate` (DateTime/Date), `email`, `phone`, `bankName`, `bankAccount`.

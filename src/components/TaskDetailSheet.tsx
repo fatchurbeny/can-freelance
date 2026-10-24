@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   X, ExternalLink, Clock, Trash2, FileText, CheckCircle,
   AlarmClock, CalendarDays, Gauge, Users, BookOpen, Building2, Languages, KeyRound,
-  CircleDot, Edit2, Plus, Link as LinkIcon, Loader2, Check
+  CircleDot, Edit2, Plus, Link as LinkIcon, Loader2, Check, Globe
 } from 'lucide-react';
 import {
   updateTaskStatusAction, addCommentAction, getTaskCommentsAction,
@@ -20,6 +20,7 @@ import CustomSelectCell from './CustomSelectCell';
 import MonthCalendarPicker from './MonthCalendarPicker';
 import DesignBriefSection from './task-detail/DesignBriefSection';
 import CustomFieldsSection from './task-detail/CustomFieldsSection';
+import TaskShareButton from './task-detail/TaskShareButton';
 import type { CustomFieldDef } from './custom-fields/FieldValueDisplay';
 import { PRIORITY_OPTIONS, LICENSE_OPTIONS, getPagesForDoctype } from './task-form-utils';
 
@@ -80,6 +81,9 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
   // Privasi per role: freelance tidak melihat brand/akun; Dropbox Link hanya untuk yang berhak.
   const canSeeBrand = !access.enabled || access.permissions.includes('account.view');
   const canSeeDropbox = !access.enabled || access.permissions.includes('dropboxLink.view');
+  const canShare = !access.enabled || access.permissions.includes('task.share');
+  // Task punya link publik aktif (dilaporkan TaskShareButton) → badge "Public view".
+  const [isPublic, setIsPublic] = useState(false);
   const [pending, setPending] = useState<string | null>(null);
   const [done, setDone] = useState<string | null>(null);
   const [briefEditing, setBriefEditing] = useState(false);
@@ -290,6 +294,7 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
+            {canShare && <TaskShareButton taskId={task.id} onActiveChange={setIsPublic} />}
             {task.notionUrl && (
               <a
                 href={task.notionUrl}
@@ -318,6 +323,15 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
           <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 font-bold">
             <AlarmClock className="w-3.5 h-3.5 text-gray-400" />
             <span>Last Edited: <strong className="text-gray-700 dark:text-gray-300">{lastEditedLabel}</strong></span>
+            {isPublic && (
+              <span
+                title="Task ini punya link publik view-only yang aktif"
+                className="ml-1 flex items-center gap-1 border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50 dark:bg-emerald-950/30 px-1.5 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400"
+              >
+                <Globe className="w-3 h-3" />
+                Public view
+              </span>
+            )}
           </div>
 
           {/* Auto-save Status Indicator */}
