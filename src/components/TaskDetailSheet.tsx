@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   X, ExternalLink, Clock, Trash2, FileText, CheckCircle,
   AlarmClock, CalendarDays, Gauge, Users, BookOpen, Building2, Languages, KeyRound,
-  CircleDot, Edit2, Plus, Link as LinkIcon, Loader2, Check
+  CircleDot, Edit2, Plus, Link as LinkIcon, Loader2, Check, Globe
 } from 'lucide-react';
 import {
   updateTaskStatusAction, addCommentAction, getTaskCommentsAction,
@@ -19,6 +19,9 @@ import toast from 'react-hot-toast';
 import CustomSelectCell from './CustomSelectCell';
 import MonthCalendarPicker from './MonthCalendarPicker';
 import DesignBriefSection from './task-detail/DesignBriefSection';
+import CustomFieldsSection from './task-detail/CustomFieldsSection';
+import TaskShareButton from './task-detail/TaskShareButton';
+import type { CustomFieldDef } from './custom-fields/FieldValueDisplay';
 import { PRIORITY_OPTIONS, LICENSE_OPTIONS, getPagesForDoctype } from './task-form-utils';
 
 interface QATask {
@@ -33,6 +36,7 @@ interface QATask {
   uploadRequestUrl?: string | null;
   outputUrl?: string | null;
   customFields?: Record<string, unknown> | null;
+  productionUnitId?: string;
   productionUnit?: { platform: { outputType: string } } | null;
   comments?: { id: string; content: string; createdAt: string }[];
   qtySubmit: string | number | null;
@@ -43,6 +47,8 @@ interface QATask {
   taskMonth?: string | null;
   bodyText?: string | null;
   lastEditedTime?: string | number | null;
+  /** Diisi bila task bagian dari order bundle; designer-nya mengikuti order. */
+  bundleOrderId?: string | null;
 }
 
 interface Props {
@@ -75,8 +81,12 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
   // Privasi per role: freelance tidak melihat brand/akun; Dropbox Link hanya untuk yang berhak.
   const canSeeBrand = !access.enabled || access.permissions.includes('account.view');
   const canSeeDropbox = !access.enabled || access.permissions.includes('dropboxLink.view');
+  const canShare = !access.enabled || access.permissions.includes('task.share');
+  // Task punya link publik aktif (dilaporkan TaskShareButton) → badge "Public view".
+  const [isPublic, setIsPublic] = useState(false);
   const [pending, setPending] = useState<string | null>(null);
   const [done, setDone] = useState<string | null>(null);
+  const [briefEditing, setBriefEditing] = useState(false);
   const closeRef = useRef<HTMLButtonElement>(null);
 
   const [content, setContent] = useState('');
@@ -102,7 +112,6 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
   const [bodyText, setBodyText] = useState<string>('');
   const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
   const [canvaUrls, setCanvaUrls] = useState<string[]>([]);
-  const [customValues, setCustomValues] = useState<Record<string, string>>({});
   const [newCanvaUrl, setNewCanvaUrl] = useState('');
   const [canvaLinkError, setCanvaLinkError] = useState('');
 
@@ -111,6 +120,11 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
   const [designStatuses, setDesignStatuses] = useState<OptionItem[]>([]);
   const [accounts, setAccounts] = useState<OptionItem[]>([]);
   const [optionsLoaded, setOptionsLoaded] = useState(false);
+  // Field tambahan production + field inti yang dimatikan
+  const [customFieldDefs, setCustomFieldDefs] = useState<CustomFieldDef[]>([]);
+  const [disabledFields, setDisabledFields] = useState<string[]>([]);
+  const [customValues, setCustomValues] = useState<Record<string, unknown>>({});
+  const isOff = (key: string) => disabledFields.includes(key);
 
   const taskId = task?.id;
 
@@ -137,24 +151,22 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
     setBodyText(task.bodyText || '');
     setSelectedAccountIds(task?.taskAccounts?.map(ta => ta.account.id) || []);
     setCanvaUrls(task?.canvaLinks?.map(cl => cl.url) || []);
-    setCustomValues(
-      Object.fromEntries(
-        Object.entries(task?.customFields || {})
-          .filter(([, v]) => typeof v === 'string' || typeof v === 'number')
-          .map(([k, v]) => [k, String(v)])
-      )
-    );
     setNewCanvaUrl('');
     setCanvaLinkError('');
+    setCustomValues({ ...(task.customFields ?? {}) });
+    setCustomFieldDefs([]);
+    setDisabledFields([]);
 
     getTaskCommentsAction(task.id).then(setComments).finally(() => setLoaded(true));
     
-    fetchTaskMetadataOptionsAction().then((res) => {
+    fetchTaskMetadataOptionsAction(task.productionUnitId).then((res) => {
       if (res.success && res.data) {
         setDesigners(res.data.designers || []);
         setDoctypes(res.data.doctypes || []);
         setDesignStatuses(res.data.designStatuses || []);
         setAccounts(res.data.accounts || []);
+        setCustomFieldDefs(res.data.fields || []);
+        setDisabledFields(res.data.disabledFields || []);
       }
       setOptionsLoaded(true);
     });
@@ -256,7 +268,7 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
         role="dialog"
         aria-modal="true"
         aria-label={`Task details: ${taskName || 'Untitled Task'}`}
-        className="absolute inset-y-0 right-0 flex w-full max-w-[540px] flex-col h-full max-h-screen border-l border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] divide-y divide-[#f0f0f0] dark:divide-[#272a34] shadow-2xl overflow-hidden font-sans"
+        className={`absolute inset-y-0 right-0 flex w-full max-w-[540px] transition-[right] duration-200 ease-out ${briefEditing ? 'min-[1100px]:right-[540px]' : ''} flex-col h-full max-h-screen border-l border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] divide-y divide-[#f0f0f0] dark:divide-[#272a34] shadow-2xl overflow-hidden font-sans`}
       >
         <div className="flex shrink-0 items-center justify-between border-b border-[#f0f0f0] dark:border-[#272a34] p-4 sm:p-5 bg-gray-50/50 dark:bg-[#16181d]/50 gap-4">
           <div className="flex items-center gap-2.5 min-w-0 flex-1">
@@ -282,6 +294,7 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
+            {canShare && <TaskShareButton taskId={task.id} onActiveChange={setIsPublic} />}
             {task.notionUrl && (
               <a
                 href={task.notionUrl}
@@ -310,6 +323,15 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
           <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 font-bold">
             <AlarmClock className="w-3.5 h-3.5 text-gray-400" />
             <span>Last Edited: <strong className="text-gray-700 dark:text-gray-300">{lastEditedLabel}</strong></span>
+            {isPublic && (
+              <span
+                title="Task ini punya link publik view-only yang aktif"
+                className="ml-1 flex items-center gap-1 border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50 dark:bg-emerald-950/30 px-1.5 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400"
+              >
+                <Globe className="w-3 h-3" />
+                Public view
+              </span>
+            )}
           </div>
 
           {/* Auto-save Status Indicator */}
@@ -388,7 +410,21 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
                 <span>Designer</span>
               </div>
               <div className="flex-1 p-0 flex items-stretch min-h-[44px] bg-white dark:bg-[#0d0e12]">
-                {true ? (
+                {task.bundleOrderId ? (
+                  // Task bundle: designer mengikuti order bundle (ubah lewat Billing Statement → Order Bundle).
+                  <div className="flex items-center gap-2 flex-wrap w-full px-5 py-2.5">
+                    <span
+                      className="px-2.5 py-0.5 text-[11px] font-bold rounded"
+                      style={{
+                        backgroundColor: `${activeDesigner?.avatarColor || '#ec4899'}25`,
+                        color: activeDesigner?.avatarColor || '#ec4899',
+                      }}
+                    >
+                      {activeDesigner?.displayName || 'Unassigned'}
+                    </span>
+                    <span className="text-[11px] text-gray-400">Mengikuti order bundle · ubah di Billing Statement</span>
+                  </div>
+                ) : true ? (
                   <CustomSelectCell
                     value={designerId}
                     placeholder="Select Designer"
@@ -529,6 +565,7 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
             </div>
 
             {/* IND/ENG Languages Row */}
+            {!isOff('languages') && (
             <div className="flex items-stretch text-xs font-sans min-h-[44px]">
               <div className="w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
                 <Languages className="w-3.5 h-3.5 text-gray-400" />
@@ -579,7 +616,10 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
               </div>
             </div>
 
+            )}
+
             {/* Priority Row */}
+            {!isOff('priority') && (
             <div className="flex items-stretch text-xs font-sans min-h-[44px]">
               <div className="w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
                 <Gauge className="w-3.5 h-3.5 text-gray-400" />
@@ -610,7 +650,10 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
               </div>
             </div>
 
+            )}
+
             {/* License Row */}
+            {!isOff('license') && (
             <div className="flex items-stretch text-xs font-sans min-h-[44px]">
               <div className="w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
                 <KeyRound className="w-3.5 h-3.5 text-gray-400" />
@@ -641,7 +684,10 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
               </div>
             </div>
 
+            )}
+
             {/* Task Month Row */}
+            {!isOff('taskMonth') && (
             <div className="flex items-stretch text-xs font-sans min-h-[44px]">
               <div className="w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
                 <CalendarDays className="w-3.5 h-3.5 text-gray-400" />
@@ -671,8 +717,10 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
               </div>
             </div>
 
+            )}
+
             {/* Brand (Accounts) Row */}
-            {canSeeBrand && (
+            {canSeeBrand && !isOff('brand') && (
             <div className="flex items-stretch text-xs font-sans min-h-[44px]">
               <div className="w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
                 <Building2 className="w-3.5 h-3.5 text-gray-400" />
@@ -760,7 +808,7 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
               )}
             </div>
           </div>
-          ) : (
+          ) : isOff('canvaLink') ? null : (
           <div className="flex flex-col bg-white dark:bg-[#0d0e12]">
             <div className="px-5 py-2.5 bg-gray-50/50 dark:bg-[#16181d]/50 border-b border-[#f0f0f0] dark:border-[#272a34] flex items-center justify-between">
               <h3 className="text-xs font-sans font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
@@ -845,32 +893,19 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
           </div>
           )}
 
-          {/* Custom Fields (properti Notion di luar skema inti) */}
-          {Object.keys(customValues).length > 0 && (
-            <div className="flex flex-col bg-white dark:bg-[#0d0e12]">
-              <div className="px-5 py-2.5 bg-gray-50/50 dark:bg-[#16181d]/50 border-b border-[#f0f0f0] dark:border-[#272a34]">
-                <h3 className="text-xs font-sans font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                  CUSTOM FIELDS
-                </h3>
-              </div>
-              <div className="divide-y divide-[#f0f0f0] dark:divide-[#272a34]">
-                {Object.entries(customValues).map(([key, value]) => (
-                  <div key={key} className="flex items-center gap-3 px-5 py-2.5 text-xs font-sans">
-                    <span className="w-40 shrink-0 truncate text-gray-500 dark:text-gray-400">{key}</span>
-                    <input
-                      value={value}
-                      onChange={(e) => setCustomValues((prev) => ({ ...prev, [key]: e.target.value }))}
-                      onBlur={() => triggerAutoSave({ customFields: { ...(task?.customFields || {}), ...customValues } as Record<string, string> })}
-                      className="flex-1 min-w-0 bg-transparent border-0 px-0 font-bold text-gray-900 dark:text-white outline-none focus:ring-0"
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          {/* Field tambahan per production (Notion) */}
+          <CustomFieldsSection
+            fields={customFieldDefs}
+            values={customValues}
+            onChange={(name, value) => {
+              setCustomValues((prev) => ({ ...prev, [name]: value }));
+              triggerAutoSave({ customFields: { [name]: value } });
+            }}
+          />
 
           {/* DESIGN BRIEF & COMMENTS TABBED INTERFACE */}
           <DesignBriefSection
+            productionUnitId={task.productionUnitId}
             bodyText={bodyText}
             onBodyTextChange={(nextText) => {
               setBodyText(nextText);
@@ -881,6 +916,7 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
             onAddComment={handleAddComment}
             onDeleteComment={handleDeleteComment}
             sendingComment={sending}
+            onEditorOpenChange={setBriefEditing}
           />
         </div>
       </aside>

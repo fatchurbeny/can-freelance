@@ -10,7 +10,7 @@ import StepSchema from './StepSchema';
 import StepOutput from './StepOutput';
 import StepReview from './StepReview';
 import { StepProgress, StepSuccess } from './StepResult';
-import { INITIAL_DATA, STEP, type PlatformOption, type WizardData } from './types';
+import { INITIAL_DATA, STEP, isContracted, type PlatformOption, type WizardData } from './types';
 
 const DRAFT_KEY = 'production-wizard-draft';
 
@@ -51,17 +51,19 @@ export default function ProductionWizard({ platforms, latestSyncLog }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [created, setCreated] = useState<{ name: string; slug: string } | null>(null);
 
+  // Pilih platform berkontrak pertama; draft yang menunjuk platform belum berkontrak ikut dipindahkan
+  const firstContractedId = platforms.find(isContracted)?.id ?? '';
   useEffect(() => {
-    if (!data.platformId && platforms.length > 0) {
-      setData((prev) => ({ ...prev, platformId: platforms[0].id }));
+    if (!isContracted(platforms.find((p) => p.id === data.platformId)) && firstContractedId) {
+      setData((prev) => ({ ...prev, platformId: firstContractedId }));
     }
-  }, [platforms, data.platformId]);
+  }, [platforms, data.platformId, firstContractedId]);
 
   const platform = platforms.find((p) => p.id === data.platformId);
   const patch = (next: Partial<WizardData>) => setData((prev) => ({ ...prev, ...next }));
 
   const canNext =
-    step === STEP.INFO ? data.name.trim().length > 0 && !!data.platformId
+    step === STEP.INFO ? data.name.trim().length > 0 && isContracted(platform)
     : step === STEP.NOTION ? notionReady
     : true;
 
@@ -90,7 +92,7 @@ export default function ProductionWizard({ platforms, latestSyncLog }: Props) {
 
   function resetWizard() {
     try { localStorage.removeItem(DRAFT_KEY); } catch (_) { /* noop */ }
-    setData({ ...INITIAL_DATA, platformId: platforms[0]?.id ?? '' });
+    setData({ ...INITIAL_DATA, platformId: firstContractedId });
     setNotionReady(false);
     setError(null);
     setCreated(null);
@@ -127,7 +129,7 @@ export default function ProductionWizard({ platforms, latestSyncLog }: Props) {
               <StepProgress error={error} onRetry={() => setStep(STEP.REVIEW)} />
             )}
             {step === STEP.SUCCESS && created && (
-              <StepSuccess name={created.name} slug={created.slug} onReset={resetWizard} />
+              <StepSuccess name={created.name} slug={created.slug} platformId={data.platformId} onReset={resetWizard} />
             )}
 
             {showNav && (

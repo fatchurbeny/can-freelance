@@ -1,14 +1,18 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
-import { ExternalLink, Check, Copy, FileText, Plus, Link as LinkIcon } from 'lucide-react';
+import { ExternalLink, Check, Copy, FileText, Plus, Shuffle, Link as LinkIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { classifyHeading, cleanHeading, sortByBriefOrder, NOTES_HEADING, type BriefKind } from './brief-parser';
+import BriefAssetsList from '../assets/BriefAssetsList';
+import { parseAssetSection, type BriefAssetRef } from '@/lib/asset-brief';
 
 interface Props {
   bodyText: string;
   /** Opens Edit mode with a "Catatan untuk Designer" section ready */
   onAddNotes?: () => void;
+  /** Acak role warna palet; tombol hanya tampil bila diisi (role yang boleh edit brief). */
+  onShufflePalette?: () => void;
 }
 
 interface Swatch { role?: string; hex: string }
@@ -22,6 +26,7 @@ interface PreviewCard {
   colors?: Swatch[];
   links?: BriefLink[];
   tags?: string[];
+  assets?: BriefAssetRef[];
 }
 
 function splitSections(markdown: string) {
@@ -84,6 +89,10 @@ function buildCards(markdown: string): PreviewCard[] {
       cards.push({ kind, title: 'Template Wireframe & Reference', content, links });
       continue;
     }
+    if (kind === 'assets') {
+      cards.push({ kind, title: title || 'Assets', content, assets: parseAssetSection(`## Assets\n${content}`) });
+      continue;
+    }
     if (kind === 'image') {
       const img = content.match(/!\[[^\]]*\]\(([^)\s]+)\)/) || content.match(/https?:\/\/\S+\.(?:png|jpe?g|webp|gif)/i);
       cards.push({ kind, title: title || 'Reference Image', content, imageUrl: img ? toServableImage(img[1] ?? img[0]) : null });
@@ -137,7 +146,7 @@ function Card({ index, title, meta, action, children }: { index: number; title: 
   );
 }
 
-export default function DesignBriefPreview({ bodyText, onAddNotes }: Props) {
+export default function DesignBriefPreview({ bodyText, onAddNotes, onShufflePalette }: Props) {
   const [copiedHex, setCopiedHex] = useState<string | null>(null);
   const [copiedKeywords, setCopiedKeywords] = useState(false);
   const cards = buildCards(bodyText);
@@ -191,7 +200,23 @@ export default function DesignBriefPreview({ bodyText, onAddNotes }: Props) {
         if (card.kind === 'palette') {
           const colors = card.colors ?? [];
           return (
-            <Card key={i} index={n} title={card.title} meta={colors.length ? `${colors.length} warna` : undefined}>
+            <Card
+              key={i}
+              index={n}
+              title={card.title}
+              meta={colors.length ? `${colors.length} warna` : undefined}
+              action={onShufflePalette && colors.length > 1 ? (
+                <button
+                  type="button"
+                  onClick={onShufflePalette}
+                  title="Acak susunan Primary, Accent, dst."
+                  className="flex items-center gap-1 h-6 px-2 border border-[#f0f0f0] dark:border-[#272a34] text-[10px] font-semibold text-gray-600 dark:text-gray-300 hover:text-[#ff5e1f] hover:border-[#ff5e1f] transition-colors cursor-pointer"
+                >
+                  <Shuffle className="w-3 h-3" />
+                  <span>Acak</span>
+                </button>
+              ) : undefined}
+            >
               {colors.length ? (
                 <div className="grid" style={{ gridTemplateColumns: `repeat(${Math.min(colors.length, 5)}, minmax(0, 1fr))` }}>
                   {colors.map((c, ci) => (
@@ -215,6 +240,14 @@ export default function DesignBriefPreview({ bodyText, onAddNotes }: Props) {
               ) : (
                 <p className="p-4 text-xs text-gray-500">Kode warna belum ada.</p>
               )}
+            </Card>
+          );
+        }
+        if (card.kind === 'assets') {
+          const refs = card.assets ?? [];
+          return (
+            <Card key={i} index={n} title={card.title} meta={refs.length ? `${refs.length} aset` : undefined}>
+              <BriefAssetsList refs={refs} />
             </Card>
           );
         }

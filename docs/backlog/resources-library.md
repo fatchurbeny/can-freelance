@@ -1,6 +1,21 @@
 # Backlog: Resources Library (katalog aset Canva)
 
-Status: **DITUNDA — menunggu hasil meeting (keputusan MFA akun Canva).** Belum ada kode aplikasi, belum ada perubahan schema.
+Status: **Jalur manual + mirror Notion (opsi B) diimplementasikan 2026-10-24** di branch `feat/asset-library` (worktree `.claude/worktrees/asset-library`). Jalur API di bawah tetap ditunda (MFA).
+
+## Jalur manual (dipilih) — Asset Library
+Tidak memakai Canva API, jadi tidak butuh MFA. Admin menempel dua link per aset:
+- **Link Edit** (`…/edit`): untuk tombol "Buka di Canva"; butuh login akun tim.
+- **Public View Link** (`…/view`): preview iframe `…/view?embed`, tanpa login. Validasi: tolak link `/edit` dengan petunjuk "Share → Public view link". Token edit ≠ token view, jadi tidak bisa diturunkan otomatis. CSP `frame-src` harus mengizinkan `https://www.canva.com`.
+- Cover: default thumbnail halaman 1 dari Canva (`…/screen?type=thumbnail`, dimuat browser); upload opsional. `og:image` tidak dipakai (hanya logo Canva). Judul otomatis dari oEmbed.
+- Integrasi brief: tombol **Ambil dari Library** di `DesignBriefEditorDrawer` (di samping Palet Warna) menyisipkan section markdown `## 📦 Assets` (judul + public link + halaman yang dipakai), sama seperti pola `mergePaletteMarkdown`, sehingga ikut `bodyText` dan ter-push ke Notion. `DesignBriefPreview` merender section ini sebagai kartu aset.
+- Skema rencana: `AssetCategory` (tab, urutan, opsional per production) dan `Asset` (judul, kategori, tag, editUrl, previewUrl, cover, pages, catatan, `source` manual|api, `canvaDesignId` opsional agar bisa naik ke jalur API).
+- **Notion: opsi B dipilih** — app = sumber utama input, database Notion "Asset Library" (di bawah Impro-Freelance) = mirror dua arah. Properti: Name, Kategori (select), Tag (multi-select), Production (select), Edit URL, Public View URL, Halaman (number), Catatan, Status (Aktif/Arsip). App → Notion saat simpan (+ blok embed Canva di body); Notion → App lewat sync incremental `last_edited_time`; link `/edit` di Public View dari Notion ditandai "Perlu diperbaiki". Cover tetap disimpan di app (URL file Notion kedaluwarsa ±1 jam). Push lewat antrean (rate limit ±3 req/detik).
+- **Relation "Assets"** di database task per production → hitungan "Dipakai di N task". Relation tidak bisa menyimpan keterangan halaman, jadi catatan halaman tetap di section `## 📦 Assets` di brief. Production yang sudah ada dibuatkan relation manual (tombol "Buat relation" di Notion Config → Asset Library, karena mengubah skema database live); production baru otomatis.
+- Skema tambahan: `Asset.notionPageId`, `syncStatus`, `lastSyncedAt`; `NotionDatabase` didaftarkan dengan kegunaan Asset Library.
+- Desain (Artifact, privat): https://claude.ai/artifact/HKviEpNcfcL5V7MD3iYjLj (1 halaman `/assets` interaktif, 2 drawer Tambah Aset, 3 picker di Design Brief, 4 Notion Config → Asset Library).
+- Belum diputuskan: siapa yang boleh mengelola aset (admin saja / AD/PM), kategori awal, library per production atau bersama.
+
+## Jalur API (ditunda)
 
 ## Ide
 Katalog di app untuk designer, tanpa perlu akses Canva Creator. Folder project Canva (contoh: "Mini Illustration Icon Pack", ±47 file bertema) dimuat otomatis; tiap file menampilkan pratinjau halamannya dan tombol **Buka di Canva**. Menggantikan kebiasaan mencari lewat search asset.

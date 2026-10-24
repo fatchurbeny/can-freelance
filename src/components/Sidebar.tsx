@@ -13,6 +13,7 @@ import {
   Settings,
   UserRound,
   UserCog,
+  Library,
   Menu,
   X,
   ChevronRight,
@@ -22,6 +23,7 @@ import SyncButton from './SyncButton';
 import AccountSwitcher from './AccountSwitcher';
 import { getProductionUnitsAction } from '@/app/actions/production-unit';
 import { NAV_REQUIREMENTS, type AccessInfo } from '@/lib/permissions';
+import { DEV_TOOLS_ENABLED } from '@/lib/dev-tools';
 
 interface ProductionUnitNav {
   id: string;
@@ -94,6 +96,7 @@ export default function Sidebar({ currentSyncLog, access }: SidebarProps) {
     { name: 'Overview', icon: LayoutDashboard, href: '/', active: false, group: 'GET STARTED' },
     { name: 'Production', icon: Files, href: '/production', active: pathname === '/production', group: 'GET STARTED' },
     { name: 'Account & Team', icon: Users, href: '/account-team', active: pathname === '/account-team', group: 'BUILD' },
+    { name: 'Asset Library', icon: Library, href: '/assets', active: pathname === '/assets', group: 'BUILD' },
     { name: 'Rate Card', icon: CreditCard, href: '/rate-card', active: pathname === '/rate-card', group: 'BUILD' },
     { name: 'Billing Statement', icon: FileText, href: '/billing-statement', active: pathname === '/billing-statement', group: 'BUILD' },
     { name: 'Profil', icon: UserRound, href: '/profile', active: pathname === '/profile', group: 'BUILD' },
@@ -103,8 +106,10 @@ export default function Sidebar({ currentSyncLog, access }: SidebarProps) {
   ];
 
   // Menu yang tidak diizinkan untuk role ini tidak ditampilkan (server tetap menjaga akses).
+  // Knowledge Graph hanya alat developer lokal (lihat lib/dev-tools.ts).
   const visibleMenuItems = menuItems.filter((i) =>
-    i.href === '/profile' ? access.enabled && access.hasProfile : (NAV_REQUIREMENTS[i.href] ?? []).some(allows),
+    i.href === '/knowledge-graph' && !DEV_TOOLS_ENABLED ? false
+    : i.href === '/profile' ? access.enabled && access.hasProfile : (NAV_REQUIREMENTS[i.href] ?? []).some(allows),
   );
 
   // Group items by category
@@ -116,13 +121,14 @@ export default function Sidebar({ currentSyncLog, access }: SidebarProps) {
       {isMobileOpen && (
         <div 
           onClick={() => setIsMobileOpen(false)}
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden transition-opacity"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-45 md:hidden transition-opacity"
         />
       )}
 
-      {/* Sidebar Drawer — Fixed w-56 on desktop below top bar */}
+      {/* Sidebar Drawer — Fixed w-56 on desktop below top bar.
+          z-45: di atas tab sticky halaman (z-40, mis. ProductionTabNav), di bawah TopBar (z-50) & drawer. */}
       <aside className={`
-        fixed top-14 left-0 bottom-0 z-40 h-[calc(100vh-56px)] bg-white dark:bg-[#0d0e12] 
+        fixed top-14 left-0 bottom-0 z-45 h-[calc(100vh-56px)] bg-white dark:bg-[#0d0e12] 
         border-r border-[#f0f0f0] dark:border-[#272a34] py-4 px-4 flex flex-col 
         justify-between transition-transform duration-300 w-56
         ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0

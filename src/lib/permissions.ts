@@ -18,6 +18,7 @@ export type Permission =
   | 'task.create'
   | 'task.edit'
   | 'task.edit.own'
+  | 'task.share' // buat/cabut link publik view-only task
   | 'parameterIssue.view'
   | 'emailNotification.view'
   | 'uploadLink.view'
@@ -30,19 +31,23 @@ export type Permission =
   | 'billing.view.own'
   | 'integration.manage'
   | 'user.manage'
-  | 'production.create';
+  | 'production.create'
+  | 'asset.view' // lihat Asset Library & pakai di Design Brief
+  | 'asset.manage'; // tambah/edit/arsip aset & kategori
 
 const ALL: readonly Permission[] = [
-  'overview.view', 'kanban.view', 'task.create', 'task.edit', 'task.edit.own',
+  'overview.view', 'kanban.view', 'task.create', 'task.edit', 'task.edit.own', 'task.share',
   'parameterIssue.view', 'emailNotification.view', 'uploadLink.view', 'dropboxLink.view',
   'account.view', 'accountTeam.view', 'rateCard.view', 'rateCard.edit',
   'billing.view', 'billing.view.own', 'integration.manage', 'user.manage', 'production.create',
+  'asset.view', 'asset.manage',
 ];
 
 const MANAGEMENT: readonly Permission[] = [
-  'overview.view', 'kanban.view', 'task.create', 'task.edit',
+  'overview.view', 'kanban.view', 'task.create', 'task.edit', 'task.share',
   'parameterIssue.view', 'emailNotification.view', 'uploadLink.view', 'dropboxLink.view',
   'account.view', 'accountTeam.view', 'rateCard.view', 'rateCard.edit',
+  'asset.view', 'asset.manage',
 ];
 
 export const ROLE_LABELS: Record<RoleKey, string> = {
@@ -60,15 +65,15 @@ export const ROLE_PERMISSIONS: Record<RoleKey, readonly Permission[]> = {
   art_director: MANAGEMENT,
   project_manager: MANAGEMENT,
   finance: [
-    'overview.view', 'kanban.view', 'account.view', 'rateCard.view', 'billing.view',
+    'overview.view', 'kanban.view', 'account.view', 'rateCard.view', 'billing.view', 'asset.view',
   ],
   designer_fulltime: [
-    'kanban.view', 'task.edit.own', 'uploadLink.view', 'account.view', 'billing.view.own',
+    'kanban.view', 'task.edit.own', 'uploadLink.view', 'account.view', 'billing.view.own', 'asset.view',
   ],
   designer_freelance: [
-    'kanban.view', 'task.edit.own', 'uploadLink.view', 'billing.view.own',
+    'kanban.view', 'task.edit.own', 'uploadLink.view', 'billing.view.own', 'asset.view',
   ],
-  viewer: ['overview.view', 'kanban.view'],
+  viewer: ['overview.view', 'kanban.view', 'asset.view'],
 };
 
 export const ROLE_KEYS = Object.keys(ROLE_PERMISSIONS) as RoleKey[];
@@ -118,6 +123,7 @@ export const NAV_REQUIREMENTS: Record<string, Permission[]> = {
   '/production': ['kanban.view'],
   '/account-team': ['accountTeam.view'],
   '/rate-card': ['rateCard.view'],
+  '/assets': ['asset.view'],
   '/billing-statement': ['billing.view', 'billing.view.own'],
   '/knowledge-graph': ['integration.manage'],
   '/notion-config': ['integration.manage'],
@@ -190,6 +196,7 @@ export const FEATURE_MATRIX: FeatureRow[] = [
     label: 'Detail task › Ubah status & field task',
     level: (_r, p) => (has(p, 'task.edit') ? 'full' : has(p, 'task.edit.own') ? 'limited' : 'none'),
   },
+  { label: 'Detail task › Share link publik (view-only)', level: (_r, p) => (has(p, 'task.share') ? 'full' : 'none') },
   { label: 'Buat / duplikat / hapus task', level: (_r, p) => (has(p, 'task.create') ? 'full' : 'none') },
   { label: 'Detail task › Upload Link', level: (_r, p) => (has(p, 'uploadLink.view') ? 'full' : 'none') },
   { label: 'Detail task › Dropbox Link (view)', level: (_r, p) => (has(p, 'dropboxLink.view') ? 'full' : 'none') },
@@ -203,6 +210,10 @@ export const FEATURE_MATRIX: FeatureRow[] = [
   },
   { label: 'Account & Team', level: (_r, p) => (has(p, 'accountTeam.view') ? 'full' : 'none') },
   { label: 'Profil Saya + Timeline Karir (menu Profil)', level: (r) => (DESIGNER_ROLES.includes(r) ? 'full' : 'none') },
+  {
+    label: 'Asset Library',
+    level: (_r, p) => (has(p, 'asset.manage') ? 'full' : has(p, 'asset.view') ? 'limited' : 'none'),
+  },
   { label: 'Notion Config / Integrasi', level: (_r, p) => (has(p, 'integration.manage') ? 'full' : 'none') },
   { label: 'User & Role · Buat Akun Login', level: (_r, p) => (has(p, 'user.manage') ? 'full' : 'none') },
   { label: 'Lihat sebagai (pratinjau hanya-baca)', level: (_r, p) => (has(p, 'user.manage') ? 'full' : 'none') },

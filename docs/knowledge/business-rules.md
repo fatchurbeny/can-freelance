@@ -36,3 +36,12 @@ Setiap string UI yang mereferensikan periode waktu (seperti pada header board at
 * **Multiple Months**: `Doctype created in N months` (menyesuaikan dengan konvensi `N Bulan` pada toolbar).
 * **Tanpa Seleksi Filter**: Kembali ke label dasar umum (`Doctype created`).
 * **Lokalisasi Bulan**: Selalu gunakan bahasa Indonesia (`Januari`, `Februari`, `Maret`, `April`, `Mei`, `Juni`, `Juli`, `Agustus`, `September`, `Oktober`, `November`, `Desember`).
+
+---
+
+## 📦 Trial → Kontrak Bundle
+* Order bundle pertama selalu **Trial**. Tombol **Jadikan Kontrak** (Billing Statement → Order Bundle → detail order) hanya aktif bila **semua task trial approved** (`DesignStatus.countsAsApproved`); server mengecek ulang (`createBundleContractAction`).
+* Jadikan Kontrak membuat **`BundleContract`** baru (periode tanggal mulai–akhir, **harga per periode** default harga paket, bisa diubah, catatan). Order trial **tetap Trial** (badge "DIKONTRAK"), pembayaran trial tidak berubah.
+* Order tiap periode dibuat **manual** lewat **Order Periode Berikutnya**: bundle, designer, harga (= harga kontrak) dan tipe Kontrak terkunci; periode otomatis = bulan setelah order kontrak terakhir (atau bulan pertama kontrak). Server menolak periode di luar masa kontrak atau yang sudah punya order di kontrak itu.
+* Form "Add Order Bundle" biasa selalu membuat Trial (toggle Trial/Kontrak dihapus). Order "Kontrak" lama tanpa kontrak tetap tampil, tanpa tombol order periode.
+* Trial yang sudah punya kontrak tidak bisa dihapus.

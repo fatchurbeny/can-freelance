@@ -41,87 +41,157 @@ async function generateGraphifyData() {
     }
   };
 
-  // 1. Pages (App Router Routes)
-  const appDir = path.join(rootDir, 'src/app');
-  if (fs.existsSync(appDir)) {
-    const pages = [
-      { id: 'page:/', label: 'Dashboard Page', filepath: 'src/app/page.tsx', route: '/' },
-      { id: 'page:/production', label: 'Production Kanban', filepath: 'src/app/production/page.tsx', route: '/production' },
-      { id: 'page:/billing-statement', label: 'Billing Statement', filepath: 'src/app/billing-statement/page.tsx', route: '/billing-statement' },
-      { id: 'page:/knowledge-graph', label: 'Knowledge Graph Page', filepath: 'src/app/knowledge-graph/page.tsx', route: '/knowledge-graph' },
-      { id: 'page:/rate-card', label: 'Rate Card Editor', filepath: 'src/app/rate-card/page.tsx', route: '/rate-card' },
-      { id: 'page:/account-team', label: 'Account & Team', filepath: 'src/app/account-team/page.tsx', route: '/account-team' },
-      { id: 'page:/notion-config', label: 'Notion Config', filepath: 'src/app/notion-config/page.tsx', route: '/notion-config' },
-    ];
+  const toPosix = (p: string) => p.split(path.sep).join('/');
+  const rel = (abs: string) => toPosix(path.relative(rootDir, abs));
+  const isCode = (name: string) => /\.(tsx|ts)$/.test(name) && !name.endsWith('.d.ts');
+  const listFiles = (dir: string): string[] => {
+    if (!fs.existsSync(dir)) return [];
+    return fs.readdirSync(dir, { withFileTypes: true })
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .flatMap(item => {
+        const full = path.join(dir, item.name);
+        if (item.isDirectory()) return listFiles(full);
+        return item.isFile() && isCode(item.name) ? [full] : [];
+      });
+  };
 
-    pages.forEach(p => {
-      addNode({
-        id: p.id,
-        label: p.label,
+  // Source file (repo-relative) → node id, used to resolve imports into graph links.
+  const fileToNode = new Map<string, string>();
+  const register = (node: GraphNode) => {
+    addNode(node);
+    fileToNode.set(node.filepath, node.id);
+  };
+
+  // Hand-written labels/details for long-standing nodes; everything else is discovered.
+  const pageLabels: Record<string, string> = {
+    '/': 'Dashboard Page',
+    '/production': 'Production Kanban',
+    '/billing-statement': 'Billing Statement',
+    '/knowledge-graph': 'Knowledge Graph Page',
+    '/rate-card': 'Rate Card Editor',
+    '/account-team': 'Account & Team',
+    '/notion-config': 'Notion Config',
+  };
+  const actionDetails: Record<string, string> = {
+    'approval-payroll': 'Server Actions for Payroll calculations & status toggles',
+  };
+  const modelDetails: Record<string, string> = {
+    Task: 'Notion Task card record (qtySubmit, pages, status)',
+    Designer: 'Designer profile & status (Active/Resign/Hold)',
+    Doctype: 'Document template format & base page rate',
+    DesignStatus: 'Kanban production status stage',
+    SyncLog: 'Execution logs of Notion sync operations',
+  };
+
+  // Route of a file under src/app: drop route groups "(x)" and the file name.
+  const routeOf = (relPath: string) => {
+    const segments = path.posix.dirname(relPath.replace(/^src\/app\/?/, '')).split('/')
+      .filter(seg => seg && seg !== '.' && !/^\(.*\)$/.test(seg));
+    return '/' + segments.join('/');
+  };
+
+  // 1. App Router: pages, layouts, API routes, server actions, colocated components
+  const appDir = path.join(rootDir, 'src/app');
+  const appComponentFiles: string[] = [];
+  for (const abs of listFiles(appDir)) {
+    const relPath = rel(abs);
+    const base = path.basename(relPath).replace(/\.(tsx|ts)$/, '');
+    const route = routeOf(relPath);
+    if (relPath.startsWith('src/app/actions/')) {
+      register({
+        id: `action:${base}`,
+        label: `${base}.ts`,
+        type: 'action',
+        group: 'Server Actions & Lib',
+        filepath: relPath,
+        details: actionDetails[base] || `Server Actions in ${relPath}`,
+      });
+    } else if (base === 'route' && route.startsWith('/api')) {
+      register({
+        id: `api:${route.replace(/^\/api/, '') || '/'}`,
+        label: `API ${route}`,
+        type: 'action',
+        group: 'Server Actions & Lib',
+        filepath: relPath,
+        details: `Route Handler (${route})`,
+      });
+    } else if (base === 'page') {
+      register({
+        id: `page:${route}`,
+        label: pageLabels[route] || `${route.split('/').pop()} Page`,
         type: 'page',
         group: 'App Router Pages',
-        filepath: p.filepath,
-        details: `Next.js 16 App Router Page (${p.route})`,
+        filepath: relPath,
+        details: `Next.js 16 App Router Page (${route})`,
       });
+    } else if (base === 'layout') {
+      register({
+        id: `layout:${route}`,
+        label: route === '/' ? 'Root Layout' : `${route.split('/').pop()} Layout`,
+        type: 'page',
+        group: 'App Router Pages',
+        filepath: relPath,
+        details: `Next.js App Router Layout (${route})`,
+      });
+    } else if (relPath.endsWith('.tsx')) {
+      appComponentFiles.push(abs);
+    }
+  }
+
+  // 2. React Components (src/components/** plus .tsx colocated in src/app)
+  for (const abs of [...listFiles(path.join(rootDir, 'src/components')), ...appComponentFiles]) {
+    const relPath = rel(abs);
+    const name = path.basename(relPath).replace(/\.(tsx|ts)$/, '');
+    const id = nodes.some(n => n.id === `component:${name}`) ? `component:${relPath}` : `component:${name}`;
+    register({
+      id,
+      label: name,
+      type: 'component',
+      group: 'React Components',
+      filepath: relPath,
+      details: `React UI Component in ${relPath}`,
     });
   }
 
-  // 2. React Components
-  const componentsDir = path.join(rootDir, 'src/components');
-  if (fs.existsSync(componentsDir)) {
-    const compFiles = fs.readdirSync(componentsDir).filter(f => f.endsWith('.tsx') || f.endsWith('.ts'));
-    compFiles.forEach(file => {
-      const compName = path.basename(file, path.extname(file));
-      const compId = `component:${compName}`;
-      addNode({
-        id: compId,
-        label: compName,
-        type: 'component',
-        group: 'React Components',
-        filepath: `src/components/${file}`,
-        details: `React UI Component in src/components/${file}`,
-      });
-    });
-  }
-
-  // 3. Actions & Server Logic
-  const actions = [
-    { id: 'action:approval-payroll', label: 'approval-payroll.ts', filepath: 'src/app/actions/approval-payroll.ts', details: 'Server Actions for Payroll calculations & status toggles' },
-    { id: 'action:sync-notion', label: 'sync-notion.ts Engine', filepath: 'src/lib/sync-notion.ts', details: 'Notion API Full & Incremental sync engine' },
-    { id: 'action:queries', label: 'queries.ts Aggregations', filepath: 'src/lib/queries.ts', details: 'Prisma aggregation queries for KPI & volume trends' },
-  ];
-  actions.forEach(a => {
-    addNode({
-      id: a.id,
-      label: a.label,
+  // 3. Server lib (src/lib/**). sync-notion & queries keep their historical action: ids.
+  const libDetails: Record<string, { id: string; label: string; details: string }> = {
+    'sync-notion': { id: 'action:sync-notion', label: 'sync-notion.ts Engine', details: 'Notion API Full & Incremental sync engine' },
+    queries: { id: 'action:queries', label: 'queries.ts Aggregations', details: 'Prisma aggregation queries for KPI & volume trends' },
+  };
+  for (const abs of listFiles(path.join(rootDir, 'src/lib'))) {
+    const relPath = rel(abs);
+    const name = relPath.replace(/^src\/lib\//, '').replace(/\.(tsx|ts)$/, '');
+    const known = libDetails[name];
+    register({
+      id: known?.id || `lib:${name}`,
+      label: known?.label || `${name}.ts`,
       type: 'action',
       group: 'Server Actions & Lib',
-      filepath: a.filepath,
-      details: a.details,
+      filepath: relPath,
+      details: known?.details || `Server/shared library in ${relPath}`,
     });
-  });
+  }
 
-  // 4. Prisma Database Models & Entities
-  const prismaModels = [
-    { id: 'model:Task', label: 'Task Model', filepath: 'prisma/schema.prisma', details: 'Notion Task card record (qtySubmit, pages, status)' },
-    { id: 'model:Designer', label: 'Designer Model', filepath: 'prisma/schema.prisma', details: 'Designer profile & status (Active/Resign/Hold)' },
-    { id: 'model:Doctype', label: 'Doctype Model', filepath: 'prisma/schema.prisma', details: 'Document template format & base page rate' },
-    { id: 'model:Brand', label: 'Brand Model', filepath: 'prisma/schema.prisma', details: 'Client brand entity' },
-    { id: 'model:DesignStatus', label: 'DesignStatus Model', filepath: 'prisma/schema.prisma', details: 'Kanban production status stage' },
-    { id: 'model:ContractRate', label: 'ContractRate Model', filepath: 'prisma/schema.prisma', details: 'Custom rate overrides per designer & doctype' },
-    { id: 'model:BillingStatement', label: 'BillingStatement Model', filepath: 'prisma/schema.prisma', details: 'Monthly designer payment statement' },
-    { id: 'model:SyncLog', label: 'SyncLog Model', filepath: 'prisma/schema.prisma', details: 'Execution logs of Notion sync operations' },
-  ];
-  prismaModels.forEach(m => {
-    addNode({
-      id: m.id,
-      label: m.label,
-      type: 'model',
-      group: 'Prisma DB Models',
-      filepath: m.filepath,
-      details: m.details,
-    });
-  });
+  // 4. Prisma Database Models (parsed from schema.prisma)
+  const schemaPath = path.join(rootDir, 'prisma/schema.prisma');
+  const modelAccessors = new Map<string, string>(); // prisma.<accessor> → model node id
+  if (fs.existsSync(schemaPath)) {
+    const schema = fs.readFileSync(schemaPath, 'utf-8');
+    for (const match of schema.matchAll(/^model\s+(\w+)\s*\{([\s\S]*?)^\}/gm)) {
+      const [, name, body] = match;
+      const table = body.match(/@@map\(\s*"([^"]+)"\s*\)/)?.[1];
+      const id = `model:${name}`;
+      addNode({
+        id,
+        label: `${name} Model`,
+        type: 'model',
+        group: 'Prisma DB Models',
+        filepath: 'prisma/schema.prisma',
+        details: modelDetails[name] || `Prisma model ${name}${table ? ` (table ${table})` : ''}`,
+      });
+      modelAccessors.set(name.charAt(0).toLowerCase() + name.slice(1), id);
+    }
+  }
 
   // 5. SaaS Business Rules Cluster
   const businessRules = [
@@ -214,69 +284,36 @@ async function generateGraphifyData() {
     });
   });
 
-  // 10. AST Import Scanner (Extract Real Component & Page Import Links)
-  const scanImports = (dirPath: string) => {
-    if (!fs.existsSync(dirPath)) return;
-
-    const scanFile = (filePath: string) => {
-      const relPath = path.relative(rootDir, filePath).replace(/\\/g, '/');
-      const content = fs.readFileSync(filePath, 'utf-8');
-
-      let sourceId: string | null = null;
-      if (relPath.startsWith('src/app/')) {
-        let route = relPath.replace('src/app', '').replace('/page.tsx', '').replace('/page.ts', '');
-        if (route === '') route = '/';
-        sourceId = `page:${route}`;
-        const pageLabel = route === '/' ? 'Dashboard Page' : `${route.split('/').pop()} Page`;
-        addNode({
-          id: sourceId,
-          label: pageLabel,
-          type: 'page',
-          group: 'App Router Pages',
-          filepath: relPath,
-          details: `Next.js App Router Page (${route})`,
-        });
-      } else if (relPath.startsWith('src/components/')) {
-        const compName = path.basename(filePath, path.extname(filePath));
-        sourceId = `component:${compName}`;
-      }
-
-      if (!sourceId) return;
-
-      // Extract import statements from @/components/... or relative ./
-      const importMatches = content.matchAll(/import\s+.*?from\s+['"](?:@\/components\/|\.\/|\.\.\/components\/)([^'"]+)['"]/g);
-      for (const match of importMatches) {
-        const importedPath = match[1];
-        const compName = path.basename(importedPath, path.extname(importedPath));
-        if (compName && compName !== sourceId.replace('component:', '')) {
-          const targetId = `component:${compName}`;
-          addLink({
-            source: sourceId,
-            target: targetId,
-            relation: 'renders',
-            confidence: 'EXTRACTED',
-          });
-        }
-      }
-    };
-
-    const walk = (dir: string) => {
-      const items = fs.readdirSync(dir, { withFileTypes: true });
-      for (const item of items) {
-        const full = path.join(dir, item.name);
-        if (item.isDirectory()) {
-          walk(full);
-        } else if (item.isFile() && (item.name.endsWith('.tsx') || item.name.endsWith('.ts'))) {
-          scanFile(full);
-        }
-      }
-    };
-
-    walk(dirPath);
+  // 10. Import & Prisma scanner: link every registered file to what it imports / queries
+  const resolveImport = (fromRel: string, spec: string): string | null => {
+    let base: string;
+    if (spec.startsWith('@/')) base = path.join(rootDir, 'src', spec.slice(2));
+    else if (spec.startsWith('.')) base = path.join(rootDir, path.dirname(fromRel), spec);
+    else return null;
+    for (const candidate of [base, `${base}.tsx`, `${base}.ts`, path.join(base, 'index.tsx'), path.join(base, 'index.ts')]) {
+      const key = rel(candidate);
+      if (fileToNode.has(key)) return fileToNode.get(key)!;
+    }
+    return null;
   };
 
-  scanImports(path.join(rootDir, 'src/app'));
-  scanImports(path.join(rootDir, 'src/components'));
+  for (const [relPath, sourceId] of fileToNode) {
+    const content = fs.readFileSync(path.join(rootDir, relPath), 'utf-8');
+    const specs = [
+      ...content.matchAll(/^\s*(?:import|export)\s[^;]*?\bfrom\s+['"]([^'"]+)['"]/gm),
+      ...content.matchAll(/\bimport\(\s*['"]([^'"]+)['"]\s*\)/g),
+    ].map(m => m[1]);
+    for (const spec of specs) {
+      const targetId = resolveImport(relPath, spec);
+      if (!targetId || targetId === sourceId) continue;
+      const target = nodes.find(n => n.id === targetId)!;
+      addLink({ source: sourceId, target: targetId, relation: target.type === 'action' ? 'invokes' : 'renders', confidence: 'EXTRACTED' });
+    }
+    for (const match of content.matchAll(/\b(?:prisma|tx)\.(\w+)\s*\./g)) {
+      const modelId = modelAccessors.get(match[1]);
+      if (modelId) addLink({ source: sourceId, target: modelId, relation: 'queries', confidence: 'EXTRACTED' });
+    }
+  }
 
   // 10. Explicit & Inferred Relationships Across All Communities
   addLink({ source: 'component:ApprovalPayrollTable', target: 'action:approval-payroll', relation: 'invokes', confidence: 'EXTRACTED' });
@@ -289,7 +326,6 @@ async function generateGraphifyData() {
   addLink({ source: 'action:sync-notion', target: 'model:Designer', relation: 'queries', confidence: 'EXTRACTED' });
   addLink({ source: 'action:sync-notion', target: 'model:SyncLog', relation: 'queries', confidence: 'EXTRACTED' });
   addLink({ source: 'action:approval-payroll', target: 'model:Designer', relation: 'queries', confidence: 'EXTRACTED' });
-  addLink({ source: 'action:approval-payroll', target: 'model:BillingStatement', relation: 'queries', confidence: 'EXTRACTED' });
 
   // Business Rules Links
   addLink({ source: 'rule:qty-pages', target: 'model:Task', relation: 'enforces', confidence: 'INFERRED' });
@@ -319,7 +355,6 @@ async function generateGraphifyData() {
   addLink({ source: 'role:frontend', target: 'component:SortableTaskLists', relation: 'enforces', confidence: 'INFERRED' });
   addLink({ source: 'role:backend', target: 'model:Task', relation: 'queries', confidence: 'INFERRED' });
   addLink({ source: 'role:backend', target: 'model:Designer', relation: 'queries', confidence: 'INFERRED' });
-  addLink({ source: 'role:backend', target: 'model:BillingStatement', relation: 'queries', confidence: 'INFERRED' });
   addLink({ source: 'role:api', target: 'action:sync-notion', relation: 'invokes', confidence: 'INFERRED' });
   addLink({ source: 'role:api', target: 'sync:cron-mode', relation: 'invokes', confidence: 'INFERRED' });
   addLink({ source: 'role:business', target: 'rule:qty-pages', relation: 'enforces', confidence: 'INFERRED' });
@@ -328,18 +363,26 @@ async function generateGraphifyData() {
   addLink({ source: 'role:architecture', target: 'gotcha:directive-preservation', relation: 'enforces', confidence: 'INFERRED' });
   addLink({ source: 'role:devops', target: 'page:/notion-config', relation: 'enforces', confidence: 'INFERRED' });
 
+  // Drop hand-written links whose endpoints no longer exist (renamed/removed code).
+  const ids = new Set(nodes.map(n => n.id));
+  const dangling = links.filter(l => !ids.has(l.source) || !ids.has(l.target));
+  dangling.forEach(l => console.warn(`⚠️  Dropping dangling link ${l.source} → ${l.target}`));
+
   const graphData: GraphData = {
-    version: '2.0.0',
+    version: '2.1.0',
     generatedAt: new Date().toISOString(),
     nodes,
-    links,
+    links: links.filter(l => ids.has(l.source) && ids.has(l.target)),
   };
 
   const outputPath = path.join(rootDir, 'graph.json');
   fs.writeFileSync(outputPath, JSON.stringify(graphData, null, 2), 'utf-8');
   console.log(`✅ Graphify graph.json generated successfully at ${outputPath}`);
-  console.log(`Total Nodes: ${nodes.length}, Total Edges: ${links.length}`);
+  console.log(`Total Nodes: ${graphData.nodes.length}, Total Edges: ${graphData.links.length}`);
 }
 
-generateGraphifyData().catch(console.error);
+generateGraphifyData().catch(error => {
+  console.error(error);
+  process.exit(1);
+});
 

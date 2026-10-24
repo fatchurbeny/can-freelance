@@ -28,7 +28,7 @@ Untuk menghemat konsumsi token, **baca hanya modul yang relevan** dengan tugas y
    - Buka modul spesifik di atas sesuai fokus pengerjaan (contoh: jika mengerjakan UI/Komponen, baca `modules.md` & `issues-and-fixes.md`).
 2. **Penelusuran Kode Teknis (AST Call Graph)**:
    - Jika membutuhkan penelusuran panggilan fungsi atau dependensi import level rendah, periksa `graph.json` jika tersedia.
-   - Struktur: `nodes[]` (`id`, `label`, `type` = page|component|action|model|doc, `filepath`) dan `links[]` (`source`, `target`, `relation` = renders|invokes|queries|enforces|imports). Jangan dibaca utuh (±80 KB); filter dengan `jq`.
+   - Struktur: `nodes[]` (`id`, `label`, `type` = page|component|action|model|doc, `filepath`) dan `links[]` (`source`, `target`, `relation` = renders|invokes|queries|enforces|imports). Prefix id: `page:/route`, `layout:/route`, `component:Nama`, `action:<file actions>`, `lib:<file src/lib>` (kecuali `action:sync-notion`/`action:queries`), `api:/route`, `model:NamaPrisma`. Ditemukan otomatis oleh `scripts/graphify-parser.ts`. Jangan dibaca utuh (±150 KB); filter dengan `jq`.
    - Contoh: `jq '.links[] | select(.target=="component:TopBar") | .source' graph.json`
    - Jika terlihat usang, jalankan `npm run graphify`.
 3. **Akhir Sesi**:
@@ -36,7 +36,7 @@ Untuk menghemat konsumsi token, **baca hanya modul yang relevan** dengan tugas y
 
 - [Multi-Production Plan](multi-production-plan.md) — rencana bertahap production per platform (Fase 1–7)
 - [Spec Tab Parameter Issue & Email Notification](production-tabs-spec.md) — konsep + akses Art Director / Project Manager
-- [Backlog: Resources Library](../backlog/resources-library.md) — katalog aset Canva per folder (tab Icon/Illustrasi); DITUNDA menunggu meeting soal MFA akun Canva
+- [Backlog: Resources Library / Asset Library](../backlog/resources-library.md) — Asset Library jalur manual + mirror Notion (`/assets`, picker di Design Brief) sudah diimplementasikan; jalur Canva API ditunda (MFA)
 - [Spec User Role & Login ID+PIN](user-role-spec.md) — 7 role berbasis permission, Membership per production, login ID+PIN, Lihat sebagai, Profil; wireframe: https://claude.ai/artifact/Fvq1og4yp9W5YTAz298HQL
 - [Backlog: Role kustom & matriks bisa diedit](../backlog/custom-roles-matrix.md) — rencana role kustom (tabel Role, editor matriks); BELUM dikerjakan
 - [Pola Dropdown Sidebar](sidebar-dropdown-pattern.md) — aturan grup/dropdown sidebar gaya tab Dia (hanya anak aktif, expand per grup)

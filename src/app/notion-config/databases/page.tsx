@@ -1,9 +1,6 @@
-import NotionDatabasesClient from '@/components/NotionDatabasesClient';
-import { getLatestSyncStatus } from '@/app/actions/sync';
+import { redirect } from 'next/navigation';
 
-export const dynamic = 'force-dynamic';
-
-export default async function DatabasesPage() {
-  const latestSyncLog = await getLatestSyncStatus();
-  return <NotionDatabasesClient initialSyncLog={latestSyncLog} />;
+/** Pages & Databases kini tab di /notion-config; tautan lama diarahkan ke sana. */
+export default function DatabasesPage() {
+  redirect('/notion-config?tab=pages');
 }

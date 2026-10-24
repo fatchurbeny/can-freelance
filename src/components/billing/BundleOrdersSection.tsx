@@ -5,10 +5,13 @@ import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { Package, Plus, Trash2, X } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { createBundleOrderAction, deleteBundleOrderAction, updateBundleOrderPaymentAction, convertBundleOrderToContractAction, recordBundleOrderDpAction } from '@/app/actions/bundle-order';
+import { createBundleOrderAction, deleteBundleOrderAction, updateBundleOrderPaymentAction, recordBundleOrderDpAction, updateBundleOrderDesignerAction } from '@/app/actions/bundle-order';
+import type { BundleContractSummary } from '@/lib/queries';
+import { parseTaskMonthToKey } from '@/lib/period-utils';
 import PlatformSelectCell from '../PlatformSelectCell';
 import MonthCalendarPicker from '../MonthCalendarPicker';
 import BundleOrderDetailDrawer from './BundleOrderDetailDrawer';
+import BundleContractDrawer from './BundleContractDrawer';
 
 export interface BundleOrderRow {
   id: string;
@@ -31,6 +34,12 @@ export interface BundleOrderRow {
   approvedTasks: number;
   completed: boolean;
   tasks: { id: string; name: string; board: string; approved: boolean }[];
+  /** Kontrak tempat order ini menjadi satu periode (order Kontrak). */
+  contract?: BundleContractSummary | null;
+  /** Kontrak yang lahir dari order Trial ini. */
+  trialContract?: BundleContractSummary | null;
+  /** Urutan periode order ini di kontrak (1-based; 0 = bukan order kontrak). */
+  contractPeriodIndex?: number;
 }
 
 interface Props {
@@ -60,25 +69,41 @@ export default function BundleOrdersSection({ rows, periodLabel, bundles, design
   const [dpSaving, setDpSaving] = useState(false);
   const [saving, setSaving] = useState(false);
   const [paymentType, setPaymentType] = useState<'Full' | 'DP'>('Full');
-  const [orderType, setOrderType] = useState<'Trial' | 'Kontrak'>('Trial');
+  // Order periode kontrak: bundle, designer, harga & tipe mengikuti kontrak
+  const [formContract, setFormContract] = useState<BundleContractSummary | null>(null);
+  const [contractTrialId, setContractTrialId] = useState<string | null>(null);
   const [payoutMonth, setPayoutMonth] = useState('');
   const [dpAmount, setDpAmount] = useState('');
 
   const paidTotal = rows.reduce((n, r) => n + (r.paid ? r.price : r.dpPaid ? r.dpAmount : 0), 0);
   const total = rows.filter((r) => r.completed).reduce((n, r) => n + r.price, 0);
 
-  const openForm = (prefill?: BundleOrderRow) => {
+  /** Tanpa argumen = order Trial baru; dengan kontrak = order periode berikutnya dari kontrak itu. */
+  const openForm = (contractOf?: { row: BundleOrderRow; contract: BundleContractSummary }) => {
     setDetailId(null);
-    setOrderType(prefill ? 'Kontrak' : 'Trial'); setPayoutMonth('');
-    setBundleId(prefill?.bundleId ?? ''); setDesignerId(prefill?.designerId ?? ''); setPeriod(periodLabel === 'Unknown' ? '' : periodLabel); setTitle(''); setBody(''); setError(''); setPaymentType('Full'); setDpAmount('');
+    setPayoutMonth(''); setTitle(''); setBody(''); setError(''); setPaymentType('Full'); setDpAmount('');
+    setFormContract(contractOf?.contract ?? null);
+    setBundleId(contractOf?.row.bundleId ?? '');
+    setDesignerId(contractOf?.row.designerId ?? '');
+    setPeriod(contractOf ? contractOf.contract.nextPeriod ?? '' : periodLabel === 'Unknown' ? '' : periodLabel);
     setOpen(true);
   };
+
+  /** Kontrak terkait order: kontrak dari trial ini, atau kontrak tempat order ini berada. */
+  const contractOfRow = (r: BundleOrderRow) => r.trialContract ?? r.contract ?? null;
 
   const submit = async () => {
     setError('');
     if (!bundleId) return setError('Pilih bundle.');
+    if (formContract) {
+      const key = parseTaskMonthToKey(period);
+      const free = formContract.periods.filter((p) => !formContract.usedPeriods.includes(p));
+      if (!key || !free.some((p) => parseTaskMonthToKey(p) === key)) {
+        return setError(`Pilih periode kontrak yang belum dipakai (${free[0] ?? '-'} – ${free[free.length - 1] ?? '-'}).`);
+      }
+    }
     setSaving(true);
-    const res = await createBundleOrderAction({ bundleId, designerId, period, title, bodyText: body, orderType, payoutMonth: payoutMonth || null, paymentType, dpAmount: Number(dpAmount) });
+    const res = await createBundleOrderAction({ bundleId, designerId, period, title, bodyText: body, contractId: formContract?.id ?? null, payoutMonth: payoutMonth || null, paymentType, dpAmount: Number(dpAmount) });
     setSaving(false);
     if (!res.success) {
       setError(res.error || 'Gagal membuat order.');
@@ -86,7 +111,7 @@ export default function BundleOrdersSection({ rows, periodLabel, bundles, design
       if (res.orderId) router.refresh();
       return;
     }
-    toast.success('Order bundle dibuat, task dikirim ke tiap board.');
+    toast.success(formContract ? `Order periode ${period} dibuat, task dikirim ke tiap board.` : 'Order bundle dibuat, task dikirim ke tiap board.');
     setOpen(false);
     router.refresh();
   };
@@ -106,14 +131,6 @@ export default function BundleOrdersSection({ rows, periodLabel, bundles, design
     if (!res.success) return void toast.error(res.error || 'Gagal mencatat DP.');
     toast.success('DP dicatat.');
     setDpDialog(null);
-    router.refresh();
-  };
-
-  const toContract = async (id: string) => {
-    if (!window.confirm('Jadikan order ini kontrak? Order berikutnya dibuat manual per periode.')) return;
-    const res = await convertBundleOrderToContractAction(id);
-    if (!res.success) return void toast.error(res.error || 'Gagal menjadikan kontrak.');
-    toast.success('Bundle dijadikan kontrak.');
     router.refresh();
   };
 
@@ -139,11 +156,35 @@ export default function BundleOrdersSection({ rows, periodLabel, bundles, design
       <>
         {!r.dpPaid && !r.paid && <button type="button" onClick={() => setDpDialog({ id: r.id, amount: r.dpAmount > 0 ? String(r.dpAmount) : '' })} className={cls('primary')}>Catat DP</button>}
         {!r.paid && (r.paymentType === 'Full' || r.dpPaid) && <button type="button" onClick={() => pay(r.id, 'full')} className={cls('primary')}>{r.paymentType === 'DP' ? 'Lunasi' : 'Tandai Lunas'}</button>}
-        {r.orderType === 'Trial' && <button type="button" onClick={() => toContract(r.id)} className={cls('violet')}>Jadikan Kontrak</button>}
-        {r.orderType === 'Kontrak' && <button type="button" onClick={() => openForm(r)} className={cls('neutral')}>Order Periode Lain</button>}
+        {(() => {
+          const contract = contractOfRow(r);
+          if (r.orderType === 'Trial' && !contract) {
+            // Trial baru boleh dijadikan kontrak setelah semua task approved
+            return r.completed
+              ? <button type="button" onClick={() => setContractTrialId(r.id)} className={cls('violet')}>Jadikan Kontrak</button>
+              : <button type="button" disabled title="Semua task trial harus approved dulu" className={`${cls('violet')} cursor-not-allowed opacity-50`}>Jadikan Kontrak · {r.approvedTasks}/{r.totalTasks} approved</button>;
+          }
+          if (!contract) return null;
+          return contract.nextPeriod
+            ? <button type="button" onClick={() => openForm({ row: r, contract })} className={cls('violet')}>Order Periode Berikutnya · {contract.nextPeriod}</button>
+            : <span className={`${base} border border-[#f0f0f0] font-bold text-gray-400 dark:border-[#272a34]`}>Periode kontrak selesai</span>;
+        })()}
         {(r.paid || r.dpPaid) && <button type="button" onClick={() => pay(r.id, 'reset')} className={cls('neutral')}>Reset Pembayaran</button>}
       </>
     );
+  };
+
+  /** Designer order = sumber utama; task bundle di tiap board ikut diganti oleh server. */
+  const changeDesigner = async (r: BundleOrderRow, nextId: string) => {
+    if (!nextId || nextId === r.designerId) return;
+    let res = await updateBundleOrderDesignerAction(r.id, nextId);
+    if (!res.success && 'needsConfirm' in res && res.needsConfirm) {
+      if (!window.confirm(`${res.error} Lanjutkan?`)) return;
+      res = await updateBundleOrderDesignerAction(r.id, nextId, true);
+    }
+    if (!res.success) return void toast.error(res.error || 'Gagal mengganti designer.');
+    toast.success('Designer order dan semua task bundle diperbarui.');
+    router.refresh();
   };
 
   const remove = async (id: string) => {
@@ -182,7 +223,12 @@ export default function BundleOrdersSection({ rows, periodLabel, bundles, design
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-bold text-gray-900 dark:text-white">{r.bundleName}</span>
-                    <span className={`px-2 py-0.5 text-[10px] font-bold ${r.orderType === 'Kontrak' ? 'bg-violet-500/10 text-violet-600 dark:text-violet-400' : 'bg-amber-500/10 text-amber-700 dark:text-amber-400'}`}>{r.orderType === 'Kontrak' ? 'KONTRAK' : 'TRIAL'}</span>
+                    <span className={`px-2 py-0.5 text-[10px] font-bold ${r.orderType === 'Kontrak' ? 'bg-violet-500/10 text-violet-600 dark:text-violet-400' : 'bg-amber-500/10 text-amber-700 dark:text-amber-400'}`}>
+                      {r.orderType === 'Kontrak' ? `KONTRAK${r.contract && r.contractPeriodIndex ? ` ${r.contractPeriodIndex}/${r.contract.periods.length}` : ''}` : 'TRIAL'}
+                    </span>
+                    {r.orderType === 'Trial' && r.trialContract && (
+                      <span className="px-2 py-0.5 text-[10px] font-bold bg-violet-500/10 text-violet-600 dark:text-violet-400">DIKONTRAK</span>
+                    )}
                   </div>
                   <div className="mt-1 text-[11px] text-gray-400">Order {r.period || '-'} · Payout {r.payoutMonth || 'belum diset'}</div>
                 </td>
@@ -254,7 +300,30 @@ export default function BundleOrdersSection({ rows, periodLabel, bundles, design
         );
       })()}
 
-      <BundleOrderDetailDrawer row={rows.find((r) => r.id === detailId) ?? null} onClose={() => setDetailId(null)} actions={(() => { const r = rows.find((x) => x.id === detailId); return r ? actionButtons(r, 'button') : null; })()} />
+      <BundleOrderDetailDrawer
+        row={rows.find((r) => r.id === detailId) ?? null}
+        onClose={() => setDetailId(null)}
+        actions={(() => { const r = rows.find((x) => x.id === detailId); return r ? actionButtons(r, 'button') : null; })()}
+        designers={designers}
+        onChangeDesigner={(id) => { const r = rows.find((x) => x.id === detailId); if (r) void changeDesigner(r, id); }}
+      />
+
+      {contractTrialId && (() => {
+        const trial = rows.find((r) => r.id === contractTrialId);
+        if (!trial) return null;
+        return (
+          <BundleContractDrawer
+            trial={trial}
+            bundlePrice={bundles.find((b) => b.id === trial.bundleId)?.price ?? trial.price}
+            onClose={() => setContractTrialId(null)}
+            onCreated={() => {
+              setContractTrialId(null);
+              toast.success('Kontrak bundle dibuat. Lanjutkan dengan Order Periode Berikutnya.');
+              router.refresh();
+            }}
+          />
+        );
+      })()}
 
       {open && typeof window !== 'undefined' && createPortal(
         <div className="fixed inset-0 z-70">
@@ -266,7 +335,7 @@ export default function BundleOrdersSection({ rows, periodLabel, bundles, design
                   <Package className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
-                  <h3 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider truncate">Add Order Bundle</h3>
+                  <h3 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider truncate">{formContract ? 'Order Periode Kontrak' : 'Add Order Bundle'}</h3>
                   <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate">Membuat satu task per komponen di board masing-masing.</p>
                 </div>
               </div>
@@ -275,25 +344,54 @@ export default function BundleOrdersSection({ rows, periodLabel, bundles, design
             <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden divide-y divide-[#f0f0f0] dark:divide-[#272a34]">
             <div className="flex items-stretch text-xs min-h-[44px]">
               <div className={LABEL}>Tipe Order</div>
-              <div className="flex-1 grid grid-cols-2 divide-x divide-[#f0f0f0] dark:divide-[#272a34]">
-                {([['Trial', 'Trial'], ['Kontrak', 'Kontrak']] as const).map(([v, label]) => (
-                  <button key={v} type="button" onClick={() => setOrderType(v)}
-                    className={`min-h-[44px] text-xs font-bold uppercase tracking-wider cursor-pointer transition-colors ${orderType === v ? 'bg-emerald-600 text-white' : 'bg-gray-50/50 dark:bg-[#16181d]/50 text-gray-500 hover:text-gray-900 dark:hover:text-white'}`}>{label}</button>
-                ))}
+              <div className="flex-1 px-4 flex items-center gap-2 font-bold">
+                {formContract ? (
+                  <>
+                    <span className="px-2 py-0.5 text-[10px] bg-violet-500/10 text-violet-600 dark:text-violet-400">KONTRAK</span>
+                    <span className="font-medium text-gray-500">periode {formContract.usedPeriods.length + 1}/{formContract.periods.length}</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="px-2 py-0.5 text-[10px] bg-amber-500/10 text-amber-700 dark:text-amber-400">TRIAL</span>
+                    <span className="font-medium text-gray-500">Kontrak dibuat dari trial yang lolos</span>
+                  </>
+                )}
               </div>
             </div>
-            <div className="flex items-stretch text-xs min-h-[44px]">
-              <div className={LABEL}>Bundle</div>
-              <div className="flex-1"><PlatformSelectCell value={bundleId} options={bundles.map((b) => ({ slug: b.id, name: `${b.name} — ${money(b.price)}` }))} placeholder="Pilih Bundle..." onChange={setBundleId} /></div>
-            </div>
-            <div className="flex items-stretch text-xs min-h-[44px]">
-              <div className={LABEL}>Designer / Agency</div>
-              <div className="flex-1"><PlatformSelectCell value={designerId} options={designers.map((d) => ({ slug: d.id, name: d.isAgency ? `${d.displayName} (Agency)` : d.displayName }))} placeholder="Pilih Designer..." onChange={setDesignerId} /></div>
-            </div>
+            {formContract ? (
+              <>
+                <div className="flex items-stretch text-xs min-h-[44px]"><div className={LABEL}>Bundle</div><div className="flex-1 px-4 flex items-center font-bold">{bundles.find((b) => b.id === bundleId)?.name ?? '-'}</div></div>
+                <div className="flex items-stretch text-xs min-h-[44px]"><div className={LABEL}>Designer / Agency</div><div className="flex-1 px-4 flex items-center font-bold">{designers.find((d) => d.id === designerId)?.displayName ?? '-'}</div></div>
+                <div className="flex items-stretch text-xs min-h-[44px]"><div className={LABEL}>Harga</div><div className="flex-1 px-4 flex items-center font-bold text-emerald-600 dark:text-emerald-400">{money(formContract.price)} <span className="ml-2 font-medium text-gray-400">harga kontrak</span></div></div>
+              </>
+            ) : (
+              <>
+                <div className="flex items-stretch text-xs min-h-[44px]">
+                  <div className={LABEL}>Bundle</div>
+                  <div className="flex-1"><PlatformSelectCell value={bundleId} options={bundles.map((b) => ({ slug: b.id, name: `${b.name} — ${money(b.price)}` }))} placeholder="Pilih Bundle..." onChange={setBundleId} /></div>
+                </div>
+                <div className="flex items-stretch text-xs min-h-[44px]">
+                  <div className={LABEL}>Designer / Agency</div>
+                  <div className="flex-1"><PlatformSelectCell value={designerId} options={designers.map((d) => ({ slug: d.id, name: d.isAgency ? `${d.displayName} (Agency)` : d.displayName }))} placeholder="Pilih Designer..." onChange={setDesignerId} /></div>
+                </div>
+              </>
+            )}
             <div className="flex items-stretch text-xs min-h-[44px]">
               <div className={LABEL}>Periode</div>
-              <div className="flex-1 flex items-stretch bg-white dark:bg-[#0d0e12]"><MonthCalendarPicker value={period} placeholder="Pilih Bulan..." onChange={setPeriod} /></div>
+              <div className="flex-1 flex items-stretch bg-white dark:bg-[#0d0e12]">
+                <MonthCalendarPicker
+                  value={period}
+                  placeholder="Pilih Bulan..."
+                  onChange={setPeriod}
+                  availableMonths={formContract ? formContract.periods.filter((p) => !formContract.usedPeriods.includes(p)) : undefined}
+                />
+              </div>
             </div>
+            {formContract && (
+              <p className="px-5 py-2 text-[11px] text-gray-500 dark:text-gray-400">
+                Masa kontrak {formContract.periods[0]} – {formContract.periods[formContract.periods.length - 1]}; bulan yang sudah punya order tidak bisa dipilih.
+              </p>
+            )}
             <div className="flex items-stretch text-xs min-h-[44px]">
               <div className={LABEL}>Payout Month</div>
               <div className="flex-1 flex items-stretch bg-white dark:bg-[#0d0e12]"><MonthCalendarPicker value={payoutMonth} placeholder="Kosong = masuk antrian Closing" onChange={setPayoutMonth} /></div>

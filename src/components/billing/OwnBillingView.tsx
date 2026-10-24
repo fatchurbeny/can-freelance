@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { Download } from 'lucide-react';
+import OwnMonthSelect from './OwnMonthSelect';
 import prisma from '@/lib/prisma';
 import TopBar from '@/components/TopBar';
 import { getBundleOrdersForPeriod, getPlatformRates } from '@/lib/queries';
@@ -43,27 +45,26 @@ export default async function OwnBillingView({ designerId, selectedMonth, availa
   const bundleRows = (bundle?.rows ?? []).filter((r) => r.designerId === designerId);
 
   const satuanTotal = rows.reduce((n, r) => n + r.payment, 0);
-  const bundleTotal = bundleRows.filter((r) => r.inPayout && r.completed).reduce((n, r) => n + r.price, 0);
+  const bundleTotal = (designerId && bundle?.payoutByDesigner.get(designerId)) || 0;
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#0d0e12] text-[#262626] dark:text-[#f4f4f5]">
       <TopBar badgeLabel="BILLING STATEMENT" />
       <div className="flex min-h-[calc(100vh-56px)] flex-col md:flex-row">
         <main className="flex-1 md:ml-56 p-3 sm:p-6 md:p-8 space-y-6 overflow-x-hidden bg-grid-pattern">
-          <div className="flex flex-wrap items-center gap-2">
-            {availableMonths.map((m) => (
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <OwnMonthSelect months={availableMonths} selected={selectedMonth} />
+            {designerId && (
               <Link
-                key={m}
-                href={`/billing-statement?paymentMonth=${encodeURIComponent(m)}`}
-                className={`rounded-none border px-3 py-1.5 text-xs font-semibold ${
-                  m === selectedMonth
-                    ? 'border-[#ff5e1f] bg-[#ff5e1f]/10 text-[#ff5e1f]'
-                    : 'border-[#f0f0f0] dark:border-[#272a34] text-gray-500 hover:text-[#ff5e1f]'
-                }`}
+                href={`/billing-statement/print?designerId=${designerId}&paymentMonth=${encodeURIComponent(selectedMonth)}`}
+                target="_blank"
+                rel="noopener"
+                className="inline-flex h-11 items-center justify-center gap-1.5 rounded-none bg-[#ff5e1f] px-4 text-xs font-bold uppercase tracking-wider text-white hover:bg-[#ff7038]"
               >
-                {m}
+                <Download className="h-3.5 w-3.5" />
+                <span>Download Statement</span>
               </Link>
-            ))}
+            )}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-[#f0f0f0] dark:divide-[#272a34] rounded-none border border-[#f0f0f0] dark:border-[#272a34]">
