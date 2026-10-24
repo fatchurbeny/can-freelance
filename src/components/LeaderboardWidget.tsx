@@ -59,7 +59,7 @@ export default function LeaderboardWidget({ data, columns, topPerformer, brandNa
         <div>
           <h3 className="font-sans font-bold text-sm text-gray-900 dark:text-white">Designer Leaderboard</h3>
           <p className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">
-            Output Top 5 Doctype Spesialis Designer - {brandName === 'Semua Brand' ? 'Semua Brand (6)' : brandName}
+            Output Top 5 Doctype Spesialis Designer - {brandName}
           </p>
         </div>
         {topPerformer && (

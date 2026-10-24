@@ -25,6 +25,8 @@ interface Props {
   sendingComment: boolean;
   /** Dipanggil saat drawer Edit Brief (kanan) dibuka/ditutup, agar drawer task bergeser ke kiri. */
   onEditorOpenChange?: (open: boolean) => void;
+  /** Production task; picker Asset Library hanya menampilkan aset untuk production ini. */
+  productionUnitId?: string;
 }
 
 const BODY_DEBOUNCE_MS = 1500;
@@ -38,6 +40,7 @@ export default function DesignBriefSection({
   onDeleteComment,
   sendingComment,
   onEditorOpenChange,
+  productionUnitId,
 }: Props) {
   const access = useAccess();
   // Brief hanya diubah oleh role manajemen (task.edit); designer hanya membaca & berkomentar.
@@ -264,6 +267,7 @@ export default function DesignBriefSection({
           onChange={handleDraftChange}
           onInsertPalette={handleInsertPalette}
           onInsertAssets={handleInsertAssets}
+          productionUnitId={productionUnitId}
           onClose={toggleMode}
           subtitle="Tersimpan otomatis · preview di drawer task"
         />

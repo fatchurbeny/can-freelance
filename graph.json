@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "generatedAt": "2026-10-24T10:25:27.788Z",
+  "generatedAt": "2026-10-24T13:29:15.652Z",
   "nodes": [
     {
       "id": "page:/account-team",
@@ -587,6 +587,14 @@
       "details": "React UI Component in src/components/billing/BundleClosingQueue.tsx"
     },
     {
+      "id": "component:BundleContractDrawer",
+      "label": "BundleContractDrawer",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/billing/BundleContractDrawer.tsx",
+      "details": "React UI Component in src/components/billing/BundleContractDrawer.tsx"
+    },
+    {
       "id": "component:BundleOrderDetailDrawer",
       "label": "BundleOrderDetailDrawer",
       "type": "component",
@@ -707,6 +715,22 @@
       "details": "React UI Component in src/components/CloudflareTopBar.tsx"
     },
     {
+      "id": "component:ContractDrawer",
+      "label": "ContractDrawer",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/ContractDrawer.tsx",
+      "details": "React UI Component in src/components/ContractDrawer.tsx"
+    },
+    {
+      "id": "component:ContractPeriodField",
+      "label": "ContractPeriodField",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/ContractPeriodField.tsx",
+      "details": "React UI Component in src/components/ContractPeriodField.tsx"
+    },
+    {
       "id": "component:ContractRateEditor",
       "label": "ContractRateEditor",
       "type": "component",
@@ -753,6 +777,14 @@
       "group": "React Components",
       "filepath": "src/components/DatePickerCell.tsx",
       "details": "React UI Component in src/components/DatePickerCell.tsx"
+    },
+    {
+      "id": "component:DateRangePicker",
+      "label": "DateRangePicker",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/DateRangePicker.tsx",
+      "details": "React UI Component in src/components/DateRangePicker.tsx"
     },
     {
       "id": "component:DesignerCareerTimeline",
@@ -939,6 +971,14 @@
       "details": "React UI Component in src/components/ImageColorPalettePicker.tsx"
     },
     {
+      "id": "component:InfoTip",
+      "label": "InfoTip",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/InfoTip.tsx",
+      "details": "React UI Component in src/components/InfoTip.tsx"
+    },
+    {
       "id": "component:kanban-config",
       "label": "kanban-config",
       "type": "component",
@@ -1075,14 +1115,6 @@
       "details": "React UI Component in src/components/PipelineWidget.tsx"
     },
     {
-      "id": "component:PlatformRateModal",
-      "label": "PlatformRateModal",
-      "type": "component",
-      "group": "React Components",
-      "filepath": "src/components/PlatformRateModal.tsx",
-      "details": "React UI Component in src/components/PlatformRateModal.tsx"
-    },
-    {
       "id": "component:PlatformSelectCell",
       "label": "PlatformSelectCell",
       "type": "component",
@@ -1121,6 +1153,14 @@
       "group": "React Components",
       "filepath": "src/components/production-fields/CustomFieldManager.tsx",
       "details": "React UI Component in src/components/production-fields/CustomFieldManager.tsx"
+    },
+    {
+      "id": "component:PortalMultiSelect",
+      "label": "PortalMultiSelect",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/production-fields/PortalMultiSelect.tsx",
+      "details": "React UI Component in src/components/production-fields/PortalMultiSelect.tsx"
     },
     {
       "id": "component:PortalSelect",
@@ -1531,6 +1571,14 @@
       "details": "Server/shared library in src/lib/asset-library.ts"
     },
     {
+      "id": "lib:asset-productions",
+      "label": "asset-productions.ts",
+      "type": "action",
+      "group": "Server Actions & Lib",
+      "filepath": "src/lib/asset-productions.ts",
+      "details": "Server/shared library in src/lib/asset-productions.ts"
+    },
+    {
       "id": "lib:background-sync",
       "label": "background-sync.ts",
       "type": "action",
@@ -1553,6 +1601,14 @@
       "group": "Server Actions & Lib",
       "filepath": "src/lib/canva-email-parser.ts",
       "details": "Server/shared library in src/lib/canva-email-parser.ts"
+    },
+    {
+      "id": "lib:canva-link-resolve",
+      "label": "canva-link-resolve.ts",
+      "type": "action",
+      "group": "Server Actions & Lib",
+      "filepath": "src/lib/canva-link-resolve.ts",
+      "details": "Server/shared library in src/lib/canva-link-resolve.ts"
     },
     {
       "id": "lib:canva-url",
@@ -2035,6 +2091,14 @@
       "details": "Prisma model BundleOrder (table bundle_orders)"
     },
     {
+      "id": "model:BundleContract",
+      "label": "BundleContract Model",
+      "type": "model",
+      "group": "Prisma DB Models",
+      "filepath": "prisma/schema.prisma",
+      "details": "Prisma model BundleContract (table bundle_contracts)"
+    },
+    {
       "id": "model:AssetCategory",
       "label": "AssetCategory Model",
       "type": "model",
@@ -2049,6 +2113,14 @@
       "group": "Prisma DB Models",
       "filepath": "prisma/schema.prisma",
       "details": "Prisma model Asset (table assets)"
+    },
+    {
+      "id": "model:AssetProduction",
+      "label": "AssetProduction Model",
+      "type": "model",
+      "group": "Prisma DB Models",
+      "filepath": "prisma/schema.prisma",
+      "details": "Prisma model AssetProduction (table asset_productions)"
     },
     {
       "id": "model:TaskAsset",
@@ -2368,6 +2440,12 @@
     },
     {
       "source": "action:assets",
+      "target": "lib:canva-link-resolve",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:assets",
       "target": "lib:asset-library",
       "relation": "invokes",
       "confidence": "EXTRACTED"
@@ -2387,12 +2465,6 @@
     {
       "source": "action:assets",
       "target": "model:AssetCategory",
-      "relation": "queries",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "action:assets",
-      "target": "model:ProductionUnit",
       "relation": "queries",
       "confidence": "EXTRACTED"
     },
@@ -2484,6 +2556,18 @@
       "source": "action:bundle-order",
       "target": "action:qa",
       "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:bundle-order",
+      "target": "lib:period-utils",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:bundle-order",
+      "target": "model:BundleContract",
+      "relation": "queries",
       "confidence": "EXTRACTED"
     },
     {
@@ -2716,6 +2800,12 @@
     },
     {
       "source": "action:notion-config",
+      "target": "lib:asset-productions",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:notion-config",
       "target": "model:NotionConfig",
       "relation": "queries",
       "confidence": "EXTRACTED"
@@ -2878,6 +2968,18 @@
     },
     {
       "source": "action:production-unit",
+      "target": "lib:background-sync",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:production-unit",
+      "target": "lib:asset-productions",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:production-unit",
       "target": "action:sync-notion",
       "relation": "invokes",
       "confidence": "EXTRACTED"
@@ -2909,6 +3011,18 @@
     {
       "source": "action:production-unit",
       "target": "model:Platform",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:production-unit",
+      "target": "model:Doctype",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:production-unit",
+      "target": "model:Account",
       "relation": "queries",
       "confidence": "EXTRACTED"
     },
@@ -3340,12 +3454,6 @@
     },
     {
       "source": "page:/assets",
-      "target": "lib:prisma",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "page:/assets",
       "target": "component:TopBar",
       "relation": "renders",
       "confidence": "EXTRACTED"
@@ -3366,12 +3474,6 @@
       "source": "page:/assets",
       "target": "lib:asset-library",
       "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "page:/assets",
-      "target": "model:ProductionUnit",
-      "relation": "queries",
       "confidence": "EXTRACTED"
     },
     {
@@ -3729,6 +3831,12 @@
       "confidence": "EXTRACTED"
     },
     {
+      "source": "page:/",
+      "target": "model:Task",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
       "source": "page:/production/[slug]",
       "target": "lib:prisma",
       "relation": "invokes",
@@ -3839,6 +3947,24 @@
     {
       "source": "page:/production",
       "target": "model:ProductionUnit",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/production",
+      "target": "model:Task",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/production",
+      "target": "model:Doctype",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/production",
+      "target": "model:Designer",
       "relation": "queries",
       "confidence": "EXTRACTED"
     },
@@ -4149,8 +4275,26 @@
       "confidence": "EXTRACTED"
     },
     {
+      "source": "component:AssetDetailDrawer",
+      "target": "component:InfoTip",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
       "source": "component:AssetFormDrawer",
       "target": "component:PortalSelect",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:AssetFormDrawer",
+      "target": "component:PortalMultiSelect",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:AssetFormDrawer",
+      "target": "component:InfoTip",
       "relation": "renders",
       "confidence": "EXTRACTED"
     },
@@ -4377,6 +4521,42 @@
       "confidence": "EXTRACTED"
     },
     {
+      "source": "component:BundleContractDrawer",
+      "target": "action:bundle-order",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:BundleContractDrawer",
+      "target": "component:DateRangePicker",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:BundleContractDrawer",
+      "target": "component:ContractPeriodField",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:BundleContractDrawer",
+      "target": "component:InfoTip",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:BundleContractDrawer",
+      "target": "lib:period-utils",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:BundleContractDrawer",
+      "target": "component:BundleOrdersSection",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
       "source": "component:BundleOrderDetailDrawer",
       "target": "component:PlatformSelectCell",
       "relation": "renders",
@@ -4396,6 +4576,18 @@
     },
     {
       "source": "component:BundleOrdersSection",
+      "target": "action:queries",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:BundleOrdersSection",
+      "target": "lib:period-utils",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:BundleOrdersSection",
       "target": "component:PlatformSelectCell",
       "relation": "renders",
       "confidence": "EXTRACTED"
@@ -4409,6 +4601,12 @@
     {
       "source": "component:BundleOrdersSection",
       "target": "component:BundleOrderDetailDrawer",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:BundleOrdersSection",
+      "target": "component:BundleContractDrawer",
       "relation": "renders",
       "confidence": "EXTRACTED"
     },
@@ -4487,6 +4685,42 @@
     {
       "source": "component:CloudflareTopBar",
       "target": "component:TopBar",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:ContractDrawer",
+      "target": "action:rate-card",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:ContractDrawer",
+      "target": "component:DateRangePicker",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:ContractDrawer",
+      "target": "component:ContractPeriodField",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:ContractDrawer",
+      "target": "component:InfoTip",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:ContractPeriodField",
+      "target": "component:DateRangePicker",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:ContractPeriodField",
+      "target": "component:InfoTip",
       "relation": "renders",
       "confidence": "EXTRACTED"
     },
@@ -4707,6 +4941,24 @@
       "confidence": "EXTRACTED"
     },
     {
+      "source": "component:DoctypeSlideModal",
+      "target": "component:InfoTip",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:DoctypeTable",
+      "target": "component:ContractDrawer",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:DoctypeTable",
+      "target": "component:DateRangePicker",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
       "source": "component:DoctypeTable",
       "target": "component:RateCardRow",
       "relation": "renders",
@@ -4739,12 +4991,6 @@
     {
       "source": "component:DoctypeTable",
       "target": "component:SortControl",
-      "relation": "renders",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:DoctypeTable",
-      "target": "component:PlatformRateModal",
       "relation": "renders",
       "confidence": "EXTRACTED"
     },
@@ -5025,18 +5271,6 @@
       "confidence": "EXTRACTED"
     },
     {
-      "source": "component:PlatformRateModal",
-      "target": "action:rate-card",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:PlatformRateModal",
-      "target": "component:PlatformSelectCell",
-      "relation": "renders",
-      "confidence": "EXTRACTED"
-    },
-    {
       "source": "component:PreviewBanner",
       "target": "action:auth",
       "relation": "invokes",
@@ -5079,6 +5313,12 @@
       "confidence": "EXTRACTED"
     },
     {
+      "source": "component:CoreFieldStructure",
+      "target": "component:InfoTip",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
       "source": "component:CustomFieldManager",
       "target": "action:production-field",
       "relation": "invokes",
@@ -5088,6 +5328,12 @@
       "source": "component:CustomFieldManager",
       "target": "lib:notion-field-types",
       "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:PortalMultiSelect",
+      "target": "component:PortalSelect",
+      "relation": "renders",
       "confidence": "EXTRACTED"
     },
     {
@@ -5182,6 +5428,12 @@
     },
     {
       "source": "component:StepInfo",
+      "target": "component:InfoTip",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:StepInfo",
       "target": "component:types",
       "relation": "renders",
       "confidence": "EXTRACTED"
@@ -5206,6 +5458,12 @@
     },
     {
       "source": "component:StepNotion",
+      "target": "component:InfoTip",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:StepNotion",
       "target": "component:types",
       "relation": "renders",
       "confidence": "EXTRACTED"
@@ -5220,6 +5478,18 @@
       "source": "component:StepOutput",
       "target": "component:types",
       "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:StepOutput",
+      "target": "component:InfoTip",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:StepResult",
+      "target": "action:production-unit",
+      "relation": "invokes",
       "confidence": "EXTRACTED"
     },
     {
@@ -5650,6 +5920,12 @@
     },
     {
       "source": "component:UserDrawer",
+      "target": "component:InfoTip",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:UserDrawer",
       "target": "action:user-management",
       "relation": "invokes",
       "confidence": "EXTRACTED"
@@ -5776,6 +6052,12 @@
     },
     {
       "source": "lib:asset-library",
+      "target": "lib:asset-productions",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:asset-library",
       "target": "model:AssetCategory",
       "relation": "queries",
       "confidence": "EXTRACTED"
@@ -5784,6 +6066,24 @@
       "source": "lib:asset-library",
       "target": "model:Asset",
       "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:asset-productions",
+      "target": "lib:prisma",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:asset-productions",
+      "target": "model:ProductionUnit",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:canva-link-resolve",
+      "target": "lib:canva-url",
+      "relation": "invokes",
       "confidence": "EXTRACTED"
     },
     {
@@ -5890,13 +6190,13 @@
     },
     {
       "source": "lib:notion-assets",
-      "target": "model:AssetCategory",
-      "relation": "queries",
+      "target": "lib:asset-productions",
+      "relation": "invokes",
       "confidence": "EXTRACTED"
     },
     {
       "source": "lib:notion-assets",
-      "target": "model:ProductionUnit",
+      "target": "model:AssetCategory",
       "relation": "queries",
       "confidence": "EXTRACTED"
     },

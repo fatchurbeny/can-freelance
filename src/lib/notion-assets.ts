@@ -21,9 +21,11 @@ import { registerNotionDatabase } from '@/lib/notion-registry';
 import { ASSETS_RELATION_PROPERTY } from '@/lib/notion-field-types';
 import { parseCanvaUrl, isPublicViewUrl } from '@/lib/canva-url';
 import { parseAssetSection } from '@/lib/asset-brief';
+import { canvaProductionUnits } from '@/lib/asset-productions';
 
 export const ASSET_DB_PURPOSE = 'asset_library';
 export const ASSET_DB_TITLE = 'Asset Library';
+/** Nilai lama properti Production (select) untuk "semua production"; kini = multi-select kosong. */
 export const ALL_PRODUCTIONS_LABEL = 'Semua';
 
 /** Nama properti database Notion Asset Library. */
@@ -47,7 +49,7 @@ export const ASSET_PROPERTY_MAP: { field: string; property: string; type: string
   { field: 'Judul', property: ASSET_PROPS.title, type: 'title' },
   { field: 'Kategori', property: ASSET_PROPS.category, type: 'select' },
   { field: 'Tag', property: ASSET_PROPS.tags, type: 'multi-select' },
-  { field: 'Production', property: ASSET_PROPS.production, type: 'select' },
+  { field: 'Production', property: ASSET_PROPS.production, type: 'multi-select (kosong = semua Canva)' },
   { field: 'Link Edit', property: ASSET_PROPS.editUrl, type: 'url' },
   { field: 'Public View', property: ASSET_PROPS.previewUrl, type: 'url' },
   { field: 'Jumlah Halaman', property: ASSET_PROPS.pages, type: 'number' },
@@ -61,14 +63,14 @@ const optionName = (name: string) => name.replace(/,/g, ' ').trim().slice(0, 100
 async function assetPropertySchema(): Promise<Record<string, any>> {
   const [categories, units] = await Promise.all([
     prisma.assetCategory.findMany({ where: { archived: false }, orderBy: { sortOrder: 'asc' } }),
-    prisma.productionUnit.findMany({ where: { isActive: true }, orderBy: { createdAt: 'asc' } }),
+    canvaProductionUnits(),
   ]);
   return {
     [ASSET_PROPS.title]: { title: {} },
     [ASSET_PROPS.category]: { select: { options: categories.map((c) => ({ name: optionName(c.name) })) } },
     [ASSET_PROPS.tags]: { multi_select: { options: [] } },
     [ASSET_PROPS.production]: {
-      select: { options: [ALL_PRODUCTIONS_LABEL, ...units.map((u) => u.name)].map((name) => ({ name: optionName(name) })) },
+      multi_select: { options: units.map((u) => ({ name: optionName(u.name) })) },
     },
     [ASSET_PROPS.editUrl]: { url: {} },
     [ASSET_PROPS.previewUrl]: { url: {} },
@@ -131,6 +133,25 @@ export async function refreshAssetDatabaseOptions(): Promise<void> {
 }
 
 /**
+ * Production dibuat / diganti nama / dipulihkan: tambahkan namanya ke opsi Production di Notion, dan
+ * (rename) kirim ulang aset production itu agar nama di Notion ikut berubah. Pull mencocokkan production
+ * lewat nama, jadi nama lama yang tertinggal di Notion membuat aset kehilangan production-nya.
+ * Best-effort, jalankan di background.
+ */
+export async function syncAssetProductionsAfterUnitChange(opts: { renamedUnitId?: string } = {}): Promise<void> {
+  if (!(await getAssetDatabase())) return;
+  await refreshAssetDatabaseOptions();
+  if (!opts.renamedUnitId) return;
+  const affected = await prisma.asset.findMany({
+    where: { productions: { some: { productionUnitId: opts.renamedUnitId } } },
+    select: { id: true },
+  });
+  if (affected.length === 0) return;
+  await prisma.asset.updateMany({ where: { id: { in: affected.map((a) => a.id) } }, data: { syncStatus: 'PENDING_PUSH' } });
+  for (const { id } of affected) await pushAssetToNotion(id);
+}
+
+/**
  * Pastikan database task punya relation "Assets" ke database aset. Best-effort (dipanggil saat
  * database task production dibuat/diganti). Tanpa database aset → 'no_asset_db'.
  */
@@ -148,7 +169,10 @@ export async function ensureAssetsRelationForTaskDb(taskDbId: string, opts: { cr
 type AssetWithRefs = NonNullable<Awaited<ReturnType<typeof loadAsset>>>;
 
 function loadAsset(assetId: string) {
-  return prisma.asset.findUnique({ where: { id: assetId }, include: { category: true, productionUnit: true } });
+  return prisma.asset.findUnique({
+    where: { id: assetId },
+    include: { category: true, productions: { include: { productionUnit: { select: { name: true } } } } },
+  });
 }
 
 function assetToNotionProperties(asset: AssetWithRefs): Record<string, any> {
@@ -156,7 +180,7 @@ function assetToNotionProperties(asset: AssetWithRefs): Record<string, any> {
     [ASSET_PROPS.title]: { title: [{ type: 'text', text: { content: asset.title.slice(0, 2000) } }] },
     [ASSET_PROPS.category]: { select: { name: optionName(asset.category.name) } },
     [ASSET_PROPS.tags]: { multi_select: asset.tags.map(optionName).filter(Boolean).map((name) => ({ name })) },
-    [ASSET_PROPS.production]: { select: { name: optionName(asset.productionUnit?.name ?? ALL_PRODUCTIONS_LABEL) } },
+    [ASSET_PROPS.production]: { multi_select: asset.productions.map((p) => ({ name: optionName(p.productionUnit.name) })) },
     [ASSET_PROPS.editUrl]: { url: asset.editUrl || null },
     [ASSET_PROPS.previewUrl]: { url: asset.previewUrl || null },
     [ASSET_PROPS.pages]: { number: asset.pages ?? null },
@@ -200,7 +224,15 @@ async function pushAssetOnce(assetId: string): Promise<{ pushed: boolean; reason
 
   try {
     const client = await getNotionClient();
-    const schema = await retrieveSchema(client, db.databaseId);
+    let schema = await retrieveSchema(client, db.databaseId);
+    // Database lama: Production masih select (satu production) → ubah ke multi-select
+    if (schema[ASSET_PROPS.production] && schema[ASSET_PROPS.production].type !== 'multi_select') {
+      await (client as any).dataSources.update({
+        data_source_id: await resolveDataSourceId(client, db.databaseId),
+        properties: { [ASSET_PROPS.production]: (await assetPropertySchema())[ASSET_PROPS.production] },
+      });
+      schema = await retrieveSchema(client, db.databaseId);
+    }
     const all = assetToNotionProperties(asset);
     const properties = Object.fromEntries(Object.entries(all).filter(([name]) => schema[name]));
 
@@ -270,7 +302,7 @@ export async function syncAssetsFromNotion(client: Client, mode: 'incremental' |
 
   const categories = await prisma.assetCategory.findMany({ orderBy: { sortOrder: 'asc' } });
   const categoryByName = new Map(categories.map((c) => [c.name.toLowerCase(), c.id]));
-  const units = await prisma.productionUnit.findMany({ select: { id: true, name: true } });
+  const units = await canvaProductionUnits();
   const unitByName = new Map(units.map((u) => [u.name.toLowerCase(), u.id]));
 
   const categoryIdFor = async (name: string | undefined, fallback?: string) => {
@@ -308,14 +340,18 @@ export async function syncAssetsFromNotion(client: Client, mode: 'incremental' |
 
       const previewUrl: string = props[ASSET_PROPS.previewUrl]?.url || '';
       const editUrl: string | null = props[ASSET_PROPS.editUrl]?.url || null;
-      const productionName: string | undefined = props[ASSET_PROPS.production]?.select?.name;
+      const productionProp = props[ASSET_PROPS.production];
+      const productionNames: string[] = productionProp?.multi_select
+        ? productionProp.multi_select.map((o: any) => o.name)
+        : productionProp?.select?.name ? [productionProp.select.name] : [];
+      const productionUnitIds = Array.from(new Set(
+        productionNames.filter((n) => n !== ALL_PRODUCTIONS_LABEL).map((n) => unitByName.get(n.toLowerCase())).filter((id): id is string => !!id),
+      ));
       const pages = props[ASSET_PROPS.pages]?.number;
       const data = {
         title: plain(props[ASSET_PROPS.title]?.title) || 'Tanpa judul',
         categoryId: await categoryIdFor(props[ASSET_PROPS.category]?.select?.name, existing?.categoryId),
         tags: (props[ASSET_PROPS.tags]?.multi_select ?? []).map((o: any) => o.name),
-        productionUnitId:
-          productionName && productionName !== ALL_PRODUCTIONS_LABEL ? unitByName.get(productionName.toLowerCase()) ?? null : null,
         editUrl,
         previewUrl,
         pages: typeof pages === 'number' ? Math.round(pages) : null,
@@ -326,8 +362,9 @@ export async function syncAssetsFromNotion(client: Client, mode: 'incremental' |
         lastSyncedAt: new Date(),
         lastEditedTime: editedAt,
       };
-      if (existing) await prisma.asset.update({ where: { id: existing.id }, data });
-      else await prisma.asset.create({ data: { ...data, notionPageId: page.id } });
+      const productions = productionUnitIds.map((productionUnitId) => ({ productionUnitId }));
+      if (existing) await prisma.asset.update({ where: { id: existing.id }, data: { ...data, productions: { deleteMany: {}, create: productions } } });
+      else await prisma.asset.create({ data: { ...data, notionPageId: page.id, productions: { create: productions } } });
       synced++;
     }
     cursor = res.has_more ? res.next_cursor : undefined;

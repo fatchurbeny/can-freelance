@@ -562,6 +562,7 @@ export default function CreateTaskSlideModal({ productionUnitId, open, onClose, 
           onChange={setBodyText}
           onInsertPalette={(paletteMarkdown) => setBodyText((prev) => mergePaletteMarkdown(prev, paletteMarkdown))}
           onInsertAssets={(sectionMarkdown) => setBodyText((prev) => mergeAssetsMarkdown(prev, sectionMarkdown))}
+          productionUnitId={productionUnitId}
           onClose={() => setBriefEditing(false)}
           subtitle="Tersimpan saat Save Task · preview di kiri"
           zClassName="z-80"

@@ -4,8 +4,9 @@ import { revalidatePath } from 'next/cache';
 import prisma from '@/lib/prisma';
 import { getAccess, denyUnless, denyWrite } from '@/lib/access';
 import { runInBackground } from '@/lib/background-sync';
-import { parseCanvaUrl, publicViewUrlError } from '@/lib/canva-url';
-import { loadAssetLibrary, type AssetCategoryRow, type AssetRow } from '@/lib/asset-library';
+import { normalizeCanvaViewUrl, parseCanvaUrl, publicViewUrlError } from '@/lib/canva-url';
+import { resolveCanvaShortLink } from '@/lib/canva-link-resolve';
+import { canvaProductionUnits, loadAssetLibrary, type AssetCategoryRow, type AssetRow } from '@/lib/asset-library';
 import { getNotionClient } from '@/lib/notion-provision';
 import {
   pushAssetToNotion,
@@ -18,7 +19,8 @@ export interface AssetInput {
   title: string;
   categoryId: string;
   tags: string[];
-  productionUnitId: string | null;
+  /** Kosong = semua production Canva. */
+  productionUnitIds: string[];
   editUrl: string | null;
   previewUrl: string;
   coverUrl: string | null;
@@ -36,16 +38,18 @@ function revalidate() {
 async function cleanInput(input: AssetInput) {
   const title = input.title?.trim();
   if (!title) throw new Error('Judul wajib diisi.');
-  const previewUrl = input.previewUrl?.trim() ?? '';
+  // canva.link (tombol Copy di Canva) → link desain lengkap
+  const previewUrl = normalizeCanvaViewUrl(await resolveCanvaShortLink(input.previewUrl?.trim() ?? '').catch(() => input.previewUrl?.trim() ?? ''));
   const previewError = publicViewUrlError(previewUrl);
   if (previewError) throw new Error(previewError);
-  const editUrl = input.editUrl?.trim() || null;
+  const editUrl = input.editUrl?.trim() ? await resolveCanvaShortLink(input.editUrl.trim()).catch(() => input.editUrl!.trim()) : null;
   if (editUrl && !parseCanvaUrl(editUrl)) throw new Error('Link Edit harus link desain Canva.');
   const category = await prisma.assetCategory.findUnique({ where: { id: input.categoryId } });
   if (!category) throw new Error('Kategori tidak ditemukan.');
-  if (input.productionUnitId) {
-    const unit = await prisma.productionUnit.findUnique({ where: { id: input.productionUnitId } });
-    if (!unit) throw new Error('Production tidak ditemukan.');
+  const productionUnitIds = Array.from(new Set(input.productionUnitIds ?? []));
+  if (productionUnitIds.length) {
+    const canva = await canvaProductionUnits(productionUnitIds);
+    if (canva.length !== productionUnitIds.length) throw new Error('Aset Canva hanya bisa dipakai production berplatform Canva.');
   }
   const pages = input.pages == null || Number.isNaN(input.pages) ? null : Math.max(0, Math.round(input.pages));
   const tags = Array.from(new Set((input.tags ?? []).map((t) => t.trim().toLowerCase()).filter(Boolean))).slice(0, 20);
@@ -53,13 +57,13 @@ async function cleanInput(input: AssetInput) {
     title,
     categoryId: category.id,
     tags,
-    productionUnitId: input.productionUnitId || null,
     editUrl,
     previewUrl,
     coverUrl: input.coverUrl?.trim() || null,
     pages,
     notes: input.notes?.trim() || null,
     canvaDesignId: parseCanvaUrl(previewUrl)?.designId ?? null,
+    productionUnitIds,
   };
 }
 
@@ -73,8 +77,10 @@ export async function createAssetAction(input: AssetInput) {
   const denied = await denyWrite('asset.manage');
   if (denied) return denied as never;
   try {
-    const data = await cleanInput(input);
-    const asset = await prisma.asset.create({ data: { ...data, syncStatus: 'PENDING_PUSH' } });
+    const { productionUnitIds, ...data } = await cleanInput(input);
+    const asset = await prisma.asset.create({
+      data: { ...data, syncStatus: 'PENDING_PUSH', productions: { create: productionUnitIds.map((productionUnitId) => ({ productionUnitId })) } },
+    });
     queuePush(asset.id, asset.title);
     revalidate();
     return { success: true as const, id: asset.id };
@@ -87,8 +93,15 @@ export async function updateAssetAction(assetId: string, input: AssetInput) {
   const denied = await denyWrite('asset.manage');
   if (denied) return denied as never;
   try {
-    const data = await cleanInput(input);
-    const asset = await prisma.asset.update({ where: { id: assetId }, data: { ...data, syncStatus: 'PENDING_PUSH' } });
+    const { productionUnitIds, ...data } = await cleanInput(input);
+    const asset = await prisma.asset.update({
+      where: { id: assetId },
+      data: {
+        ...data,
+        syncStatus: 'PENDING_PUSH',
+        productions: { deleteMany: {}, create: productionUnitIds.map((productionUnitId) => ({ productionUnitId })) },
+      },
+    });
     queuePush(asset.id, asset.title);
     revalidate();
     return { success: true as const };
@@ -133,15 +146,36 @@ export async function createAssetCategoryAction(name: string) {
   }
 }
 
-/** Data library untuk picker Design Brief (aset aktif yang boleh dilihat). */
-export async function getAssetLibraryAction(): Promise<
-  { success: true; categories: AssetCategoryRow[]; assets: AssetRow[] } | { success: false; error: string }
+/**
+ * Data library untuk picker Design Brief: aset aktif yang boleh dipakai task di `productionUnitId`
+ * (production non-Canva → kosong, `canvaOnly` = false).
+ */
+export async function getAssetLibraryAction(productionUnitId?: string | null): Promise<
+  { success: true; categories: AssetCategoryRow[]; assets: AssetRow[]; canvaOnly: boolean } | { success: false; error: string }
 > {
   const denied = await denyUnless('asset.view');
   if (denied) return denied;
   const access = await getAccess();
-  const data = await loadAssetLibrary(access.unitIds);
-  return { success: true, ...data };
+  if (productionUnitId && access.unitIds && !access.unitIds.includes(productionUnitId)) {
+    return { success: false, error: 'Anda tidak punya akses ke production ini.' };
+  }
+  const isCanva = productionUnitId ? (await canvaProductionUnits([productionUnitId])).length > 0 : true;
+  const data = await loadAssetLibrary(access.unitIds, { forUnitId: productionUnitId ?? null });
+  return { success: true, ...data, canvaOnly: isCanva };
+}
+
+/** Ubah link pendek canva.link menjadi link desain lengkap (untuk form Tambah/Edit Aset). */
+export async function resolveCanvaLinkAction(url: string) {
+  const denied = await denyWrite('asset.manage');
+  if (denied) return denied as never;
+  try {
+    const resolved = await resolveCanvaShortLink(url);
+    const parsed = parseCanvaUrl(resolved);
+    return { success: true as const, url: parsed?.mode === 'view' ? normalizeCanvaViewUrl(resolved) : resolved };
+  } catch (error: any) {
+    const message = error?.name === 'TimeoutError' ? 'canva.link tidak merespons.' : error.message;
+    return { success: false as const, error: message || 'Gagal membuka link canva.link.' };
+  }
 }
 
 /**

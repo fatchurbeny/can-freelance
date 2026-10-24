@@ -262,13 +262,13 @@ export default function NotionConfigClient({ initialSyncLog }: { initialSyncLog:
               <div className="flex min-h-11 items-stretch text-xs">
                 <label htmlFor="nc-name" className="flex w-[150px] shrink-0 items-center border-r border-[#f0f0f0] bg-gray-50/50 px-5 font-bold text-gray-500 dark:border-[#272a34] dark:bg-[#16181d]/50 dark:text-gray-400">Workspace</label>
                 <input id="nc-name" value={inputWorkspaceName} onChange={(e) => setInputWorkspaceName(e.target.value)} placeholder="Nama workspace" required
-                  className="min-h-11 w-full rounded-none border-0 bg-gray-50/50 px-5 text-xs font-bold text-gray-900 outline-none focus:bg-white focus:ring-1 focus:ring-[#ff5e1f] dark:bg-[#16181d]/50 dark:text-white dark:focus:bg-[#16181d]" />
+                  className="min-h-11 w-full rounded-none border-0 bg-gray-50/50 px-5 text-xs font-bold text-gray-900 outline-none focus:bg-white focus:ring-1 focus:ring-inset focus:ring-[#ff5e1f] dark:bg-[#16181d]/50 dark:text-white dark:focus:bg-[#16181d]" />
               </div>
               <div className="flex min-h-11 items-stretch text-xs">
                 <label htmlFor="nc-key" className="flex w-[150px] shrink-0 items-center border-r border-[#f0f0f0] bg-gray-50/50 px-5 font-bold text-gray-500 dark:border-[#272a34] dark:bg-[#16181d]/50 dark:text-gray-400">API key</label>
                 <div className="relative flex-1">
                   <input id="nc-key" type={showApiKey ? 'text' : 'password'} value={inputApiKey} onChange={(e) => setInputApiKey(e.target.value)} placeholder="ntn_… / secret_…" required
-                    className="min-h-11 w-full rounded-none border-0 bg-gray-50/50 pl-5 pr-11 font-mono text-xs text-gray-900 outline-none focus:bg-white focus:ring-1 focus:ring-[#ff5e1f] dark:bg-[#16181d]/50 dark:text-white dark:focus:bg-[#16181d]" />
+                    className="min-h-11 w-full rounded-none border-0 bg-gray-50/50 pl-5 pr-11 font-mono text-xs text-gray-900 outline-none focus:bg-white focus:ring-1 focus:ring-inset focus:ring-[#ff5e1f] dark:bg-[#16181d]/50 dark:text-white dark:focus:bg-[#16181d]" />
                   <button type="button" onClick={() => setShowApiKey((v) => !v)} aria-label={showApiKey ? 'Sembunyikan API key' : 'Tampilkan API key'} className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 cursor-pointer">
                     {showApiKey ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
                   </button>

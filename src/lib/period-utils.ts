@@ -107,3 +107,29 @@ export function isTaskInPeriods(taskMonth: string | null | undefined, selectedPe
   }
   return false;
 }
+
+const keyToLabel = (year: number, monthIdx: number) => `${INDONESIAN_FULL_MONTHS[monthIdx]}-${year}`;
+
+/** Bulan berikutnya dari label periode, mis. "Desember-2026" → "Januari-2027"; null bila label tidak dikenali. */
+export function nextTaskMonth(taskMonth?: string | null): string | null {
+  const key = parseTaskMonthToKey(taskMonth);
+  if (!key) return null;
+  const [y, m] = key.split('-').map(Number);
+  return m === 12 ? keyToLabel(y + 1, 0) : keyToLabel(y, m);
+}
+
+/**
+ * Label bulan ("November-2026", …) yang tersentuh rentang tanggal inklusif ("YYYY-MM-DD" atau Date).
+ * Dipakai untuk periode order kontrak bundle.
+ */
+export function taskMonthsInRange(start: string | Date, end: string | Date): string[] {
+  const toKey = (v: string | Date) => (typeof v === 'string' ? v : v.toISOString()).slice(0, 7);
+  const [sy, sm] = toKey(start).split('-').map(Number);
+  const [ey, em] = toKey(end).split('-').map(Number);
+  const out: string[] = [];
+  for (let y = sy, m = sm; y < ey || (y === ey && m <= em); m === 12 ? (y++, m = 1) : m++) {
+    out.push(keyToLabel(y, m - 1));
+    if (out.length > 120) break;
+  }
+  return out;
+}

@@ -12,6 +12,8 @@ import { coverSrc, coverTint } from './asset-ui';
 interface Props {
   /** Markdown brief saat ini; aset di section Assets jadi pilihan awal. */
   body: string;
+  /** Production task: hanya aset untuk production ini (non-Canva → kosong). */
+  productionUnitId?: string;
   /** Section Assets baru (kosong = hapus section). */
   onInsert: (sectionMarkdown: string) => void;
   onClose: () => void;
@@ -23,10 +25,11 @@ const designIdOf = (url: string) => parseCanvaUrl(url)?.designId ?? url;
  * Panel "Ambil dari Library" di dalam drawer Edit Design Brief (tetap 2 stage, bukan drawer ketiga).
  * Lihat = preview Canva inline di baris itu.
  */
-export default function AssetPicker({ body, onInsert, onClose }: Props) {
+export default function AssetPicker({ body, productionUnitId, onInsert, onClose }: Props) {
   const [categories, setCategories] = useState<AssetCategoryRow[]>([]);
   const [assets, setAssets] = useState<AssetRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [canvaOnly, setCanvaOnly] = useState(true);
   const [query, setQuery] = useState('');
   const [tab, setTab] = useState('all');
   const [previewId, setPreviewId] = useState<string | null>(null);
@@ -36,9 +39,10 @@ export default function AssetPicker({ body, onInsert, onClose }: Props) {
 
   useEffect(() => {
     let alive = true;
-    getAssetLibraryAction().then((res) => {
+    getAssetLibraryAction(productionUnitId ?? null).then((res) => {
       if (!alive) return;
       if (!res.success) { setError(res.error); setAssets([]); return; }
+      setCanvaOnly(res.canvaOnly);
       setCategories(res.categories);
       setAssets(res.assets);
       const byDesign = new Map(res.assets.map((a) => [designIdOf(a.previewUrl), a.id]));
@@ -126,7 +130,9 @@ export default function AssetPicker({ body, onInsert, onClose }: Props) {
         ) : error ? (
           <div className="px-4 py-6 text-xs font-semibold text-rose-600">{error}</div>
         ) : visible.length === 0 ? (
-          <div className="px-4 py-6 text-center text-xs text-gray-500">{assets.length === 0 ? 'Asset Library masih kosong.' : 'Tidak ada aset yang cocok.'}</div>
+          <div className="px-4 py-6 text-center text-xs text-gray-500">
+            {!canvaOnly ? 'Asset Library berisi aset Canva, hanya untuk production berplatform Canva.' : assets.length === 0 ? 'Belum ada aset untuk production ini.' : 'Tidak ada aset yang cocok.'}
+          </div>
         ) : (
           <ul className="divide-y divide-[#f0f0f0] dark:divide-[#272a34]">
             {visible.map((a) => {

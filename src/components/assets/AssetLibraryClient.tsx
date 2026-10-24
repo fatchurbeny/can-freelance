@@ -46,8 +46,8 @@ export default function AssetLibraryClient({ categories, assets, units, canManag
     const q = search.trim().toLowerCase();
     const rows = scoped.filter((a) => {
       if (tab !== 'all' && a.categoryId !== tab) return false;
-      if (unit === 'shared' && a.productionUnitId) return false;
-      if (unit !== 'all' && unit !== 'shared' && a.productionUnitId !== unit && a.productionUnitId !== null) return false;
+      if (unit === 'shared' && a.productionUnitIds.length > 0) return false;
+      if (unit !== 'all' && unit !== 'shared' && a.productionUnitIds.length > 0 && !a.productionUnitIds.includes(unit)) return false;
       if (q && !`${a.title} ${a.tags.join(' ')}`.toLowerCase().includes(q)) return false;
       return true;
     });
@@ -177,7 +177,7 @@ export default function AssetLibraryClient({ categories, assets, units, canManag
                 onKeyDown={(e) => e.key === 'Escape' && setNewCategory(null)}
                 placeholder="Nama kategori"
                 aria-label="Nama kategori baru"
-                className="w-28 bg-white sm:w-40 px-3 text-xs font-bold outline-none focus:ring-1 focus:ring-[#ff5e1f] dark:bg-[#0d0e12]"
+                className="w-28 bg-white sm:w-40 px-3 text-xs font-bold outline-none focus:ring-1 focus:ring-inset focus:ring-[#ff5e1f] dark:bg-[#0d0e12]"
               />
               <button type="submit" disabled={pending} className="bg-[#ff5e1f] px-3 text-[11px] font-bold uppercase tracking-wider text-white hover:bg-[#ff7038] disabled:opacity-50 cursor-pointer">Simpan</button>
               <button type="button" onClick={() => setNewCategory(null)} aria-label="Batal" className="px-2 text-gray-400 hover:text-[#ff5e1f] cursor-pointer"><X className="h-4 w-4" /></button>
@@ -202,7 +202,7 @@ export default function AssetLibraryClient({ categories, assets, units, canManag
             )}
           </label>
           <div className="min-w-[150px] flex-1 sm:w-[190px] sm:flex-none"><SelectDropdown label="Production" value={unit} onChange={setUnit} buttonClassName={cell}
-            options={[{ value: 'all', label: 'ALL Production' }, { value: 'shared', label: 'Semua production' }, ...units.map((u) => ({ value: u.id, label: u.name }))]} /></div>
+            options={[{ value: 'all', label: 'ALL Production' }, { value: 'shared', label: 'Semua production Canva' }, ...units.map((u) => ({ value: u.id, label: u.name }))]} /></div>
           <div className="min-w-[130px] flex-1 sm:w-[170px] sm:flex-none"><SelectDropdown label="Urutkan" value={sort} onChange={setSort} buttonClassName={`${cell} ${canManage ? '' : 'border-r-0'}`}
             options={[{ value: 'updated', label: 'Terbaru' }, { value: 'title', label: 'Judul A–Z' }, { value: 'used', label: 'Paling dipakai' }]} /></div>
           {canManage && (
@@ -243,7 +243,7 @@ export default function AssetLibraryClient({ categories, assets, units, canManag
                   <div className="flex flex-col gap-1.5 px-3.5 pb-3.5 pt-3">
                     <span className="text-[13px] font-bold leading-snug text-gray-900 group-hover:text-[#ff5e1f] dark:text-white">{a.title}</span>
                     <span className="text-xs text-gray-500 dark:text-gray-400">
-                      {a.categoryName} · {a.productionName ?? 'Semua production'}{a.usedCount > 0 ? ` · ${a.usedCount} task` : ''}
+                      {a.categoryName} · {a.productionNames.length ? a.productionNames.join(', ') : 'Semua production Canva'}{a.usedCount > 0 ? ` · ${a.usedCount} task` : ''}
                     </span>
                     {a.tags.length > 0 && (
                       <span className="flex flex-wrap gap-1">

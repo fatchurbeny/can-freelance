@@ -141,7 +141,7 @@ export default function PagesDatabasesTab({ onChanged, onOpenAssetTab }: Props) 
           value={newPage}
           onChange={(e) => setNewPage(e.target.value)}
           placeholder="Tempel link page Notion atau ID 32 karakter"
-          className="h-11 min-w-[220px] flex-1 rounded-none border-0 bg-gray-50/50 px-5 text-xs text-gray-900 outline-none focus:bg-white focus:ring-1 focus:ring-[#ff5e1f] dark:bg-[#16181d]/50 dark:text-white dark:focus:bg-[#16181d]"
+          className="h-11 min-w-[220px] flex-1 rounded-none border-0 bg-gray-50/50 px-5 text-xs text-gray-900 outline-none focus:bg-white focus:ring-1 focus:ring-inset focus:ring-[#ff5e1f] dark:bg-[#16181d]/50 dark:text-white dark:focus:bg-[#16181d]"
         />
         <label className={`flex items-center gap-2 px-4 text-xs font-semibold text-gray-600 dark:text-gray-300 cursor-pointer ${BORDER_L}`}>
           <input type="checkbox" checked={makeDefault} onChange={(e) => setMakeDefault(e.target.checked)} className="h-4 w-4 accent-gray-900" />Jadikan default

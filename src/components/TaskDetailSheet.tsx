@@ -891,6 +891,7 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
 
           {/* DESIGN BRIEF & COMMENTS TABBED INTERFACE */}
           <DesignBriefSection
+            productionUnitId={task.productionUnitId}
             bodyText={bodyText}
             onBodyTextChange={(nextText) => {
               setBodyText(nextText);

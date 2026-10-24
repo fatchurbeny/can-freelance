@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { CheckCircle2 } from 'lucide-react';
 import { getDropboxStatusAction, disconnectDropboxAction } from '@/app/actions/production-unit';
 import type { PlatformOption, WizardData } from './types';
+import InfoTip from '../InfoTip';
 
 interface Props {
   data: WizardData;
@@ -57,14 +58,16 @@ export default function StepOutput({ data, platform, onChange }: Props) {
         </div>
 
         <div className="space-y-2">
-          <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-500">Folder Root (dalam Apps/impro-freelance)</label>
+          <label className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-gray-500">
+            Folder Root (dalam Apps/impro-freelance)
+            <InfoTip label="Folder root">Folder dibuat otomatis saat task pertama dibuat.</InfoTip>
+          </label>
           <input
             className="w-full h-11 rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] px-3 text-xs outline-none focus:ring-1 focus:ring-[#ff5e1f]"
             placeholder="/Freelance Elements"
             value={data.dropboxRoot}
             onChange={(e) => onChange({ dropboxRoot: e.target.value })}
           />
-          <p className="text-[11px] text-gray-400">Folder dibuat otomatis saat task pertama dibuat.</p>
         </div>
       </div>
     );

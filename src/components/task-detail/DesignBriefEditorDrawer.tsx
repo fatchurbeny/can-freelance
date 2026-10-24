@@ -28,6 +28,8 @@ interface Props {
   onInsertPalette: (paletteMarkdown: string) => void;
   /** Section "📦 Assets" baru dari Asset Library (string kosong = hapus section). */
   onInsertAssets?: (sectionMarkdown: string) => void;
+  /** Production task; picker hanya menampilkan aset untuk production ini. */
+  productionUnitId?: string;
   onClose: () => void;
   subtitle?: string;
   /** Harus di atas z-index drawer induk. */
@@ -43,6 +45,7 @@ export default function DesignBriefEditorDrawer({
   onChange,
   onInsertPalette,
   onInsertAssets,
+  productionUnitId,
   onClose,
   subtitle = 'Preview tampil di drawer sebelah kiri',
   zClassName = 'z-[60]',
@@ -133,6 +136,7 @@ export default function DesignBriefEditorDrawer({
         {pickerOpen && onInsertAssets && (
           <AssetPicker
             body={value}
+            productionUnitId={productionUnitId}
             onClose={() => setPickerOpen(false)}
             onInsert={(md) => {
               onInsertAssets(md);

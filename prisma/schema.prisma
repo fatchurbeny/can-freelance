@@ -82,6 +82,7 @@ model Designer {
   tasks             Task[]
   careerLogs        DesignerCareerLog[]
   bundleOrders      BundleOrder[]
+  bundleContracts   BundleContract[]
   user              User?
 
   @@map("designers")
@@ -363,6 +364,8 @@ model Platform {
   outputType        String           @default("canva_link") @map("output_type") // "canva_link" | "dropbox_link"
   baseRate          Int?             @map("base_rate") // tarif dasar per halaman; null = fallback NotionConfig.contractRate
   contractStartDate DateTime?        @map("contract_start_date") @db.Date
+  /// Akhir periode kontrak (inklusif); null = tanpa tanggal akhir.
+  contractEndDate   DateTime?        @map("contract_end_date") @db.Date
   createdAt         DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
   productionUnits   ProductionUnit[]
   doctypes          Doctype[]
@@ -388,7 +391,7 @@ model ProductionUnit {
   bundleItems        BundleItem[]
   memberships        Membership[]
   fields             ProductionField[]
-  assets             Asset[]
+  assets             AssetProduction[]
 
   @@map("production_units")
 }
@@ -430,16 +433,17 @@ model DropboxConnection {
 
 /// Kontrak multi-platform: satu harga paket (bayaran designer) untuk beberapa komponen.
 model Bundle {
-  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id            String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name          String
-  price         Decimal       @db.Decimal(14, 2)
-  effectiveFrom DateTime?     @map("effective_from") @db.Date
+  price         Decimal          @db.Decimal(14, 2)
+  effectiveFrom DateTime?        @map("effective_from") @db.Date
   notes         String?
-  isActive      Boolean       @default(true) @map("is_active")
-  createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt     DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  isActive      Boolean          @default(true) @map("is_active")
+  createdAt     DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   items         BundleItem[]
   orders        BundleOrder[]
+  contracts     BundleContract[]
   tasks         Task[]
 
   @@map("bundles")
@@ -464,28 +468,55 @@ model BundleItem {
 
 /// Satu pemesanan bundle; harga di-snapshot saat order dibuat. Tampil di Billing Statement seksi Bundle.
 model BundleOrder {
-  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  bundleId    String    @map("bundle_id") @db.Uuid
-  designerId  String?   @map("designer_id") @db.Uuid
-  period      String?
-  price       Decimal   @db.Decimal(14, 2)
-  status      String    @default("Open")
-  /// "Full" = lunas sekali bayar; "DP" = bayar uang muka dulu, sisanya saat pelunasan.
-  /// "Trial" atau "Kontrak" (kontrak = order manual per periode setelah trial oke).
-  orderType   String    @default("Trial") @map("order_type")
+  id                String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  bundleId          String          @map("bundle_id") @db.Uuid
+  designerId        String?         @map("designer_id") @db.Uuid
+  period            String?
+  price             Decimal         @db.Decimal(14, 2)
+  status            String          @default("Open")
+  /// "Trial" atau "Kontrak". Order kontrak = satu periode dari `BundleContract` (`contractId`).
+  orderType         String          @default("Trial") @map("order_type")
   /// Bulan payout ke designer; null = belum diset, masuk antrian Closing. Bisa sama/beda dengan `period`.
-  payoutMonth String?   @map("payout_month")
-  paymentType String    @default("Full") @map("payment_type")
-  dpAmount    Decimal   @default(0) @map("dp_amount") @db.Decimal(14, 2)
-  dpPaidAt    DateTime? @map("dp_paid_at") @db.Timestamptz(6)
-  paidAt      DateTime? @map("paid_at") @db.Timestamptz(6)
-  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  bundle      Bundle    @relation(fields: [bundleId], references: [id])
-  designer    Designer? @relation(fields: [designerId], references: [id])
-  tasks       Task[]
+  payoutMonth       String?         @map("payout_month")
+  /// "Full" = lunas sekali bayar; "DP" = bayar uang muka dulu, sisanya saat pelunasan.
+  paymentType       String          @default("Full") @map("payment_type")
+  dpAmount          Decimal         @default(0) @map("dp_amount") @db.Decimal(14, 2)
+  dpPaidAt          DateTime?       @map("dp_paid_at") @db.Timestamptz(6)
+  paidAt            DateTime?       @map("paid_at") @db.Timestamptz(6)
+  createdAt         DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  /// Order periode dari kontrak bundle (null = trial / order kontrak lama).
+  contractId        String?         @map("contract_id") @db.Uuid
+  bundle            Bundle          @relation(fields: [bundleId], references: [id])
+  designer          Designer?       @relation(fields: [designerId], references: [id])
+  contract          BundleContract? @relation("ContractOrders", fields: [contractId], references: [id])
+  /// Kontrak yang lahir dari order trial ini.
+  contractFromTrial BundleContract? @relation("ContractTrial")
+  tasks             Task[]
 
   @@index([bundleId])
+  @@index([contractId])
   @@map("bundle_orders")
+}
+
+/// Kontrak bundle setelah trial lolos (semua task approved). Order per periode dibuat manual di dalam periode ini.
+model BundleContract {
+  id                String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  bundleId          String        @map("bundle_id") @db.Uuid
+  designerId        String?       @map("designer_id") @db.Uuid
+  trialOrderId      String?       @unique @map("trial_order_id") @db.Uuid
+  /// Harga per periode (default harga paket bundle saat kontrak dibuat).
+  price             Decimal       @db.Decimal(14, 2)
+  contractStartDate DateTime      @map("contract_start_date") @db.Date
+  contractEndDate   DateTime      @map("contract_end_date") @db.Date
+  notes             String?
+  createdAt         DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  bundle            Bundle        @relation(fields: [bundleId], references: [id])
+  designer          Designer?     @relation(fields: [designerId], references: [id])
+  trialOrder        BundleOrder?  @relation("ContractTrial", fields: [trialOrderId], references: [id])
+  orders            BundleOrder[] @relation("ContractOrders")
+
+  @@index([bundleId])
+  @@map("bundle_contracts")
 }
 
 // ── Asset Library (docs/backlog/resources-library.md) ──
@@ -503,35 +534,46 @@ model AssetCategory {
 
 /// Aset Canva. App = sumber input utama; dimirror dua arah ke database Notion "Asset Library".
 model Asset {
-  id               String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  title            String
-  categoryId       String          @map("category_id") @db.Uuid
-  tags             String[]        @default([])
-  /// null = dipakai semua production
-  productionUnitId String?         @map("production_unit_id") @db.Uuid
+  id             String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title          String
+  categoryId     String            @map("category_id") @db.Uuid
+  tags           String[]          @default([])
   /// Link edit Canva (…/edit), butuh login akun tim.
-  editUrl          String?         @map("edit_url")
+  editUrl        String?           @map("edit_url")
   /// Public view link (…/view); preview iframe `?embed` tanpa login.
-  previewUrl       String          @map("preview_url")
-  coverUrl         String?         @map("cover_url")
-  pages            Int?
-  notes            String?
-  status           String          @default("active") // "active" | "archived"
-  source           String          @default("manual") // "manual" | "api"
-  canvaDesignId    String?         @map("canva_design_id")
-  notionPageId     String?         @unique @map("notion_page_id")
-  syncStatus       String          @default("PENDING_PUSH") @map("sync_status") // SYNCED | PENDING_PUSH | ERROR
-  lastSyncedAt     DateTime?       @map("last_synced_at") @db.Timestamptz(6)
-  lastEditedTime   DateTime        @default(now()) @map("last_edited_time") @db.Timestamptz(6)
-  createdAt        DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt        DateTime        @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  category         AssetCategory   @relation(fields: [categoryId], references: [id])
-  productionUnit   ProductionUnit? @relation(fields: [productionUnitId], references: [id])
-  taskLinks        TaskAsset[]
+  previewUrl     String            @map("preview_url")
+  coverUrl       String?           @map("cover_url")
+  pages          Int?
+  notes          String?
+  status         String            @default("active") // "active" | "archived"
+  source         String            @default("manual") // "manual" | "api"
+  canvaDesignId  String?           @map("canva_design_id")
+  notionPageId   String?           @unique @map("notion_page_id")
+  syncStatus     String            @default("PENDING_PUSH") @map("sync_status") // SYNCED | PENDING_PUSH | ERROR
+  lastSyncedAt   DateTime?         @map("last_synced_at") @db.Timestamptz(6)
+  lastEditedTime DateTime          @default(now()) @map("last_edited_time") @db.Timestamptz(6)
+  createdAt      DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  category       AssetCategory     @relation(fields: [categoryId], references: [id])
+  /// Production (platform Canva) yang boleh memakai aset; kosong = semua production Canva.
+  productions    AssetProduction[]
+  taskLinks      TaskAsset[]
 
   @@index([categoryId])
   @@index([previewUrl])
   @@map("assets")
+}
+
+/// Production yang boleh memakai aset (hanya production berplatform Canva).
+model AssetProduction {
+  assetId          String         @map("asset_id") @db.Uuid
+  productionUnitId String         @map("production_unit_id") @db.Uuid
+  asset            Asset          @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  productionUnit   ProductionUnit @relation(fields: [productionUnitId], references: [id], onDelete: Cascade)
+
+  @@id([assetId, productionUnitId])
+  @@index([productionUnitId])
+  @@map("asset_productions")
 }
 
 /// Aset yang dirujuk task (section "📦 Assets" di brief / relation "Assets" di Notion).

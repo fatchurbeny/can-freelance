@@ -5,8 +5,10 @@ import { createPortal } from 'react-dom';
 import { AlertTriangle, Plus, RefreshCw, Upload, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import PortalSelect from '@/components/production-fields/PortalSelect';
-import { createAssetAction, fetchCanvaInfoAction, updateAssetAction } from '@/app/actions/assets';
-import { publicViewUrlError } from '@/lib/canva-url';
+import PortalMultiSelect from '@/components/production-fields/PortalMultiSelect';
+import InfoTip from '@/components/InfoTip';
+import { createAssetAction, fetchCanvaInfoAction, resolveCanvaLinkAction, updateAssetAction } from '@/app/actions/assets';
+import { isCanvaShortLink, publicViewUrlError } from '@/lib/canva-url';
 import { compressImageToWebP } from '@/lib/color-extractor';
 import { APP_BASE_PATH } from '@/lib/base-path';
 import type { AssetCategoryRow, AssetRow } from '@/lib/asset-library';
@@ -26,13 +28,13 @@ interface Props {
 
 const row = 'flex min-h-11 items-stretch text-xs';
 const labelCell = 'flex w-[150px] shrink-0 items-center gap-2 whitespace-nowrap border-r border-[#f0f0f0] bg-gray-50/50 px-5 font-bold text-gray-500 select-none dark:border-[#272a34] dark:bg-[#16181d]/50 dark:text-gray-400';
-const input = 'h-full min-h-11 w-full rounded-none border-0 bg-gray-50/50 px-5 text-xs font-bold text-gray-900 outline-none focus:bg-white focus:ring-1 focus:ring-[#ff5e1f] dark:bg-[#16181d]/50 dark:text-white dark:focus:bg-[#16181d]';
+const input = 'h-full min-h-11 w-full rounded-none border-0 bg-gray-50/50 px-5 text-xs font-bold text-gray-900 outline-none focus:bg-white focus:ring-1 focus:ring-inset focus:ring-[#ff5e1f] dark:bg-[#16181d]/50 dark:text-white dark:focus:bg-[#16181d]';
 const smallBtn = 'flex h-10 items-center gap-1.5 border border-[#f0f0f0] bg-white px-3 text-xs font-bold text-gray-700 hover:text-[#ff5e1f] disabled:opacity-50 dark:border-[#272a34] dark:bg-[#0d0e12] dark:text-gray-300 cursor-pointer';
 
 export default function AssetFormDrawer({ asset, categories, units, defaultCategoryId, notionConnected, onClose, onSaved }: Props) {
   const [title, setTitle] = useState(asset?.title ?? '');
   const [categoryId, setCategoryId] = useState(asset?.categoryId ?? defaultCategoryId ?? categories[0]?.id ?? '');
-  const [unitId, setUnitId] = useState(asset?.productionUnitId ?? '');
+  const [unitIds, setUnitIds] = useState<string[]>(asset?.productionUnitIds ?? []);
   const [tags, setTags] = useState<string[]>(asset?.tags ?? []);
   const [tagDraft, setTagDraft] = useState('');
   const [editUrl, setEditUrl] = useState(asset?.editUrl ?? '');
@@ -51,8 +53,46 @@ export default function AssetFormDrawer({ asset, categories, units, defaultCateg
     return () => document.removeEventListener('keydown', onKey);
   }, [onClose]);
 
-  const previewError = useMemo(() => (previewUrl.trim() ? publicViewUrlError(previewUrl) : null), [previewUrl]);
-  const previewValid = !!previewUrl.trim() && !previewError;
+  // canva.link (tombol Copy di Canva) diubah otomatis ke link desain lengkap lewat server
+  const [resolving, setResolving] = useState<'preview' | 'edit' | null>(null);
+  const [shortLinkError, setShortLinkError] = useState<string | null>(null);
+  const [resolvedFromShort, setResolvedFromShort] = useState(false);
+
+  useEffect(() => {
+    const targets: ['preview' | 'edit', string, (v: string) => void][] = [
+      ['preview', previewUrl, setPreviewUrl],
+      ['edit', editUrl, setEditUrl],
+    ];
+    const pending = targets.find(([, value]) => isCanvaShortLink(value));
+    if (!pending) return;
+    const [field, value, set] = pending;
+    let alive = true;
+    const timer = setTimeout(async () => {
+      setResolving(field);
+      const res = await resolveCanvaLinkAction(value.trim());
+      if (!alive) return;
+      setResolving(null);
+      if (!res.success) {
+        if (field === 'preview') setShortLinkError(res.error);
+        else toast.error(res.error);
+        return;
+      }
+      if (field === 'preview') {
+        setShortLinkError(null);
+        setResolvedFromShort(true);
+      }
+      set(res.url);
+    }, 300);
+    return () => { alive = false; clearTimeout(timer); };
+  }, [previewUrl, editUrl]);
+
+  const previewIsShort = isCanvaShortLink(previewUrl);
+  const previewError = useMemo(() => {
+    if (!previewUrl.trim()) return null;
+    if (isCanvaShortLink(previewUrl)) return resolving === 'preview' ? null : shortLinkError;
+    return publicViewUrlError(previewUrl);
+  }, [previewUrl, resolving, shortLinkError]);
+  const previewValid = !!previewUrl.trim() && !previewIsShort && !previewError;
 
   const addTag = (raw: string) => {
     const next = raw.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean);
@@ -100,7 +140,7 @@ export default function AssetFormDrawer({ asset, categories, units, defaultCateg
         title,
         categoryId,
         tags: allTags,
-        productionUnitId: unitId || null,
+        productionUnitIds: unitIds,
         editUrl: editUrl || null,
         previewUrl,
         coverUrl,
@@ -159,11 +199,12 @@ export default function AssetFormDrawer({ asset, categories, units, defaultCateg
           <div className={row}>
             <span className={labelCell}>Production</span>
             <div className="flex-1">
-              <PortalSelect
+              <PortalMultiSelect
                 ariaLabel="Production"
-                value={unitId}
-                onChange={setUnitId}
-                options={[{ value: '', label: 'Semua production' }, ...units.map((u) => ({ value: u.id, label: u.name }))]}
+                values={unitIds}
+                onChange={setUnitIds}
+                emptyLabel="Semua production Canva"
+                options={units.map((u) => ({ value: u.id, label: u.name }))}
               />
             </div>
           </div>
@@ -194,26 +235,36 @@ export default function AssetFormDrawer({ asset, categories, units, defaultCateg
           <div className="bg-white px-5 py-2.5 text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:bg-[#0d0e12]">Link Canva</div>
 
           <div className={row}>
-            <label htmlFor="asset-edit" className={labelCell}>Link Edit</label>
+            <label htmlFor="asset-edit" className={labelCell}>Link Edit<InfoTip label="Link Edit">Link …/edit untuk tombol Buka di Canva; perlu login akun tim.</InfoTip></label>
             <div className="flex-1"><input id="asset-edit" type="url" value={editUrl} onChange={(e) => setEditUrl(e.target.value)} className={input} placeholder="https://www.canva.com/design/…/edit" /></div>
           </div>
           <div className="flex flex-col">
             <div className={row}>
-              <label htmlFor="asset-view" className={labelCell}>Public View</label>
+              <label htmlFor="asset-view" className={labelCell}>Public View<InfoTip label="Public View">Link canva.link atau …/design/…/view. Dipakai untuk preview tanpa login; canva.link diubah otomatis ke link lengkap.</InfoTip></label>
               <div className="flex-1">
                 <input
                   id="asset-view"
                   type="url"
                   value={previewUrl}
-                  onChange={(e) => setPreviewUrl(e.target.value)}
+                  onChange={(e) => { setPreviewUrl(e.target.value); setShortLinkError(null); setResolvedFromShort(false); }}
                   aria-invalid={!!previewError}
                   aria-describedby={previewError ? 'asset-view-error' : undefined}
-                  className={`${input} ${previewError ? 'bg-orange-50 ring-1 ring-[#ff5e1f] dark:bg-[#ff5e1f]/10' : ''}`}
-                  placeholder="https://www.canva.com/design/…/view"
+                  className={`${input} ${previewError ? 'bg-orange-50 ring-1 ring-inset ring-[#ff5e1f] dark:bg-[#ff5e1f]/10' : ''}`}
+                  placeholder="https://canva.link/… atau …/design/…/view"
                 />
               </div>
             </div>
-            {previewError && (
+            {resolving === 'preview' && (
+              <div className="flex items-center gap-2 border-t border-[#f0f0f0] bg-gray-50/60 px-5 py-2.5 text-xs text-gray-600 dark:border-[#272a34] dark:bg-[#16181d]/60 dark:text-gray-300">
+                <RefreshCw className="h-3.5 w-3.5 animate-spin text-[#ff5e1f]" /> Membuka canva.link…
+              </div>
+            )}
+            {resolvedFromShort && !previewError && (
+              <div className="border-t border-[#f0f0f0] bg-gray-50/60 px-5 py-2 text-[11px] text-gray-500 dark:border-[#272a34] dark:bg-[#16181d]/60 dark:text-gray-400">
+                Link canva.link diubah otomatis ke link desain lengkap.
+              </div>
+            )}
+                        {previewError && (
               <div id="asset-view-error" className="flex gap-2.5 border-t border-orange-200 bg-orange-50 px-5 py-2.5 text-xs leading-relaxed text-orange-900 dark:border-[#ff5e1f]/30 dark:bg-[#ff5e1f]/10 dark:text-orange-200">
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                 <span>{previewError}</span>
@@ -231,7 +282,7 @@ export default function AssetFormDrawer({ asset, categories, units, defaultCateg
           </div>
 
           <div className={row}>
-            <span className={labelCell}>Cover</span>
+            <span className={labelCell}>Cover<InfoTip label="Cover">Otomatis memakai thumbnail halaman pertama dari Canva. Upload bila ingin cover lain.</InfoTip></span>
             <div className="flex flex-1 flex-wrap items-center gap-2 px-5 py-2.5">
               {cover ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -254,9 +305,6 @@ export default function AssetFormDrawer({ asset, categories, units, defaultCateg
                 className="hidden"
                 onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadCover(f); e.target.value = ''; }}
               />
-              <span className="basis-full text-[11px] text-gray-500 dark:text-gray-400">
-                {coverUrl ? 'Memakai gambar upload.' : 'Otomatis memakai thumbnail halaman pertama dari Canva. Upload bila ingin cover lain.'}
-              </span>
             </div>
           </div>
           <div className={row}>
@@ -272,7 +320,7 @@ export default function AssetFormDrawer({ asset, categories, units, defaultCateg
                 onChange={(e) => setNotes(e.target.value)}
                 rows={4}
                 placeholder="Petunjuk pemakaian untuk designer"
-                className="h-full min-h-24 w-full resize-none rounded-none border-0 bg-gray-50/50 px-5 py-3 text-xs font-medium text-gray-900 outline-none focus:bg-white focus:ring-1 focus:ring-[#ff5e1f] dark:bg-[#16181d]/50 dark:text-white dark:focus:bg-[#16181d]"
+                className="h-full min-h-24 w-full resize-none rounded-none border-0 bg-gray-50/50 px-5 py-3 text-xs font-medium text-gray-900 outline-none focus:bg-white focus:ring-1 focus:ring-inset focus:ring-[#ff5e1f] dark:bg-[#16181d]/50 dark:text-white dark:focus:bg-[#16181d]"
               />
             </div>
           </div>

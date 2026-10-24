@@ -1,8 +1,7 @@
-import prisma from '@/lib/prisma';
 import TopBar from '@/components/TopBar';
 import AssetLibraryClient from '@/components/assets/AssetLibraryClient';
 import { requireAccess } from '@/lib/access';
-import { loadAssetLibrary, loadAssetSyncSummary } from '@/lib/asset-library';
+import { canvaProductionUnits, loadAssetLibrary, loadAssetSyncSummary } from '@/lib/asset-library';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,11 +13,8 @@ export default async function AssetsPage() {
   const [library, sync, units] = await Promise.all([
     loadAssetLibrary(access.unitIds, { includeArchived: canManage }),
     loadAssetSyncSummary(),
-    prisma.productionUnit.findMany({
-      where: { isActive: true, ...(access.unitIds ? { id: { in: access.unitIds } } : {}) },
-      orderBy: { createdAt: 'asc' },
-      select: { id: true, name: true },
-    }),
+    // Aset Canva hanya untuk production berplatform Canva
+    canvaProductionUnits(access.unitIds),
   ]);
 
   return (

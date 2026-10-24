@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { X, Plus, Copy, Save } from 'lucide-react';
 import toast from 'react-hot-toast';
 import SelectDropdown from '@/components/SelectDropdown';
+import InfoTip from '@/components/InfoTip';
 import { createUserAction, updateUserAction } from '@/app/actions/user-management';
 import { resetPinAction, setUserActiveAction } from '@/app/actions/auth';
 import { DESIGNER_ROLES, ROLE_KEYS, ROLE_LABELS, ROLE_SCOPE, type RoleKey } from '@/lib/permissions';
@@ -135,7 +136,10 @@ export default function UserDrawer({ mode, user, units, freeDesigners, meId, onC
           </div>
 
           <div className="space-y-1.5">
-            <div className={label}>Tipe</div>
+            <div className={`${label} flex items-center gap-1.5`}>
+              Tipe
+              {isEdit && <InfoTip label="Tipe">Tipe dan ID tidak bisa diubah setelah dibuat.</InfoTip>}
+            </div>
             <div className="grid h-11 grid-cols-2 border border-[#f0f0f0] dark:border-[#272a34]">
               {([['FULL_TIME', 'Full-time'], ['FREELANCE', 'Freelance']] as const).map(([v, text]) => (
                 <button
@@ -149,7 +153,6 @@ export default function UserDrawer({ mode, user, units, freeDesigners, meId, onC
                 </button>
               ))}
             </div>
-            {isEdit && <p className="text-[11px] text-gray-400">Tipe dan ID tidak bisa diubah setelah dibuat.</p>}
           </div>
 
           <div className="space-y-2">

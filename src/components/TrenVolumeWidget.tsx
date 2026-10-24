@@ -74,9 +74,13 @@ const CustomTooltip = ({ active, payload }: any) => {
 };
 
 export default function TrenVolumeWidget({ data, brandName }: TrenVolumeWidgetProps) {
+  // Brand diambil dari data (bukan hanya BRAND_COLORS), termasuk brand platform lain & "Tanpa Brand".
+  const META_KEYS = new Set(['key', 'monthLabel', 'tooltips']);
+  const dataBrands = Array.from(new Set(data.flatMap((d) => Object.keys(d).filter((k) => !META_KEYS.has(k) && !k.endsWith('_templates') && !k.endsWith('_pages')))));
+
   // Calculate average task count per month
   const monthlyTotals = data.map((d) => {
-    return Object.keys(BRAND_COLORS).reduce((acc, brand) => acc + (d[brand] || 0), 0);
+    return dataBrands.reduce((acc, brand) => acc + (d[brand] || 0), 0);
   });
   const avgTasks = monthlyTotals.length > 0
     ? Math.round(monthlyTotals.reduce((sum, val) => sum + val, 0) / monthlyTotals.length)
@@ -85,7 +89,7 @@ export default function TrenVolumeWidget({ data, brandName }: TrenVolumeWidgetPr
   // Determine active brands in data to generate Bar elements
   const activeBrands = brandName && brandName !== 'Semua Brand'
     ? [brandName]
-    : Object.keys(BRAND_COLORS).filter((brand) => data.some((d) => d[brand] > 0));
+    : dataBrands.filter((brand) => data.some((d) => d[brand] > 0));
 
   return (
     <div className="p-6 relative flex flex-col h-full min-h-[360px] bg-white dark:bg-[#0d0e12]">
@@ -96,7 +100,7 @@ export default function TrenVolumeWidget({ data, brandName }: TrenVolumeWidgetPr
             Tren Volume Task
           </h3>
           <p className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">
-            Jumlah Task Tiap Bulan - {brandName === 'Semua Brand' ? 'Semua Brand (6)' : brandName}
+            Jumlah Task Tiap Bulan - {brandName}
           </p>
         </div>
         <span className="font-sans text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 uppercase whitespace-nowrap shrink-0">

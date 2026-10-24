@@ -15,6 +15,7 @@ import {
   linkExistingAssetDatabase,
   pushPendingAssets,
 } from '@/lib/notion-assets';
+import { ASSET_PLATFORM_OUTPUT } from '@/lib/asset-productions';
 
 const API_KEY_MASK = '••••••••••••••••';
 const DOCTYPE_PROPERTY_NAME = 'Doctype';
@@ -348,8 +349,10 @@ export async function getAssetNotionStatusAction() {
     const config = await getConfig();
     if (!config) return { success: true as const, exists: false as const };
     const db = await getAssetDatabase();
-    const units = await prisma.productionUnit.findMany({ where: { isActive: true }, orderBy: { createdAt: 'asc' } });
+    const units = await prisma.productionUnit.findMany({ where: { isActive: true }, orderBy: { createdAt: 'asc' }, include: { platform: true } });
     const taskDbIds = new Set(units.map((u) => compactId(u.notionTaskDbId)));
+    // Relation "Assets" hanya relevan untuk production berplatform Canva
+    const canvaUnits = units.filter((u) => u.platform.outputType === ASSET_PLATFORM_OUTPUT);
     const pageNames = new Map(config.pages.map((p) => [p.pageId, p.name]));
     const candidates = config.databases
       .filter((row) => !row.archived && row.id !== db?.rowId)
@@ -362,7 +365,7 @@ export async function getAssetNotionStatusAction() {
       prisma.asset.aggregate({ _max: { lastSyncedAt: true } }),
     ]);
     const relations = db
-      ? await Promise.all(units.map(async (u) => ({
+      ? await Promise.all(canvaUnits.map(async (u) => ({
           unitId: u.id,
           unitName: u.name,
           state: u.notionTaskDbId ? await ensureAssetsRelationForTaskDb(u.notionTaskDbId, { create: false }) : 'missing',
@@ -418,8 +421,9 @@ export async function createAssetsRelationAction(unitId: string) {
   const denied = await denyWrite('integration.manage');
   if (denied) return denied as never;
   try {
-    const unit = await prisma.productionUnit.findUnique({ where: { id: unitId } });
+    const unit = await prisma.productionUnit.findUnique({ where: { id: unitId }, include: { platform: true } });
     if (!unit?.notionTaskDbId) throw new Error('Production ini belum punya database Notion.');
+    if (unit.platform.outputType !== ASSET_PLATFORM_OUTPUT) throw new Error('Asset Library hanya untuk production berplatform Canva.');
     const state = await ensureAssetsRelationForTaskDb(unit.notionTaskDbId);
     if (state === 'conflict') throw new Error('Database task sudah punya properti "Assets" dengan tipe/target lain. Ganti namanya di Notion dulu.');
     if (state === 'no_asset_db') throw new Error('Database Asset Library belum terhubung.');

@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import { setAssetStatusAction } from '@/app/actions/assets';
 import type { AssetRow } from '@/lib/asset-library';
 import CanvaEmbed from './CanvaEmbed';
+import InfoTip from '../InfoTip';
 
 interface Props {
   asset: AssetRow;
@@ -101,7 +102,7 @@ export default function AssetDetailDrawer({ asset, canManage, onClose, onEdit, o
 
           <dl className="divide-y divide-[#f0f0f0] border-b border-[#f0f0f0] dark:divide-[#272a34] dark:border-[#272a34]">
             <div className="flex min-h-11"><dt className={labelCell}>Kategori</dt><dd className={valueCell}>{asset.categoryName}</dd></div>
-            <div className="flex min-h-11"><dt className={labelCell}>Production</dt><dd className={valueCell}>{asset.productionName ?? 'Semua production'}</dd></div>
+            <div className="flex min-h-11"><dt className={labelCell}>Production</dt><dd className={valueCell}>{asset.productionNames.length ? asset.productionNames.join(', ') : 'Semua production Canva'}</dd></div>
             <div className="flex min-h-11">
               <dt className={labelCell}>Tag</dt>
               <dd className={`${valueCell} flex-wrap gap-1`}>
@@ -115,11 +116,8 @@ export default function AssetDetailDrawer({ asset, canManage, onClose, onEdit, o
               <dd className={`${valueCell} whitespace-pre-wrap font-medium leading-relaxed`}>{asset.notes || <span className="text-gray-400">—</span>}</dd>
             </div>
             <div className="flex min-h-11">
-              <dt className={labelCell}>Dipakai di</dt>
-              <dd className={`${valueCell} flex-col items-start justify-center gap-0.5`}>
-                <span>{asset.usedCount} task</span>
-                <span className="text-[11px] font-normal text-gray-500 dark:text-gray-400">dari section Assets di brief &amp; relation Notion</span>
-              </dd>
+              <dt className={`${labelCell} gap-1.5`}>Dipakai di<InfoTip label="Dipakai di">Dihitung dari section Assets di brief &amp; relation Notion.</InfoTip></dt>
+              <dd className={valueCell}>{asset.usedCount} task</dd>
             </div>
             <div className="flex min-h-11">
               <dt className={labelCell}>Notion</dt>

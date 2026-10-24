@@ -1,5 +1,8 @@
 import prisma from '@/lib/prisma';
 import { getAssetDatabase } from '@/lib/notion-assets';
+import { canvaProductionUnits } from '@/lib/asset-productions';
+
+export { canvaProductionUnits } from '@/lib/asset-productions';
 
 /** Baris aset untuk client (aman diserialisasi). */
 export interface AssetRow {
@@ -8,8 +11,9 @@ export interface AssetRow {
   categoryId: string;
   categoryName: string;
   tags: string[];
-  productionUnitId: string | null;
-  productionName: string | null;
+  /** Kosong = semua production Canva. */
+  productionUnitIds: string[];
+  productionNames: string[];
   editUrl: string | null;
   previewUrl: string;
   coverUrl: string | null;
@@ -39,23 +43,33 @@ export interface AssetSyncSummary {
 export const notionPageUrl = (pageId: string | null) => (pageId ? `https://www.notion.so/${pageId.replace(/-/g, '')}` : null);
 
 /**
- * Kategori + aset yang boleh dilihat (aset "semua production" atau production yang bisa diakses).
- * `unitIds` null = semua production.
+ * Kategori + aset yang boleh dilihat. Aset tanpa production = semua production Canva.
+ * `unitIds` null = semua production (admin); selain itu hanya aset untuk production Canva yang bisa diakses.
+ * `forUnitId` (picker brief) = aset yang boleh dipakai task di production itu; production non-Canva → kosong.
  */
 export async function loadAssetLibrary(
   unitIds: string[] | null,
-  opts: { includeArchived?: boolean } = {},
+  opts: { includeArchived?: boolean; forUnitId?: string | null } = {},
 ): Promise<{ categories: AssetCategoryRow[]; assets: AssetRow[] }> {
+  let scopeIds: string[] | null = null;
+  if (opts.forUnitId) scopeIds = (await canvaProductionUnits([opts.forUnitId])).map((u) => u.id);
+  else if (unitIds) scopeIds = (await canvaProductionUnits(unitIds)).map((u) => u.id);
+  const visible = scopeIds === null
+    ? {}
+    : { OR: [{ productions: { none: {} } }, { productions: { some: { productionUnitId: { in: scopeIds } } } }] };
   const [categories, assets] = await Promise.all([
     prisma.assetCategory.findMany({ where: { archived: false }, orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }] }),
-    prisma.asset.findMany({
-      where: {
-        ...(opts.includeArchived ? {} : { status: 'active' }),
-        ...(unitIds ? { OR: [{ productionUnitId: null }, { productionUnitId: { in: unitIds } }] } : {}),
-      },
-      include: { category: true, productionUnit: { select: { name: true } }, _count: { select: { taskLinks: true } } },
-      orderBy: { updatedAt: 'desc' },
-    }),
+    scopeIds !== null && scopeIds.length === 0
+      ? Promise.resolve([])
+      : prisma.asset.findMany({
+          where: { ...(opts.includeArchived ? {} : { status: 'active' }), ...visible },
+          include: {
+            category: true,
+            productions: { include: { productionUnit: { select: { name: true } } } },
+            _count: { select: { taskLinks: true } },
+          },
+          orderBy: { updatedAt: 'desc' },
+        }),
   ]);
   return {
     categories: categories.map((c) => ({ id: c.id, name: c.name, sortOrder: c.sortOrder })),
@@ -65,8 +79,8 @@ export async function loadAssetLibrary(
       categoryId: a.categoryId,
       categoryName: a.category.name,
       tags: a.tags,
-      productionUnitId: a.productionUnitId,
-      productionName: a.productionUnit?.name ?? null,
+      productionUnitIds: a.productions.map((p) => p.productionUnitId),
+      productionNames: a.productions.map((p) => p.productionUnit.name),
       editUrl: a.editUrl,
       previewUrl: a.previewUrl,
       coverUrl: a.coverUrl,

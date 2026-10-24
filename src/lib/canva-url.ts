@@ -50,9 +50,22 @@ export function toCanvaThumbnailUrl(url: string | null | undefined): string | nu
   return `https://www.canva.com/design/${parsed.designId}/${parsed.token}/screen?type=thumbnail`;
 }
 
+/** Link pendek Canva (`canva.link/<kode>`), default tombol Copy di menu Public view link. */
+export function isCanvaShortLink(url: string | null | undefined): boolean {
+  return !!url && /^(https?:\/\/)?(www\.)?canva\.link\/[A-Za-z0-9_-]+\/?(\?.*)?$/i.test(url.trim());
+}
+
+/** Public view link tanpa parameter pelacakan (utm_*), mis. hasil redirect canva.link. */
+export function normalizeCanvaViewUrl(url: string): string {
+  const parsed = parseCanvaUrl(url);
+  if (!parsed || parsed.mode !== 'view' || !parsed.token) return url.trim();
+  return `https://www.canva.com/design/${parsed.designId}/${parsed.token}/view`;
+}
+
 /** Pesan validasi untuk kolom Public View; null bila valid. */
 export function publicViewUrlError(url: string | null | undefined): string | null {
   if (!url?.trim()) return 'Public view link wajib diisi.';
+  if (isCanvaShortLink(url)) return 'Link canva.link belum bisa dibuka. Pastikan link public view masih aktif.';
   const parsed = parseCanvaUrl(url);
   if (!parsed) return 'Bukan link desain Canva.';
   if (parsed.mode === 'edit') return 'Ini link /edit dan butuh login. Di Canva buka Share → Public view link, lalu tempel link yang berakhiran /view.';

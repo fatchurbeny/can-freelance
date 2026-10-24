@@ -4,7 +4,9 @@ import { revalidatePath } from 'next/cache';
 import prisma from '@/lib/prisma';
 import { getAccess, denyUnless, denyWrite } from '@/lib/access';
 import { registerNotionDatabase } from '@/lib/notion-registry';
-import { ensureAssetsRelationForTaskDb } from '@/lib/notion-assets';
+import { ensureAssetsRelationForTaskDb, syncAssetProductionsAfterUnitChange } from '@/lib/notion-assets';
+import { runInBackground } from '@/lib/background-sync';
+import { ASSET_PLATFORM_OUTPUT } from '@/lib/asset-productions';
 import { syncNotionData } from '@/lib/sync-notion';
 import {
   createTaskDatabase,
@@ -25,6 +27,12 @@ export async function getProductionUnitsAction() {
     orderBy: { createdAt: 'asc' },
   });
   return JSON.parse(JSON.stringify(units));
+}
+
+/** Asset Library (relation "Assets") hanya untuk production berplatform Canva. */
+async function isCanvaPlatform(platformId: string): Promise<boolean> {
+  const platform = await prisma.platform.findUnique({ where: { id: platformId }, select: { outputType: true } });
+  return platform?.outputType === ASSET_PLATFORM_OUTPUT;
 }
 
 async function findUnit(unitId: string) {
@@ -54,7 +62,7 @@ export async function createProductionTaskDatabaseAction(input: { unitId: string
       data: { notionTaskDbId: databaseId, notionParentPageId: parentPageId },
     });
     await registerNotionDatabase(unit.name, databaseId, parentPageId);
-    await ensureAssetsRelationForTaskDb(databaseId);
+    if (await isCanvaPlatform(unit.platformId)) await ensureAssetsRelationForTaskDb(databaseId);
 
     revalidatePath('/production', 'layout');
     return { success: true, created: true, databaseId };
@@ -133,6 +141,18 @@ export async function listPlatformsAction() {
   if (denied) return denied as never;
   const platforms = await prisma.platform.findMany({ orderBy: { createdAt: 'asc' } });
   return JSON.parse(JSON.stringify(platforms));
+}
+
+/** Kelengkapan platform setelah production dibuat (doctype & akun masih kosong → tampilkan pengingat). */
+export async function getPlatformSetupAction(platformId: string) {
+  const denied = await denyUnless('production.create');
+  if (denied) return denied as never;
+  const [platform, doctypes, accounts] = await Promise.all([
+    prisma.platform.findUnique({ where: { id: platformId }, select: { name: true } }),
+    prisma.doctype.count({ where: { platformId } }),
+    prisma.account.count({ where: { platformId } }),
+  ]);
+  return { success: true as const, name: platform?.name ?? '', doctypes, accounts };
 }
 
 /** Daftar page induk untuk database Task baru (Notion Config → Pages), default lebih dulu. */
@@ -237,7 +257,11 @@ export async function createProductionUnitAction(input: CreateProductionUnitInpu
       },
     });
     await registerNotionDatabase(name, databaseId, parentPageId);
-    await ensureAssetsRelationForTaskDb(databaseId);
+    // Production Canva baru: relation "Assets" + masuk opsi Production di database Notion Asset Library
+    if (platform.outputType === ASSET_PLATFORM_OUTPUT) {
+      await ensureAssetsRelationForTaskDb(databaseId);
+      runInBackground('Opsi production Asset Library', () => syncAssetProductionsAfterUnitChange());
+    }
 
     try { revalidatePath('/production', 'layout'); } catch (_) {}
     return { success: true, unit: JSON.parse(JSON.stringify(unit)) };
@@ -289,6 +313,7 @@ export async function setProductionUnitArchivedAction(input: { unitId: string; a
   try {
     await findUnit(input.unitId);
     await prisma.productionUnit.update({ where: { id: input.unitId }, data: { isActive: !input.archived } });
+    if (!input.archived) runInBackground('Opsi production Asset Library', () => syncAssetProductionsAfterUnitChange());
     const sync = await syncAfterProductionChange();
     revalidateProduction();
     return { success: true, sync };
@@ -370,7 +395,10 @@ export async function updateProductionUnitAction(input: UpdateProductionUnitInpu
 
     if (databaseChanged) {
       await registerNotionDatabase(name, databaseId);
-      await ensureAssetsRelationForTaskDb(databaseId);
+      if (unit.platform.outputType === ASSET_PLATFORM_OUTPUT) await ensureAssetsRelationForTaskDb(databaseId);
+    }
+    if (name !== unit.name && unit.platform.outputType === ASSET_PLATFORM_OUTPUT) {
+      runInBackground('Rename production di Asset Library', () => syncAssetProductionsAfterUnitChange({ renamedUnitId: unit.id }));
     }
     const sync = databaseChanged ? await syncAfterProductionChange() : undefined;
     revalidateProduction();

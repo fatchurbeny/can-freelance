@@ -13,6 +13,7 @@ import {
   type FieldMapping,
 } from '@/lib/production-field-mapping';
 import PortalSelect from './PortalSelect';
+import InfoTip from '../InfoTip';
 
 interface Props {
   unitId: string;
@@ -134,8 +135,8 @@ export default function CoreFieldStructure({ unitId, fieldMapping, disabledField
       {offWarnings.length > 0 && (
         <div className="px-5 py-3 space-y-1 text-xs text-amber-600">{offWarnings.map((w) => <p key={w}>{w}</p>)}</div>
       )}
-      <div className="flex items-center justify-between gap-3 px-5 py-3">
-        <p className="text-[11px] text-gray-500 dark:text-gray-400">Field aktif yang belum ada di Notion akan dibuat saat simpan.</p>
+      <div className="flex items-center justify-end gap-2 px-5 py-3">
+        <InfoTip label="Simpan struktur field">Field aktif yang belum ada di Notion akan dibuat saat simpan.</InfoTip>
         <button
           type="button"
           onClick={save}

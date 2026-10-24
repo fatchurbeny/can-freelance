@@ -5,7 +5,12 @@ export interface PlatformOption {
   name: string;
   slug: string;
   outputType: 'canva_link' | 'dropbox_link' | string;
+  /** Tarif dasar kontrak; null = belum berkontrak (tidak bisa dipilih di wizard). */
+  baseRate?: number | null;
 }
+
+/** Production hanya dibuat untuk platform yang sudah berkontrak (Rate Card → Kontrak). */
+export const isContracted = (platform: PlatformOption | undefined) => platform?.baseRate != null;
 
 export interface WizardData {
   name: string;
