@@ -12,7 +12,8 @@ Dokumen ini memetakan struktur modul aplikasi Next.js 16 (App Router), Server Ac
 * **`/knowledge-graph`**: [src/app/knowledge-graph/page.tsx](file:///Users/fatchurbeny/Documents/Project/can-freelance/src/app/knowledge-graph/page.tsx) — Dashboard visual interaktif Knowledge Graph & penjelajah dokumen pengetahuan.
 * **`/rate-card`**: Editor tarif kontrak desainer & doctype.
 * **`/account-team`**: Manajemen desainer dan status keanggotaan.
-* **`/notion-config`**: Konfigurasi Notion Database ID & API token.
+* **`/notion-config`**: satu halaman dengan tab (gaya `ProductionTabNav`, tab aktif di `?tab=`): **Koneksi** (workspace, API key, panduan), **Pages & Databases** (`?tab=pages`; `/notion-config/databases` di-redirect ke sini), **Sinkronisasi** (metode/interval + riwayat `SyncLog`), **Asset Library**, **Email Notifikasi** (badge `!` bila Google perlu reconnect; kembali dari OAuth membuka tab ini). Komponen tab di `src/components/notion-config/`. Tombol *Sync Sekarang* mengirim event `notion-sync-request` ke `SyncButton` sidebar (satu alur & modal sync).
+* **`/assets`**: Asset Library — tab kategori, cari judul/tag, grid kartu (cover = thumbnail Canva / upload), drawer detail (iframe `…/view?embed` tanpa login, Buka di Canva = link edit) dan drawer Tambah/Edit (`asset.manage`). Komponen di `src/components/assets/`; action `src/app/actions/assets.ts`; loader `src/lib/asset-library.ts`.
 
 ---
 
@@ -44,3 +45,10 @@ Dokumen ini memetakan struktur modul aplikasi Next.js 16 (App Router), Server Ac
 | **KPISection** | [src/components/KPISection.tsx](file:///Users/fatchurbeny/Documents/Project/can-freelance/src/components/KPISection.tsx) | Widget ringkasan metrik utama (Total Tasks, QTY Pages, Templates, Unpaid Payroll). |
 | **SyncButton** | [src/components/SyncButton.tsx](file:///Users/fatchurbeny/Documents/Project/can-freelance/src/components/SyncButton.tsx) | Tombol trigger manual Notion Full Sync dengan indikator progress. |
 | **KnowledgeGraphViewer** | [src/components/KnowledgeGraphViewer.tsx](file:///Users/fatchurbeny/Documents/Project/can-freelance/src/components/KnowledgeGraphViewer.tsx) | Viewer interaktif Knowledge Graph dengan tab penjelajah grafis & dokumen. |
+
+---
+
+## 📦 Asset Library di Design Brief
+* Drawer **Edit Design Brief** punya tombol **Ambil dari Library** → `AssetPicker` sebagai panel di dalam drawer (tetap 2 stage, bukan drawer ketiga). Escape menutup picker dulu. Sisipkan → `mergeAssetsMarkdown` (`src/lib/asset-brief.ts`) mengganti section `## 📦 Assets` (`- [Judul](…/view) — hlm 3, 7`).
+* Preview brief: kind `assets` (`brief-parser.ts`, urutan setelah `links`) dirender `BriefAssetsList` (cover, kategori, halaman, preview iframe inline).
+* Helper link Canva: `src/lib/canva-url.ts` (`parseCanvaUrl`, `publicViewUrlError`, `toCanvaEmbedUrl`, `toCanvaThumbnailUrl`). Judul otomatis dari oEmbed `https://www.canva.com/_oembed` (`fetchCanvaInfoAction`).

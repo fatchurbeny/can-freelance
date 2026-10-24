@@ -14,6 +14,7 @@ import DesignBriefPreview from './task-detail/DesignBriefPreview';
 import CustomFieldsSection from './task-detail/CustomFieldsSection';
 import { type CustomFieldDef, isEmptyFieldValue } from './custom-fields/FieldValueDisplay';
 import DesignBriefEditorDrawer, { BRIEF_EDITOR_SHIFT_CLASS, mergePaletteMarkdown } from './task-detail/DesignBriefEditorDrawer';
+import { mergeAssetsMarkdown } from '@/lib/asset-brief';
 import { shufflePaletteMarkdown } from './task-detail/brief-parser';
 import { PRIORITY_OPTIONS, LICENSE_OPTIONS, getPagesForDoctype } from './task-form-utils';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
@@ -560,6 +561,7 @@ export default function CreateTaskSlideModal({ productionUnitId, open, onClose, 
           value={bodyText}
           onChange={setBodyText}
           onInsertPalette={(paletteMarkdown) => setBodyText((prev) => mergePaletteMarkdown(prev, paletteMarkdown))}
+          onInsertAssets={(sectionMarkdown) => setBodyText((prev) => mergeAssetsMarkdown(prev, sectionMarkdown))}
           onClose={() => setBriefEditing(false)}
           subtitle="Tersimpan saat Save Task · preview di kiri"
           zClassName="z-80"

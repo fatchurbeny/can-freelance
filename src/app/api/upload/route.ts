@@ -1,13 +1,11 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
-import crypto from 'crypto';
 import { authorizeApi } from '@/lib/api-auth';
+import { saveUploadedFile } from '@/lib/upload-storage';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
-  const denied = await authorizeApi('task.edit', { write: true });
+  const denied = await authorizeApi(['task.edit', 'asset.manage'], { write: true });
   if (denied) return denied;
   try {
     const formData = await request.formData();
@@ -24,18 +22,7 @@ export async function POST(request: Request) {
 
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    // Generate clean unique filename based on content hash and timestamp
-    const hash = crypto.randomBytes(6).toString('hex');
-    const filename = `ref-${Date.now()}-${hash}.webp`;
-
-    // Ensure uploads directory exists in public folder
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-
-    const filePath = path.join(uploadDir, filename);
-    fs.writeFileSync(filePath, buffer);
+    const filename = saveUploadedFile(buffer);
 
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://portal.fatchurbeny.com/can-freelance';
     const publicUrl = baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1')

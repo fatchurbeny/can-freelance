@@ -14,6 +14,7 @@ import { runInBackground } from '@/lib/background-sync';
 import { attachUploadRequest } from '@/lib/dropbox-output';
 import { resolveWriteName, type FieldKey, type FieldMapping } from '@/lib/production-field-mapping';
 import { customFieldProperties, titlePropertyName } from '@/lib/notion-task-properties';
+import { assetsRelationProperty, resolveBriefAssets, syncTaskAssetLinks } from '@/lib/notion-assets';
 
 async function getNotionClientAndDatabase(databaseIdOverride?: string | null) {
   const activeConfig = await prisma.notionConfig.findFirst({
@@ -143,6 +144,23 @@ async function getNotionPageStatusProperty(notionClient: Client, page: any, prop
     console.warn('Failed to retrieve Notion status property from schema:', err);
   }
   return null;
+}
+
+/** Rich text Notion dari satu baris markdown: `[teks](url)` dan URL tunggal jadi link. */
+function toRichText(content: string): any[] {
+  const bare = content.trim().match(/^(https?:\/\/[^\s]+)$/i);
+  if (bare) return [{ type: 'text', text: { content, link: { url: bare[1] } } }];
+  const parts: any[] = [];
+  const linkRe = /\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g;
+  let last = 0;
+  let match: RegExpExecArray | null;
+  while ((match = linkRe.exec(content)) !== null) {
+    if (match.index > last) parts.push({ type: 'text', text: { content: content.slice(last, match.index) } });
+    parts.push({ type: 'text', text: { content: match[1], link: { url: match[2] } } });
+    last = match.index + match[0].length;
+  }
+  if (last < content.length) parts.push({ type: 'text', text: { content: content.slice(last) } });
+  return parts.length > 0 ? parts : [{ type: 'text', text: { content } }];
 }
 
 function markdownToNotionBlocks(bodyText: string): any[] {
@@ -286,21 +304,10 @@ function markdownToNotionBlocks(bodyText: string): any[] {
       });
     } else if (line.startsWith('- ') || line.startsWith('* ')) {
       const content = line.replace(/^[-*]\s+/, '');
-      const urlMatch = content.match(/^(https?:\/\/[^\s]+)$/i);
       blocks.push({
         object: 'block',
         type: 'bulleted_list_item',
-        bulleted_list_item: {
-          rich_text: [
-            {
-              type: 'text',
-              text: {
-                content,
-                link: urlMatch ? { url: urlMatch[1] } : undefined,
-              },
-            },
-          ],
-        },
+        bulleted_list_item: { rich_text: toRichText(content) },
       });
     } else {
       // Check for Markdown image syntax: ![alt](url)
@@ -317,21 +324,10 @@ function markdownToNotionBlocks(bodyText: string): any[] {
           },
         });
       } else {
-        const urlMatch = line.match(/^(https?:\/\/[^\s]+)$/i);
         blocks.push({
           object: 'block',
           type: 'paragraph',
-          paragraph: {
-            rich_text: [
-              {
-                type: 'text',
-                text: {
-                  content: rawLine,
-                  link: urlMatch ? { url: urlMatch[1] } : undefined,
-                },
-              },
-            ],
-          },
+          paragraph: { rich_text: toRichText(rawLine) },
         });
       }
     }
@@ -698,6 +694,14 @@ export async function createTaskAction(payload: CreateTaskPayload) {
 
         Object.assign(notionProperties, await customFieldProperties(targetUnit.id, payload.customFields, schemaProps));
 
+        // Relation "Assets" dari section Assets di brief
+        const briefAssets = await resolveBriefAssets(payload.bodyText);
+        const assetsRelation = assetsRelationProperty(
+          schemaProps,
+          briefAssets.map((a) => a.notionPageId).filter((id): id is string => !!id),
+        );
+        if (assetsRelation && briefAssets.length > 0) Object.assign(notionProperties, assetsRelation);
+
         const newNotionPage: any = await notionConfig.client.pages.create({
           parent: { database_id: notionConfig.databaseId },
           properties: notionProperties,
@@ -766,6 +770,8 @@ export async function createTaskAction(payload: CreateTaskPayload) {
         productionUnit: { connect: { id: targetUnit.id } },
       },
     });
+
+    if (task.bodyText) await syncTaskAssetLinks(task.id, task.bodyText);
 
     // Platform Dropbox: buat File Request di latar belakang (tidak menahan respons simpan)
     runInBackground('dropbox-upload-request', () => attachUploadRequest(task.id));
@@ -931,6 +937,11 @@ export async function updateTaskFieldsAction(taskId: string, payload: TaskUpdate
       data: updateData,
     });
 
+    // Aset Library yang dirujuk brief → TaskAsset (hitungan "Dipakai di") + relation Notion
+    const assetPageIds = payload.bodyText !== undefined
+      ? await syncTaskAssetLinks(taskId, updateData.bodyText as string | null | undefined)
+      : null;
+
     // Best-effort Notion sync offloaded to background
     const isMockTask = existingTask.notionPageId.startsWith('sync_mock_page_');
     if (!isMockTask) {
@@ -1063,6 +1074,8 @@ export async function updateTaskFieldsAction(taskId: string, payload: TaskUpdate
 
         // Field tambahan production
         Object.assign(notionProperties, await customFieldProperties(existingTask.productionUnitId, payload.customFields, schemaProps));
+
+        if (assetPageIds) Object.assign(notionProperties, assetsRelationProperty(schemaProps, assetPageIds) ?? {});
 
         if (Object.keys(notionProperties).length > 0) {
           await notionClient.pages.update({

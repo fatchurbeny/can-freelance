@@ -193,6 +193,7 @@ model Task {
   productionUnit   ProductionUnit  @relation(fields: [productionUnitId], references: [id])
   taskAccounts     TaskAccount[]
   canvaLinks       TaskCanvaLink[]
+  assetLinks       TaskAsset[]
   comments         TaskComment[]
   designStatus     DesignStatus?   @relation(fields: [designStatusId], references: [id])
   designer         Designer?       @relation(fields: [designerId], references: [id])
@@ -268,6 +269,8 @@ model NotionDatabase {
   archived            Boolean      @default(false)
   /// Page induk di Notion (ID 32 hex) bila diketahui.
   parentPageId        String?      @map("parent_page_id")
+  /// Kegunaan khusus; "asset_library" = database mirror Asset Library (maks. satu yang aktif).
+  purpose             String?
   config              NotionConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
 
   @@map("notion_databases")
@@ -385,6 +388,7 @@ model ProductionUnit {
   bundleItems        BundleItem[]
   memberships        Membership[]
   fields             ProductionField[]
+  assets             Asset[]
 
   @@map("production_units")
 }
@@ -482,4 +486,65 @@ model BundleOrder {
 
   @@index([bundleId])
   @@map("bundle_orders")
+}
+
+// ── Asset Library (docs/backlog/resources-library.md) ──
+/// Tab kategori di /assets (Icon, Ilustrasi, Template, Mockup, …).
+model AssetCategory {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String   @unique
+  sortOrder Int      @default(0) @map("sort_order")
+  archived  Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  assets    Asset[]
+
+  @@map("asset_categories")
+}
+
+/// Aset Canva. App = sumber input utama; dimirror dua arah ke database Notion "Asset Library".
+model Asset {
+  id               String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title            String
+  categoryId       String          @map("category_id") @db.Uuid
+  tags             String[]        @default([])
+  /// null = dipakai semua production
+  productionUnitId String?         @map("production_unit_id") @db.Uuid
+  /// Link edit Canva (…/edit), butuh login akun tim.
+  editUrl          String?         @map("edit_url")
+  /// Public view link (…/view); preview iframe `?embed` tanpa login.
+  previewUrl       String          @map("preview_url")
+  coverUrl         String?         @map("cover_url")
+  pages            Int?
+  notes            String?
+  status           String          @default("active") // "active" | "archived"
+  source           String          @default("manual") // "manual" | "api"
+  canvaDesignId    String?         @map("canva_design_id")
+  notionPageId     String?         @unique @map("notion_page_id")
+  syncStatus       String          @default("PENDING_PUSH") @map("sync_status") // SYNCED | PENDING_PUSH | ERROR
+  lastSyncedAt     DateTime?       @map("last_synced_at") @db.Timestamptz(6)
+  lastEditedTime   DateTime        @default(now()) @map("last_edited_time") @db.Timestamptz(6)
+  createdAt        DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime        @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  category         AssetCategory   @relation(fields: [categoryId], references: [id])
+  productionUnit   ProductionUnit? @relation(fields: [productionUnitId], references: [id])
+  taskLinks        TaskAsset[]
+
+  @@index([categoryId])
+  @@index([previewUrl])
+  @@map("assets")
+}
+
+/// Aset yang dirujuk task (section "📦 Assets" di brief / relation "Assets" di Notion).
+model TaskAsset {
+  taskId    String   @map("task_id") @db.Uuid
+  assetId   String   @map("asset_id") @db.Uuid
+  /// Halaman yang dipakai, mis. "3, 7, 12"; null = semua.
+  pages     String?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  asset     Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, assetId])
+  @@index([assetId])
+  @@map("task_assets")
 }

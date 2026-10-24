@@ -343,3 +343,9 @@ Dokumen ini mencatat histori bug, edge cases, serta aturan layout CSS/React untu
   4. **Notion Image Markdown Translation (`src/app/actions/qa.ts`)**:
      - Saat markdown memuat syntax `![alt](url)`, parser otomatis menghasilkan Notion block berjenis `image` (`external.url`) sehingga gambar acuan desain tampil utuh di Notion di atas strip palet warna.
 
+### 34. Asset Library: preview & cover Canva tanpa login
+* **Preview**: public view link + `?embed` bisa di-iframe tanpa login; link `/edit` selalu minta login. Token edit ≠ token view, jadi view link tidak bisa diturunkan dari edit link → form menolak `/edit` di kolom Public View.
+* **Cover**: `og:image` halaman view Canva hanya logo generik (`fb_cover-1.jpg`), dan `…/screen?type=thumbnail` ditolak (403) bila diminta dari server. Browser bisa memuatnya langsung, jadi cover default = `toCanvaThumbnailUrl(previewUrl)` dimuat client; upload opsional menimpa. Judul diambil dari oEmbed (`/_oembed`, berhasil dari server).
+* **Escape di iframe**: saat fokus di dalam iframe Canva, keydown tidak sampai ke halaman; Escape baru bekerja setelah fokus kembali ke halaman.
+* **Relation dual_property**: `ensureRelationProperty` membuat kolom balik di database aset (nama = judul database task). Membuat relation mengubah skema database task live, jadi untuk production yang sudah ada dilakukan manual per production.
+* **`db push` saat sesi lain punya tabel belum di-commit**: `prisma db push` akan DROP tabel yang tidak ada di schema worktree. Pakai `prisma migrate diff --from-config-datasource --to-schema … --script`, buang statement DROP, lalu `prisma db execute`.

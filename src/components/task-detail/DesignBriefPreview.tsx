@@ -4,6 +4,8 @@ import { useState, type ReactNode } from 'react';
 import { ExternalLink, Check, Copy, FileText, Plus, Shuffle, Link as LinkIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { classifyHeading, cleanHeading, sortByBriefOrder, NOTES_HEADING, type BriefKind } from './brief-parser';
+import BriefAssetsList from '../assets/BriefAssetsList';
+import { parseAssetSection, type BriefAssetRef } from '@/lib/asset-brief';
 
 interface Props {
   bodyText: string;
@@ -24,6 +26,7 @@ interface PreviewCard {
   colors?: Swatch[];
   links?: BriefLink[];
   tags?: string[];
+  assets?: BriefAssetRef[];
 }
 
 function splitSections(markdown: string) {
@@ -84,6 +87,10 @@ function buildCards(markdown: string): PreviewCard[] {
       const existing = cards.find((c) => c.kind === 'links');
       if (existing) { existing.links!.push(...links); continue; }
       cards.push({ kind, title: 'Template Wireframe & Reference', content, links });
+      continue;
+    }
+    if (kind === 'assets') {
+      cards.push({ kind, title: title || 'Assets', content, assets: parseAssetSection(`## Assets\n${content}`) });
       continue;
     }
     if (kind === 'image') {
@@ -233,6 +240,14 @@ export default function DesignBriefPreview({ bodyText, onAddNotes, onShufflePale
               ) : (
                 <p className="p-4 text-xs text-gray-500">Kode warna belum ada.</p>
               )}
+            </Card>
+          );
+        }
+        if (card.kind === 'assets') {
+          const refs = card.assets ?? [];
+          return (
+            <Card key={i} index={n} title={card.title} meta={refs.length ? `${refs.length} aset` : undefined}>
+              <BriefAssetsList refs={refs} />
             </Card>
           );
         }

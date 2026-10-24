@@ -1,9 +1,6 @@
-import NotionDatabasesClient from '@/components/NotionDatabasesClient';
-import { requireAccess } from '@/lib/access';
+import { redirect } from 'next/navigation';
 
-export const dynamic = 'force-dynamic';
-
-export default async function DatabasesPage() {
-  await requireAccess(['integration.manage']);
-  return <NotionDatabasesClient />;
+/** Pages & Databases kini tab di /notion-config; tautan lama diarahkan ke sana. */
+export default function DatabasesPage() {
+  redirect('/notion-config?tab=pages');
 }

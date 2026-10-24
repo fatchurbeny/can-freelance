@@ -3,7 +3,8 @@
 import { revalidatePath } from 'next/cache';
 import prisma from '@/lib/prisma';
 import { getAccess, denyUnless, denyWrite } from '@/lib/access';
-import { encrypt, decrypt } from '@/lib/encryption';
+import { registerNotionDatabase } from '@/lib/notion-registry';
+import { ensureAssetsRelationForTaskDb } from '@/lib/notion-assets';
 import { syncNotionData } from '@/lib/sync-notion';
 import {
   createTaskDatabase,
@@ -24,36 +25,6 @@ export async function getProductionUnitsAction() {
     orderBy: { createdAt: 'asc' },
   });
   return JSON.parse(JSON.stringify(units));
-}
-
-/**
- * Daftarkan database Task production ke daftar Notion Config → Databases agar fitur yang masih
- * membaca daftar itu (QA, Parameter Issue, opsi Doctype) ikut mengenalnya. Lewati bila ID sudah
- * terdaftar atau Notion Config belum ada. Best-effort: kegagalan tidak membatalkan aksi production.
- */
-async function registerNotionDatabase(name: string, databaseId: string, parentPageId?: string | null) {
-  try {
-    const config = await prisma.notionConfig.findFirst({ include: { databases: true } });
-    if (!config || !databaseId) return;
-    const normalize = (id: string) => id.replace(/-/g, '').toLowerCase();
-    const target = normalize(databaseId);
-    const parent = parentPageId ? normalize(parentPageId) : null;
-    const existing = config.databases.find((db) => {
-      try { return normalize(decrypt(db.encryptedDatabaseId, db.iv)) === target; } catch { return false; }
-    });
-    if (existing) {
-      // Dipakai lagi oleh production: keluarkan dari arsip, lengkapi page induk
-      if (existing.archived || (!existing.parentPageId && parent)) {
-        await prisma.notionDatabase.update({ where: { id: existing.id }, data: { archived: false, parentPageId: existing.parentPageId ?? parent } });
-      }
-      return;
-    }
-    const { iv, encryptedData } = encrypt(databaseId);
-    await prisma.notionDatabase.create({ data: { name, encryptedDatabaseId: encryptedData, iv, configId: config.id, parentPageId: parent } });
-    try { revalidatePath('/notion-config', 'layout'); } catch {}
-  } catch (error: any) {
-    console.warn(`Gagal mendaftarkan database Notion "${name}" ke Notion Config:`, error?.message || error);
-  }
 }
 
 async function findUnit(unitId: string) {
@@ -83,6 +54,7 @@ export async function createProductionTaskDatabaseAction(input: { unitId: string
       data: { notionTaskDbId: databaseId, notionParentPageId: parentPageId },
     });
     await registerNotionDatabase(unit.name, databaseId, parentPageId);
+    await ensureAssetsRelationForTaskDb(databaseId);
 
     revalidatePath('/production', 'layout');
     return { success: true, created: true, databaseId };
@@ -265,6 +237,7 @@ export async function createProductionUnitAction(input: CreateProductionUnitInpu
       },
     });
     await registerNotionDatabase(name, databaseId, parentPageId);
+    await ensureAssetsRelationForTaskDb(databaseId);
 
     try { revalidatePath('/production', 'layout'); } catch (_) {}
     return { success: true, unit: JSON.parse(JSON.stringify(unit)) };
@@ -395,7 +368,10 @@ export async function updateProductionUnitAction(input: UpdateProductionUnitInpu
       },
     });
 
-    if (databaseChanged) await registerNotionDatabase(name, databaseId);
+    if (databaseChanged) {
+      await registerNotionDatabase(name, databaseId);
+      await ensureAssetsRelationForTaskDb(databaseId);
+    }
     const sync = databaseChanged ? await syncAfterProductionChange() : undefined;
     revalidateProduction();
     return { success: true, unit: JSON.parse(JSON.stringify(updated)), sync, databaseChanged };
