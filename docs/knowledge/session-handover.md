@@ -10,7 +10,7 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 
 ## 📌 Status Aktif
 
-* **Branch**: `feat/asset-library` (PR #9, Auto-fix aktif) **dirilis ke VPS 2026-10-25** (`48079e1`), belum di-merge ke `main` · **Peran terakhir**: `🛡️ [DevOps & Release]`
+* **Branch**: `feat/asset-library` (PR #9, Auto-fix aktif) **dirilis ke VPS 2026-10-25** (terakhir `8f8e837`), belum di-merge ke `main` · **Peran terakhir**: `🛡️ [DevOps & Release]`
 * **Multi-Production**: Fase 1–8 sebagian besar selesai (Production Hub, platform per production, Dropbox File Request untuk Envato Elements, Bundle & Order Bundle, tarif per platform). Detail rencana: [`multi-production-plan.md`](multi-production-plan.md).
 * **User Role Fase 1**: login ID + PIN 6 digit, role berbasis permission, Membership per ProductionUnit, "Lihat sebagai", halaman `/user-role`, `/profile`. Spec: [`user-role-spec.md`](user-role-spec.md). `AUTH_MODE=session` aktif di `.env` lokal dan VPS Biznet GIO.
 * **Sidebar**: pindah ke `layout.tsx` (`AppSidebar`), grup dropdown gaya pohon. Pola baku: [`sidebar-dropdown-pattern.md`](sidebar-dropdown-pattern.md).
@@ -18,7 +18,7 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 ## ⏳ Belum Selesai / Menunggu
 
 * Ganti PIN admin `FT-001` (menunggu user).
-* Kode di VPS = `feat/asset-library` `48079e1`. Backup DB sebelum rilis: `~/db-backups/can-freelance-20261025-130650-pre-unique-design.dump`. **SSH VPS kini juga di port 2222** (`/etc/systemd/system/ssh.socket.d/port.conf`) karena jaringan kantor & hotspot memblokir port 22 keluar: deploy `VPS_SSH_PORT=2222 npm run deploy:vps`.
+* Kode di VPS = `feat/asset-library` `8f8e837`. Backup DB sebelum rilis: `~/db-backups/can-freelance-20261025-130650-pre-unique-design.dump`. **SSH VPS kini juga di port 2222** (`/etc/systemd/system/ssh.socket.d/port.conf`) karena jaringan kantor & hotspot memblokir port 22 keluar: deploy `VPS_SSH_PORT=2222 npm run deploy:vps`.
 * Tombol "Download all Statement" di `/billing-statement` mengarah ke `/api/billing/download-all` yang tidak ada (dan `<a>` tanpa basePath) → selalu 404.
 * Print statement (`/billing-statement/print`) memanggil `window.print()` otomatis.
 * Escape saat dropdown terbuka di drawer `/user-role` menutup seluruh drawer (isian hilang).
@@ -40,7 +40,7 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 
 ### 2026-10-25 — Rilis Asset Library lanjutan (Claude Code, `🎨 [Frontend & UI/UX]`, `🔄 [API & Notion Integration]`, `🛡️ [DevOps & Release]`)
 * Sub-tab Notion Config (Asset Library / Pages & Databases / Sinkronisasi, `?sub=`), impor aset dari database Notion (+ perbarui judul & tag), `canva_design_id` unik, pindai database di sub-page, ikon & ilustrasi kategori (3D, Shape & Label), info field via `InfoTip`, preset periode kontrak, kolom Designer/Doctype di Production Hub, tab "Tanpa Brand" di Overview.
-* **Asset Report** (`/asset-report`, menu di bawah Production, sub-menu per kategori; desain https://claude.ai/artifact/1bRjBCU85gn84C85Cm27Lb): diuji lokal dengan data uji sementara (sudah dihapus); belum di VPS. Wireframe role belum diperbarui untuk menu ini.
+* **Asset Report** (`/asset-report`, menu di bawah Production, sub-menu per kategori; desain https://claude.ai/artifact/1bRjBCU85gn84C85Cm27Lb): diuji lokal dengan data uji sementara (sudah dihapus); **dirilis ke VPS 2026-10-25** (`8f8e837`, tanpa perubahan skema). Wireframe role belum diperbarui untuk menu ini.
 * Rincian sesi 2026-10-24 (Asset Library, kontrak, rilis pertama) dipindah ke arsip `archive/session-handover-from-2026-10-17.md`.
 ---
 
