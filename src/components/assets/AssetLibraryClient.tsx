@@ -10,6 +10,7 @@ import type { AssetCategoryRow, AssetRow, AssetSyncSummary } from '@/lib/asset-l
 import AssetDetailDrawer from './AssetDetailDrawer';
 import AssetFormDrawer from './AssetFormDrawer';
 import { coverSrc, coverTint, formatRelative } from './asset-ui';
+import { CategoryIcon, CategoryIllustration } from './CategoryArt';
 
 export interface UnitOption { id: string; name: string }
 
@@ -57,6 +58,9 @@ export default function AssetLibraryClient({ categories, assets, units, canManag
   }, [scoped, tab, unit, search, sort]);
 
   const countFor = (categoryId: string) => scoped.filter((a) => categoryId === 'all' || a.categoryId === categoryId).length;
+  const activeCategory = tab === 'all' ? null : categories.find((c) => c.id === tab) ?? null;
+  // Kategori (atau library) memang kosong, bukan hasil filter pencarian/production
+  const categoryEmpty = countFor(tab) === 0;
 
   const runSync = () =>
     startTransition(async () => {
@@ -142,6 +146,7 @@ export default function AssetLibraryClient({ categories, assets, units, canManag
                       : 'bg-[#f8f9fa] font-medium text-gray-600 hover:bg-[#f0f1f3] hover:text-gray-900 dark:bg-[#0d0e12] dark:text-gray-400 dark:hover:bg-[#16181d]/50 dark:hover:text-gray-200'
                   }`}
                 >
+                  {c.id !== 'all' && <CategoryIcon name={c.name} className="h-4 w-4 shrink-0" />}
                   <span>{c.name}</span>
                   {count > 0 && (
                     <span
@@ -212,8 +217,27 @@ export default function AssetLibraryClient({ categories, assets, units, canManag
         </div>
 
         {filtered.length === 0 ? (
-          <div className="px-6 py-16 text-center text-sm text-gray-500 dark:text-gray-400">
-            {assets.length === 0 ? (canManage ? 'Belum ada aset. Klik Tambah Aset untuk mulai.' : 'Belum ada aset di library.') : 'Tidak ada aset yang cocok.'}
+          <div className="flex flex-col items-center gap-3 px-6 py-14 text-center">
+            <CategoryIllustration name={activeCategory?.name} className="h-32 w-40" />
+            <p className="text-sm font-bold text-gray-900 dark:text-white">
+              {categoryEmpty
+                ? activeCategory ? `Belum ada aset ${activeCategory.name}` : 'Belum ada aset di library'
+                : 'Tidak ada aset yang cocok'}
+            </p>
+            <p className="max-w-sm text-xs text-gray-500 dark:text-gray-400">
+              {categoryEmpty
+                ? canManage ? 'Tambahkan aset Canva agar designer bisa memakainya di Design Brief.' : 'Aset akan muncul di sini setelah ditambahkan tim.'
+                : 'Ubah kata kunci, production, atau status untuk melihat aset lain.'}
+            </p>
+            {categoryEmpty && canManage && show === 'active' && (
+              <button
+                type="button"
+                onClick={() => setDrawer({ mode: 'create', id: null })}
+                className="mt-1 flex h-9 items-center gap-1.5 bg-[#ff5e1f] px-3.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-[#ff7038] cursor-pointer"
+              >
+                <Plus className="h-3.5 w-3.5" /> Tambah Aset
+              </button>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))]">

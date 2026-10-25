@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "generatedAt": "2026-10-24T13:30:08.013Z",
+  "generatedAt": "2026-10-25T01:23:11.736Z",
   "nodes": [
     {
       "id": "page:/account-team",
@@ -553,6 +553,14 @@
       "group": "React Components",
       "filepath": "src/components/assets/CanvaEmbed.tsx",
       "details": "React UI Component in src/components/assets/CanvaEmbed.tsx"
+    },
+    {
+      "id": "component:CategoryArt",
+      "label": "CategoryArt",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/assets/CategoryArt.tsx",
+      "details": "React UI Component in src/components/assets/CategoryArt.tsx"
     },
     {
       "id": "component:ChangePinForm",
@@ -4459,6 +4467,12 @@
     {
       "source": "component:AssetLibraryClient",
       "target": "component:asset-ui",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:AssetLibraryClient",
+      "target": "component:CategoryArt",
       "relation": "renders",
       "confidence": "EXTRACTED"
     },
