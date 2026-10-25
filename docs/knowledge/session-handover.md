@@ -10,7 +10,7 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 
 ## 📌 Status Aktif
 
-* **Branch**: `feat/asset-library` (commit `6baf129`, termasuk merge share link task `/share/t/[token]` dari `feat/bundle-order-designer`) **dirilis ke VPS 2026-10-24**, belum di-merge ke `main` · **Peran terakhir**: `🛡️ [DevOps & Release]`
+* **Branch**: `feat/asset-library` (PR #9, Auto-fix aktif) **dirilis ke VPS 2026-10-25** (`48079e1`), belum di-merge ke `main` · **Peran terakhir**: `🛡️ [DevOps & Release]`
 * **Multi-Production**: Fase 1–8 sebagian besar selesai (Production Hub, platform per production, Dropbox File Request untuk Envato Elements, Bundle & Order Bundle, tarif per platform). Detail rencana: [`multi-production-plan.md`](multi-production-plan.md).
 * **User Role Fase 1**: login ID + PIN 6 digit, role berbasis permission, Membership per ProductionUnit, "Lihat sebagai", halaman `/user-role`, `/profile`. Spec: [`user-role-spec.md`](user-role-spec.md). `AUTH_MODE=session` aktif di `.env` lokal dan VPS Biznet GIO.
 * **Sidebar**: pindah ke `layout.tsx` (`AppSidebar`), grup dropdown gaya pohon. Pola baku: [`sidebar-dropdown-pattern.md`](sidebar-dropdown-pattern.md).
@@ -18,7 +18,7 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 ## ⏳ Belum Selesai / Menunggu
 
 * Ganti PIN admin `FT-001` (menunggu user).
-* Kode di VPS = `feat/asset-library` `6baf129` → merge ke `main`. Backup DB VPS sebelum rilis: `~/db-backups/can-freelance-20261024-203119-pre-asset-library.dump`.
+* Kode di VPS = `feat/asset-library` `48079e1`. Backup DB sebelum rilis: `~/db-backups/can-freelance-20261025-130650-pre-unique-design.dump`. **SSH VPS kini juga di port 2222** (`/etc/systemd/system/ssh.socket.d/port.conf`) karena jaringan kantor & hotspot memblokir port 22 keluar: deploy `VPS_SSH_PORT=2222 npm run deploy:vps`.
 * Tombol "Download all Statement" di `/billing-statement` mengarah ke `/api/billing/download-all` yang tidak ada (dan `<a>` tanpa basePath) → selalu 404.
 * Print statement (`/billing-statement/print`) memanggil `window.print()` otomatis.
 * Escape saat dropdown terbuka di drawer `/user-role` menutup seluruh drawer (isian hilang).
@@ -26,8 +26,8 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 * Tab Email Notifications & Overview di production Elements masih konten Canva.
 * Kanban per platform masih didiskusikan.
 * Impor katalog Notion "Canva Assets" (148 baris: 122 siap, 9 link bukan Canva, 17 tanpa link) lewat Notion Config → Asset Library; diuji pratinjau saja, belum diimpor (lokal akan push ke Notion asli).
-* Skema: `assets.canva_design_id` **unik** (index `assets_canva_design_id_key`). Lokal sudah; **VPS: cek duplikat dulu** (`select canva_design_id, count(*) … having count(*)>1`) lalu buat index saat rilis.
-* Kategori aset **3D** & **Shape & Label** baru ada di DB lokal (ikon/ilustrasi di `CategoryArt.tsx`); di VPS tambahkan lewat "+ Kategori" atau INSERT saat rilis berikutnya.
+* Skema: `assets.canva_design_id` **unik** (index `assets_canva_design_id_key`), lokal & VPS sudah (VPS: 121 aset, tanpa duplikat).
+* Kategori aset **3D** & **Shape & Label** ada di lokal & VPS (urutan 4–5); ikon/ilustrasi di `CategoryArt.tsx`.
 * Asset Library di VPS: database Notion "Asset Library" & relation `Assets` belum dibuat di workspace produksi (Notion Config → Asset Library). Dropbox VPS: `invalid_client` di log 2026-10-20 (cek kredensial). Backlog: [Resources Library](../backlog/resources-library.md) jalur API (ditunda, MFA Canva), [Role kustom & matriks](../backlog/custom-roles-matrix.md), [Design Brief autosave](../backlog/task-drawer-design-brief-autosave.md).
 
 ## ⚠️ Gotcha yang Masih Berlaku
