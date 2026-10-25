@@ -11,6 +11,7 @@ import {
   linkAssetDatabaseAction,
 } from '@/app/actions/notion-config';
 import { formatRelative } from './asset-ui';
+import NotionAssetImport from './NotionAssetImport';
 
 type Status = Extract<Awaited<ReturnType<typeof getAssetNotionStatusAction>>, { success: true; exists: true }>;
 
@@ -196,6 +197,8 @@ export default function AssetLibraryNotionCard() {
           </div>
         </div>
       )}
+
+      {status && <NotionAssetImport candidates={status.candidates} onImported={load} />}
     </section>
   );
 }

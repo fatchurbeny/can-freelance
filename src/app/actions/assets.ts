@@ -2,13 +2,18 @@
 
 import { revalidatePath } from 'next/cache';
 import prisma from '@/lib/prisma';
+import type { Prisma } from '../../../generated/prisma';
 import { getAccess, denyUnless, denyWrite } from '@/lib/access';
 import { runInBackground } from '@/lib/background-sync';
 import { normalizeCanvaViewUrl, parseCanvaUrl, publicViewUrlError } from '@/lib/canva-url';
 import { resolveCanvaShortLink } from '@/lib/canva-link-resolve';
 import { canvaProductionUnits, loadAssetLibrary, type AssetCategoryRow, type AssetRow } from '@/lib/asset-library';
 import { getNotionClient } from '@/lib/notion-provision';
+import { decrypt } from '@/lib/encryption';
+import { normalizeNotionId } from '@/lib/notion-provision';
+import { previewNotionAssetImport, type ImportPreview } from '@/lib/notion-asset-import';
 import {
+  getAssetDatabase,
   pushAssetToNotion,
   pushPendingAssets,
   refreshAssetDatabaseOptions,
@@ -214,6 +219,74 @@ export async function syncAssetsNowAction() {
     return { success: true as const, pushed, pulled };
   } catch (error: any) {
     return { success: false as const, error: error.message || 'Sync Asset Library gagal.' };
+  }
+}
+
+/**
+ * Notion Config → Asset Library → Impor: baca database Notion lain (database terdaftar atau link)
+ * dan kembalikan pratinjau baris; tidak ada yang disimpan.
+ */
+export async function previewNotionAssetImportAction(input: { registeredId?: string | null; link?: string | null }) {
+  const denied = await denyWrite('asset.manage');
+  if (denied) return denied as never;
+  try {
+    let id: string | null = null;
+    if (input.registeredId) {
+      const row = await prisma.notionDatabase.findUnique({ where: { id: input.registeredId } });
+      if (!row) throw new Error('Database terdaftar tidak ditemukan.');
+      id = normalizeNotionId(decrypt(row.encryptedDatabaseId, row.iv));
+    } else if (input.link) {
+      id = normalizeNotionId(input.link);
+    }
+    if (!id) throw new Error('Pilih database terdaftar atau tempel link database Notion.');
+    const assetDb = await getAssetDatabase();
+    const preview: ImportPreview = await previewNotionAssetImport(id, assetDb?.databaseId ?? null);
+    const categories = await prisma.assetCategory.findMany({ where: { archived: false }, orderBy: { sortOrder: 'asc' }, select: { id: true, name: true } });
+    return { success: true as const, preview, categories };
+  } catch (error: any) {
+    return { success: false as const, error: error.message || 'Gagal membaca database Notion.' };
+  }
+}
+
+/** Simpan baris impor yang dipilih sebagai aset baru (tanpa production = semua production Canva). */
+export async function importNotionAssetsAction(rows: { title: string; tags: string[]; previewUrl: string; categoryId: string }[]) {
+  const denied = await denyWrite('asset.manage');
+  if (denied) return denied as never;
+  try {
+    const categoryIds = new Set((await prisma.assetCategory.findMany({ select: { id: true } })).map((c) => c.id));
+    const existing = new Set(
+      (await prisma.asset.findMany({ where: { canvaDesignId: { not: null } }, select: { canvaDesignId: true } })).map((a) => a.canvaDesignId),
+    );
+    const data: Prisma.AssetCreateManyInput[] = [];
+    let skipped = 0;
+    for (const row of rows) {
+      const previewUrl = normalizeCanvaViewUrl(row.previewUrl?.trim() ?? '');
+      const designId = parseCanvaUrl(previewUrl)?.designId ?? null;
+      if (!row.title?.trim() || publicViewUrlError(previewUrl) || !categoryIds.has(row.categoryId) || !designId || existing.has(designId)) {
+        skipped++;
+        continue;
+      }
+      existing.add(designId);
+      data.push({
+        title: row.title.trim(),
+        categoryId: row.categoryId,
+        tags: Array.from(new Set((row.tags ?? []).map((t) => t.trim().toLowerCase()).filter(Boolean))).slice(0, 20),
+        previewUrl,
+        canvaDesignId: designId,
+        source: 'notion_import',
+      });
+    }
+    if (data.length) await prisma.asset.createMany({ data });
+    // Kirim ke database mirror Asset Library bertahap (50 per putaran) di background
+    runInBackground(`Push ${data.length} aset impor ke Notion`, async () => {
+      for (let round = 0; round < 40; round++) {
+        if ((await pushPendingAssets(50)) === 0) break;
+      }
+    });
+    revalidate();
+    return { success: true as const, created: data.length, skipped };
+  } catch (error: any) {
+    return { success: false as const, error: error.message || 'Impor aset gagal.' };
   }
 }
 

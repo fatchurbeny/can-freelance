@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "generatedAt": "2026-10-25T01:23:11.736Z",
+  "generatedAt": "2026-10-25T01:53:54.282Z",
   "nodes": [
     {
       "id": "page:/account-team",
@@ -561,6 +561,14 @@
       "group": "React Components",
       "filepath": "src/components/assets/CategoryArt.tsx",
       "details": "React UI Component in src/components/assets/CategoryArt.tsx"
+    },
+    {
+      "id": "component:NotionAssetImport",
+      "label": "NotionAssetImport",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/assets/NotionAssetImport.tsx",
+      "details": "React UI Component in src/components/assets/NotionAssetImport.tsx"
     },
     {
       "id": "component:ChangePinForm",
@@ -1723,6 +1731,14 @@
       "details": "Server/shared library in src/lib/imap-client.ts"
     },
     {
+      "id": "lib:notion-asset-import",
+      "label": "notion-asset-import.ts",
+      "type": "action",
+      "group": "Server Actions & Lib",
+      "filepath": "src/lib/notion-asset-import.ts",
+      "details": "Server/shared library in src/lib/notion-asset-import.ts"
+    },
+    {
       "id": "lib:notion-assets",
       "label": "notion-assets.ts",
       "type": "action",
@@ -2498,6 +2514,18 @@
     },
     {
       "source": "action:assets",
+      "target": "lib:encryption",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:assets",
+      "target": "lib:notion-asset-import",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:assets",
       "target": "lib:notion-assets",
       "relation": "invokes",
       "confidence": "EXTRACTED"
@@ -2511,6 +2539,12 @@
     {
       "source": "action:assets",
       "target": "model:Asset",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:assets",
+      "target": "model:NotionDatabase",
       "relation": "queries",
       "confidence": "EXTRACTED"
     },
@@ -4495,6 +4529,12 @@
       "confidence": "EXTRACTED"
     },
     {
+      "source": "component:AssetLibraryNotionCard",
+      "target": "component:NotionAssetImport",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
       "source": "component:AssetPicker",
       "target": "action:assets",
       "relation": "invokes",
@@ -4563,6 +4603,36 @@
     {
       "source": "component:CanvaEmbed",
       "target": "lib:canva-url",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:NotionAssetImport",
+      "target": "component:SelectDropdown",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:NotionAssetImport",
+      "target": "component:PortalSelect",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:NotionAssetImport",
+      "target": "component:InfoTip",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:NotionAssetImport",
+      "target": "action:assets",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:NotionAssetImport",
+      "target": "lib:notion-asset-import",
       "relation": "invokes",
       "confidence": "EXTRACTED"
     },
@@ -6256,6 +6326,36 @@
       "source": "lib:imap-client",
       "target": "lib:canva-email-parser",
       "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:notion-asset-import",
+      "target": "lib:prisma",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:notion-asset-import",
+      "target": "lib:canva-url",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:notion-asset-import",
+      "target": "lib:notion-provision",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:notion-asset-import",
+      "target": "model:AssetCategory",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:notion-asset-import",
+      "target": "model:Asset",
+      "relation": "queries",
       "confidence": "EXTRACTED"
     },
     {
