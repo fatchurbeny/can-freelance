@@ -25,6 +25,7 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 * Sync `Dropbox Link` ke Notion (perlu file diunggah ke File Request).
 * Tab Email Notifications & Overview di production Elements masih konten Canva.
 * Kanban per platform masih didiskusikan.
+* Kategori aset **3D** & **Shape & Label** baru ada di DB lokal (ikon/ilustrasi di `CategoryArt.tsx`); di VPS tambahkan lewat "+ Kategori" atau INSERT saat rilis berikutnya.
 * Asset Library di VPS: database Notion "Asset Library" & relation `Assets` belum dibuat di workspace produksi (Notion Config → Asset Library). Dropbox VPS: `invalid_client` di log 2026-10-20 (cek kredensial). Backlog: [Resources Library](../backlog/resources-library.md) jalur API (ditunda, MFA Canva), [Role kustom & matriks](../backlog/custom-roles-matrix.md), [Design Brief autosave](../backlog/task-drawer-design-brief-autosave.md).
 
 ## ⚠️ Gotcha yang Masih Berlaku

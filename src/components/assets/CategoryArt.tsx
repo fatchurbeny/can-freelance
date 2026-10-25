@@ -1,7 +1,7 @@
 // Ikon & ilustrasi kategori Asset Library (desain: https://claude.ai/artifact/X14RZaeaoT5sNTnjHxVeCF).
 // Kategori dibuat bebas oleh user, jadi dicocokkan lewat nama; nama lain memakai bentuk umum (folder).
 
-type Kind = 'icon' | 'illustration' | 'template' | 'mockup' | 'generic';
+type Kind = 'icon' | 'illustration' | 'template' | 'mockup' | '3d' | 'shape' | 'generic';
 
 const ACCENT = '#ff5e1f';
 
@@ -11,6 +11,8 @@ export function categoryKind(name?: string | null): Kind {
   if (/^(ilustrasi|illustrasi|illustration)/.test(n)) return 'illustration';
   if (n.startsWith('template')) return 'template';
   if (/^mock/.test(n)) return 'mockup';
+  if (/^3\s*d/.test(n)) return '3d';
+  if (/^(shape|label|bentuk)/.test(n)) return 'shape';
   return 'generic';
 }
 
@@ -41,6 +43,20 @@ export function CategoryIcon({ name, className = 'h-4 w-4' }: { name?: string | 
       return (
         <svg {...common}>
           <rect x="3" y="4" width="14" height="10" /><path d="M1 17h18" /><rect x="17" y="9" width="6" height="11" fill={ACCENT} stroke={ACCENT} />
+        </svg>
+      );
+    case '3d':
+      return (
+        <svg {...common} strokeLinejoin="round">
+          <path d="M12 2l9 5v10l-9 5-9-5V7z" /><path d="M3 7l9 5 9-5M12 12v10" />
+          <path d="M12 2l9 5-9 5-9-5z" fill={ACCENT} stroke={ACCENT} />
+        </svg>
+      );
+    case 'shape':
+      return (
+        <svg {...common}>
+          <rect x="3" y="3" width="8" height="8" /><circle cx="17" cy="7" r="4" />
+          <path d="M3 15h11l3 3-3 3H3z" fill={ACCENT} stroke={ACCENT} />
         </svg>
       );
     default:
@@ -138,6 +154,39 @@ export function CategoryIllustration({ name, className = 'h-32 w-40' }: { name?:
           <rect x="142" y="62" width="36" height="68" fill={ACCENT} />
           <rect x="146" y="68" width="22" height="4" fill="#fff" />
           <rect x="146" y="92" width="28" height="30" fill="#fff" />
+        </svg>
+      );
+    case '3d':
+      return (
+        <svg {...svg}>
+          <ellipse cx="100" cy="142" rx="74" ry="8" className={soft} />
+          <path d="M84 40l40-20 40 20-40 20z" fill={ACCENT} />
+          <path d="M84 40l40 20v48L84 88z" fill="#c2410c" />
+          <path d="M164 40l-40 20v48l40-20z" fill="#ff8a5c" />
+          <path d="M84 40l40-20 40 20-40 20zM124 60v48" fill="none" className="stroke-[#262626] dark:stroke-gray-200" strokeWidth="1.5" strokeLinejoin="round" />
+          <ellipse cx="54" cy="96" rx="20" ry="7" className={dim} />
+          <rect x="34" y="72" width="40" height="24" className={mid} />
+          <rect x="34" y="72" width="12" height="24" className={dim} />
+          <ellipse cx="54" cy="72" rx="20" ry="7" className={`${soft} stroke-gray-400 dark:stroke-gray-500`} strokeWidth="1.5" />
+          <circle cx="132" cy="122" r="16" className={ink} />
+          <circle cx="126" cy="116" r="5" className="fill-gray-500" />
+          <path d="M28 132l14-24 14 24z" className={`${paper} stroke-gray-300 dark:stroke-[#343846]`} strokeWidth="1.5" />
+        </svg>
+      );
+    case 'shape':
+      return (
+        <svg {...svg}>
+          <path d="M100 14l9 16 18-4-4 18 16 9-16 9 4 18-18-4-9 16-9-16-18 4 4-18-16-9 16-9-4-18 18 4z" fill={ACCENT} />
+          <text x="100" y="58" textAnchor="middle" fontFamily="Inter, sans-serif" fontSize="13" fontWeight="700" fill="#fff">NEW</text>
+          <path d="M20 96h86l14 14-14 14H20z" className={`${paper} stroke-gray-300 dark:stroke-[#343846]`} strokeWidth="1.5" />
+          <circle cx="104" cy="110" r="3.5" className={mid} />
+          <rect x="30" y="104" width="44" height="6" className={ink} />
+          <rect x="30" y="114" width="30" height="4" className={mid} />
+          <path d="M132 100h48v26h-30l-10 10v-10h-8z" className={ink} />
+          <rect x="140" y="108" width="32" height="4" className="fill-white dark:fill-[#16181d]" />
+          <rect x="24" y="26" width="34" height="34" fill="none" className="stroke-gray-400 dark:stroke-gray-500" strokeWidth="2" />
+          <circle cx="164" cy="44" r="16" fill="none" className="stroke-gray-400 dark:stroke-gray-500" strokeWidth="2" />
+          <path d="M40 146h120" stroke={ACCENT} strokeWidth="3" />
         </svg>
       );
     default:
