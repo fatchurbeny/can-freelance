@@ -16,7 +16,8 @@ VPS_USER="fatchurbeny"
 VPS_HOST="103.89.5.148"
 REMOTE_APP_DIR="/www/wwwroot/can-freelance-app"
 ARCHIVE_NAME="can-freelance-release.tar.gz"
-SSH_OPTS="-o StrictHostKeyChecking=no -o ConnectTimeout=15"
+# Port SSH bisa diganti bila jaringan memblokir 22, mis. VPS_SSH_PORT=2222 npm run deploy:vps
+SSH_OPTS="-o StrictHostKeyChecking=no -o ConnectTimeout=15 -o Port=${VPS_SSH_PORT:-22}"
 
 echo "🚀 [1/5] Memulai kompilasi Next.js 16 Standalone Production Build..."
 npm run build
