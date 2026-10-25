@@ -40,6 +40,7 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 
 ### 2026-10-25 — Rilis Asset Library lanjutan (Claude Code, `🎨 [Frontend & UI/UX]`, `🔄 [API & Notion Integration]`, `🛡️ [DevOps & Release]`)
 * Sub-tab Notion Config (Asset Library / Pages & Databases / Sinkronisasi, `?sub=`), impor aset dari database Notion (+ perbarui judul & tag), `canva_design_id` unik, pindai database di sub-page, ikon & ilustrasi kategori (3D, Shape & Label), info field via `InfoTip`, preset periode kontrak, kolom Designer/Doctype di Production Hub, tab "Tanpa Brand" di Overview.
+* **Asset Report** (`/asset-report`, menu di bawah Production, sub-menu per kategori; desain https://claude.ai/artifact/1bRjBCU85gn84C85Cm27Lb): diuji lokal dengan data uji sementara (sudah dihapus); belum di VPS. Wireframe role belum diperbarui untuk menu ini.
 * Rincian sesi 2026-10-24 (Asset Library, kontrak, rilis pertama) dipindah ke arsip `archive/session-handover-from-2026-10-17.md`.
 ---
 

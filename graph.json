@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "generatedAt": "2026-10-25T05:36:31.793Z",
+  "generatedAt": "2026-10-25T07:12:53.804Z",
   "nodes": [
     {
       "id": "page:/account-team",
@@ -17,6 +17,14 @@
       "group": "Server Actions & Lib",
       "filepath": "src/app/actions/approval-payroll.ts",
       "details": "Server Actions for Payroll calculations & status toggles"
+    },
+    {
+      "id": "action:asset-report",
+      "label": "asset-report.ts",
+      "type": "action",
+      "group": "Server Actions & Lib",
+      "filepath": "src/app/actions/asset-report.ts",
+      "details": "Server Actions in src/app/actions/asset-report.ts"
     },
     {
       "id": "action:assets",
@@ -249,6 +257,14 @@
       "group": "Server Actions & Lib",
       "filepath": "src/app/api/uploads/[filename]/route.ts",
       "details": "Route Handler (/api/uploads/[filename])"
+    },
+    {
+      "id": "page:/asset-report",
+      "label": "asset-report Page",
+      "type": "page",
+      "group": "App Router Pages",
+      "filepath": "src/app/asset-report/page.tsx",
+      "details": "Next.js 16 App Router Page (/asset-report)"
     },
     {
       "id": "page:/assets",
@@ -489,6 +505,22 @@
       "group": "React Components",
       "filepath": "src/components/AppSidebar.tsx",
       "details": "React UI Component in src/components/AppSidebar.tsx"
+    },
+    {
+      "id": "component:AssetReportClient",
+      "label": "AssetReportClient",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/asset-report/AssetReportClient.tsx",
+      "details": "React UI Component in src/components/asset-report/AssetReportClient.tsx"
+    },
+    {
+      "id": "component:AssetUsageDrawer",
+      "label": "AssetUsageDrawer",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/asset-report/AssetUsageDrawer.tsx",
+      "details": "React UI Component in src/components/asset-report/AssetUsageDrawer.tsx"
     },
     {
       "id": "component:asset-ui",
@@ -1627,6 +1659,14 @@
       "details": "Server/shared library in src/lib/asset-productions.ts"
     },
     {
+      "id": "lib:asset-report",
+      "label": "asset-report.ts",
+      "type": "action",
+      "group": "Server Actions & Lib",
+      "filepath": "src/lib/asset-report.ts",
+      "details": "Server/shared library in src/lib/asset-report.ts"
+    },
+    {
       "id": "lib:background-sync",
       "label": "background-sync.ts",
       "type": "action",
@@ -2475,6 +2515,30 @@
     {
       "source": "action:approval-payroll",
       "target": "model:Task",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:asset-report",
+      "target": "lib:prisma",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:asset-report",
+      "target": "lib:access",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:asset-report",
+      "target": "lib:asset-report",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:asset-report",
+      "target": "model:AssetCategory",
       "relation": "queries",
       "confidence": "EXTRACTED"
     },
@@ -3559,6 +3623,36 @@
       "confidence": "EXTRACTED"
     },
     {
+      "source": "page:/asset-report",
+      "target": "component:TopBar",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/asset-report",
+      "target": "component:AssetReportClient",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/asset-report",
+      "target": "lib:access",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/asset-report",
+      "target": "lib:asset-library",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/asset-report",
+      "target": "lib:asset-report",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
       "source": "page:/assets",
       "target": "component:TopBar",
       "relation": "renders",
@@ -4372,6 +4466,66 @@
       "source": "component:AppSidebar",
       "target": "lib:permissions",
       "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:AssetReportClient",
+      "target": "component:SelectDropdown",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:AssetReportClient",
+      "target": "component:InfoTip",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:AssetReportClient",
+      "target": "component:CategoryArt",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:AssetReportClient",
+      "target": "component:asset-ui",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:AssetReportClient",
+      "target": "lib:asset-report",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:AssetReportClient",
+      "target": "component:AssetUsageDrawer",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:AssetUsageDrawer",
+      "target": "action:asset-report",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:AssetUsageDrawer",
+      "target": "component:asset-ui",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:AssetUsageDrawer",
+      "target": "lib:asset-report",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:AssetUsageDrawer",
+      "target": "component:AssetReportClient",
+      "relation": "renders",
       "confidence": "EXTRACTED"
     },
     {
@@ -5858,6 +6012,18 @@
     },
     {
       "source": "component:Sidebar",
+      "target": "action:asset-report",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:Sidebar",
+      "target": "component:CategoryArt",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:Sidebar",
       "target": "lib:permissions",
       "relation": "invokes",
       "confidence": "EXTRACTED"
@@ -6291,6 +6457,36 @@
     {
       "source": "lib:asset-productions",
       "target": "model:ProductionUnit",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:asset-report",
+      "target": "lib:prisma",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:asset-report",
+      "target": "lib:period-utils",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:asset-report",
+      "target": "model:AssetCategory",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:asset-report",
+      "target": "model:Asset",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:asset-report",
+      "target": "model:TaskAsset",
       "relation": "queries",
       "confidence": "EXTRACTED"
     },

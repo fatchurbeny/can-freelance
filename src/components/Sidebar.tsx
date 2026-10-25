@@ -17,11 +17,14 @@ import {
   Menu,
   X,
   ChevronRight,
-  Plus
+  Plus,
+  ChartColumn
 } from 'lucide-react';
 import SyncButton from './SyncButton';
 import AccountSwitcher from './AccountSwitcher';
 import { getProductionUnitsAction } from '@/app/actions/production-unit';
+import { listAssetCategoriesNavAction } from '@/app/actions/asset-report';
+import { CategoryIcon } from '@/components/assets/CategoryArt';
 import { NAV_REQUIREMENTS, type AccessInfo } from '@/lib/permissions';
 import { DEV_TOOLS_ENABLED } from '@/lib/dev-tools';
 
@@ -55,6 +58,9 @@ export default function Sidebar({ currentSyncLog, access }: SidebarProps) {
   const activePeriod = periodFromUrl ?? savedPeriod;
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
   const [productionUnits, setProductionUnits] = useState<ProductionUnitNav[]>([]);
+  const [assetCategories, setAssetCategories] = useState<{ id: string; name: string; count: number }[]>([]);
+  const activeAssetCategory = searchParams.get('category');
+  const canSeeAssetReport = (NAV_REQUIREMENTS['/asset-report'] ?? []).some(allows);
 
   // Refetch senyap tiap navigasi (daftar lama tetap tampil, tanpa kedip) agar production baru ikut muncul.
   useEffect(() => {
@@ -64,14 +70,24 @@ export default function Sidebar({ currentSyncLog, access }: SidebarProps) {
         .then((units) => { if (!cancelled) setProductionUnits(units); })
         .catch(() => { /* sidebar tetap tampil tanpa submenu */ });
     };
+    // Sub-menu Asset Report = kategori aset aktif (Asset Library memberi tahu setelah tambah kategori).
+    const loadCategories = () => {
+      if (!canSeeAssetReport) return;
+      listAssetCategoriesNavAction()
+        .then((cats) => { if (!cancelled) setAssetCategories(cats); })
+        .catch(() => { /* sidebar tetap tampil tanpa submenu */ });
+    };
     load();
+    loadCategories();
     // Production Hub memberi tahu setelah rename / arsip / hapus agar submenu langsung ikut berubah.
     window.addEventListener('production-units-changed', load);
+    window.addEventListener('asset-categories-changed', loadCategories);
     return () => {
       cancelled = true;
       window.removeEventListener('production-units-changed', load);
+      window.removeEventListener('asset-categories-changed', loadCategories);
     };
-  }, [pathname]);
+  }, [pathname, canSeeAssetReport]);
 
   useEffect(() => {
     const handleToggle = () => setIsMobileOpen((prev) => !prev);
@@ -95,6 +111,7 @@ export default function Sidebar({ currentSyncLog, access }: SidebarProps) {
   const menuItems: MenuItem[] = [
     { name: 'Overview', icon: LayoutDashboard, href: '/', active: false, group: 'GET STARTED' },
     { name: 'Production', icon: Files, href: '/production', active: pathname === '/production', group: 'GET STARTED' },
+    { name: 'Asset Report', icon: ChartColumn, href: '/asset-report', active: pathname === '/asset-report' && !activeAssetCategory, group: 'GET STARTED' },
     { name: 'Account & Team', icon: Users, href: '/account-team', active: pathname === '/account-team', group: 'BUILD' },
     { name: 'Asset Library', icon: Library, href: '/assets', active: pathname === '/assets', group: 'BUILD' },
     { name: 'Rate Card', icon: CreditCard, href: '/rate-card', active: pathname === '/rate-card', group: 'BUILD' },
@@ -172,16 +189,19 @@ export default function Sidebar({ currentSyncLog, access }: SidebarProps) {
                     const Icon = item.icon;
                     const isProduction = item.href === '/production';
                     const isOverview = item.href === '/';
-                    const hasChildren = (isOverview || isProduction) && productionUnits.length > 0;
-                    const childActive = isOverview
-                      ? pathname === '/' && !!activeProduction
-                      : pathname.startsWith('/production/');
+                    const isAssetReport = item.href === '/asset-report';
+                    const hasChildren = isAssetReport ? assetCategories.length > 0 : (isOverview || isProduction) && productionUnits.length > 0;
+                    const childActive = isAssetReport
+                      ? pathname === '/asset-report' && !!activeAssetCategory
+                      : isOverview
+                        ? pathname === '/' && !!activeProduction
+                        : pathname.startsWith('/production/');
                     const expanded = !!expandedGroups[item.name];
                     const isOpen = hasChildren && (expanded || childActive);
                     const chevronOpen = expanded;
                     const onToggle = () => setExpandedGroups((prev) => ({ ...prev, [item.name]: !prev[item.name] }));
                     const activeUnitOnly = !expanded && childActive;
-                    const href = getHrefWithPeriod(item.href);
+                    const href = isAssetReport ? item.href : getHrefWithPeriod(item.href);
 
                     const row = (
                       <div className="relative flex items-stretch">
@@ -261,7 +281,19 @@ export default function Sidebar({ currentSyncLog, access }: SidebarProps) {
                         >
                           <div className="overflow-hidden min-h-0">
                           <div className="space-y-0.5 pt-1 ml-5 pl-3 border-l border-gray-200 dark:border-[#272a34]">
-                            {productionUnits.filter((unit) => !activeUnitOnly || (isOverview ? unit.slug === activeProduction : pathname === `/production/${unit.slug}`)).map((unit) => {
+                            {isAssetReport && !activeUnitOnly && (
+                              <Link href="/asset-report" onClick={() => setIsMobileOpen(false)} className={childClass(pathname === '/asset-report' && !activeAssetCategory)}>
+                                <span className="whitespace-nowrap truncate">Semua aset</span>
+                                <span className="text-[10px] tabular-nums text-gray-400">{assetCategories.reduce((n, c) => n + c.count, 0)}</span>
+                              </Link>
+                            )}
+                            {isAssetReport && assetCategories.filter((cat) => !activeUnitOnly || cat.id === activeAssetCategory).map((cat) => (
+                              <Link key={cat.id} href={`/asset-report?category=${cat.id}`} onClick={() => setIsMobileOpen(false)} className={childClass(pathname === '/asset-report' && activeAssetCategory === cat.id)}>
+                                <span className="flex min-w-0 items-center gap-2"><CategoryIcon name={cat.name} className="h-3.5 w-3.5 shrink-0" /><span className="whitespace-nowrap truncate">{cat.name}</span></span>
+                                <span className="text-[10px] tabular-nums text-gray-400">{cat.count}</span>
+                              </Link>
+                            ))}
+                            {!isAssetReport && productionUnits.filter((unit) => !activeUnitOnly || (isOverview ? unit.slug === activeProduction : pathname === `/production/${unit.slug}`)).map((unit) => {
                               const unitHref = isOverview ? `/?production=${encodeURIComponent(unit.slug)}` : `/production/${unit.slug}`;
                               const unitActive = isOverview
                                 ? pathname === '/' && activeProduction === unit.slug

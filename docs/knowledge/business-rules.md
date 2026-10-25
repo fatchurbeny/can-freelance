@@ -45,3 +45,12 @@ Setiap string UI yang mereferensikan periode waktu (seperti pada header board at
 * Order tiap periode dibuat **manual** lewat **Order Periode Berikutnya**: bundle, designer, harga (= harga kontrak) dan tipe Kontrak terkunci; periode otomatis = bulan setelah order kontrak terakhir (atau bulan pertama kontrak). Server menolak periode di luar masa kontrak atau yang sudah punya order di kontrak itu.
 * Form "Add Order Bundle" biasa selalu membuat Trial (toggle Trial/Kontrak dihapus). Order "Kontrak" lama tanpa kontrak tetap tampil, tanpa tombol order periode.
 * Trial yang sudah punya kontrak tidak bisa dihapus.
+
+## 📈 Asset Report (Applies, Usages & kualitas)
+
+* **Apply** = satu baris `task_assets` (aset ada di section 📦 Assets brief atau relation Notion task), tanggal = `task_assets.createdAt`. Filter periode (30 / 90 hari / semua) dan production memakai tanggal ini; akses dibatasi production user.
+* **Status template** (dari `DesignStatus` task): Approved = `countsAsApproved`; Profile only = `countsAsProfileOnly`; Reject = nama/notion key cocok `/reject/i`; selain itu Dikerjakan. **Usages** = apply yang task-nya Approved.
+* **Bermasalah %** = (Profile only + Reject) / template selesai (Approved + Profile only + Reject).
+* **Kualitas aset**: 0 apply → Belum dipakai; < 3 template selesai → Data belum cukup; bermasalah ≥ rata-rata kategori + 15 poin **dan** ≥ 40% → **Perlu dicek**; selain itu Aman. Logika di `src/lib/asset-report.ts`.
+* Pages di drawer = `doctype.pages` (fallback `task.pages`); link template = `TaskCanvaLink` pertama (fallback `task.outputUrl`); catatan = `TaskComment` terbaru untuk Reject / Profile only.
+

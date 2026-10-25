@@ -78,6 +78,7 @@ export default function AssetLibraryClient({ categories, assets, units, canManag
       if (!res.success) { toast.error(res.error); return; }
       setNewCategory(null);
       setTab(res.id);
+      window.dispatchEvent(new Event('asset-categories-changed'));
       router.refresh();
     });
 

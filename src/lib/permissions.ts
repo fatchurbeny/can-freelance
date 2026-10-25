@@ -124,6 +124,7 @@ export const NAV_REQUIREMENTS: Record<string, Permission[]> = {
   '/account-team': ['accountTeam.view'],
   '/rate-card': ['rateCard.view'],
   '/assets': ['asset.view'],
+  '/asset-report': ['asset.manage'],
   '/billing-statement': ['billing.view', 'billing.view.own'],
   '/knowledge-graph': ['integration.manage'],
   '/notion-config': ['integration.manage'],

@@ -427,15 +427,21 @@ export async function syncTaskAssetLinks(
         .filter((a) => !known.has(a.id) && relationIds.includes(compact(a.notionPageId!)))
     : [];
 
+  // Diff, bukan hapus-semua: `createdAt` = tanggal aset pertama dipakai di brief (dipakai Asset Report)
+  const wanted = new Map<string, string | null>();
+  fromBody.forEach((a) => wanted.set(a.assetId, a.pages));
+  fromRelation.forEach((a) => { if (!wanted.has(a.id)) wanted.set(a.id, null); });
+  const existing = await prisma.taskAsset.findMany({ where: { taskId }, select: { assetId: true, pages: true } });
+  const existingPages = new Map(existing.map((row) => [row.assetId, row.pages]));
+  const pageUpdates = [...wanted].filter(([assetId, pages]) => existingPages.has(assetId) && existingPages.get(assetId) !== pages);
+
   await prisma.$transaction([
-    prisma.taskAsset.deleteMany({ where: { taskId } }),
+    prisma.taskAsset.deleteMany({ where: { taskId, assetId: { notIn: [...wanted.keys()] } } }),
     prisma.taskAsset.createMany({
-      data: [
-        ...fromBody.map((a) => ({ taskId, assetId: a.assetId, pages: a.pages })),
-        ...fromRelation.map((a) => ({ taskId, assetId: a.id, pages: null })),
-      ],
+      data: [...wanted].filter(([assetId]) => !existingPages.has(assetId)).map(([assetId, pages]) => ({ taskId, assetId, pages })),
       skipDuplicates: true,
     }),
+    ...pageUpdates.map(([assetId, pages]) => prisma.taskAsset.update({ where: { taskId_assetId: { taskId, assetId } }, data: { pages } })),
   ]);
   return fromBody.map((a) => a.notionPageId).filter((id): id is string => !!id);
 }
