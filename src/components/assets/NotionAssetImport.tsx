@@ -7,11 +7,14 @@ import SelectDropdown from '@/components/SelectDropdown';
 import PortalSelect from '@/components/production-fields/PortalSelect';
 import InfoTip from '@/components/InfoTip';
 import { importNotionAssetsAction, previewNotionAssetImportAction } from '@/app/actions/assets';
+import { scanNotionPageDatabasesAction } from '@/app/actions/notion-config';
 import type { ImportPreview, ImportRowStatus } from '@/lib/notion-asset-import';
 
 interface Props {
   /** Database terdaftar di Pages & Databases (bukan database task / mirror aset). */
   candidates: { id: string; name: string }[];
+  /** Page induk terdaftar; dipindai ulang agar database baru (termasuk di sub-page) masuk daftar. */
+  pages: { id: string; name: string }[];
   onImported: () => void;
 }
 
@@ -28,7 +31,7 @@ const STATUS_LABEL: Record<ImportRowStatus, { text: string; dot: string }> = {
 };
 
 /** Notion Config → Asset Library: impor aset dari database Notion lain (mis. katalog Canva Assets). */
-export default function NotionAssetImport({ candidates, onImported }: Props) {
+export default function NotionAssetImport({ candidates, pages, onImported }: Props) {
   const [source, setSource] = useState(candidates[0]?.id ?? OTHER);
   const [link, setLink] = useState('');
   const [preview, setPreview] = useState<ImportPreview | null>(null);
@@ -38,6 +41,19 @@ export default function NotionAssetImport({ candidates, onImported }: Props) {
   const [updateExisting, setUpdateExisting] = useState(false);
   const [checking, startCheck] = useTransition();
   const [importing, startImport] = useTransition();
+  const [scanning, startScan] = useTransition();
+
+  const rescan = () =>
+    startScan(async () => {
+      let added = 0;
+      for (const page of pages) {
+        const res = await scanNotionPageDatabasesAction(page.id);
+        if (!res.success) { toast.error(`${page.name}: ${res.error}`); continue; }
+        added += res.added ?? 0;
+      }
+      toast.success(added ? `${added} database baru didaftarkan.` : 'Tidak ada database baru.');
+      onImported();
+    });
 
   const check = () =>
     startCheck(async () => {
@@ -104,7 +120,12 @@ export default function NotionAssetImport({ candidates, onImported }: Props) {
             Database sumber hanya dibaca. Link bit.ly / canva.link diikuti ke link desain Canva; aset yang desainnya sudah ada dilewati. Kategori ditebak dari kategori, tag, atau judul.
           </InfoTip>
         </p>
-        <p className="text-xs text-gray-500 dark:text-gray-400">Salin katalog aset yang sudah ada (mis. Canva Assets) ke Asset Library.</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400">
+          Salin katalog aset yang sudah ada (mis. Canva Assets) ke Asset Library. Database belum ada di daftar?{' '}
+          <button type="button" onClick={rescan} disabled={scanning || pages.length === 0} className="font-semibold text-[#c2410c] hover:underline disabled:opacity-50 cursor-pointer">
+            {scanning ? 'Memindai…' : 'Pindai ulang page'}
+          </button>
+        </p>
       </div>
 
       <div className="flex flex-wrap items-stretch gap-2 p-5">

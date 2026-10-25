@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "generatedAt": "2026-10-25T05:12:16.063Z",
+  "generatedAt": "2026-10-25T05:36:31.793Z",
   "nodes": [
     {
       "id": "page:/account-team",
@@ -4641,6 +4641,12 @@
     {
       "source": "component:NotionAssetImport",
       "target": "action:assets",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:NotionAssetImport",
+      "target": "action:notion-config",
       "relation": "invokes",
       "confidence": "EXTRACTED"
     },

@@ -374,19 +374,45 @@ export async function checkParentPage(pageId: string): Promise<string> {
   return titleProp?.title?.map((t: any) => t.plain_text).join('') || 'Tanpa judul';
 }
 
-/** Database yang ada langsung di dalam page (blok child_database). Hanya membaca. */
-export async function listChildDatabases(pageId: string): Promise<{ id: string; title: string }[]> {
+// Blok wadah yang isinya ikut dibaca (database di dalam kolom / toggle tetap ditemukan).
+const CONTAINER_BLOCKS = new Set(['column_list', 'column', 'toggle', 'synced_block', 'callout']);
+
+/**
+ * Database di bawah sebuah page: langsung di page, di dalam kolom/toggle, dan di sub-page sampai
+ * kedalaman `pageDepth` (default 1, mis. page "Canva Assets" yang berisi database). Database di
+ * sub-page yang hanya berisi satu database diberi nama sub-page-nya (nama yang tampil di sidebar Notion).
+ */
+export async function listChildDatabases(pageId: string, pageDepth = 1): Promise<{ id: string; title: string }[]> {
   const client = await getNotionClient();
-  const found: { id: string; title: string }[] = [];
-  let cursor: string | undefined;
-  do {
-    const res: any = await client.blocks.children.list({ block_id: pageId, start_cursor: cursor, page_size: 100 });
-    for (const block of res.results) {
-      if (block.type === 'child_database') found.push({ id: block.id, title: block.child_database?.title || 'Tanpa judul' });
-    }
-    cursor = res.has_more ? res.next_cursor : undefined;
-  } while (cursor);
-  return found;
+  const found: { id: string; title: string; viaPage: string | null }[] = [];
+  const seen = new Set<string>();
+
+  const walk = async (blockId: string, depth: number, viaPage: string | null) => {
+    let cursor: string | undefined;
+    do {
+      const res: any = await client.blocks.children.list({ block_id: blockId, start_cursor: cursor, page_size: 100 });
+      for (const block of res.results) {
+        if (block.type === 'child_database') {
+          if (seen.has(block.id)) continue;
+          seen.add(block.id);
+          found.push({ id: block.id, title: block.child_database?.title || 'Tanpa judul', viaPage });
+        } else if (block.type === 'child_page' && depth < pageDepth) {
+          await walk(block.id, depth + 1, block.child_page?.title || null).catch(() => {});
+        } else if (block.has_children && CONTAINER_BLOCKS.has(block.type)) {
+          await walk(block.id, depth, viaPage).catch(() => {});
+        }
+      }
+      cursor = res.has_more ? res.next_cursor : undefined;
+    } while (cursor);
+  };
+
+  await walk(pageId, 0, null);
+  const perPage = new Map<string, number>();
+  found.forEach((f) => { if (f.viaPage) perPage.set(f.viaPage, (perPage.get(f.viaPage) ?? 0) + 1); });
+  return found.map((f) => ({
+    id: f.id,
+    title: f.viaPage ? (perPage.get(f.viaPage) === 1 ? f.viaPage : `${f.viaPage} · ${f.title}`) : f.title,
+  }));
 }
 
 /**

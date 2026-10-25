@@ -226,7 +226,7 @@ export default function AssetLibraryNotionCard() {
           </div>
       )}
 
-      {status && sub === 'impor' && <NotionAssetImport candidates={status.candidates} onImported={load} />}
+      {status && sub === 'impor' && <NotionAssetImport candidates={status.candidates} pages={status.pages} onImported={load} />}
     </section>
   );
 }
