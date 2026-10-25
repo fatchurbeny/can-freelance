@@ -25,10 +25,8 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 * Sync `Dropbox Link` ke Notion (perlu file diunggah ke File Request).
 * Tab Email Notifications & Overview di production Elements masih konten Canva.
 * Kanban per platform masih didiskusikan.
-* Impor katalog Notion "Canva Assets" (148 baris: 122 siap, 9 link bukan Canva, 17 tanpa link) lewat Notion Config → Asset Library; diuji pratinjau saja, belum diimpor (lokal akan push ke Notion asli).
-* Skema: `assets.canva_design_id` **unik** (index `assets_canva_design_id_key`), lokal & VPS sudah (VPS: 121 aset, tanpa duplikat).
-* Kategori aset **3D** & **Shape & Label** ada di lokal & VPS (urutan 4–5); ikon/ilustrasi di `CategoryArt.tsx`.
-* Asset Library di VPS: database Notion "Asset Library" & relation `Assets` belum dibuat di workspace produksi (Notion Config → Asset Library). Dropbox VPS: `invalid_client` di log 2026-10-20 (cek kredensial). Backlog: [Resources Library](../backlog/resources-library.md) jalur API (ditunda, MFA Canva), [Role kustom & matriks](../backlog/custom-roles-matrix.md), [Design Brief autosave](../backlog/task-drawer-design-brief-autosave.md).
+* Impor katalog Notion "Canva Assets" (sub-page Impro-Freelance; kini terbaca lewat Pindai) belum dijalankan di VPS.
+* Asset Library di VPS terhubung ke database Notion "Asset Library" (121 aset); cek relation `Assets` per production di Notion Config. Dropbox VPS: `invalid_client` di log (cek kredensial).
 
 ## ⚠️ Gotcha yang Masih Berlaku
 
@@ -40,12 +38,9 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 
 ## 📝 Sesi Terakhir
 
-### 2026-10-24 — Asset Library, Notion Config bertab, kontrak platform & bundle (Claude Code, `⚙️ [Backend & Database]`, `🎨 [Frontend & UI/UX]`, `🔄 [API & Notion Integration]`)
-* Branch `feat/asset-library` (worktree `.claude/worktrees/asset-library`), commit `d5cb65b` + merge `6baf129`. Rincian lengkap di arsip `archive/session-handover-from-2026-10-17.md`.
-* Asset Library (`/assets`, mirror Notion, picker di Design Brief, Production multi-select hanya platform Canva), Notion Config satu halaman bertab, kontrak platform di Rate Card → Kontrak (periode preset 3/6/12 bulan atau Custom + hari kerja Sen–Jum; info field via ikon ⓘ `InfoTip` di semua form: wizard, User, Asset, Doctype, Core field — aturan `form-crud-rules.md` §9), **Trial → Kontrak bundle** via `BundleContract`. Production Hub: kolom Designer (punya task di production) & Doctype (aktif per platform). Overview: tab "Tanpa Brand" untuk task tanpa akun (issues #35). Aturan: `business-rules.md`; modul: `modules.md`; entitas: `entities.md`.
-* **Rilis VPS 2026-10-24**: skema VPS ditambah via SQL aditif dari `prisma migrate diff` (tanpa DROP, 1 transaksi; 9 tabel baru termasuk `task_share_links`, kolom `contract_id`, `contract_end_date`, `purpose`, dll.) + 4 kategori aset default; `migrate diff` setelahnya kosong. `npm run deploy:vps` lolos healthcheck; log error PM2 bersih.
-* Notion: database "Asset Library" di Impro-Freelance (uji) + relation `Assets` hanya di SC-Canva. Belum diuji: drawer Jadikan Kontrak bundle di browser (tak ada trial approved lokal), brief → relation `Assets`, gating role "Lihat sebagai". Wireframe role belum diperbarui.
-
+### 2026-10-25 — Rilis Asset Library lanjutan (Claude Code, `🎨 [Frontend & UI/UX]`, `🔄 [API & Notion Integration]`, `🛡️ [DevOps & Release]`)
+* Sub-tab Notion Config (Asset Library / Pages & Databases / Sinkronisasi, `?sub=`), impor aset dari database Notion (+ perbarui judul & tag), `canva_design_id` unik, pindai database di sub-page, ikon & ilustrasi kategori (3D, Shape & Label), info field via `InfoTip`, preset periode kontrak, kolom Designer/Doctype di Production Hub, tab "Tanpa Brand" di Overview.
+* Rincian sesi 2026-10-24 (Asset Library, kontrak, rilis pertama) dipindah ke arsip `archive/session-handover-from-2026-10-17.md`.
 ---
 
 ## Catatan untuk LLM / Editor Selanjutnya
