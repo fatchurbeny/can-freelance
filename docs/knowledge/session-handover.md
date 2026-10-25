@@ -10,7 +10,7 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 
 ## 📌 Status Aktif
 
-* **Branch**: `feat/asset-library` (PR #9, Auto-fix aktif) **dirilis ke VPS 2026-10-25** (terakhir `8f8e837`), belum di-merge ke `main` · **Peran terakhir**: `🛡️ [DevOps & Release]`
+* **Branch**: `feat/asset-library` (PR #9, Auto-fix aktif) **dirilis ke VPS 2026-10-25** (terakhir `23736dd`), belum di-merge ke `main` · **Peran terakhir**: `🛡️ [DevOps & Release]`
 * **Multi-Production**: Fase 1–8 sebagian besar selesai (Production Hub, platform per production, Dropbox File Request untuk Envato Elements, Bundle & Order Bundle, tarif per platform). Detail rencana: [`multi-production-plan.md`](multi-production-plan.md).
 * **User Role Fase 1**: login ID + PIN 6 digit, role berbasis permission, Membership per ProductionUnit, "Lihat sebagai", halaman `/user-role`, `/profile`. Spec: [`user-role-spec.md`](user-role-spec.md). `AUTH_MODE=session` aktif di `.env` lokal dan VPS Biznet GIO.
 * **Sidebar**: pindah ke `layout.tsx` (`AppSidebar`), grup dropdown gaya pohon. Pola baku: [`sidebar-dropdown-pattern.md`](sidebar-dropdown-pattern.md).
@@ -18,7 +18,7 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 ## ⏳ Belum Selesai / Menunggu
 
 * Ganti PIN admin `FT-001` (menunggu user).
-* Kode di VPS = `feat/asset-library` `8f8e837`. Backup DB sebelum rilis: `~/db-backups/can-freelance-20261025-130650-pre-unique-design.dump`. **SSH VPS kini juga di port 2222** (`/etc/systemd/system/ssh.socket.d/port.conf`) karena jaringan kantor & hotspot memblokir port 22 keluar: deploy `VPS_SSH_PORT=2222 npm run deploy:vps`.
+* Kode di VPS = `feat/asset-library` `23736dd`. Backup DB sebelum rilis: `~/db-backups/can-freelance-20261025-130650-pre-unique-design.dump`. **SSH VPS kini juga di port 2222** (`/etc/systemd/system/ssh.socket.d/port.conf`) karena jaringan kantor & hotspot memblokir port 22 keluar: deploy `VPS_SSH_PORT=2222 npm run deploy:vps`.
 * Tombol "Download all Statement" di `/billing-statement` mengarah ke `/api/billing/download-all` yang tidak ada (dan `<a>` tanpa basePath) → selalu 404.
 * Print statement (`/billing-statement/print`) memanggil `window.print()` otomatis.
 * Escape saat dropdown terbuka di drawer `/user-role` menutup seluruh drawer (isian hilang).
@@ -40,7 +40,7 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 
 ### 2026-10-25 — Batas akses aset per role (Claude Code, `🛡️ [Security]`/`🎨 [Frontend & UI/UX]`)
 * `asset.view` dicabut dari Finance & Viewer. `asset.manage` kini per production: helper `canManageAsset`/`canManageAllAssets` (`permissions.ts`), guard `denyAssetScope`/`denyAssetGlobal` di `actions/assets.ts`; UI `/assets` menyembunyikan Sync/+Kategori untuk non-Admin, Edit/Arsip hanya aset production sendiri, form AD/PM wajib pilih production sendiri. Baris "Asset Report" di matriks. Detail: `user-role-spec.md` › Akses aset.
-* Diuji: Lihat sebagai PM uji `FT-002` (Lamongan, kini **nonaktif**) + skrip helper (14 kasus). Simpan aset sebagai PM tidak diuji di browser (pratinjau hanya-baca). Belum di-commit.
+* Diuji: Lihat sebagai PM uji `FT-002` (Lamongan, kini **nonaktif**) + skrip helper (14 kasus). Simpan aset sebagai PM tidak diuji di browser (pratinjau hanya-baca). Commit `23736dd`, **dirilis ke VPS 2026-10-25** (port SSH 2222, tanpa perubahan skema); healthcheck lolos, `/assets` & `/asset-report` → 307 login.
 * Commit `f3bd86c` di `feat/bundle-order-designer` memuat versi **rencana** Akses aset (`productionUnitId` tunggal) → saat merge pakai versi branch ini.
 * `.claude/launch.json` utama: `asset-library-dev` = AUTH_MODE=off (port 3012); `asset-library-auth` = worktree dengan login (port 3004).
 
