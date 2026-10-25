@@ -11,7 +11,7 @@ import { canvaProductionUnits, loadAssetLibrary, type AssetCategoryRow, type Ass
 import { getNotionClient } from '@/lib/notion-provision';
 import { decrypt } from '@/lib/encryption';
 import { normalizeNotionId } from '@/lib/notion-provision';
-import { previewNotionAssetImport, type ImportPreview } from '@/lib/notion-asset-import';
+import { normalizeTags, previewNotionAssetImport, type ImportPreview } from '@/lib/notion-asset-import';
 import {
   getAssetDatabase,
   pushAssetToNotion,
@@ -72,6 +72,12 @@ async function cleanInput(input: AssetInput) {
   };
 }
 
+/** Pesan ramah untuk desain Canva yang sudah dipakai aset lain (unik `canvaDesignId`). */
+function saveError(error: any, fallback: string): string {
+  if (error?.code === 'P2002') return 'Desain Canva ini sudah ada di Asset Library. Cari aset tersebut lalu edit, jangan ditambah ulang.';
+  return error?.message || fallback;
+}
+
 function queuePush(assetId: string, label: string) {
   runInBackground(`Push aset ${label} ke Notion`, async () => {
     await pushAssetToNotion(assetId);
@@ -90,7 +96,7 @@ export async function createAssetAction(input: AssetInput) {
     revalidate();
     return { success: true as const, id: asset.id };
   } catch (error: any) {
-    return { success: false as const, error: error.message || 'Gagal menyimpan aset.' };
+    return { success: false as const, error: saveError(error, 'Gagal menyimpan aset.') };
   }
 }
 
@@ -111,7 +117,7 @@ export async function updateAssetAction(assetId: string, input: AssetInput) {
     revalidate();
     return { success: true as const };
   } catch (error: any) {
-    return { success: false as const, error: error.message || 'Gagal menyimpan aset.' };
+    return { success: false as const, error: saveError(error, 'Gagal menyimpan aset.') };
   }
 }
 
@@ -248,8 +254,14 @@ export async function previewNotionAssetImportAction(input: { registeredId?: str
   }
 }
 
-/** Simpan baris impor yang dipilih sebagai aset baru (tanpa production = semua production Canva). */
-export async function importNotionAssetsAction(rows: { title: string; tags: string[]; previewUrl: string; categoryId: string }[]) {
+/**
+ * Simpan baris impor: `create` = aset baru (tanpa production = semua production Canva);
+ * `update` = perbarui judul & tag aset yang desainnya sudah ada, dari database sumber.
+ */
+export async function importNotionAssetsAction(input: {
+  create: { title: string; tags: string[]; previewUrl: string; categoryId: string }[];
+  update?: { assetId: string; title: string; tags: string[] }[];
+}) {
   const denied = await denyWrite('asset.manage');
   if (denied) return denied as never;
   try {
@@ -259,7 +271,7 @@ export async function importNotionAssetsAction(rows: { title: string; tags: stri
     );
     const data: Prisma.AssetCreateManyInput[] = [];
     let skipped = 0;
-    for (const row of rows) {
+    for (const row of input.create ?? []) {
       const previewUrl = normalizeCanvaViewUrl(row.previewUrl?.trim() ?? '');
       const designId = parseCanvaUrl(previewUrl)?.designId ?? null;
       if (!row.title?.trim() || publicViewUrlError(previewUrl) || !categoryIds.has(row.categoryId) || !designId || existing.has(designId)) {
@@ -270,21 +282,37 @@ export async function importNotionAssetsAction(rows: { title: string; tags: stri
       data.push({
         title: row.title.trim(),
         categoryId: row.categoryId,
-        tags: Array.from(new Set((row.tags ?? []).map((t) => t.trim().toLowerCase()).filter(Boolean))).slice(0, 20),
+        tags: normalizeTags(row.tags ?? []),
         previewUrl,
         canvaDesignId: designId,
         source: 'notion_import',
       });
     }
-    if (data.length) await prisma.asset.createMany({ data });
+    // skipDuplicates + unik canvaDesignId: aman bila dua impor berjalan bersamaan
+    const created = data.length ? (await prisma.asset.createMany({ data, skipDuplicates: true })).count : 0;
+    skipped += data.length - created;
+
+    let updated = 0;
+    for (const row of input.update ?? []) {
+      const title = row.title?.trim();
+      if (!title) { skipped++; continue; }
+      const res = await prisma.asset.updateMany({
+        where: { id: row.assetId },
+        data: { title, tags: normalizeTags(row.tags ?? []), syncStatus: 'PENDING_PUSH', lastEditedTime: new Date() },
+      });
+      if (res.count) updated++; else skipped++;
+    }
+
     // Kirim ke database mirror Asset Library bertahap (50 per putaran) di background
-    runInBackground(`Push ${data.length} aset impor ke Notion`, async () => {
-      for (let round = 0; round < 40; round++) {
-        if ((await pushPendingAssets(50)) === 0) break;
-      }
-    });
+    if (created + updated > 0) {
+      runInBackground(`Push ${created + updated} aset impor ke Notion`, async () => {
+        for (let round = 0; round < 40; round++) {
+          if ((await pushPendingAssets(50)) === 0) break;
+        }
+      });
+    }
     revalidate();
-    return { success: true as const, created: data.length, skipped };
+    return { success: true as const, created, updated, skipped };
   } catch (error: any) {
     return { success: false as const, error: error.message || 'Impor aset gagal.' };
   }

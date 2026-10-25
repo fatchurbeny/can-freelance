@@ -26,6 +26,7 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 * Tab Email Notifications & Overview di production Elements masih konten Canva.
 * Kanban per platform masih didiskusikan.
 * Impor katalog Notion "Canva Assets" (148 baris: 122 siap, 9 link bukan Canva, 17 tanpa link) lewat Notion Config → Asset Library; diuji pratinjau saja, belum diimpor (lokal akan push ke Notion asli).
+* Skema: `assets.canva_design_id` **unik** (index `assets_canva_design_id_key`). Lokal sudah; **VPS: cek duplikat dulu** (`select canva_design_id, count(*) … having count(*)>1`) lalu buat index saat rilis.
 * Kategori aset **3D** & **Shape & Label** baru ada di DB lokal (ikon/ilustrasi di `CategoryArt.tsx`); di VPS tambahkan lewat "+ Kategori" atau INSERT saat rilis berikutnya.
 * Asset Library di VPS: database Notion "Asset Library" & relation `Assets` belum dibuat di workspace produksi (Notion Config → Asset Library). Dropbox VPS: `invalid_client` di log 2026-10-20 (cek kredensial). Backlog: [Resources Library](../backlog/resources-library.md) jalur API (ditunda, MFA Canva), [Role kustom & matriks](../backlog/custom-roles-matrix.md), [Design Brief autosave](../backlog/task-drawer-design-brief-autosave.md).
 

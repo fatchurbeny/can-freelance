@@ -562,7 +562,7 @@ model Asset {
   notes          String?
   status         String            @default("active") // "active" | "archived"
   source         String            @default("manual") // "manual" | "api"
-  canvaDesignId  String?           @map("canva_design_id")
+  canvaDesignId  String?           @unique @map("canva_design_id")
   notionPageId   String?           @unique @map("notion_page_id")
   syncStatus     String            @default("PENDING_PUSH") @map("sync_status") // SYNCED | PENDING_PUSH | ERROR
   lastSyncedAt   DateTime?         @map("last_synced_at") @db.Timestamptz(6)

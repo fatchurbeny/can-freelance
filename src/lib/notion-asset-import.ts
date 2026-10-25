@@ -11,7 +11,12 @@ import { getNotionClient, listChildDatabases, resolveDataSourceId } from '@/lib/
 const SHORT_LINK_HOSTS = new Set(['bit.ly', 'bitly.com', 'canva.link', 'tinyurl.com', 's.id', 't.ly', 'cutt.ly', 'rebrand.ly']);
 const IMPORT_LIMIT = 1000;
 
-export type ImportRowStatus = 'ready' | 'duplicate' | 'no_link' | 'unresolved';
+/** `update` = desain sudah ada di library tetapi judul/tag di sumber berbeda; `duplicate` = sudah ada & sama. */
+export type ImportRowStatus = 'ready' | 'update' | 'duplicate' | 'no_link' | 'unresolved';
+
+/** Normalisasi tag seperti saat aset disimpan (huruf kecil, unik, maks. 20). */
+export const normalizeTags = (tags: string[]) =>
+  Array.from(new Set(tags.map((t) => t.trim().toLowerCase()).filter(Boolean))).slice(0, 20);
 
 export interface ImportPreviewRow {
   /** Id page Notion sumber. */
@@ -22,6 +27,10 @@ export interface ImportPreviewRow {
   previewUrl: string | null;
   categoryId: string | null;
   status: ImportRowStatus;
+  /** Aset library yang desainnya sama (status `update` / `duplicate`). */
+  existing: { id: string; title: string; tags: string[] } | null;
+  /** Bagian yang berbeda dari sumber, untuk status `update`. */
+  changes: ('judul' | 'tag')[];
 }
 
 export interface ImportPreview {
@@ -165,21 +174,30 @@ export async function previewNotionAssetImport(databaseIdOrPage: string, assetDa
 
   const resolved = await mapLimit(base, 6, (row) => (row.sourceUrl ? resolveToCanvaViewUrl(row.sourceUrl) : Promise.resolve(null)));
   const designIds = resolved.map((u) => (u ? parseCanvaUrl(u)?.designId : null)).filter((id): id is string => !!id);
-  const existing = new Set(
-    (await prisma.asset.findMany({ where: { canvaDesignId: { in: designIds } }, select: { canvaDesignId: true } }))
-      .map((a) => a.canvaDesignId),
+  const existing = new Map(
+    (await prisma.asset.findMany({ where: { canvaDesignId: { in: designIds } }, select: { id: true, canvaDesignId: true, title: true, tags: true } }))
+      .map((a) => [a.canvaDesignId!, { id: a.id, title: a.title, tags: a.tags }]),
   );
   const seen = new Set<string>();
 
   const rows: ImportPreviewRow[] = base.map((row, i) => {
     const previewUrl = resolved[i];
     const designId = previewUrl ? parseCanvaUrl(previewUrl)?.designId ?? null : null;
+    const match = designId && !seen.has(designId) ? existing.get(designId) ?? null : null;
+    const changes: ('judul' | 'tag')[] = [];
+    if (match) {
+      if (match.title.trim() !== row.title.trim()) changes.push('judul');
+      const a = [...normalizeTags(match.tags)].sort().join('|');
+      const b = [...normalizeTags(row.tags)].sort().join('|');
+      if (a !== b) changes.push('tag');
+    }
     let status: ImportRowStatus = 'ready';
     if (!row.sourceUrl) status = 'no_link';
     else if (!previewUrl || publicViewUrlError(previewUrl)) status = 'unresolved';
-    else if (designId && (existing.has(designId) || seen.has(designId))) status = 'duplicate';
+    else if (designId && seen.has(designId)) status = 'duplicate';
+    else if (match) status = changes.length ? 'update' : 'duplicate';
     if (designId) seen.add(designId);
-    return { ...row, previewUrl, status };
+    return { ...row, previewUrl, status, existing: match, changes };
   });
 
   return { databaseTitle, properties: { title: titleProp, link: linkProp, tags: tagsProp, category: categoryProp }, rows, truncated };

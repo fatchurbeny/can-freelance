@@ -363,8 +363,14 @@ export async function syncAssetsFromNotion(client: Client, mode: 'incremental' |
         lastEditedTime: editedAt,
       };
       const productions = productionUnitIds.map((productionUnitId) => ({ productionUnitId }));
-      if (existing) await prisma.asset.update({ where: { id: existing.id }, data: { ...data, productions: { deleteMany: {}, create: productions } } });
-      else await prisma.asset.create({ data: { ...data, notionPageId: page.id, productions: { create: productions } } });
+      try {
+        if (existing) await prisma.asset.update({ where: { id: existing.id }, data: { ...data, productions: { deleteMany: {}, create: productions } } });
+        else await prisma.asset.create({ data: { ...data, notionPageId: page.id, productions: { create: productions } } });
+      } catch (err: any) {
+        // Desain yang sama sudah dipakai aset lain (mis. page Notion diduplikasi): lewati, jangan gagalkan seluruh sync
+        if (err?.code === 'P2002') { console.warn(`Asset Library: page ${page.id} dilewati, desain Canva sudah dipakai aset lain.`); continue; }
+        throw err;
+      }
       synced++;
     }
     cursor = res.has_more ? res.next_cursor : undefined;

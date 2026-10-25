@@ -21,6 +21,7 @@ const headCell = 'px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider tex
 
 const STATUS_LABEL: Record<ImportRowStatus, { text: string; dot: string }> = {
   ready: { text: 'Siap', dot: 'bg-[#00a67d]' },
+  update: { text: 'Berubah di sumber', dot: 'bg-amber-500' },
   duplicate: { text: 'Sudah ada', dot: 'bg-[#6e7687]' },
   unresolved: { text: 'Link bukan desain Canva', dot: 'bg-rose-500' },
   no_link: { text: 'Tanpa link', dot: 'bg-rose-500' },
@@ -34,6 +35,7 @@ export default function NotionAssetImport({ candidates, onImported }: Props) {
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
   const [rowCategory, setRowCategory] = useState<Record<string, string>>({});
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [updateExisting, setUpdateExisting] = useState(false);
   const [checking, startCheck] = useTransition();
   const [importing, startImport] = useTransition();
 
@@ -45,18 +47,32 @@ export default function NotionAssetImport({ candidates, onImported }: Props) {
       setCategories(res.categories);
       setRowCategory(Object.fromEntries(res.preview.rows.map((r) => [r.key, r.categoryId ?? ''])));
       setSelected(new Set(res.preview.rows.filter((r) => r.status === 'ready' && r.categoryId).map((r) => r.key)));
+      setUpdateExisting(false);
     });
 
   const counts = useMemo(() => {
-    const c: Record<ImportRowStatus, number> = { ready: 0, duplicate: 0, unresolved: 0, no_link: 0 };
+    const c: Record<ImportRowStatus, number> = { ready: 0, update: 0, duplicate: 0, unresolved: 0, no_link: 0 };
     preview?.rows.forEach((r) => { c[r.status]++; });
     return c;
   }, [preview]);
 
   const readyRows = preview?.rows.filter((r) => r.status === 'ready') ?? [];
+  const updateRows = preview?.rows.filter((r) => r.status === 'update') ?? [];
+  const selectable = (status: ImportRowStatus) => status === 'ready' || (status === 'update' && updateExisting);
+  const selectableRows = preview?.rows.filter((r) => selectable(r.status)) ?? [];
   const toImport = readyRows.filter((r) => selected.has(r.key) && rowCategory[r.key]);
+  const toUpdate = updateExisting ? updateRows.filter((r) => selected.has(r.key) && r.existing) : [];
   const missingCategory = readyRows.filter((r) => selected.has(r.key) && !rowCategory[r.key]).length;
-  const allSelected = readyRows.length > 0 && readyRows.every((r) => selected.has(r.key));
+  const allSelected = selectableRows.length > 0 && selectableRows.every((r) => selected.has(r.key));
+
+  const toggleUpdateExisting = (on: boolean) => {
+    setUpdateExisting(on);
+    setSelected((prev) => {
+      const next = new Set(prev);
+      updateRows.forEach((r) => (on ? next.add(r.key) : next.delete(r.key)));
+      return next;
+    });
+  };
 
   const toggle = (key: string) => setSelected((prev) => {
     const next = new Set(prev);
@@ -66,9 +82,13 @@ export default function NotionAssetImport({ candidates, onImported }: Props) {
 
   const runImport = () =>
     startImport(async () => {
-      const res = await importNotionAssetsAction(toImport.map((r) => ({ title: r.title, tags: r.tags, previewUrl: r.previewUrl!, categoryId: rowCategory[r.key] })));
+      const res = await importNotionAssetsAction({
+        create: toImport.map((r) => ({ title: r.title, tags: r.tags, previewUrl: r.previewUrl!, categoryId: rowCategory[r.key] })),
+        update: toUpdate.map((r) => ({ assetId: r.existing!.id, title: r.title, tags: r.tags })),
+      });
       if (!res.success) { toast.error(res.error); return; }
-      toast.success(`${res.created} aset diimpor${res.skipped ? `, ${res.skipped} dilewati` : ''}. Dikirim ke Notion di background.`);
+      const parts = [res.created && `${res.created} aset diimpor`, res.updated && `${res.updated} diperbarui`, res.skipped && `${res.skipped} dilewati`].filter(Boolean);
+      toast.success(`${parts.join(', ') || 'Tidak ada perubahan'}. Dikirim ke Notion di background.`);
       setPreview(null);
       onImported();
     });
@@ -127,14 +147,21 @@ export default function NotionAssetImport({ candidates, onImported }: Props) {
             </span>
           </div>
           {preview.truncated && <p className="px-5 py-2 text-xs font-semibold text-amber-600">Hanya 1.000 baris pertama yang dibaca.</p>}
+          {counts.update > 0 && (
+            <label className="flex cursor-pointer items-center gap-2.5 border-b border-[#f0f0f0] bg-amber-50/60 px-5 py-2.5 text-xs font-semibold text-gray-800 dark:border-[#272a34] dark:bg-amber-500/5 dark:text-gray-200">
+              <input type="checkbox" checked={updateExisting} onChange={(e) => toggleUpdateExisting(e.target.checked)} className="h-4 w-4 accent-[#ff5e1f]" />
+              Perbarui judul &amp; tag {counts.update} aset yang berubah di database sumber
+              <InfoTip label="Perbarui aset yang sudah ada">Judul dan tag aset di library diganti dengan versi database sumber, lalu dikirim ke Notion. Kategori, production, link, dan catatan tidak diubah.</InfoTip>
+            </label>
+          )}
 
           <div className="max-h-[480px] overflow-y-auto">
             <table className="w-full text-left text-xs">
               <thead className="sticky top-0 z-10 bg-gray-50 dark:bg-[#16181d]">
                 <tr className="border-b border-[#f0f0f0] dark:border-[#272a34]">
                   <th className="w-10 px-4 py-2.5">
-                    <input type="checkbox" aria-label="Pilih semua yang siap" checked={allSelected}
-                      onChange={() => setSelected(allSelected ? new Set() : new Set(readyRows.map((r) => r.key)))} className="h-4 w-4 accent-[#ff5e1f]" />
+                    <input type="checkbox" aria-label="Pilih semua yang bisa diproses" checked={allSelected}
+                      onChange={() => setSelected(allSelected ? new Set() : new Set(selectableRows.map((r) => r.key)))} className="h-4 w-4 accent-[#ff5e1f]" />
                   </th>
                   <th className={headCell}>Judul</th>
                   <th className={`${headCell} w-[200px]`}>Kategori</th>
@@ -144,10 +171,11 @@ export default function NotionAssetImport({ candidates, onImported }: Props) {
               <tbody className="divide-y divide-[#f0f0f0] dark:divide-[#272a34]">
                 {preview.rows.map((r) => {
                   const ready = r.status === 'ready';
+                  const canPick = selectable(r.status);
                   return (
-                    <tr key={r.key} className={ready ? '' : 'opacity-60'}>
+                    <tr key={r.key} className={canPick || r.status === 'update' ? '' : 'opacity-60'}>
                       <td className="px-4 py-2">
-                        <input type="checkbox" aria-label={`Impor ${r.title}`} disabled={!ready} checked={ready && selected.has(r.key)} onChange={() => toggle(r.key)} className="h-4 w-4 accent-[#ff5e1f]" />
+                        <input type="checkbox" aria-label={`${r.status === 'update' ? 'Perbarui' : 'Impor'} ${r.title}`} disabled={!canPick} checked={canPick && selected.has(r.key)} onChange={() => toggle(r.key)} className="h-4 w-4 accent-[#ff5e1f]" />
                       </td>
                       <td className="px-4 py-2">
                         <span className="block font-bold text-gray-900 dark:text-white">{r.title}</span>
@@ -157,10 +185,15 @@ export default function NotionAssetImport({ candidates, onImported }: Props) {
                         {ready ? (
                           <PortalSelect ariaLabel={`Kategori ${r.title}`} placeholder="Pilih kategori" value={rowCategory[r.key] ?? ''} options={categoryOptions}
                             onChange={(v) => setRowCategory((prev) => ({ ...prev, [r.key]: v }))} />
-                        ) : <span className="px-4 text-gray-400">—</span>}
+                        ) : <span className="px-4 text-gray-400">{r.status === 'update' ? 'Tetap' : '—'}</span>}
                       </td>
                       <td className="px-4 py-2">
                         <span className="flex items-center gap-2 font-semibold text-gray-700 dark:text-gray-300"><span aria-hidden className={`h-2 w-2 shrink-0 ${STATUS_LABEL[r.status].dot}`} />{STATUS_LABEL[r.status].text}</span>
+                        {r.status === 'update' && (
+                          <span className="block text-[11px] text-gray-500 dark:text-gray-400">
+                            {r.changes.join(' & ')} berbeda{r.changes.includes('judul') && r.existing ? ` · saat ini "${r.existing.title}"` : ''}
+                          </span>
+                        )}
                         {r.status === 'unresolved' && r.sourceUrl && (
                           <a href={r.sourceUrl} target="_blank" rel="noreferrer" className="block max-w-[170px] truncate text-[11px] text-[#c2410c] hover:underline">{r.sourceUrl}</a>
                         )}
@@ -174,16 +207,16 @@ export default function NotionAssetImport({ candidates, onImported }: Props) {
 
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#f0f0f0] px-5 py-3 dark:border-[#272a34]">
             <span className="text-xs text-gray-500 dark:text-gray-400">
-              {toImport.length} dipilih{missingCategory > 0 ? ` · ${missingCategory} belum punya kategori (tidak ikut diimpor)` : ''}
+              {toImport.length} baru{toUpdate.length ? ` · ${toUpdate.length} diperbarui` : ''}{missingCategory > 0 ? ` · ${missingCategory} belum punya kategori (tidak ikut diimpor)` : ''}
             </span>
             <button
               type="button"
               onClick={runImport}
-              disabled={importing || toImport.length === 0}
+              disabled={importing || toImport.length + toUpdate.length === 0}
               className="flex h-10 items-center gap-2 bg-[#ff5e1f] px-4 text-xs font-bold uppercase tracking-wider text-white hover:bg-[#ff7038] disabled:opacity-50 cursor-pointer"
             >
               <Download className="h-3.5 w-3.5" />
-              {importing ? 'Mengimpor…' : `Impor ${toImport.length} aset`}
+              {importing ? 'Memproses…' : toUpdate.length ? `Impor ${toImport.length} · Perbarui ${toUpdate.length}` : `Impor ${toImport.length} aset`}
             </button>
           </div>
         </>
