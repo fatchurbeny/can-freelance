@@ -13,7 +13,8 @@ Tidak memakai Canva API, jadi tidak butuh MFA. Admin menempel dua link per aset:
 - **Relation "Assets"** di database task per production → hitungan "Dipakai di N task". Relation tidak bisa menyimpan keterangan halaman, jadi catatan halaman tetap di section `## 📦 Assets` di brief. Production baru perlu dibuatkan relation (tombol "Buat relation" di Notion Config → Asset Library).
 - Skema tambahan: `Asset.notionPageId`, `syncStatus`, `lastSyncedAt`; `NotionDatabase` didaftarkan dengan kegunaan Asset Library.
 - Desain (Artifact, privat): https://claude.ai/artifact/HKviEpNcfcL5V7MD3iYjLj (1 halaman `/assets` interaktif, 2 drawer Tambah Aset, 3 picker di Design Brief, 4 Notion Config → Asset Library).
-- Belum diputuskan: siapa yang boleh mengelola aset (admin saja / AD/PM), kategori awal, library per production atau bersama.
+- **Akses (diputuskan 2026-10-25)**: dua cakupan, **Asset Production** (`productionUnitId` terisi) dan **Asset Library** bersama (`productionUnitId` null) → `Asset` & `AssetCategory` dapat kolom `productionUnitId` opsional. Lihat (`asset.view`): Admin, AD, PM, designer FT & FL. Kelola (`asset.manage`): Admin semua; AD & PM hanya production sendiri; library bersama hanya membership global (Admin). Detail & jebakan `can()`: [`../knowledge/user-role-spec.md`](../knowledge/user-role-spec.md) › Akses aset.
+- Belum diputuskan: kategori awal.
 
 ## Jalur API (ditunda)
 

@@ -56,3 +56,20 @@ Entri yang dipindah dari `session-handover.md`. Cari dengan `grep`; jangan dibac
 * Database uji di Notion dan barisnya di Notion Config → Databases boleh dihapus manual.
 * **Notion Config → Pages & Databases** (pengganti halaman Databases, tabel gaya Production Hub, copy Bahasa Indonesia): daftar page induk (`NotionPage`, default = Impro-Freelance) + database terdaftar. Status arsip database milik production mengikuti production (Production Hub); Arsipkan/Pulihkan hanya untuk database tanpa production. Halaman Notion Config responsif (2 kolom mulai `xl`). `NotionConfig.defaultParentPageId` dihapus. Lokal: test, test-1, test-2 didaftarkan lewat Pindai (Belum dipakai, tidak diarsipkan). VPS perlu `db push` + isi page.
 * Belum di-commit.
+
+### 2026-10-24 — Share link publik task (Claude Code, `⚙️ [Backend & Database]` + `🎨 [Frontend & UI/UX]`)
+* Model baru `TaskShareLink` (db push lokal sudah; **VPS perlu `prisma db push`**), permission `task.share` (Admin, AD, PM).
+* Tombol Share di header task drawer → buat/salin/cabut link `/can-freelance/share/t/<token>`; satu link aktif per task, tanpa kedaluwarsa. Escape menutup panel saja.
+* Halaman publik `/share/t/[token]` (proxy & sidebar dikecualikan, `noindex`): field allowlist + Design Brief. Detail di `modules.md`.
+* Drawer menandai task ber-link publik: badge **Public view** di baris Last Edited + titik hijau di tombol Share (status dimuat saat drawer dibuka). Cabut link memakai konfirmasi inline (`confirm()` bawaan tertutup otomatis di browser in-app → cabut tidak jalan). Diuji di browser (Admin): cabut → 404, buat ulang, Escape hanya menutup panel.
+* Dev server kedua: `npm run dev` membaca `PORT` (default 3002) & `next.config` membaca `NEXT_DIST_DIR`; preview `.claude/launch.json` memakai `.next-preview` + `autoPort` (Next 16 menolak 2 `next dev` di distDir sama).
+* Diuji di build produksi lokal (port 3003): link aktif 200, token salah/dicabut 404, rute lain tetap 307 ke login; desktop + mobile 375px tanpa scroll horizontal. Dev server chat lain di 3002 perlu restart (Prisma client lama). Belum di-commit.
+
+### 2026-10-24 — Designer bisa download statement sendiri (Claude Code, `🎨 [Frontend & UI/UX]`)
+* `OwnBillingView` (billing untuk role designer) kini punya tombol **Download Statement** → `/billing-statement/print?designerId=<milik sendiri>&paymentMonth=…` (tab baru). Guard di print page sudah membatasi `billing.view.own` ke `designerId` sendiri.
+* Print page: Rate/Poll tidak lagi hardcode `15000` (pakai `priceFor`, `-` bila belum ada harga); payout 0 untuk designer `Resign` (sama dengan halaman billing).
+* Print page kini memuat **Order Bundle** yang masuk payout bulan itu (`getBundleOrdersForPeriod` → `payoutByDesigner`, designer Resign = 0): tabel bundle + Subtotal Satuan/Bundle + Total; ringkasan Total Payout = satuan + bundle. `OwnBillingView` juga memakai `payoutByDesigner` agar total sama persis.
+* Deretan chip bulan di `OwnBillingView` diganti dropdown (`billing/OwnMonthSelect.tsx`, pakai `SelectDropdown`, ubah `paymentMonth` di URL); default = bulan terbaru (`availableMonths[0]`). Diuji desktop + mobile 375px.
+* Tombol pakai `next/link` (bukan `<a>`) agar basePath `/can-freelance` ikut; `<a>` biasa → 404.
+* Diuji lokal (Admin "Lihat sebagai" Putery): tombol muncul, print Putery Sept-2026 = IDR 2.700.000 (sama dengan billing), print designer lain dialihkan. Tabel bundle belum teruji visual: satu-satunya order lokal (Slides-Colony) task-nya masih Draft. Belum di-commit.
+* Catatan: panel Notion Sync di sidebar sudah admin-only (`integration.manage`); PM/AD multi-production = beberapa baris Membership (by design).
