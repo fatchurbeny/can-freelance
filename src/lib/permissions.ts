@@ -65,7 +65,7 @@ export const ROLE_PERMISSIONS: Record<RoleKey, readonly Permission[]> = {
   art_director: MANAGEMENT,
   project_manager: MANAGEMENT,
   finance: [
-    'overview.view', 'kanban.view', 'account.view', 'rateCard.view', 'billing.view', 'asset.view',
+    'overview.view', 'kanban.view', 'account.view', 'rateCard.view', 'billing.view',
   ],
   designer_fulltime: [
     'kanban.view', 'task.edit.own', 'uploadLink.view', 'account.view', 'billing.view.own', 'asset.view',
@@ -73,7 +73,7 @@ export const ROLE_PERMISSIONS: Record<RoleKey, readonly Permission[]> = {
   designer_freelance: [
     'kanban.view', 'task.edit.own', 'uploadLink.view', 'billing.view.own', 'asset.view',
   ],
-  viewer: ['overview.view', 'kanban.view', 'asset.view'],
+  viewer: ['overview.view', 'kanban.view'],
 };
 
 export const ROLE_KEYS = Object.keys(ROLE_PERMISSIONS) as RoleKey[];
@@ -108,6 +108,23 @@ export function can(user: AuthUser | null | undefined, permission: Permission, p
     if (productionUnitId && m.productionUnitId && m.productionUnitId !== productionUnitId) return false;
     return ROLE_PERMISSIONS[m.roleKey].includes(permission);
   });
+}
+
+/**
+ * Kelola aset bersama (tanpa production), kategori, Sync & Impor Notion: hanya membership global
+ * ber-`asset.manage`. Jangan pakai `can(user, 'asset.manage')` tanpa production untuk ini — itu true
+ * untuk membership production mana pun.
+ */
+export function canManageAllAssets(user: AuthUser | null | undefined): boolean {
+  return !!user?.memberships.some(
+    (m) => m.productionUnitId === null && isRoleKey(m.roleKey) && ROLE_PERMISSIONS[m.roleKey].includes('asset.manage'),
+  );
+}
+
+/** Kelola satu aset: semua production-nya harus dalam cakupan user; kosong = aset bersama. */
+export function canManageAsset(user: AuthUser | null | undefined, productionUnitIds: readonly string[]): boolean {
+  if (productionUnitIds.length === 0) return canManageAllAssets(user);
+  return productionUnitIds.every((id) => can(user, 'asset.manage', id));
 }
 
 /** Production yang boleh diakses user; `null` = semua (membership global). */
@@ -215,6 +232,7 @@ export const FEATURE_MATRIX: FeatureRow[] = [
     label: 'Asset Library',
     level: (_r, p) => (has(p, 'asset.manage') ? 'full' : has(p, 'asset.view') ? 'limited' : 'none'),
   },
+  { label: 'Asset Report', level: (_r, p) => (has(p, 'asset.manage') ? 'full' : 'none') },
   { label: 'Notion Config / Integrasi', level: (_r, p) => (has(p, 'integration.manage') ? 'full' : 'none') },
   { label: 'User & Role · Buat Akun Login', level: (_r, p) => (has(p, 'user.manage') ? 'full' : 'none') },
   { label: 'Lihat sebagai (pratinjau hanya-baca)', level: (_r, p) => (has(p, 'user.manage') ? 'full' : 'none') },

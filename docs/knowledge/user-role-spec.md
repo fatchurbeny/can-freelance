@@ -57,6 +57,14 @@ Hubungan dengan Account & Team: ya. Baris **Brand** di detail task (`TaskDetailS
 | Account & Team, Rate Card (edit) | ✓ | ✓ | ✓ | baca | – | – |
 | Billing, Payroll | ✓ | – | – | ✓ | milik sendiri | – |
 | Integrasi, manajemen user | ✓ | – | – | – | – | – |
+| Asset Library — lihat (`asset.view`) | ✓ | ✓ | ✓ | – | ✓ (FT & FL) | – |
+| Asset Library — kelola, Asset Report (`asset.manage`) | ✓ semua | production sendiri | production sendiri | – | – | – |
+
+### Akses aset (2026-10-25)
+- Cakupan aset = `Asset.productions` (`AssetProduction`); kosong = **aset bersama** semua production Canva. Designer/AD/PM melihat aset bersama + aset production mereka (`loadAssetLibrary(access.unitIds)`).
+- `asset.view`: Admin, AD, PM, designer FT & FL. **Tidak** untuk Finance & Viewer (kartu Assets di brief tetap terlihat lewat `kanban.view`).
+- `asset.manage`: AD/PM hanya aset yang **semua** production-nya ada di membership mereka (`canManageAsset`), wajib ≥1 production. Aset bersama, kategori, Sync, dan Impor Notion hanya membership global (`canManageAllAssets`, praktiknya Admin). Asset Report untuk AD/PM sudah difilter ke production sendiri.
+- Jangan memakai `can(user, 'asset.manage')` tanpa production untuk aset bersama: itu true untuk membership production mana pun. Guard server: `denyAssetScope` / `denyAssetGlobal` di `src/app/actions/assets.ts`.
 
 ## Login ID + PIN
 - **ID unik per orang**, format dengan awalan tipe: `FT-001` (full-time), `FL-014` (freelance). Disimpan di `User.userCode` (unique) + `User.employmentType` (`FULL_TIME` | `FREELANCE`).

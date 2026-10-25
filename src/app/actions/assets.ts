@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import prisma from '@/lib/prisma';
 import type { Prisma } from '../../../generated/prisma';
 import { getAccess, denyUnless, denyWrite } from '@/lib/access';
+import { canManageAllAssets, canManageAsset } from '@/lib/permissions';
 import { runInBackground } from '@/lib/background-sync';
 import { normalizeCanvaViewUrl, parseCanvaUrl, publicViewUrlError } from '@/lib/canva-url';
 import { resolveCanvaShortLink } from '@/lib/canva-link-resolve';
@@ -78,6 +79,28 @@ function saveError(error: any, fallback: string): string {
   return error?.message || fallback;
 }
 
+/** `asset.manage` dalam cakupan production aset (AD/PM: production sendiri; kosong = aset bersama). */
+async function denyAssetScope(...productionUnitIdLists: string[][]) {
+  const denied = await denyWrite('asset.manage');
+  if (denied) return denied;
+  const access = await getAccess();
+  if (!access.enabled) return null;
+  if (productionUnitIdLists.every((ids) => canManageAsset(access.user, ids))) return null;
+  return { success: false as const, error: 'Anda hanya bisa mengelola aset production Anda. Aset bersama hanya untuk Admin.' };
+}
+
+/** Aksi seluruh library (kategori, Sync, Impor Notion): hanya membership global ber-`asset.manage`. */
+async function denyAssetGlobal() {
+  const denied = await denyWrite('asset.manage');
+  if (denied) return denied;
+  const access = await getAccess();
+  if (!access.enabled || canManageAllAssets(access.user)) return null;
+  return { success: false as const, error: 'Hanya Admin yang bisa mengubah kategori, sinkronisasi, dan impor aset.' };
+}
+
+const assetUnitIds = async (assetId: string) =>
+  (await prisma.assetProduction.findMany({ where: { assetId }, select: { productionUnitId: true } })).map((p) => p.productionUnitId);
+
 function queuePush(assetId: string, label: string) {
   runInBackground(`Push aset ${label} ke Notion`, async () => {
     await pushAssetToNotion(assetId);
@@ -85,7 +108,7 @@ function queuePush(assetId: string, label: string) {
 }
 
 export async function createAssetAction(input: AssetInput) {
-  const denied = await denyWrite('asset.manage');
+  const denied = await denyAssetScope(Array.from(new Set(input.productionUnitIds ?? [])));
   if (denied) return denied as never;
   try {
     const { productionUnitIds, ...data } = await cleanInput(input);
@@ -101,7 +124,7 @@ export async function createAssetAction(input: AssetInput) {
 }
 
 export async function updateAssetAction(assetId: string, input: AssetInput) {
-  const denied = await denyWrite('asset.manage');
+  const denied = await denyAssetScope(await assetUnitIds(assetId), Array.from(new Set(input.productionUnitIds ?? [])));
   if (denied) return denied as never;
   try {
     const { productionUnitIds, ...data } = await cleanInput(input);
@@ -123,7 +146,7 @@ export async function updateAssetAction(assetId: string, input: AssetInput) {
 
 /** Arsipkan / pulihkan aset (status ikut ke Notion). */
 export async function setAssetStatusAction(assetId: string, status: 'active' | 'archived') {
-  const denied = await denyWrite('asset.manage');
+  const denied = await denyAssetScope(await assetUnitIds(assetId));
   if (denied) return denied as never;
   try {
     const asset = await prisma.asset.update({ where: { id: assetId }, data: { status, syncStatus: 'PENDING_PUSH' } });
@@ -136,7 +159,7 @@ export async function setAssetStatusAction(assetId: string, status: 'active' | '
 }
 
 export async function createAssetCategoryAction(name: string) {
-  const denied = await denyWrite('asset.manage');
+  const denied = await denyAssetGlobal();
   if (denied) return denied as never;
   try {
     const clean = name?.trim();
@@ -215,7 +238,7 @@ export async function fetchCanvaInfoAction(previewUrl: string) {
 
 /** Tombol Sync di /assets: kirim aset yang tertunda lalu tarik ulang seluruh database aset dari Notion. */
 export async function syncAssetsNowAction() {
-  const denied = await denyWrite('asset.manage');
+  const denied = await denyAssetGlobal();
   if (denied) return denied as never;
   try {
     const pushed = await pushPendingAssets();
@@ -233,7 +256,7 @@ export async function syncAssetsNowAction() {
  * dan kembalikan pratinjau baris; tidak ada yang disimpan.
  */
 export async function previewNotionAssetImportAction(input: { registeredId?: string | null; link?: string | null }) {
-  const denied = await denyWrite('asset.manage');
+  const denied = await denyAssetGlobal();
   if (denied) return denied as never;
   try {
     let id: string | null = null;
@@ -262,7 +285,7 @@ export async function importNotionAssetsAction(input: {
   create: { title: string; tags: string[]; previewUrl: string; categoryId: string }[];
   update?: { assetId: string; title: string; tags: string[] }[];
 }) {
-  const denied = await denyWrite('asset.manage');
+  const denied = await denyAssetGlobal();
   if (denied) return denied as never;
   try {
     const categoryIds = new Set((await prisma.assetCategory.findMany({ select: { id: true } })).map((c) => c.id));

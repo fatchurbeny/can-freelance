@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "generatedAt": "2026-10-25T07:12:53.804Z",
+  "generatedAt": "2026-10-25T07:44:46.833Z",
   "nodes": [
     {
       "id": "page:/account-team",
@@ -2556,6 +2556,12 @@
     },
     {
       "source": "action:assets",
+      "target": "lib:permissions",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:assets",
       "target": "lib:background-sync",
       "relation": "invokes",
       "confidence": "EXTRACTED"
@@ -2605,6 +2611,12 @@
     {
       "source": "action:assets",
       "target": "model:AssetCategory",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:assets",
+      "target": "model:AssetProduction",
       "relation": "queries",
       "confidence": "EXTRACTED"
     },
@@ -3667,6 +3679,12 @@
     {
       "source": "page:/assets",
       "target": "lib:access",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "page:/assets",
+      "target": "lib:permissions",
       "relation": "invokes",
       "confidence": "EXTRACTED"
     },

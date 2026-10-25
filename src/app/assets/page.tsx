@@ -1,6 +1,7 @@
 import TopBar from '@/components/TopBar';
 import AssetLibraryClient from '@/components/assets/AssetLibraryClient';
 import { requireAccess } from '@/lib/access';
+import { canManageAllAssets } from '@/lib/permissions';
 import { canvaProductionUnits, loadAssetLibrary, loadAssetSyncSummary } from '@/lib/asset-library';
 
 export const dynamic = 'force-dynamic';
@@ -9,6 +10,7 @@ export const dynamic = 'force-dynamic';
 export default async function AssetsPage() {
   const access = await requireAccess(['asset.view']);
   const canManage = access.allows('asset.manage');
+  const manageAll = !access.enabled || canManageAllAssets(access.user);
 
   const [library, sync, units] = await Promise.all([
     loadAssetLibrary(access.unitIds, { includeArchived: canManage }),
@@ -27,6 +29,8 @@ export default async function AssetsPage() {
             assets={library.assets}
             units={units}
             canManage={canManage}
+            manageAll={manageAll}
+            manageUnitIds={units.filter((u) => access.allows('asset.manage', u.id)).map((u) => u.id)}
             sync={sync}
           />
         </main>

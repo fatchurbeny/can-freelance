@@ -20,6 +20,8 @@ interface Props {
   asset: AssetRow | null;
   categories: AssetCategoryRow[];
   units: UnitOption[];
+  /** false (AD/PM) = wajib memilih production sendiri; aset bersama hanya Admin. */
+  allowShared?: boolean;
   defaultCategoryId?: string;
   notionConnected: boolean;
   onClose: () => void;
@@ -31,10 +33,10 @@ const labelCell = 'flex w-[150px] shrink-0 items-center gap-2 whitespace-nowrap 
 const input = 'h-full min-h-11 w-full rounded-none border-0 bg-gray-50/50 px-5 text-xs font-bold text-gray-900 outline-none focus:bg-white focus:ring-1 focus:ring-inset focus:ring-[#ff5e1f] dark:bg-[#16181d]/50 dark:text-white dark:focus:bg-[#16181d]';
 const smallBtn = 'flex h-10 items-center gap-1.5 border border-[#f0f0f0] bg-white px-3 text-xs font-bold text-gray-700 hover:text-[#ff5e1f] disabled:opacity-50 dark:border-[#272a34] dark:bg-[#0d0e12] dark:text-gray-300 cursor-pointer';
 
-export default function AssetFormDrawer({ asset, categories, units, defaultCategoryId, notionConnected, onClose, onSaved }: Props) {
+export default function AssetFormDrawer({ asset, categories, units, allowShared = true, defaultCategoryId, notionConnected, onClose, onSaved }: Props) {
   const [title, setTitle] = useState(asset?.title ?? '');
   const [categoryId, setCategoryId] = useState(asset?.categoryId ?? defaultCategoryId ?? categories[0]?.id ?? '');
-  const [unitIds, setUnitIds] = useState<string[]>(asset?.productionUnitIds ?? []);
+  const [unitIds, setUnitIds] = useState<string[]>(asset?.productionUnitIds ?? (!allowShared && units.length === 1 ? [units[0].id] : []));
   const [tags, setTags] = useState<string[]>(asset?.tags ?? []);
   const [tagDraft, setTagDraft] = useState('');
   const [editUrl, setEditUrl] = useState(asset?.editUrl ?? '');
@@ -135,6 +137,7 @@ export default function AssetFormDrawer({ asset, categories, units, defaultCateg
   const save = () =>
     startTransition(async () => {
       setError(null);
+      if (!allowShared && unitIds.length === 0) { setError('Pilih production untuk aset ini.'); return; }
       const allTags = tagDraft.trim() ? Array.from(new Set([...tags, ...tagDraft.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean)])) : tags;
       const payload = {
         title,
@@ -203,7 +206,7 @@ export default function AssetFormDrawer({ asset, categories, units, defaultCateg
                 ariaLabel="Production"
                 values={unitIds}
                 onChange={setUnitIds}
-                emptyLabel="Semua production Canva"
+                emptyLabel={allowShared ? 'Semua production Canva' : 'Pilih production'}
                 options={units.map((u) => ({ value: u.id, label: u.name }))}
               />
             </div>

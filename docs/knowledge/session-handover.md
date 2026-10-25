@@ -38,10 +38,14 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 
 ## 📝 Sesi Terakhir
 
+### 2026-10-25 — Batas akses aset per role (Claude Code, `🛡️ [Security]`/`🎨 [Frontend & UI/UX]`)
+* `asset.view` dicabut dari Finance & Viewer. `asset.manage` kini per production: helper `canManageAsset`/`canManageAllAssets` (`permissions.ts`), guard `denyAssetScope`/`denyAssetGlobal` di `actions/assets.ts`; UI `/assets` menyembunyikan Sync/+Kategori untuk non-Admin, Edit/Arsip hanya aset production sendiri, form AD/PM wajib pilih production sendiri. Baris "Asset Report" di matriks. Detail: `user-role-spec.md` › Akses aset.
+* Diuji: Lihat sebagai PM uji `FT-002` (Lamongan, kini **nonaktif**) + skrip helper (14 kasus). Simpan aset sebagai PM tidak diuji di browser (pratinjau hanya-baca). Belum di-commit.
+* Commit `f3bd86c` di `feat/bundle-order-designer` memuat versi **rencana** Akses aset (`productionUnitId` tunggal) → saat merge pakai versi branch ini.
+* `.claude/launch.json` utama: `asset-library-dev` = AUTH_MODE=off (port 3012); `asset-library-auth` = worktree dengan login (port 3004).
+
 ### 2026-10-25 — Rilis Asset Library lanjutan (Claude Code, `🎨 [Frontend & UI/UX]`, `🔄 [API & Notion Integration]`, `🛡️ [DevOps & Release]`)
-* Sub-tab Notion Config (Asset Library / Pages & Databases / Sinkronisasi, `?sub=`), impor aset dari database Notion (+ perbarui judul & tag), `canva_design_id` unik, pindai database di sub-page, ikon & ilustrasi kategori (3D, Shape & Label), info field via `InfoTip`, preset periode kontrak, kolom Designer/Doctype di Production Hub, tab "Tanpa Brand" di Overview.
 * **Asset Report** (`/asset-report`, menu di bawah Production, sub-menu per kategori; desain https://claude.ai/artifact/1bRjBCU85gn84C85Cm27Lb): diuji lokal dengan data uji sementara (sudah dihapus); **dirilis ke VPS 2026-10-25** (`8f8e837`, tanpa perubahan skema). Wireframe role belum diperbarui untuk menu ini.
-* Rincian sesi 2026-10-24 (Asset Library, kontrak, rilis pertama) dipindah ke arsip `archive/session-handover-from-2026-10-17.md`.
 ---
 
 ## Catatan untuk LLM / Editor Selanjutnya

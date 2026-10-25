@@ -18,7 +18,12 @@ interface Props {
   categories: AssetCategoryRow[];
   assets: AssetRow[];
   units: UnitOption[];
+  /** Boleh menambah aset (asset.manage di production mana pun). */
   canManage: boolean;
+  /** Admin/membership global: aset bersama, kategori, Sync. */
+  manageAll: boolean;
+  /** Production tempat user boleh mengelola aset (AD/PM). */
+  manageUnitIds: string[];
   sync: AssetSyncSummary;
 }
 
@@ -26,7 +31,7 @@ type DrawerState = { mode: 'detail' | 'edit'; id: string } | { mode: 'create'; i
 
 const cell = 'h-11 rounded-none border-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] text-xs';
 
-export default function AssetLibraryClient({ categories, assets, units, canManage, sync }: Props) {
+export default function AssetLibraryClient({ categories, assets, units, canManage, manageAll, manageUnitIds, sync }: Props) {
   const router = useRouter();
   const [tab, setTab] = useState('all');
   const [search, setSearch] = useState('');
@@ -39,6 +44,10 @@ export default function AssetLibraryClient({ categories, assets, units, canManag
 
   // Diturunkan dari props agar data terbaru tampil setelah router.refresh().
   const drawerAsset = drawer?.id ? assets.find((a) => a.id === drawer.id) ?? null : null;
+  // AD/PM: hanya aset yang semua production-nya milik mereka; aset bersama = Admin
+  const canEditAsset = (a: AssetRow) =>
+    manageAll || (canManage && a.productionUnitIds.length > 0 && a.productionUnitIds.every((id) => manageUnitIds.includes(id)));
+  const formUnits = manageAll ? units : units.filter((u) => manageUnitIds.includes(u.id));
   const categoryIndex = useMemo(() => new Map(categories.map((c, i) => [c.id, i])), [categories]);
 
   const scoped = useMemo(() => assets.filter((a) => (show === 'archived' ? a.status === 'archived' : a.status === 'active')), [assets, show]);
@@ -103,7 +112,7 @@ export default function AssetLibraryClient({ categories, assets, units, canManag
             <span aria-hidden className={`h-2 w-2 ${syncDot}`} />
             {syncLabel}
           </div>
-          {canManage && sync.connected && (
+          {manageAll && sync.connected && (
             <button
               type="button"
               onClick={runSync}
@@ -163,7 +172,7 @@ export default function AssetLibraryClient({ categories, assets, units, canManag
               );
             })}
           </div>
-          {canManage && (newCategory === null ? (
+          {manageAll && (newCategory === null ? (
             <button
               type="button"
               onClick={() => setNewCategory('')}
@@ -261,7 +270,7 @@ export default function AssetLibraryClient({ categories, assets, units, canManag
                     {a.pages != null && (
                       <span className="absolute bottom-2 right-2 bg-black/75 px-1.5 py-0.5 text-[11px] font-bold text-white">{a.pages} hlm</span>
                     )}
-                    {a.syncStatus === 'ERROR' && canManage && (
+                    {a.syncStatus === 'ERROR' && canEditAsset(a) && (
                       <span className="absolute left-2 top-2 bg-rose-500 px-1.5 py-0.5 text-[10px] font-bold uppercase text-white">Gagal sync</span>
                     )}
                   </div>
@@ -288,7 +297,7 @@ export default function AssetLibraryClient({ categories, assets, units, canManag
       {drawer?.mode === 'detail' && drawerAsset && (
         <AssetDetailDrawer
           asset={drawerAsset}
-          canManage={canManage}
+          canManage={canEditAsset(drawerAsset)}
           onClose={() => setDrawer(null)}
           onEdit={() => setDrawer({ mode: 'edit', id: drawerAsset.id })}
           onChanged={() => router.refresh()}
@@ -299,7 +308,8 @@ export default function AssetLibraryClient({ categories, assets, units, canManag
           key={drawer.id ?? 'new'}
           asset={drawer.mode === 'edit' ? drawerAsset : null}
           categories={categories}
-          units={units}
+          units={formUnits}
+          allowShared={manageAll}
           defaultCategoryId={tab !== 'all' ? tab : categories[0]?.id}
           notionConnected={sync.connected}
           onClose={() => setDrawer(drawer.mode === 'edit' ? { mode: 'detail', id: drawer.id } : null)}
