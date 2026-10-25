@@ -112,6 +112,7 @@ export default function NotionConfigClient({ initialSyncLog }: { initialSyncLog:
     const params = new URLSearchParams(searchParams.toString());
     params.delete('google_auth');
     params.delete('error');
+    params.delete('sub');
     if (id === 'koneksi') params.delete('tab');
     else params.set('tab', id);
     const qs = params.toString();

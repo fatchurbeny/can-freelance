@@ -5,7 +5,8 @@ import { RefreshCw, Save } from 'lucide-react';
 import toast from 'react-hot-toast';
 import SelectDropdown from '@/components/SelectDropdown';
 import { getRecentSyncLogsAction, saveSchedulingConfigAction } from '@/app/actions/notion-config';
-import { BTN_PRIMARY, DOT, KV_GRID, KV_LABEL, KV_ROW, KV_VALUE, PANEL_HEAD, PANEL_TITLE, SECTION_GAP, TABLE, TD, TH, THEAD_ROW, TROW } from './styles';
+import { BTN_PRIMARY, DOT, KV_GRID, KV_LABEL, KV_ROW, KV_VALUE, PANEL_HEAD, PANEL_TITLE, TABLE, TD, TH, THEAD_ROW, TROW } from './styles';
+import SubTabs, { useSubTab } from './SubTabs';
 
 export const SYNC_INTERVAL_OPTIONS = [
   { value: '15_mins', label: 'Setiap 15 menit' },
@@ -31,6 +32,11 @@ const STATUS_VIEW: Record<string, { label: string; dot: string }> = {
   failed: { label: 'Gagal', dot: 'bg-rose-500' },
 };
 
+const SUBS = ['jadwal', 'riwayat'] as const;
+const LOG_LIMIT = 20;
+type LogFilter = 'all' | 'incremental' | 'full' | 'failed';
+const LOG_FILTERS: [LogFilter, string][] = [['all', 'Semua'], ['incremental', 'Incremental'], ['full', 'Full'], ['failed', 'Gagal']];
+
 const formatTime = (ms: number) =>
   `${new Date(ms).toLocaleDateString('id-ID')} ${new Date(ms).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}`;
 
@@ -40,9 +46,11 @@ export default function SyncTab({ autoSync: initialAuto, syncInterval: initialIn
   const [syncInterval, setSyncInterval] = useState(initialInterval);
   const [saving, setSaving] = useState(false);
   const [logs, setLogs] = useState<SyncLogRow[] | null>(null);
+  const [logFilter, setLogFilter] = useState<LogFilter>('all');
+  const [sub, setSub] = useSubTab(SUBS, 'jadwal');
 
   const loadLogs = useCallback(async () => {
-    const res = await getRecentSyncLogsAction(10);
+    const res = await getRecentSyncLogsAction(LOG_LIMIT);
     setLogs(res.success ? res.logs : []);
   }, []);
 
@@ -68,9 +76,24 @@ export default function SyncTab({ autoSync: initialAuto, syncInterval: initialIn
   };
 
   const latest = STATUS_VIEW[latestSyncLog?.status ?? ''];
+  const failedCount = logs?.filter((l) => l.status === 'failed').length ?? 0;
+  const visibleLogs = logs?.filter((l) =>
+    logFilter === 'all' ? true : logFilter === 'failed' ? l.status === 'failed' : l.mode === logFilter,
+  ) ?? null;
 
   return (
     <div className="flex flex-col">
+      <SubTabs
+        label="Bagian Sinkronisasi"
+        active={sub}
+        onChange={setSub}
+        items={[
+          { id: 'jadwal', label: 'Jadwal' },
+          { id: 'riwayat', label: 'Riwayat sync', badge: failedCount > 0 ? `${failedCount} gagal` : null, tone: 'alert' },
+        ]}
+      />
+
+      {sub === 'jadwal' && (<>
       <div className={PANEL_HEAD}>
         <span className={PANEL_TITLE}>Jadwal sinkronisasi</span>
         <button type="button" onClick={save} disabled={!dirty || saving} className={BTN_PRIMARY}>
@@ -123,9 +146,28 @@ export default function SyncTab({ autoSync: initialAuto, syncInterval: initialIn
         </div>
       </div>
 
-      <div className={`${PANEL_HEAD} ${SECTION_GAP}`}>
-        <span className={PANEL_TITLE}>Riwayat sync</span>
-        <span className="text-xs text-gray-500 dark:text-gray-400">10 terakhir</span>
+      </>)}
+
+      {sub === 'riwayat' && (<>
+      <div className="flex flex-wrap items-stretch border-b border-[#f0f0f0] dark:border-[#272a34]">
+        <div role="group" aria-label="Filter riwayat" className="flex items-stretch overflow-x-auto">
+          {LOG_FILTERS.map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              aria-pressed={logFilter === id}
+              onClick={() => setLogFilter(id)}
+              className={`h-11 whitespace-nowrap border-r border-[#f0f0f0] px-4 text-xs dark:border-[#272a34] cursor-pointer ${
+                logFilter === id
+                  ? 'bg-white font-bold text-gray-900 shadow-[inset_0_-2px_0_#ff5e1f] dark:bg-[#16181d] dark:text-white'
+                  : 'bg-gray-50/50 font-semibold text-gray-500 hover:text-gray-900 dark:bg-[#16181d]/50 dark:text-gray-400 dark:hover:text-white'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <span className="ml-auto flex items-center px-5 text-xs text-gray-500 dark:text-gray-400">{LOG_LIMIT} terakhir</span>
       </div>
       <div className="overflow-x-auto">
         <table className={`${TABLE} min-w-[640px]`}>
@@ -141,10 +183,10 @@ export default function SyncTab({ autoSync: initialAuto, syncInterval: initialIn
             {logs === null && (
               <tr><td colSpan={4} className="px-5 py-8 text-center text-gray-400">Memuat riwayat…</td></tr>
             )}
-            {logs?.length === 0 && (
-              <tr><td colSpan={4} className="px-5 py-8 text-center text-gray-400">Belum ada riwayat sync.</td></tr>
+            {visibleLogs?.length === 0 && (
+              <tr><td colSpan={4} className="px-5 py-8 text-center text-gray-400">{logs?.length ? 'Tidak ada sync yang cocok dengan filter.' : 'Belum ada riwayat sync.'}</td></tr>
             )}
-            {logs?.map((log) => {
+            {visibleLogs?.map((log) => {
               const view = STATUS_VIEW[log.status] ?? { label: log.status, dot: 'bg-[#6e7687]' };
               return (
                 <tr key={log.id} className={TROW}>
@@ -161,6 +203,7 @@ export default function SyncTab({ autoSync: initialAuto, syncInterval: initialIn
           </tbody>
         </table>
       </div>
+      </>)}
     </div>
   );
 }

@@ -12,6 +12,9 @@ import {
 } from '@/app/actions/notion-config';
 import { formatRelative } from './asset-ui';
 import NotionAssetImport from './NotionAssetImport';
+import SubTabs, { useSubTab } from '@/components/notion-config/SubTabs';
+
+const SUBS = ['database', 'relation', 'impor'] as const;
 
 type Status = Extract<Awaited<ReturnType<typeof getAssetNotionStatusAction>>, { success: true; exists: true }>;
 
@@ -34,6 +37,7 @@ export default function AssetLibraryNotionCard() {
   const [pageId, setPageId] = useState('');
   const [linkId, setLinkId] = useState('');
   const [pending, startTransition] = useTransition();
+  const [sub, setSub] = useSubTab(SUBS, 'database');
 
   const load = useCallback(async () => {
     const res = await getAssetNotionStatusAction();
@@ -45,6 +49,8 @@ export default function AssetLibraryNotionCard() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  const missingRelations = status?.database ? status.relations.filter((r) => r.state === 'missing').length : 0;
 
   const run = (fn: () => Promise<{ success: boolean; error?: string }>, okMessage: string) =>
     startTransition(async () => {
@@ -69,6 +75,13 @@ export default function AssetLibraryNotionCard() {
           </span>
           <p className="text-xs text-gray-500 dark:text-gray-400">App jadi tempat input utama; database Notion ikut tersinkron dua arah.</p>
         </div>
+        {status?.database && (
+          <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-gray-500 dark:text-gray-400">
+            <span><strong className="text-gray-900 dark:text-white">{status.counts.total}</strong> aset</span>
+            <span><strong className="text-gray-900 dark:text-white">{status.counts.pending}</strong> menunggu{status.counts.failed > 0 ? ` · ${status.counts.failed} gagal` : ''}</span>
+            <span>sync {formatRelative(status.counts.lastSyncedAt)}</span>
+          </div>
+        )}
       </div>
 
       {error && <div className="px-5 py-4 text-xs font-semibold text-rose-600">{error}</div>}
@@ -77,8 +90,21 @@ export default function AssetLibraryNotionCard() {
       )}
 
       {status && (
+        <SubTabs
+          label="Bagian Asset Library"
+          active={sub}
+          onChange={setSub}
+          items={[
+            { id: 'database', label: 'Database & Pemetaan' },
+            { id: 'relation', label: 'Relation Production', badge: missingRelations > 0 ? `${missingRelations} belum` : null, tone: 'alert' },
+            { id: 'impor', label: 'Impor dari Notion' },
+          ]}
+        />
+      )}
+
+      {status && sub === 'database' && (
         <div className="grid grid-cols-1 divide-y divide-[#f0f0f0] dark:divide-[#272a34] xl:grid-cols-2 xl:divide-x xl:divide-y-0">
-          <div className="flex flex-col divide-y divide-[#f0f0f0] dark:divide-[#272a34]">
+          <div className="flex flex-col">
             {status.database ? (
               <dl className="divide-y divide-[#f0f0f0] text-xs dark:divide-[#272a34]">
                 {[
@@ -138,7 +164,8 @@ export default function AssetLibraryNotionCard() {
               </div>
             )}
 
-            <div>
+          </div>
+          <div>
               <div className="border-b border-[#f0f0f0] px-5 py-2.5 text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:border-[#272a34]">Pemetaan properti</div>
               <div className="grid grid-cols-2 border-b border-[#f0f0f0] bg-gray-50/50 dark:border-[#272a34] dark:bg-[#16181d]/50">
                 <span className={`${headCell} border-r border-[#f0f0f0] dark:border-[#272a34]`}>Field app</span>
@@ -153,8 +180,10 @@ export default function AssetLibraryNotionCard() {
                 ))}
               </div>
             </div>
-          </div>
+        </div>
+      )}
 
+      {status && sub === 'relation' && (
           <div className="flex flex-col">
             <div className="border-b border-[#f0f0f0] bg-gray-50/50 px-5 py-3.5 dark:border-[#272a34] dark:bg-[#16181d]/50">
               <p className="text-sm font-bold text-gray-900 dark:text-white">Relation &quot;Assets&quot; di database task</p>
@@ -195,10 +224,9 @@ export default function AssetLibraryNotionCard() {
               </>
             )}
           </div>
-        </div>
       )}
 
-      {status && <NotionAssetImport candidates={status.candidates} onImported={load} />}
+      {status && sub === 'impor' && <NotionAssetImport candidates={status.candidates} onImported={load} />}
     </section>
   );
 }

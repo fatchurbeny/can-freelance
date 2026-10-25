@@ -76,7 +76,7 @@ export default function NotionAssetImport({ candidates, onImported }: Props) {
   const categoryOptions = categories.map((c) => ({ value: c.id, label: c.name }));
 
   return (
-    <div className="border-t border-[#f0f0f0] dark:border-[#272a34]">
+    <div>
       <div className="border-b border-[#f0f0f0] bg-gray-50/50 px-5 py-3.5 dark:border-[#272a34] dark:bg-[#16181d]/50">
         <p className="flex items-center gap-1.5 text-sm font-bold text-gray-900 dark:text-white">
           Impor dari database Notion

@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "generatedAt": "2026-10-25T01:53:54.282Z",
+  "generatedAt": "2026-10-25T05:12:16.063Z",
   "nodes": [
     {
       "id": "page:/account-team",
@@ -1081,6 +1081,14 @@
       "group": "React Components",
       "filepath": "src/components/notion-config/styles.ts",
       "details": "React UI Component in src/components/notion-config/styles.ts"
+    },
+    {
+      "id": "component:SubTabs",
+      "label": "SubTabs",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/notion-config/SubTabs.tsx",
+      "details": "React UI Component in src/components/notion-config/SubTabs.tsx"
     },
     {
       "id": "component:SyncTab",
@@ -4535,6 +4543,12 @@
       "confidence": "EXTRACTED"
     },
     {
+      "source": "component:AssetLibraryNotionCard",
+      "target": "component:SubTabs",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
       "source": "component:AssetPicker",
       "target": "action:assets",
       "relation": "invokes",
@@ -5315,6 +5329,12 @@
       "confidence": "EXTRACTED"
     },
     {
+      "source": "component:PagesDatabasesTab",
+      "target": "component:SubTabs",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
       "source": "component:SyncTab",
       "target": "component:SelectDropdown",
       "relation": "renders",
@@ -5329,6 +5349,12 @@
     {
       "source": "component:SyncTab",
       "target": "component:styles",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:SyncTab",
+      "target": "component:SubTabs",
       "relation": "renders",
       "confidence": "EXTRACTED"
     },

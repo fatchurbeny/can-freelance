@@ -12,7 +12,8 @@ import {
   setDefaultNotionPageAction,
   setNotionDatabaseArchivedAction,
 } from '@/app/actions/notion-config';
-import { BTN, PANEL_HEAD, PANEL_NOTE, PANEL_TITLE, SECTION_GAP, TABLE, TD, TH, THEAD_ROW, TROW } from './styles';
+import { BTN, PANEL_HEAD, PANEL_NOTE, PANEL_TITLE, TABLE, TD, TH, THEAD_ROW, TROW } from './styles';
+import SubTabs, { useSubTab } from './SubTabs';
 
 interface PageRow {
   id: string;
@@ -35,6 +36,13 @@ interface DatabaseRow {
 }
 
 const ASSET_PURPOSE = 'asset_library';
+const SUBS = ['databases', 'pages'] as const;
+
+type Usage = 'all' | 'task' | 'asset' | 'none';
+const USAGE_FILTERS: [Usage, string][] = [['all', 'Semua'], ['task', 'Task'], ['asset', 'Asset Library'], ['none', 'Belum dipakai']];
+
+const usageOf = (db: DatabaseRow): Exclude<Usage, 'all'> =>
+  db.productions.length > 0 ? 'task' : db.purpose === ASSET_PURPOSE ? 'asset' : 'none';
 const BORDER_L = 'border-l border-[#f0f0f0] dark:border-[#272a34]';
 
 interface Props {
@@ -50,6 +58,8 @@ export default function PagesDatabasesTab({ onChanged, onOpenAssetTab }: Props) 
   const [databases, setDatabases] = useState<DatabaseRow[]>([]);
   const [view, setView] = useState<'active' | 'archived'>('active');
   const [query, setQuery] = useState('');
+  const [usage, setUsage] = useState<Usage>('all');
+  const [sub, setSub] = useSubTab(SUBS, 'databases');
   const [busyId, setBusyId] = useState<string | null>(null);
   const [newPage, setNewPage] = useState('');
   const [makeDefault, setMakeDefault] = useState(false);
@@ -113,10 +123,11 @@ export default function PagesDatabasesTab({ onChanged, onOpenAssetTab }: Props) 
     const q = query.trim().toLowerCase();
     return databases.filter((db) => {
       if ((view === 'archived') !== db.archived) return false;
+      if (usage !== 'all' && usageOf(db) !== usage) return false;
       if (!q) return true;
       return `${db.name} ${db.parentPageName ?? ''} ${db.productions.map((p) => p.name).join(' ')}`.toLowerCase().includes(q);
     });
-  }, [databases, view, query]);
+  }, [databases, view, query, usage]);
 
   if (loading) {
     return (
@@ -128,7 +139,17 @@ export default function PagesDatabasesTab({ onChanged, onOpenAssetTab }: Props) 
 
   return (
     <div className="flex flex-col">
-      {/* Pages */}
+      <SubTabs
+        label="Bagian Pages & Databases"
+        active={sub}
+        onChange={setSub}
+        items={[
+          { id: 'databases', label: 'Databases', badge: activeCount },
+          { id: 'pages', label: 'Pages', badge: pages.length },
+        ]}
+      />
+
+      {sub === 'pages' && (<>
       <div className={PANEL_HEAD}>
         <div className="space-y-0.5">
           <span className={PANEL_TITLE}>Pages</span>
@@ -192,9 +213,10 @@ export default function PagesDatabasesTab({ onChanged, onOpenAssetTab }: Props) 
           </tbody>
         </table>
       </div>
+      </>)}
 
-      {/* Databases */}
-      <div className={`${PANEL_HEAD} ${SECTION_GAP}`}>
+      {sub === 'databases' && (<>
+      <div className={PANEL_HEAD}>
         <div className="space-y-0.5">
           <span className={PANEL_TITLE}>Databases</span>
           <p className={PANEL_NOTE}>Database milik production mengikuti status production-nya (atur lewat Production Hub). Database tanpa kegunaan bisa diarsipkan; tetap terdaftar dan data Notion tidak disentuh.</p>
@@ -208,6 +230,23 @@ export default function PagesDatabasesTab({ onChanged, onOpenAssetTab }: Props) 
             <button type="button" onClick={() => setQuery('')} aria-label="Hapus pencarian" className="text-gray-400 hover:text-[#ff5e1f] cursor-pointer"><X className="h-3.5 w-3.5" /></button>
           )}
         </label>
+        <div role="group" aria-label="Filter kegunaan" className={`flex items-stretch overflow-x-auto ${BORDER_L}`}>
+          {USAGE_FILTERS.map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              aria-pressed={usage === id}
+              onClick={() => setUsage(id)}
+              className={`h-11 whitespace-nowrap border-r border-[#f0f0f0] px-3.5 text-xs last:border-r-0 dark:border-[#272a34] cursor-pointer ${
+                usage === id
+                  ? 'bg-white font-bold text-gray-900 shadow-[inset_0_-2px_0_#ff5e1f] dark:bg-[#16181d] dark:text-white'
+                  : 'bg-gray-50/50 font-semibold text-gray-500 hover:text-gray-900 dark:bg-[#16181d]/50 dark:text-gray-400 dark:hover:text-white'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
         <div className={`grid grid-cols-2 divide-x divide-[#f0f0f0] dark:divide-[#272a34] ${BORDER_L}`}>
           {([['active', `Aktif (${activeCount})`], ['archived', `Arsip (${archivedCount})`]] as const).map(([id, label]) => (
             <button
@@ -291,6 +330,7 @@ export default function PagesDatabasesTab({ onChanged, onOpenAssetTab }: Props) 
           </tbody>
         </table>
       </div>
+      </>)}
     </div>
   );
 }
