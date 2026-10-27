@@ -653,7 +653,8 @@ export async function createTaskAction(payload: CreateTaskPayload) {
         if (payload.license && licenseKey) notionProperties[licenseKey] = { select: { name: payload.license } };
 
         const doctypeKey = w('doctype');
-        if (selectedDoctype?.displayName && doctypeKey) notionProperties[doctypeKey] = { select: { name: selectedDoctype.displayName } };
+        // Opsi select Notion = notionKey (lihat syncDoctypeOptionToNotion); displayName boleh berisi koma yang ditolak Notion.
+        if (selectedDoctype?.notionKey && doctypeKey) notionProperties[doctypeKey] = { select: { name: selectedDoctype.notionKey } };
 
         const statusKey = w('designStatus');
         if (selectedStatus && statusKey) {
@@ -1024,7 +1025,7 @@ export async function updateTaskFieldsAction(taskId: string, payload: TaskUpdate
           if (payload.doctypeId) {
             const doctypeRecord = await prisma.doctype.findUnique({ where: { id: payload.doctypeId } });
             if (doctypeRecord) {
-              notionProperties[doctypeKey] = { select: { name: doctypeRecord.displayName } };
+              notionProperties[doctypeKey] = { select: { name: doctypeRecord.notionKey } };
             }
           } else {
             notionProperties[doctypeKey] = { select: null };

@@ -317,7 +317,7 @@ export async function pushPendingLocalChangesToNotion() {
       if (task.license && licenseKey) properties[licenseKey] = { select: { name: task.license } };
 
       const doctypeKey = w('doctype');
-      if (task.doctype?.displayName && doctypeKey) properties[doctypeKey] = { select: { name: task.doctype.displayName } };
+      if (task.doctype?.notionKey && doctypeKey) properties[doctypeKey] = { select: { name: task.doctype.notionKey } };
 
       const designerKey = w('designer');
       if (task.designer?.displayName && designerKey) {
