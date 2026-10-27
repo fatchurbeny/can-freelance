@@ -38,6 +38,10 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 
 ## 📝 Sesi Terakhir
 
+### 2026-10-27 — Summary Order Bundle: nominal "menunggu task approved" (Claude Code, `🎨 [Frontend]` + `⚙️ [Backend]`)
+* Aturan tetap: order bundle masuk payout hanya bila semua task approved (meski sudah Lunas). `getBundleOrdersForPeriod` kini mengembalikan `pendingTotal` (Payout Month = bulan ini, task belum semua approved).
+* UI: kartu segmen "Order Bundle" dan header grup Payout Breakdown menampilkan "+ IDR x menunggu task approved"; baris order belum complete diberi badge amber. Belum dicek di browser (DB lokal mati), belum di-commit.
+
 ### 2026-10-25 — Model akses Asset Production & Asset Library (Claude Code, `🏛️ [Architecture & Knowledge Ops]`)
 * Diputuskan (belum diimplementasi): permission baru `asset.view` (Admin, AD, PM, designer FT & FL) dan `asset.manage` (Admin semua; AD & PM production sendiri; library bersama hanya membership global). Aset/kategori punya `productionUnitId` opsional (terisi = Asset Production, null = Library). Dicatat di `user-role-spec.md` › Akses aset dan backlog `resources-library.md`. Tanpa perubahan kode.
 

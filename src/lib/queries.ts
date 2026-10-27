@@ -814,12 +814,15 @@ export async function getBundleOrdersForPeriod(period: string) {
   const rows = orders.map((o) => mapBundleOrderRow(o, period));
   const payoutByDesigner = new Map<string, number>();
   let payoutTotal = 0;
+  // Order dengan Payout Month bulan ini yang task-nya belum semua approved: belum masuk payout.
+  let pendingTotal = 0;
   for (const r of rows) {
-    if (!r.inPayout || !r.completed || !r.designerId || r.resigned) continue;
+    if (!r.inPayout || !r.designerId || r.resigned) continue;
+    if (!r.completed) { pendingTotal += r.price; continue; }
     payoutByDesigner.set(r.designerId, (payoutByDesigner.get(r.designerId) ?? 0) + r.price);
     payoutTotal += r.price;
   }
-  return { rows, payoutByDesigner, payoutTotal };
+  return { rows, payoutByDesigner, payoutTotal, pendingTotal };
 }
 
 /** Order bundle yang semua task-nya approved tapi belum punya Payout Month (antrian tab Closing). */
