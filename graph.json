@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "generatedAt": "2026-10-24T10:25:42.696Z",
+  "generatedAt": "2026-10-28T10:26:13.646Z",
   "nodes": [
     {
       "id": "page:/account-team",
@@ -41,6 +41,14 @@
       "group": "Server Actions & Lib",
       "filepath": "src/app/actions/bundle.ts",
       "details": "Server Actions in src/app/actions/bundle.ts"
+    },
+    {
+      "id": "action:canva-insights",
+      "label": "canva-insights.ts",
+      "type": "action",
+      "group": "Server Actions & Lib",
+      "filepath": "src/app/actions/canva-insights.ts",
+      "details": "Server Actions in src/app/actions/canva-insights.ts"
     },
     {
       "id": "action:designer",
@@ -193,6 +201,30 @@
       "group": "Server Actions & Lib",
       "filepath": "src/app/api/google/oauth/start/route.ts",
       "details": "Route Handler (/api/google/oauth/start)"
+    },
+    {
+      "id": "api:/insights/ingest",
+      "label": "API /api/insights/ingest",
+      "type": "action",
+      "group": "Server Actions & Lib",
+      "filepath": "src/app/api/insights/ingest/route.ts",
+      "details": "Route Handler (/api/insights/ingest)"
+    },
+    {
+      "id": "api:/insights/known-ids",
+      "label": "API /api/insights/known-ids",
+      "type": "action",
+      "group": "Server Actions & Lib",
+      "filepath": "src/app/api/insights/known-ids/route.ts",
+      "details": "Route Handler (/api/insights/known-ids)"
+    },
+    {
+      "id": "api:/insights/runs",
+      "label": "API /api/insights/runs",
+      "type": "action",
+      "group": "Server Actions & Lib",
+      "filepath": "src/app/api/insights/runs/route.ts",
+      "details": "Route Handler (/api/insights/runs)"
     },
     {
       "id": "api:/knowledge-graph",
@@ -1459,6 +1491,54 @@
       "details": "Server/shared library in src/lib/canva-email-parser.ts"
     },
     {
+      "id": "lib:canva-insights/api-auth",
+      "label": "canva-insights/api-auth.ts",
+      "type": "action",
+      "group": "Server Actions & Lib",
+      "filepath": "src/lib/canva-insights/api-auth.ts",
+      "details": "Server/shared library in src/lib/canva-insights/api-auth.ts"
+    },
+    {
+      "id": "lib:canva-insights/import",
+      "label": "canva-insights/import.ts",
+      "type": "action",
+      "group": "Server Actions & Lib",
+      "filepath": "src/lib/canva-insights/import.ts",
+      "details": "Server/shared library in src/lib/canva-insights/import.ts"
+    },
+    {
+      "id": "lib:canva-insights/ingest",
+      "label": "canva-insights/ingest.ts",
+      "type": "action",
+      "group": "Server Actions & Lib",
+      "filepath": "src/lib/canva-insights/ingest.ts",
+      "details": "Server/shared library in src/lib/canva-insights/ingest.ts"
+    },
+    {
+      "id": "lib:canva-insights/match",
+      "label": "canva-insights/match.ts",
+      "type": "action",
+      "group": "Server Actions & Lib",
+      "filepath": "src/lib/canva-insights/match.ts",
+      "details": "Server/shared library in src/lib/canva-insights/match.ts"
+    },
+    {
+      "id": "lib:canva-insights/parse",
+      "label": "canva-insights/parse.ts",
+      "type": "action",
+      "group": "Server Actions & Lib",
+      "filepath": "src/lib/canva-insights/parse.ts",
+      "details": "Server/shared library in src/lib/canva-insights/parse.ts"
+    },
+    {
+      "id": "lib:canva-insights/reparse",
+      "label": "canva-insights/reparse.ts",
+      "type": "action",
+      "group": "Server Actions & Lib",
+      "filepath": "src/lib/canva-insights/reparse.ts",
+      "details": "Server/shared library in src/lib/canva-insights/reparse.ts"
+    },
+    {
       "id": "lib:color-extractor",
       "label": "color-extractor.ts",
       "type": "action",
@@ -1915,6 +1995,54 @@
       "details": "Prisma model BundleOrder (table bundle_orders)"
     },
     {
+      "id": "model:CanvaTemplate",
+      "label": "CanvaTemplate Model",
+      "type": "model",
+      "group": "Prisma DB Models",
+      "filepath": "prisma/schema.prisma",
+      "details": "Prisma model CanvaTemplate (table canva_templates)"
+    },
+    {
+      "id": "model:CanvaTemplateDaily",
+      "label": "CanvaTemplateDaily Model",
+      "type": "model",
+      "group": "Prisma DB Models",
+      "filepath": "prisma/schema.prisma",
+      "details": "Prisma model CanvaTemplateDaily (table canva_template_daily)"
+    },
+    {
+      "id": "model:CanvaBrandDaily",
+      "label": "CanvaBrandDaily Model",
+      "type": "model",
+      "group": "Prisma DB Models",
+      "filepath": "prisma/schema.prisma",
+      "details": "Prisma model CanvaBrandDaily (table canva_brand_daily)"
+    },
+    {
+      "id": "model:CanvaTierScore",
+      "label": "CanvaTierScore Model",
+      "type": "model",
+      "group": "Prisma DB Models",
+      "filepath": "prisma/schema.prisma",
+      "details": "Prisma model CanvaTierScore (table canva_tier_scores)"
+    },
+    {
+      "id": "model:CanvaIngestBatch",
+      "label": "CanvaIngestBatch Model",
+      "type": "model",
+      "group": "Prisma DB Models",
+      "filepath": "prisma/schema.prisma",
+      "details": "Prisma model CanvaIngestBatch (table canva_ingest_batches)"
+    },
+    {
+      "id": "model:CanvaCollectorRun",
+      "label": "CanvaCollectorRun Model",
+      "type": "model",
+      "group": "Prisma DB Models",
+      "filepath": "prisma/schema.prisma",
+      "details": "Prisma model CanvaCollectorRun (table canva_collector_runs)"
+    },
+    {
       "id": "rule:qty-pages",
       "label": "QTY Pages Calculation",
       "type": "doc",
@@ -2346,6 +2474,30 @@
       "source": "action:bundle",
       "target": "model:BundleOrder",
       "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:canva-insights",
+      "target": "lib:access",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:canva-insights",
+      "target": "lib:canva-insights/import",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:canva-insights",
+      "target": "lib:canva-insights/ingest",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:canva-insights",
+      "target": "lib:canva-insights/api-auth",
+      "relation": "invokes",
       "confidence": "EXTRACTED"
     },
     {
@@ -3054,6 +3206,66 @@
       "source": "api:/google/oauth/start",
       "target": "lib:api-auth",
       "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "api:/insights/ingest",
+      "target": "lib:canva-insights/api-auth",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "api:/insights/ingest",
+      "target": "lib:canva-insights/ingest",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "api:/insights/ingest",
+      "target": "lib:canva-insights/parse",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "api:/insights/known-ids",
+      "target": "lib:prisma",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "api:/insights/known-ids",
+      "target": "lib:canva-insights/api-auth",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "api:/insights/known-ids",
+      "target": "model:CanvaTemplate",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "api:/insights/runs",
+      "target": "lib:prisma",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "api:/insights/runs",
+      "target": "lib:canva-insights/api-auth",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "api:/insights/runs",
+      "target": "model:Account",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "api:/insights/runs",
+      "target": "model:CanvaCollectorRun",
+      "relation": "queries",
       "confidence": "EXTRACTED"
     },
     {
@@ -5262,6 +5474,150 @@
       "source": "lib:api-auth",
       "target": "lib:permissions",
       "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:canva-insights/api-auth",
+      "target": "lib:rate-limit",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:canva-insights/import",
+      "target": "lib:prisma",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:canva-insights/import",
+      "target": "lib:canva-insights/ingest",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:canva-insights/import",
+      "target": "lib:canva-insights/parse",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:canva-insights/import",
+      "target": "model:CanvaTemplate",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:canva-insights/ingest",
+      "target": "lib:prisma",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:canva-insights/ingest",
+      "target": "lib:canva-insights/match",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:canva-insights/ingest",
+      "target": "lib:canva-insights/parse",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:canva-insights/ingest",
+      "target": "model:Account",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:canva-insights/ingest",
+      "target": "model:CanvaTemplate",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:canva-insights/ingest",
+      "target": "model:CanvaTemplateDaily",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:canva-insights/ingest",
+      "target": "model:CanvaBrandDaily",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:canva-insights/ingest",
+      "target": "model:CanvaTierScore",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:canva-insights/ingest",
+      "target": "model:CanvaIngestBatch",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:canva-insights/ingest",
+      "target": "model:CanvaCollectorRun",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:canva-insights/match",
+      "target": "lib:prisma",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:canva-insights/match",
+      "target": "lib:canva-insights/parse",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:canva-insights/match",
+      "target": "model:TaskCanvaLink",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:canva-insights/match",
+      "target": "model:Task",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:canva-insights/match",
+      "target": "model:CanvaTemplate",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:canva-insights/reparse",
+      "target": "lib:prisma",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:canva-insights/reparse",
+      "target": "lib:canva-insights/ingest",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:canva-insights/reparse",
+      "target": "lib:canva-insights/match",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:canva-insights/reparse",
+      "target": "model:CanvaIngestBatch",
+      "relation": "queries",
       "confidence": "EXTRACTED"
     },
     {

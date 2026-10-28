@@ -35,22 +35,17 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 * Dropdown di dalam container `overflow-*` terpotong; render lewat portal `fixed`.
 * Push body Notion memakai antrean in-memory per `pageId` (`src/lib/notion-body-push.ts`); efektif untuk 1 proses PM2, cluster >1 butuh lock DB.
 * Ubah UI/role → perbarui wireframe: https://claude.ai/artifact/Fvq1og4yp9W5YTAz298HQL
+* Env baru di VPS harus ditambahkan juga ke **`.next/standalone/.env`** (kasus `DROPBOX_APP_KEY` 2026-10-27; berlaku juga untuk `INSIGHTS_INGEST_TOKEN`).
 
 ## 📝 Sesi Terakhir
 
-### 2026-10-27 — Summary Order Bundle: nominal "menunggu task approved" (Claude Code, `🎨 [Frontend]` + `⚙️ [Backend]`)
-* Aturan tetap: order bundle masuk payout hanya bila semua task approved (meski sudah Lunas). `getBundleOrdersForPeriod` kini mengembalikan `pendingTotal` (Payout Month = bulan ini, task belum semua approved).
-* UI: kartu segmen "Order Bundle" dan header grup Payout Breakdown menampilkan "+ IDR x menunggu task approved"; baris order belum complete diberi badge amber. Commit `6c3057d`, dirilis ke VPS (healthcheck lolos); tampilan belum dicek visual.
-* Notion: opsi select Doctype = `notionKey`, bukan `displayName` (displayName "PPTX, Slides, Keynote" ditolak karena koma). Create/update task & push sync kini kirim `notionKey` (`95cab85`, sudah di VPS).
-* Dropbox `invalid_client`: `.next/standalone/.env` VPS tidak punya `DROPBOX_APP_KEY/SECRET`. Ditambahkan dari `.env` lokal (backup `.env.bak-*`), PM2 di-reload; probe token → `invalid_grant` (client valid). Refresh token tersimpan belum terbukti valid: bila sync Dropbox masih gagal, hubungkan ulang Dropbox dari VPS.
-
-### 2026-10-25 — Model akses Asset Production & Asset Library (Claude Code, `🏛️ [Architecture & Knowledge Ops]`)
-* Diputuskan (belum diimplementasi): permission baru `asset.view` (Admin, AD, PM, designer FT & FL) dan `asset.manage` (Admin semua; AD & PM production sendiri; library bersama hanya membership global). Aset/kategori punya `productionUnitId` opsional (terisi = Asset Production, null = Library). Dicatat di `user-role-spec.md` › Akses aset dan backlog `resources-library.md`. Tanpa perubahan kode.
-
-### 2026-10-24 — Asset Library: jalur manual, tahap desain (Claude Code, `🏛️ [Architecture & Knowledge Ops]`)
-* User memilih jalur **manual** (link edit + public view link, preview iframe `?embed`, tanpa Canva API/MFA). Rencana & skema di [`../backlog/resources-library.md`](../backlog/resources-library.md).
-* Notion **opsi B** disetujui: app = input utama, database Notion "Asset Library" = mirror dua arah, relation "Assets" di database task untuk hitungan pemakaian.
-* Desain 4 artboard: https://claude.ai/artifact/HKviEpNcfcL5V7MD3iYjLj. Belum ada kode/skema; menunggu review desain.
+### 2026-10-28 — Canva Insights Fase 1 (Claude Code, `⚙️ [Backend & Database]` + `🔄 [API & Notion Integration]` + `🏛️ [Knowledge Ops]`)
+* Branch `feat/canva-insights` (dari tip `feat/bundle-order-designer`), **belum di-commit**. Spek: [`canva-insights-spec.md`](canva-insights-spec.md), brief: [`../backlog/canva-insights-implementation.md`](../backlog/canva-insights-implementation.md), mapping field: [`../canva-insights-endpoints.md`](../canva-insights-endpoints.md).
+* Ditulis: 6 model `Canva*` + `Account.canvaBrandId` (sudah `prisma generate`), `src/lib/canva-insights/*`, route `/api/insights/{ingest,runs,known-ids}`, action `canva-insights.ts`, script `seed-canva-brands.ts` & `import-canva-insights.ts`. Selisih dari skema spek dicatat di spek §4.
+* Teruji tanpa DB: parser lolos 4 fixture, total breakdowns 28 Sep–27 Okt = angka acuan brief, data rusak & brand asing ditolak, `tsc` lolos.
+* **Menunggu user**: `npx prisma db push` + restart dev server, `INSIGHTS_INGEST_TOKEN` di `.env`, lalu seed + impor fixture (cek idempoten & laporan tautan task). Fixture Chital belum ada.
+* Fase 3 wajib: jangan jumlahkan `audience = "ALL"` bersama `B`/`C` (spek §4).
+* Archived: entri 2026-10-27 (Summary Order Bundle, Notion doctype, Dropbox env VPS) → `archive/session-handover-from-2026-10-17.md`.
 
 ---
 

@@ -51,6 +51,12 @@ Laporan tagihan pembayaran desainer.
 ### 8. `SyncLog` & `NotionConfig` (Log & Konfigurasi Sync)
 Kredensial database Notion ID, API Key, dan histori log eksekusi sync (`status`, `startedAt`, `finishedAt`, `itemsProcessed`, `errors`).
 
+### 9. Canva Insights (`canva_*`) — spek: [`canva-insights-spec.md`](canva-insights-spec.md) §4
+* `Account.canvaBrandId` (unik) menghubungkan akun brand ke brand Canva Creator; diisi `scripts/seed-canva-brands.ts`.
+* `CanvaTemplate` (id `EAH…`): metadata, `sourceDesignId` (`DAH…`), tautan `taskId` + `matchMethod` (`design_id` | `title` | `manual`).
+* `CanvaTemplateDaily` (`templateId`, `date` hari UTC, `audience`) dan `CanvaBrandDaily` (`canvaBrandId`, `date`, `audience`): Applies/Usages harian. `audience` = `B` Free, `C` Pro, atau `ALL` (request tanpa `contentRoyalties`; jangan dijumlah bersama `B`/`C`).
+* `CanvaTierScore`, `CanvaIngestBatch` (respons mentah + status `PENDING`/`PARSED`/`REJECTED`), `CanvaCollectorRun` (`RUNNING`/`OK`/`NEEDS_LOGIN`/`ERROR`).
+
 ---
 
 ## 🔄 Pemetaan Notion API -> Prisma Column

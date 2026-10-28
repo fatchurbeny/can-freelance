@@ -132,8 +132,11 @@ model Account {
   platformId         String                   @map("platform_id") @db.Uuid
   displayName        String                   @map("display_name")
   color              String?
+  /// Brand ID Canva Creator ("BAE…"), dipakai Canva Insights (docs/knowledge/canva-insights-spec.md).
+  canvaBrandId       String?                  @unique @map("canva_brand_id")
   taskAccounts       TaskAccount[]
   emailNotifications CanvaEmailNotification[]
+  canvaTemplates     CanvaTemplate[]
   platform           Platform                 @relation(fields: [platformId], references: [id])
 
   @@unique([platformId, notionKey])
@@ -193,6 +196,7 @@ model Task {
   productionUnit   ProductionUnit  @relation(fields: [productionUnitId], references: [id])
   taskAccounts     TaskAccount[]
   canvaLinks       TaskCanvaLink[]
+  canvaTemplates   CanvaTemplate[]
   comments         TaskComment[]
   shareLinks       TaskShareLink[]
   designStatus     DesignStatus?   @relation(fields: [designStatusId], references: [id])
@@ -497,4 +501,121 @@ model BundleOrder {
 
   @@index([bundleId])
   @@map("bundle_orders")
+}
+
+// ── Canva Insights (docs/knowledge/canva-insights-spec.md) ──────────────────────
+// Data dikirim collector lewat POST /api/insights/ingest; dashboard tidak pernah memanggil Canva.
+
+/// Template Canva Creator ("EAH…"). Metadata dari endpoint templates, publish/aktivitas dari content/usages.
+model CanvaTemplate {
+  id             String               @id // "EAH…"
+  canvaBrandId   String               @map("canva_brand_id")
+  accountId      String?              @map("account_id") @db.Uuid
+  /// Field `I` endpoint templates ("DAH…"): desain sumber, kunci utama tautan ke task.
+  sourceDesignId String?              @map("source_design_id")
+  title          String?
+  keywords       String[]
+  /// Field `0`: "canva_pro" | "none" (Free).
+  license        String?
+  /// Field `d` (dugaan jumlah halaman).
+  pageCount      Int?                 @map("page_count")
+  thumbnailUrl   String?              @map("thumbnail_url")
+  publishedAt    DateTime?            @map("published_at") @db.Timestamptz(6)
+  lastActivityAt DateTime?            @map("last_activity_at") @db.Timestamptz(6)
+  taskId         String?              @map("task_id") @db.Uuid
+  /// "design_id" | "title" | "manual"; "manual" tidak pernah ditimpa otomatis.
+  matchMethod    String?              @map("match_method")
+  firstSeenAt    DateTime             @default(now()) @map("first_seen_at") @db.Timestamptz(6)
+  updatedAt      DateTime             @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  account        Account?             @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  task           Task?                @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  daily          CanvaTemplateDaily[]
+
+  @@index([canvaBrandId])
+  @@index([taskId])
+  @@index([sourceDesignId])
+  @@map("canva_templates")
+}
+
+/// Applies/Usages harian per template. `date` = hari UTC (field `k`), audience = `F` mentah ("B" | "C") atau "ALL".
+model CanvaTemplateDaily {
+  templateId String        @map("template_id")
+  date       DateTime      @db.Date
+  audience   String        @default("ALL")
+  applies    Int
+  usages     Int
+  batchId    String        @map("batch_id") @db.Uuid
+  updatedAt  DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  template   CanvaTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@id([templateId, date, audience])
+  @@index([date])
+  @@map("canva_template_daily")
+}
+
+/// Total harian akun dari endpoint breakdowns (`e` = awal hari UTC).
+model CanvaBrandDaily {
+  canvaBrandId String   @map("canva_brand_id")
+  date         DateTime @db.Date
+  audience     String
+  applies      Int
+  usages       Int
+  batchId      String   @map("batch_id") @db.Uuid
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@id([canvaBrandId, date, audience])
+  @@map("canva_brand_daily")
+}
+
+/// Tier harian creator. Hanya `B` (tanggal), `C` (tier), `F` (kandidat skor) dipetakan; baris utuh di `raw`.
+model CanvaTierScore {
+  canvaBrandId String   @map("canva_brand_id")
+  date         DateTime @db.Date
+  tier         String?
+  score        Decimal? @db.Decimal
+  raw          Json
+  batchId      String   @map("batch_id") @db.Uuid
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@id([canvaBrandId, date])
+  @@map("canva_tier_scores")
+}
+
+/// Respons mentah satu request collector; diparse oleh parser bervers (bisa diparse ulang).
+model CanvaIngestBatch {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  receivedAt    DateTime @default(now()) @map("received_at") @db.Timestamptz(6)
+  canvaBrandId  String   @map("canva_brand_id")
+  /// "content.by_brand" | "content.by_content" | "brand.breakdowns" | "tier_scores" | "templates"
+  endpoint      String
+  /// Parameter request (tanpa header).
+  query         Json
+  payload       Json
+  /// "collector" | "manual"
+  source        String   @default("collector")
+  runId         String?  @map("run_id") @db.Uuid
+  parserVersion Int      @default(1) @map("parser_version")
+  /// PENDING | PARSED | REJECTED
+  status        String   @default("PENDING")
+  error         String?
+  rowCount      Int      @default(0) @map("row_count")
+
+  @@index([canvaBrandId, receivedAt])
+  @@map("canva_ingest_batches")
+}
+
+/// Satu run collector per brand (status sync di /insights).
+model CanvaCollectorRun {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  canvaBrandId String    @map("canva_brand_id")
+  startedAt    DateTime  @map("started_at") @db.Timestamptz(6)
+  finishedAt   DateTime? @map("finished_at") @db.Timestamptz(6)
+  /// RUNNING | OK | NEEDS_LOGIN | ERROR
+  status       String
+  message      String?
+  batchCount   Int       @default(0) @map("batch_count")
+  host         String?
+
+  @@index([canvaBrandId, startedAt])
+  @@map("canva_collector_runs")
 }

@@ -73,3 +73,17 @@ Entri yang dipindah dari `session-handover.md`. Cari dengan `grep`; jangan dibac
 * Tombol pakai `next/link` (bukan `<a>`) agar basePath `/can-freelance` ikut; `<a>` biasa → 404.
 * Diuji lokal (Admin "Lihat sebagai" Putery): tombol muncul, print Putery Sept-2026 = IDR 2.700.000 (sama dengan billing), print designer lain dialihkan. Tabel bundle belum teruji visual: satu-satunya order lokal (Slides-Colony) task-nya masih Draft. Belum di-commit.
 * Catatan: panel Notion Sync di sidebar sudah admin-only (`integration.manage`); PM/AD multi-production = beberapa baris Membership (by design).
+
+### 2026-10-24 — Asset Library: jalur manual, tahap desain (Claude Code, `🏛️ [Architecture & Knowledge Ops]`)
+* User memilih jalur **manual** (link edit + public view link, preview iframe `?embed`, tanpa Canva API/MFA). Rencana & skema di [`../backlog/resources-library.md`](../backlog/resources-library.md).
+* Notion **opsi B** disetujui: app = input utama, database Notion "Asset Library" = mirror dua arah, relation "Assets" di database task untuk hitungan pemakaian.
+* Desain 4 artboard: https://claude.ai/artifact/HKviEpNcfcL5V7MD3iYjLj. Belum ada kode/skema; menunggu review desain.
+
+### 2026-10-25 — Model akses Asset Production & Asset Library (Claude Code, `🏛️ [Architecture & Knowledge Ops]`)
+* Diputuskan (belum diimplementasi): permission baru `asset.view` (Admin, AD, PM, designer FT & FL) dan `asset.manage` (Admin semua; AD & PM production sendiri; library bersama hanya membership global). Aset/kategori punya `productionUnitId` opsional (terisi = Asset Production, null = Library). Dicatat di `user-role-spec.md` › Akses aset dan backlog `resources-library.md`. Tanpa perubahan kode.
+
+### 2026-10-27 — Summary Order Bundle: nominal "menunggu task approved" (Claude Code, `🎨 [Frontend]` + `⚙️ [Backend]`)
+* Aturan tetap: order bundle masuk payout hanya bila semua task approved (meski sudah Lunas). `getBundleOrdersForPeriod` kini mengembalikan `pendingTotal` (Payout Month = bulan ini, task belum semua approved).
+* UI: kartu segmen "Order Bundle" dan header grup Payout Breakdown menampilkan "+ IDR x menunggu task approved"; baris order belum complete diberi badge amber. Commit `6c3057d`, dirilis ke VPS (healthcheck lolos); tampilan belum dicek visual.
+* Notion: opsi select Doctype = `notionKey`, bukan `displayName` (displayName "PPTX, Slides, Keynote" ditolak karena koma). Create/update task & push sync kini kirim `notionKey` (`95cab85`, sudah di VPS).
+* Dropbox `invalid_client`: `.next/standalone/.env` VPS tidak punya `DROPBOX_APP_KEY/SECRET`. Ditambahkan dari `.env` lokal (backup `.env.bak-*`), PM2 di-reload; probe token → `invalid_grant` (client valid). Refresh token tersimpan belum terbukti valid: bila sync Dropbox masih gagal, hubungkan ulang Dropbox dari VPS.
