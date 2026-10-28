@@ -36,6 +36,8 @@ URL dashboard lain harus ditambahkan dulu ke `host_permissions` di `manifest.jso
 - **Notifikasi Chrome** muncul saat sinkron selesai (berhasil atau gagal).
 - **Log teknis** ada di bagian bawah popup (dilipat).
 
+Diuji juga di **Yab** (Chromium). Yab menolak `storage.local.set` yang terlalu sering ("Exceeded storage quota"), jadi status hanya ditulis tiap 5 detik dan kegagalan penyimpanan tidak menghentikan sinkron; header sesi disimpan di memori service worker.
+
 Jangan memuat ulang (reload) extension saat sinkron berjalan: prosesnya terputus. Data yang sudah masuk tetap tersimpan; sinkronkan lagi untuk melanjutkan.
 
 Status per brand juga muncul di dashboard can-freelance (`/insights`, status sync). Sinkronkan tiap brand minimal sekali sehari; data hari terakhir Canva memang terlambat ±1 hari.

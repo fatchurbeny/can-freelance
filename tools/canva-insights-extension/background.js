@@ -12,9 +12,13 @@ import { log, politeDelay, setLogSink, sleep } from './lib/util.js';
 const DASHBOARD_URL = 'https://www.canva.com/creators/template/dashboard/dashboard';
 const COLLECTOR_VERSION = 1;
 const HEADER_WAIT_MS = 30_000;
-const MAX_STATUS_LINES = 40;
+const MAX_STATUS_LINES = 15;
+const MAX_LINE_CHARS = 140;
+/** Yab (Chromium) menolak storage.local.set bila terlalu sering/besar: status ditulis maks. tiap 5 detik. */
+const STATUS_WRITE_MS = 5000;
 
 // ── Header sesi dari request dashboard Creator ─────────────────────────────────
+const lastHeaders = new Map();
 chrome.webRequest.onBeforeSendHeaders.addListener(
   (details) => {
     if (details.tabId < 0) return;
@@ -23,17 +27,36 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
       const name = h.name.toLowerCase();
       if (SESSION_HEADERS.includes(name)) headers[name] = h.value;
     }
-    if (headers['x-canva-authz']) chrome.storage.session.set({ [`headers:${details.tabId}`]: headers });
+    if (!headers['x-canva-authz']) return;
+    // Header disimpan di memori (utama) dan storage.session (cadangan bila service worker dimulai ulang).
+    // Request extension sendiri juga lewat sini (ribuan per sinkron): tulis storage hanya bila berubah.
+    const json = JSON.stringify(headers);
+    if (lastHeaders.get(details.tabId)?.json === json) return;
+    lastHeaders.set(details.tabId, { json, headers });
+    chrome.storage.session.set({ [`headers:${details.tabId}`]: headers }).catch((e) => console.warn('[canva-insights] header tidak tersimpan:', e?.message ?? e));
   },
   { urls: ['https://www.canva.com/_ajax/creatorinsight/*'] },
   ['requestHeaders', 'extraHeaders'],
 );
 
-chrome.tabs.onRemoved.addListener((tabId) => chrome.storage.session.remove(`headers:${tabId}`));
+chrome.tabs.onRemoved.addListener((tabId) => {
+  lastHeaders.delete(tabId);
+  chrome.storage.session.remove(`headers:${tabId}`);
+});
+
+async function readHeaders(tabId) {
+  const mem = lastHeaders.get(tabId)?.headers;
+  if (mem) return mem;
+  const key = `headers:${tabId}`;
+  try {
+    return (await chrome.storage.session.get(key))[key] ?? null;
+  } catch {
+    return null;
+  }
+}
 
 async function waitForHeaders(tabId) {
-  const key = `headers:${tabId}`;
-  let stored = (await chrome.storage.session.get(key))[key];
+  let stored = await readHeaders(tabId);
   if (stored) return stored;
   // Belum ada request creatorinsight di tab ini (mis. extension baru dimuat ulang): muat ulang dashboard
   // agar header tertangkap. Panel di halaman ikut dimuat ulang dan langsung menampilkan status berjalan.
@@ -41,7 +64,7 @@ async function waitForHeaders(tabId) {
   await chrome.tabs.update(tabId, { url: DASHBOARD_URL });
   for (let waited = 0; waited < HEADER_WAIT_MS; waited += 1000) {
     await sleep(1000);
-    stored = (await chrome.storage.session.get(key))[key];
+    stored = await readHeaders(tabId);
     if (stored) return stored;
   }
   return null;
@@ -72,13 +95,38 @@ function pageFetcher(tabId, sessionHeaders) {
 // ── Status untuk popup ─────────────────────────────────────────────────────────
 let lines = [];
 
-async function setStatus(patch) {
-  const { status = {} } = await chrome.storage.local.get('status');
-  await chrome.storage.local.set({ status: { ...status, ...patch, lines } });
+let pending = {};
+let lastWrite = 0;
+let writeTimer = null;
+
+/**
+ * Simpan status untuk popup/panel. Tulisan digabung dan dibatasi tiap 5 detik (kecuali `force`), dan
+ * kegagalan penyimpanan (mis. kuota browser) hanya dicatat: tidak boleh menghentikan sinkronisasi.
+ */
+async function setStatus(patch, { force = false } = {}) {
+  pending = { ...pending, ...patch };
+  const wait = STATUS_WRITE_MS - (Date.now() - lastWrite);
+  if (!force && wait > 0) {
+    writeTimer ??= setTimeout(() => {
+      writeTimer = null;
+      setStatus({}, { force: true });
+    }, wait);
+    return;
+  }
+  const next = pending;
+  pending = {};
+  lastWrite = Date.now();
+  try {
+    const { status = {} } = await chrome.storage.local.get('status');
+    await chrome.storage.local.set({ status: { ...status, ...next, lines } });
+  } catch (e) {
+    console.warn('[canva-insights] status tidak tersimpan:', e?.message ?? e);
+  }
 }
 
 setLogSink((level, message) => {
-  lines = [...lines, `${new Date().toLocaleTimeString('id-ID')} ${message}`].slice(-MAX_STATUS_LINES);
+  const line = `${new Date().toLocaleTimeString('id-ID')} ${message}`.slice(0, MAX_LINE_CHARS);
+  lines = [...lines, line].slice(-MAX_STATUS_LINES);
   setStatus({});
 });
 
@@ -186,10 +234,13 @@ async function runSync(tabId, { backfill }) {
     if (summary.rejected) hint = 'Sebagian data ditolak dashboard. Data lain tetap tersimpan; kabari admin.';
   } catch (e) {
     ({ status, message, hint } = explainError(e));
-    if (status === 'NEEDS_LOGIN') await chrome.storage.session.remove(`headers:${tabId}`);
+    if (status === 'NEEDS_LOGIN') {
+      lastHeaders.delete(tabId);
+      await chrome.storage.session.remove(`headers:${tabId}`).catch(() => {});
+    }
   } finally {
     if (pagination.detected && pagination.param) {
-      await chrome.storage.local.set({ settings: { ...settings, paginationParam: pagination.param } });
+      await chrome.storage.local.set({ settings: { ...settings, paginationParam: pagination.param } }).catch(() => {});
       log('INFO', `Parameter paginasi "${pagination.param}" disimpan; catat di spek §1.3 & §9`);
     }
     await server.finishRun(runId, status, message).catch((e) => log('ERROR', `Gagal melapor run: ${e.message}`));
@@ -215,7 +266,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   lines = [];
   sendResponse({ started: true });
   badge('…', '#6b7280', 'sinkron berjalan');
-  setStatus({ state: 'running', startedAt: Date.now(), heartbeatAt: Date.now(), progress: null, brandId: null, result: null }).then(async () => {
+  setStatus({ state: 'running', startedAt: Date.now(), heartbeatAt: Date.now(), progress: null, stage: null, brandId: null, result: null }, { force: true }).then(async () => {
     let result;
     const startedAt = Date.now();
     try {
@@ -226,10 +277,14 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     result.durationMs = Date.now() - startedAt;
     const ok = result.status === 'OK';
     log(ok ? 'INFO' : 'WARN', `${ok ? 'Berhasil' : 'Gagal'}: ${result.message}`);
-    const { lastRuns = {} } = await chrome.storage.local.get('lastRuns');
-    if (result.brandId) lastRuns[result.brandId] = { status: result.status, message: result.message, at: Date.now() };
-    await chrome.storage.local.set({ lastRuns });
-    await setStatus({ state: 'done', finishedAt: Date.now(), result });
+    try {
+      const { lastRuns = {} } = await chrome.storage.local.get('lastRuns');
+      if (result.brandId) lastRuns[result.brandId] = { status: result.status, message: result.message, at: Date.now() };
+      await chrome.storage.local.set({ lastRuns });
+    } catch (e) {
+      console.warn('[canva-insights] riwayat sinkron tidak tersimpan:', e?.message ?? e);
+    }
+    await setStatus({ state: 'done', finishedAt: Date.now(), result }, { force: true });
     badge(ok ? 'OK' : '!', ok ? '#16a34a' : '#dc2626', ok ? 'sinkron terakhir berhasil' : 'sinkron terakhir gagal');
     notify(ok ? 'Sinkron Canva Insights berhasil' : 'Sinkron Canva Insights gagal', `${result.message}${result.hint ? ` ${result.hint}` : ''}`);
     running = false;

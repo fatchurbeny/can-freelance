@@ -1,5 +1,5 @@
 // Uji manual background.js dengan `chrome` palsu + Canva palsu → API dashboard sungguhan.
-// Pakai: BASE_URL=http://127.0.0.1:3002/can-freelance TOKEN=... BRAND=BADxbxKIT_Y node test/background-e2e.mjs
+// Pakai: BASE_URL=http://127.0.0.1:3002/can-freelance TOKEN=... BRAND=BADxbxKIT_Y [FAIL_STORAGE=1] node test/background-e2e.mjs
 const DAY = 86_400_000;
 const brandId = process.env.BRAND;
 const store = { local: new Map(), session: new Map() };
@@ -8,7 +8,11 @@ const area = (m) => ({
     const list = keys == null ? [...m.keys()] : [keys].flat();
     return Object.fromEntries(list.filter((k) => m.has(k)).map((k) => [k, structuredClone(m.get(k))]));
   },
-  async set(obj) { for (const [k, v] of Object.entries(obj)) m.set(k, structuredClone(v)); },
+  async set(obj) {
+    // FAIL_STORAGE=1 meniru Yab: status ditolak "Exceeded storage quota" (pengaturan tetap tersimpan).
+    if (process.env.FAIL_STORAGE && !('settings' in obj)) throw new Error('Invalid call to browser.storage.local.set(). Exceeded storage quota.');
+    for (const [k, v] of Object.entries(obj)) m.set(k, structuredClone(v));
+  },
   async remove(keys) { for (const k of [keys].flat()) m.delete(k); },
 });
 let onHeaders, onMessage;
@@ -65,6 +69,18 @@ await import('../background.js');
 let reply;
 onMessage({ type: 'sync', tabId: 7, backfill: false }, {}, (r) => { reply = r; });
 console.log('reply', reply);
+if (process.env.FAIL_STORAGE) {
+  // Status tidak bisa disimpan; tunggu run selesai lewat API dashboard.
+  for (let i = 0; i < 120; i++) {
+    await new Promise((r) => setTimeout(r, 1000));
+    const res = await realFetch(`${process.env.BASE_URL}/api/insights/known-ids?brandId=${brandId}`, { headers: { Authorization: `Bearer ${process.env.TOKEN}` } }).then((r) => r.json());
+    if (res.ids?.length === ids.length && res.missingMetadata?.length === 0) {
+      console.log('FAIL_STORAGE: sinkron tetap selesai,', res.ids.length, 'template berjudul; canva calls', canvaCalls.length);
+      process.exit(0);
+    }
+  }
+  console.log('FAIL_STORAGE: timeout'); process.exit(1);
+}
 for (let i = 0; i < 120; i++) {
   await new Promise((r) => setTimeout(r, 1000));
   const { status } = await chrome.storage.local.get('status');
