@@ -4,7 +4,12 @@
   "version": "1.0.0",
   "description": "Kirim Applies/Usages dashboard Canva Creator ke dashboard can-freelance (satu klik per brand).",
   "minimum_chrome_version": "116",
-  "permissions": ["webRequest", "scripting", "storage"],
+  "permissions": [
+    "webRequest",
+    "scripting",
+    "storage",
+    "notifications"
+  ],
   "host_permissions": [
     "https://www.canva.com/*",
     "https://portal.fatchurbeny.com/*",
@@ -17,7 +22,13 @@
   },
   "action": {
     "default_title": "Canva Insights",
-    "default_popup": "popup.html"
+    "default_popup": "popup.html",
+    "default_icon": {
+      "128": "icon-128.png"
+    }
   },
-  "options_page": "options.html"
+  "options_page": "options.html",
+  "icons": {
+    "128": "icon-128.png"
+  }
 }

@@ -4,12 +4,25 @@
   <meta charset="utf-8">
   <title>Canva Insights</title>
   <link rel="stylesheet" href="ui.css">
-  <style>body { width: 340px; padding: 12px; }</style>
+  <style>body { width: 360px; padding: 12px; } header { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 10px; } header h1 { margin: 0; }</style>
 </head>
 <body>
-  <h1>Canva Insights → can-freelance</h1>
+  <header>
+    <h1>Canva Insights</h1>
+    <span id="conn" class="pill">…</span>
+  </header>
+
+  <section id="status" class="status" aria-live="polite">
+    <h2><span class="dot" aria-hidden="true"></span><span id="status-title">Memuat…</span></h2>
+    <p id="status-text" class="muted"></p>
+    <div id="bar" class="bar" hidden><span id="bar-fill" style="width: 0%"></span></div>
+    <p id="status-meta" class="muted"></p>
+    <p id="status-hint" class="hint" hidden></p>
+    <ol id="steps" class="steps" hidden></ol>
+  </section>
+
   <div id="setup" class="box" hidden>
-    <p class="bad">URL dashboard dan token belum diisi.</p>
+    <p>URL dashboard dan token belum diisi.</p>
     <button id="open-options" class="secondary">Buka Pengaturan</button>
   </div>
   <div id="not-dashboard" class="box" hidden>
@@ -17,18 +30,19 @@
     <button id="open-dashboard">Buka dashboard Creator</button>
   </div>
   <div id="ready" class="box" hidden>
-    <p>Sinkronkan akun Canva yang sedang login di tab ini. Brand dikenali otomatis.</p>
-    <label><input type="checkbox" id="backfill"> Ambil 365 hari (sinkron pertama brand ini)</label>
+    <label><input type="checkbox" id="backfill"> Ambil 365 hari (sinkron pertama brand ini, ±1 jam)</label>
     <button id="sync">Sinkronkan sekarang</button>
   </div>
-  <div class="box">
-    <p id="state" class="muted">Belum ada sinkronisasi.</p>
-    <pre id="lines"></pre>
-  </div>
+
   <div class="box">
     <p class="muted">Sinkron terakhir per brand</p>
     <table id="runs"></table>
   </div>
+
+  <details>
+    <summary>Log teknis</summary>
+    <pre id="lines"></pre>
+  </details>
   <script type="module" src="popup.js"></script>
 </body>
 </html>

@@ -1,40 +1,119 @@
 const DASHBOARD_URL = 'https://www.canva.com/creators/template/dashboard/dashboard';
 const BRANDS = {
-  BADxbxKIT_Y: 'Chital',
-  BAEtJgfxnTk: 'zahra.art',
-  BAEUTwNzf0Y: 'impro',
-  BAEWutmc71I: 'UiCreative.net',
+  BADxbxKIT_Y: 'Chital Graphic',
+  BAEtJgfxnTk: 'Zahra Art',
+  BAEUTwNzf0Y: 'Improstd',
+  BAEWutmc71I: 'UICreative.net',
   BAEZG0o0gf4: 'Antler',
 };
-const STALE_RUN_MS = 15 * 60 * 1000;
+/** Sama dengan STAGES di lib/collect-brand.js; `weight` = perkiraan porsi waktu. */
+const STAGES = [
+  { key: 'discover', label: 'Daftar template aktif (90 hari)', weight: 5 },
+  { key: 'known', label: 'Gabung template yang dikenal dashboard', weight: 2 },
+  { key: 'daily', label: 'Angka harian per template', weight: 80 },
+  { key: 'brand', label: 'Total harian akun', weight: 5 },
+  { key: 'tier', label: 'Skor tier', weight: 3 },
+  { key: 'meta', label: 'Judul & thumbnail template baru', weight: 5 },
+];
+/** Berjalan = ada tanda hidup (tiap halaman data) dalam 2 menit terakhir. */
+const HEARTBEAT_STALE_MS = 2 * 60 * 1000;
+const NUM = new Intl.NumberFormat('id-ID');
 const $ = (id) => document.getElementById(id);
 const brandName = (id) => BRANDS[id] ?? id;
-const ago = (ms) => {
+
+function duration(ms) {
+  const min = Math.floor(ms / 60000);
+  if (min < 1) return 'kurang dari 1 menit';
+  const h = Math.floor(min / 60);
+  return h ? `${h} j ${min % 60} m` : `${min} menit`;
+}
+function ago(ms) {
   const min = Math.round((Date.now() - ms) / 60000);
+  if (min < 1) return 'baru saja';
   if (min < 60) return `${min} menit lalu`;
   const h = Math.round(min / 60);
   return h < 48 ? `${h} jam lalu` : `${Math.round(h / 24)} hari lalu`;
-};
+}
+function percent(stage) {
+  if (!stage) return 2;
+  let done = 0;
+  for (let i = 0; i < stage.index; i++) done += STAGES[i].weight;
+  const cur = STAGES[stage.index];
+  const frac = stage.key === 'daily' && stage.groups ? (stage.group - 1) / stage.groups : 0;
+  return Math.min(99, Math.round(done + cur.weight * frac));
+}
+
+function renderSteps(stage, mode) {
+  const list = $('steps');
+  list.hidden = !stage && mode !== 'ok';
+  list.replaceChildren(
+    ...STAGES.map((st, i) => {
+      const li = document.createElement('li');
+      let mark = '○';
+      if (mode === 'ok' || (stage && i < stage.index)) [li.className, mark] = ['done', '✓'];
+      else if (stage && i === stage.index) [li.className, mark] = mode === 'fail' ? ['fail', '✕'] : ['now', '●'];
+      const m = document.createElement('span');
+      m.className = 'mark';
+      m.textContent = mark;
+      const t = document.createElement('span');
+      t.textContent = st.key === 'daily' && stage?.key === 'daily' && stage.groups && mode === 'run' ? `${st.label} · grup ${stage.group}/${stage.groups}` : st.label;
+      li.append(m, t);
+      return li;
+    }),
+  );
+}
+
+function setCard(kind, title, text, meta, hint) {
+  $('status').className = `status ${kind}`;
+  $('status-title').textContent = title;
+  $('status-text').textContent = text ?? '';
+  $('status-meta').textContent = meta ?? '';
+  $('status-hint').hidden = !hint;
+  $('status-hint').textContent = hint ? `Yang perlu dilakukan: ${hint}` : '';
+}
 
 let tab;
 
 function render({ settings = {}, status = {}, lastRuns = {} }) {
   const configured = !!(settings.baseUrl && settings.token);
   const onCanva = !!tab?.url?.startsWith('https://www.canva.com/');
-  const running = status.state === 'running' && Date.now() - (status.startedAt ?? 0) < STALE_RUN_MS;
-  $('setup').hidden = configured;
-  $('not-dashboard').hidden = !configured || onCanva;
-  $('ready').hidden = !configured || !onCanva;
-  $('sync').disabled = running;
+  const fresh = Date.now() - (status.heartbeatAt ?? status.startedAt ?? 0) < HEARTBEAT_STALE_MS;
+  const running = status.state === 'running' && fresh;
+  const stalled = status.state === 'running' && !fresh;
 
-  if (running) $('state').textContent = `Berjalan${status.brandId ? ` · ${brandName(status.brandId)}` : ''}…`;
-  else if (status.result) {
+  $('conn').textContent = configured ? `Terhubung ke ${new URL(settings.baseUrl).host}` : 'Belum diatur';
+  $('setup').hidden = configured;
+  $('not-dashboard').hidden = !configured || onCanva || running;
+  $('ready').hidden = !configured || !onCanva || running;
+  $('bar').hidden = !running;
+
+  const who = status.brandId ? brandName(status.brandId) : 'brand';
+  const p = status.progress;
+  const counts = p ? `${NUM.format(p.batches)} halaman · ${NUM.format(p.rows)} baris` : 'menyiapkan…';
+  if (running) {
+    const pct = percent(status.stage);
+    $('bar-fill').style.width = `${pct}%`;
+    setCard('run', `Sedang sinkron · ${who}`, `${pct}% · ${counts}`, `Berjalan ${duration(Date.now() - status.startedAt)}. Biarkan tab Canva tetap terbuka; popup boleh ditutup.`);
+    renderSteps(status.stage, 'run');
+  } else if (stalled) {
+    setCard('warn', `Terhenti · ${who}`, `Tidak ada kabar sejak ${ago(status.heartbeatAt ?? status.startedAt)} (${counts}).`, null,
+      'Tab Canva mungkin ditutup, Chrome dimuat ulang, atau Mac tidur. Buka dashboard Creator lalu sinkronkan lagi; data yang sudah masuk tetap tersimpan.');
+    renderSteps(status.stage, 'fail');
+  } else if (status.state === 'done' && status.result) {
     const r = status.result;
-    $('state').innerHTML = '';
-    const span = document.createElement('span');
-    span.className = r.status === 'OK' ? 'ok' : 'bad';
-    span.textContent = `${r.brandId ? `${brandName(r.brandId)}: ` : ''}${r.status}`;
-    $('state').append(span, document.createTextNode(r.message ? ` — ${r.message}` : ''));
+    const name = r.brandId ? brandName(r.brandId) : '';
+    const when = `Selesai ${ago(status.finishedAt)}${r.durationMs ? ` · durasi ${duration(r.durationMs)}` : ''}`;
+    if (r.status === 'OK') {
+      setCard('ok', `Berhasil${name ? ` · ${name}` : ''}`, r.message, when);
+      renderSteps(null, 'ok');
+    } else {
+      const login = r.status === 'NEEDS_LOGIN';
+      setCard(login ? 'warn' : 'bad', `${login ? 'Perlu login' : 'Gagal'}${name ? ` · ${name}` : ''}`, r.message, when, r.hint);
+      renderSteps(status.stage, 'fail');
+    }
+  } else {
+    setCard('', 'Siap', configured ? 'Buka dashboard Creator brand, lalu klik Sinkronkan sekarang.' : 'Atur URL dashboard dan token dulu.', null);
+    $('steps').hidden = true;
   }
   $('lines').textContent = (status.lines ?? []).join('\n');
 
@@ -46,7 +125,7 @@ function render({ settings = {}, status = {}, lastRuns = {} }) {
       name.textContent = brandName(id);
       const st = document.createElement('td');
       st.className = r.status === 'OK' ? 'ok' : 'bad';
-      st.textContent = r.status;
+      st.textContent = r.status === 'OK' ? '✓ Berhasil' : r.status === 'NEEDS_LOGIN' ? '! Perlu login' : '✕ Gagal';
       const when = document.createElement('td');
       when.className = 'muted';
       when.textContent = ago(r.at);
@@ -70,14 +149,14 @@ $('open-dashboard').addEventListener('click', () => {
 $('sync').addEventListener('click', async () => {
   $('sync').disabled = true;
   const res = await chrome.runtime.sendMessage({ type: 'sync', tabId: tab.id, backfill: $('backfill').checked });
-  if (!res?.started) {
-    $('state').textContent = res?.error ?? 'Gagal memulai';
-    $('sync').disabled = false;
-  }
+  $('sync').disabled = false;
+  if (!res?.started) setCard('warn', 'Belum bisa mulai', res?.error ?? 'Gagal memulai sinkronisasi.', null);
 });
 chrome.storage.onChanged.addListener((_changes, area) => {
   if (area === 'local') refresh();
 });
+// Segarkan teks waktu ("berjalan 12 menit") walau tidak ada perubahan data.
+setInterval(refresh, 15000);
 
 [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 await refresh();

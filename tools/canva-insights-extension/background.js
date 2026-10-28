@@ -5,7 +5,7 @@
  * Token sesi Canva hanya disimpan di chrome.storage.session (memori, hilang saat Chrome ditutup).
  */
 import { CanvaHttpError, ENDPOINTS, PaginationError, SESSION_HEADERS, buildUrl, parseCanvaJson } from './lib/canva.js';
-import { collectBrand } from './lib/collect-brand.js';
+import { collectBrand, STAGES } from './lib/collect-brand.js';
 import { createServerClient, ServerAuthError } from './lib/server.js';
 import { log, politeDelay, setLogSink, sleep } from './lib/util.js';
 
@@ -80,9 +80,41 @@ setLogSink((level, message) => {
   setStatus({});
 });
 
-function badge(text, color) {
+function badge(text, color, title) {
   chrome.action.setBadgeText({ text });
   if (color) chrome.action.setBadgeBackgroundColor({ color });
+  if (title) chrome.action.setTitle({ title: `Canva Insights — ${title}` });
+}
+
+/** Terjemahkan kegagalan menjadi status, pesan, dan saran yang bisa dilakukan user. */
+function explainError(e) {
+  if (e instanceof ServerAuthError) {
+    return { status: 'ERROR', message: 'Token ditolak dashboard can-freelance.', hint: 'Buka Pengaturan extension, tempel ulang token INSIGHTS_INGEST_TOKEN, lalu Uji koneksi.' };
+  }
+  if (e instanceof CanvaHttpError && e.status === 401) {
+    return { status: 'NEEDS_LOGIN', message: 'Sesi Canva habis.', hint: 'Login ulang di canva.com, buka dashboard Creator, lalu sinkronkan lagi.' };
+  }
+  if (e instanceof CanvaHttpError && e.status === 429) {
+    return { status: 'ERROR', message: 'Canva membatasi permintaan (terlalu sering).', hint: 'Tunggu sekitar 15 menit, lalu sinkronkan lagi. Data yang sudah masuk tetap tersimpan.' };
+  }
+  if (e instanceof CanvaHttpError) {
+    return { status: 'ERROR', message: `Canva membalas ${e.status}.`, hint: 'Muat ulang dashboard Creator lalu sinkronkan lagi. Bila berulang, kabari admin.' };
+  }
+  if (e instanceof PaginationError) {
+    return { status: 'ERROR', message: `Paginasi Canva berubah: ${e.message}`, hint: 'Kabari admin: format data Canva mungkin berubah.' };
+  }
+  if (e instanceof TypeError && /fetch/i.test(e.message)) {
+    return { status: 'ERROR', message: 'Dashboard can-freelance tidak bisa dihubungi.', hint: 'Pastikan server dashboard menyala dan URL di Pengaturan benar.' };
+  }
+  return { status: 'ERROR', message: e.message, hint: e.hint ?? null };
+}
+
+function notify(title, message) {
+  try {
+    chrome.notifications.create({ type: 'basic', iconUrl: 'icon-128.png', title, message, priority: 1 });
+  } catch {
+    // Notifikasi opsional.
+  }
 }
 
 // ── Sinkronisasi satu brand (akun Canva yang login di tab ini) ─────────────────
@@ -90,23 +122,50 @@ let running = false;
 
 async function runSync(tabId, { backfill }) {
   const { settings = {} } = await chrome.storage.local.get('settings');
-  if (!settings.baseUrl || !settings.token) throw new Error('Isi URL dashboard dan token di Pengaturan extension');
+  if (!settings.baseUrl || !settings.token) {
+    throw Object.assign(new Error('URL dashboard dan token belum diisi.'), { hint: 'Klik Buka Pengaturan, isi keduanya, Simpan, lalu Uji koneksi.' });
+  }
 
   log('INFO', 'Menunggu header sesi dashboard Creator…');
   const headers = await waitForHeaders(tabId);
-  if (!headers) throw new Error('Dashboard Creator tidak memuat data dalam 30 detik. Pastikan sudah login Canva dan halaman tampil normal.');
+  if (!headers) {
+    throw Object.assign(new Error('Dashboard Creator tidak memuat data dalam 30 detik.'), {
+      hint: 'Pastikan sudah login Canva dan grafik di dashboard Creator tampil, lalu sinkronkan lagi.',
+    });
+  }
   const brandId = headers['x-canva-brand'];
-  if (!brandId) throw new Error('Brand ID tidak terbaca dari dashboard');
+  if (!brandId) throw Object.assign(new Error('Brand tidak terbaca dari dashboard.'), { hint: 'Muat ulang dashboard Creator lalu coba lagi.' });
   await setStatus({ brandId });
 
-  const server = createServerClient({ ...settings, host: settings.host || 'chrome-extension', collectorVersion: COLLECTOR_VERSION });
-  const runId = await server.startRun(brandId);
+  const client = createServerClient({ ...settings, host: settings.host || 'chrome-extension', collectorVersion: COLLECTOR_VERSION });
+  const progress = { batches: 0, rows: 0 };
+  const server = {
+    ...client,
+    async ingest(batch) {
+      const result = await client.ingest(batch);
+      progress.batches += 1;
+      progress.rows += batch.payload?.A?.length ?? 0;
+      // Tanda hidup tiap batch: popup menganggap macet bila > 2 menit tanpa kabar.
+      await setStatus({ heartbeatAt: Date.now(), progress: { ...progress } });
+      return result;
+    },
+  };
+  const runId = await server.startRun(brandId).catch((e) => {
+    if (/belum terdaftar/.test(e.message)) e.hint = 'Brand ini belum dihubungkan di dashboard. Kabari admin (Account.canvaBrandId).';
+    throw e;
+  });
   const pagination = { param: settings.paginationParam ?? null, detected: false };
   let status = 'ERROR';
   let message = null;
+  let hint = null;
   try {
-    log('INFO', `Brand ${brandId}: mulai${backfill ? ' (365 hari)' : ''}`);
+    log('INFO', `Mulai${backfill ? ' (365 hari)' : ' (14 hari terakhir)'}`);
     const summary = await collectBrand({
+      onStage: (key, detail) => {
+        const index = STAGES.findIndex((st) => st.key === key);
+        if (key !== 'daily' || detail?.group === 1) log('INFO', STAGES[index].label);
+        setStatus({ stage: { key, index, total: STAGES.length, ...(detail ?? {}) }, heartbeatAt: Date.now() });
+      },
       brand: { slug: brandId, brandId },
       fetchJson: pageFetcher(tabId, headers),
       server,
@@ -115,16 +174,13 @@ async function runSync(tabId, { backfill }) {
       backfill,
     });
     status = summary.rejected > 0 ? 'ERROR' : 'OK';
-    message = `${summary.batches} batch, ${summary.rows} baris, ${summary.templates} template${summary.rejected ? `, ${summary.rejected} REJECTED` : ''}`;
+    message = `${summary.templates.toLocaleString('id-ID')} template, ${summary.rows.toLocaleString('id-ID')} baris data dalam ${summary.batches.toLocaleString('id-ID')} halaman${
+      summary.rejected ? `; ${summary.rejected} halaman ditolak server` : ''
+    }.`;
+    if (summary.rejected) hint = 'Sebagian data ditolak dashboard. Data lain tetap tersimpan; kabari admin.';
   } catch (e) {
-    if (e instanceof ServerAuthError) throw e;
-    if (e instanceof CanvaHttpError && e.status === 401) {
-      status = 'NEEDS_LOGIN';
-      message = 'Sesi Canva habis: login ulang di canva.com lalu sinkronkan lagi';
-      await chrome.storage.session.remove(`headers:${tabId}`);
-    } else {
-      message = `${e instanceof PaginationError ? 'Paginasi: ' : ''}${e.message}`;
-    }
+    ({ status, message, hint } = explainError(e));
+    if (status === 'NEEDS_LOGIN') await chrome.storage.session.remove(`headers:${tabId}`);
   } finally {
     if (pagination.detected && pagination.param) {
       await chrome.storage.local.set({ settings: { ...settings, paginationParam: pagination.param } });
@@ -132,7 +188,7 @@ async function runSync(tabId, { backfill }) {
     }
     await server.finishRun(runId, status, message).catch((e) => log('ERROR', `Gagal melapor run: ${e.message}`));
   }
-  return { brandId, status, message };
+  return { brandId, status, message, hint, progress: { ...progress } };
 }
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
@@ -144,20 +200,24 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   running = true;
   lines = [];
   sendResponse({ started: true });
-  badge('…', '#6b7280');
-  setStatus({ state: 'running', startedAt: Date.now(), brandId: null, result: null }).then(async () => {
+  badge('…', '#6b7280', 'sinkron berjalan');
+  setStatus({ state: 'running', startedAt: Date.now(), heartbeatAt: Date.now(), progress: null, brandId: null, result: null }).then(async () => {
     let result;
+    const startedAt = Date.now();
     try {
       result = await runSync(msg.tabId, { backfill: !!msg.backfill });
     } catch (e) {
-      result = { brandId: null, status: 'ERROR', message: e.message };
+      result = { brandId: null, ...explainError(e) };
     }
-    log(result.status === 'OK' ? 'INFO' : 'WARN', `${result.status}${result.message ? ` — ${result.message}` : ''}`);
+    result.durationMs = Date.now() - startedAt;
+    const ok = result.status === 'OK';
+    log(ok ? 'INFO' : 'WARN', `${ok ? 'Berhasil' : 'Gagal'}: ${result.message}`);
     const { lastRuns = {} } = await chrome.storage.local.get('lastRuns');
     if (result.brandId) lastRuns[result.brandId] = { status: result.status, message: result.message, at: Date.now() };
     await chrome.storage.local.set({ lastRuns });
     await setStatus({ state: 'done', finishedAt: Date.now(), result });
-    badge(result.status === 'OK' ? 'OK' : '!', result.status === 'OK' ? '#16a34a' : '#dc2626');
+    badge(ok ? 'OK' : '!', ok ? '#16a34a' : '#dc2626', ok ? 'sinkron terakhir berhasil' : 'sinkron terakhir gagal');
+    notify(ok ? 'Sinkron Canva Insights berhasil' : 'Sinkron Canva Insights gagal', `${result.message}${result.hint ? ` ${result.hint}` : ''}`);
     running = false;
   });
   return false;

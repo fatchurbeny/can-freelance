@@ -8,11 +8,22 @@ export const DISCOVERY_DAYS = 90;
 /** --backfill: sejarah maksimal yang diambil, dipecah per potongan (spek §5.3 langkah 5). */
 export const BACKFILL_DAYS = 365;
 
+/** Langkah sinkron, urut; `onStage` menerima key ini untuk progres di popup. */
+export const STAGES = [
+  { key: 'discover', label: 'Daftar template aktif (90 hari)' },
+  { key: 'known', label: 'Gabung template yang dikenal dashboard' },
+  { key: 'daily', label: 'Angka harian per template' },
+  { key: 'brand', label: 'Total harian akun' },
+  { key: 'tier', label: 'Skor tier' },
+  { key: 'meta', label: 'Judul & thumbnail template baru' },
+];
+
 /**
  * Urutan kerja satu brand (spek §5.3). Tidak tahu soal browser: `fetchJson` dari sesi Canva,
  * `server` dari klien API (atau klien dry-run). Mengembalikan ringkasan untuk laporan run.
+ * `onStage(key, detail)` dipanggil saat langkah berganti (detail harian: `{ group, groups }`).
  */
-export async function collectBrand({ brand, fetchJson, server, pagination, runId, backfill = false, now = Date.now() }) {
+export async function collectBrand({ brand, fetchJson, server, pagination, runId, backfill = false, now = Date.now(), onStage = () => {} }) {
   const brandId = brand.brandId;
   const toDate = startOfUtcDay(now) + DAY_MS; // eksklusif: termasuk hari ini (UTC)
   const summary = { batches: 0, rejected: 0, rows: 0, templates: 0 };
@@ -40,6 +51,7 @@ export async function collectBrand({ brand, fetchJson, server, pagination, runId
     });
 
   // 1. BY_BRAND 90 hari → daftar template aktif.
+  onStage('discover');
   const ids = new Set();
   await pages(
     'content.by_brand',
@@ -57,6 +69,7 @@ export async function collectBrand({ brand, fetchJson, server, pagination, runId
   );
 
   // 2. Gabung dengan template yang sudah dikenal server (template sepi tetap diambil hariannya).
+  onStage('known');
   const known = await server.knownIds(brandId);
   const knownSet = new Set(known.ids);
   known.ids.forEach((id) => ids.add(id));
@@ -67,7 +80,9 @@ export async function collectBrand({ brand, fetchJson, server, pagination, runId
   const dailyRanges = backfill
     ? rangeChunks(toDate - BACKFILL_DAYS * DAY_MS, toDate, 90)
     : [[toDate - DAILY_DAYS * DAY_MS, toDate]];
-  for (const group of chunk([...ids].sort(), 50)) {
+  const groups = chunk([...ids].sort(), 50);
+  for (const [g, group] of groups.entries()) {
+    onStage('daily', { group: g + 1, groups: groups.length });
     for (const [fromDate, rangeTo] of dailyRanges) {
       await pages('content.by_content', {
         type: 'BY_CONTENT',
@@ -87,6 +102,7 @@ export async function collectBrand({ brand, fetchJson, server, pagination, runId
   const brandRanges = backfill
     ? rangeChunks(toDate - BACKFILL_DAYS * DAY_MS, toDate, 45)
     : [[toDate - DAILY_DAYS * DAY_MS, toDate]];
+  onStage('brand');
   for (const [fromDate, rangeTo] of brandRanges) {
     await pages('brand.breakdowns', {
       brandId,
@@ -100,6 +116,7 @@ export async function collectBrand({ brand, fetchJson, server, pagination, runId
   }
 
   // 5. Skor tier.
+  onStage('tier');
   await pages('tier_scores', {
     brand: brandId,
     after: toDate - (backfill ? BACKFILL_DAYS : DAILY_DAYS) * DAY_MS,
@@ -107,6 +124,7 @@ export async function collectBrand({ brand, fetchJson, server, pagination, runId
   });
 
   // 6. Metadata hanya untuk template baru / yang belum punya judul di server.
+  onStage('meta');
   const missing = new Set(known.missingMetadata);
   for (const id of ids) if (!knownSet.has(id)) missing.add(id);
   for (const group of chunk([...missing].sort(), 50)) {

@@ -26,7 +26,16 @@ URL dashboard lain harus ditambahkan dulu ke `host_permissions` di `manifest.jso
 3. Klik ikon extension → **Sinkronkan sekarang**. Brand dikenali otomatis dari dashboard.
    - Sinkron **pertama** tiap brand: centang **Ambil 365 hari**.
    - Selanjutnya cukup tanpa centang (mengambil ulang 14 hari terakhir).
-4. Biarkan tab Canva terbuka sampai status **OK** (sekitar 1–2 menit; tiap request diberi jeda 1–2 detik). Badge ikon: `…` berjalan, `OK` berhasil, `!` gagal.
+4. Biarkan tab Canva terbuka sampai selesai. Sinkron 14 hari ±5–10 menit per brand; 365 hari ±1 jam (tiap request diberi jeda 1–2 detik). Popup boleh ditutup.
+
+### Membaca status
+
+- **Popup**: kartu status berwarna — *Siap*, *Sedang sinkron* (persen, halaman & baris yang sudah masuk, lama berjalan, langkah aktif dari 6 langkah, mis. "Angka harian per template · grup 19/25"), *Berhasil* (ringkasan + durasi), *Gagal* / *Perlu login* (alasan + "Yang perlu dilakukan"), *Terhenti* (tidak ada kabar > 2 menit: tab Canva ditutup, Chrome dimuat ulang, atau Mac tidur).
+- **Badge ikon**: `…` berjalan, `OK` berhasil, `!` gagal; arahkan kursor ke ikon untuk keterangan.
+- **Notifikasi Chrome** muncul saat sinkron selesai (berhasil atau gagal).
+- **Log teknis** ada di bagian bawah popup (dilipat).
+
+Jangan memuat ulang (reload) extension saat sinkron berjalan: prosesnya terputus. Data yang sudah masuk tetap tersimpan; sinkronkan lagi untuk melanjutkan.
 
 Status per brand juga muncul di dashboard can-freelance (`/insights`, status sync). Sinkronkan tiap brand minimal sekali sehari; data hari terakhir Canva memang terlambat ±1 hari.
 

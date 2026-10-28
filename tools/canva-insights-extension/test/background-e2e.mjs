@@ -26,7 +26,8 @@ globalThis.chrome = {
     },
   },
   storage: { local: area(store.local), session: area(store.session) },
-  action: { setBadgeText() {}, setBadgeBackgroundColor() {} },
+  action: { setBadgeText() {}, setBadgeBackgroundColor() {}, setTitle() {} },
+  notifications: { create: (o) => console.log('notification:', o.title, '|', o.message) },
   runtime: { onMessage: { addListener: (cb) => { onMessage = cb; } } },
   scripting: {
     async executeScript({ world, func, args }) {
@@ -70,6 +71,7 @@ for (let i = 0; i < 120; i++) {
   if (status?.state === 'done') {
     const { settings, lastRuns } = await chrome.storage.local.get(['settings', 'lastRuns']);
     console.log('result', JSON.stringify(status.result));
+    console.log('lines', JSON.stringify(status.lines.map((l) => l.replace(/^\S+ /, ''))));
     console.log('paginationParam', settings.paginationParam, '| lastRuns', JSON.stringify(lastRuns));
     const sent = canvaCalls[0].headers;
     console.log('canva calls', canvaCalls.length, '| credentials', canvaCalls[0].credentials, '| headers sent', Object.keys(sent).sort().join(','));
