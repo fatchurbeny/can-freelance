@@ -35,7 +35,9 @@ async function waitForHeaders(tabId) {
   const key = `headers:${tabId}`;
   let stored = (await chrome.storage.session.get(key))[key];
   if (stored) return stored;
-  // Belum ada request creatorinsight di tab ini: muat ulang dashboard agar header tertangkap.
+  // Belum ada request creatorinsight di tab ini (mis. extension baru dimuat ulang): muat ulang dashboard
+  // agar header tertangkap. Panel di halaman ikut dimuat ulang dan langsung menampilkan status berjalan.
+  log('INFO', 'Memuat ulang dashboard Creator untuk membaca sesi Canva…');
   await chrome.tabs.update(tabId, { url: DASHBOARD_URL });
   for (let waited = 0; waited < HEADER_WAIT_MS; waited += 1000) {
     await sleep(1000);
@@ -119,6 +121,8 @@ function notify(title, message) {
 
 // ── Sinkronisasi satu brand (akun Canva yang login di tab ini) ─────────────────
 let running = false;
+let lastBeat = 0;
+const STUCK_MS = 2 * 60 * 1000;
 
 async function runSync(tabId, { backfill }) {
   const { settings = {} } = await chrome.storage.local.get('settings');
@@ -146,7 +150,8 @@ async function runSync(tabId, { backfill }) {
       progress.batches += 1;
       progress.rows += batch.payload?.A?.length ?? 0;
       // Tanda hidup tiap batch: popup menganggap macet bila > 2 menit tanpa kabar.
-      await setStatus({ heartbeatAt: Date.now(), progress: { ...progress } });
+      lastBeat = Date.now();
+      await setStatus({ heartbeatAt: lastBeat, progress: { ...progress } });
       return result;
     },
   };
@@ -164,7 +169,8 @@ async function runSync(tabId, { backfill }) {
       onStage: (key, detail) => {
         const index = STAGES.findIndex((st) => st.key === key);
         if (key !== 'daily' || detail?.group === 1) log('INFO', STAGES[index].label);
-        setStatus({ stage: { key, index, total: STAGES.length, ...(detail ?? {}) }, heartbeatAt: Date.now() });
+        lastBeat = Date.now();
+        setStatus({ stage: { key, index, total: STAGES.length, ...(detail ?? {}) }, heartbeatAt: lastBeat });
       },
       brand: { slug: brandId, brandId },
       fetchJson: pageFetcher(tabId, headers),
@@ -193,11 +199,13 @@ async function runSync(tabId, { backfill }) {
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg?.type !== 'sync') return false;
-  if (running) {
-    sendResponse({ started: false, error: 'Sinkronisasi lain masih berjalan' });
+  if (running && Date.now() - lastBeat < STUCK_MS) {
+    sendResponse({ started: false, error: `Sinkronisasi sedang berjalan (kabar terakhir ${Math.round((Date.now() - lastBeat) / 1000)} detik lalu). Tunggu sampai selesai.` });
     return false;
   }
+  // Run sebelumnya macet (> 2 menit tanpa kabar) tidak lagi mengunci tombol.
   running = true;
+  lastBeat = Date.now();
   lines = [];
   sendResponse({ started: true });
   badge('…', '#6b7280', 'sinkron berjalan');
