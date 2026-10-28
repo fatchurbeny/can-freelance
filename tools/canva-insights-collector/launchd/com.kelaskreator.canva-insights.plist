@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Template LaunchAgent collector Canva Insights. Ganti __NODE__ (hasil `which node`),
+  __DIR__ (path folder tools/canva-insights-collector) dan __HOME__ (path home), lalu pasang:
+    cp launchd/com.kelaskreator.canva-insights.plist ~/Library/LaunchAgents/
+    launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.kelaskreator.canva-insights.plist
+  Jadwal 08:15 waktu lokal (set zona waktu Mac ke Asia/Jakarta = 08:15 WIB, setelah hari UTC berganti 07:00 WIB).
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.kelaskreator.canva-insights</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>__NODE__</string>
+    <string>__DIR__/collect.mjs</string>
+    <string>run</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>__DIR__</string>
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key>
+    <integer>8</integer>
+    <key>Minute</key>
+    <integer>15</integer>
+  </dict>
+  <key>StandardOutPath</key>
+  <string>__HOME__/Library/Logs/canva-insights-collector.log</string>
+  <key>StandardErrorPath</key>
+  <string>__HOME__/Library/Logs/canva-insights-collector.log</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+    <!-- Collector sudah menulis ke log yang sama lewat stdout; jangan tulis dua kali. -->
+    <key>CANVA_INSIGHTS_LOG</key>
+    <string>/dev/null</string>
+  </dict>
+  <key>ProcessType</key>
+  <string>Background</string>
+</dict>
+</plist>

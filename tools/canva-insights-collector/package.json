@@ -1,0 +1,18 @@
+{
+  "name": "canva-insights-collector",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Ambil data Canva Creator Insights dari browser lalu kirim ke API ingest can-freelance (docs/knowledge/canva-insights-spec.md §5).",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "login": "node collect.mjs login",
+    "run": "node collect.mjs run",
+    "test": "node --test \"test/*.test.mjs\""
+  },
+  "dependencies": {
+    "playwright": "~1.64.0"
+  }
+}

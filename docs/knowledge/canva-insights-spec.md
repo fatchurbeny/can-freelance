@@ -1,6 +1,6 @@
 # Spec: Canva Insights Tracker
 
-Status: **Fase 1 ditulis di branch `feat/canva-insights`** (2026-10-28): skema, parser, API, impor manual. Diuji ke DB lokal: total breakdowns = acuan brief, impor ulang idempoten, batch rusak ditolak, API HTTP (401/403/413/422/200) sesuai. Fase 2–3 belum. Brief kerja: [`../backlog/canva-insights-implementation.md`](../backlog/canva-insights-implementation.md). Ringkasan endpoint per field: [`../canva-insights-endpoints.md`](../canva-insights-endpoints.md) (salinan dokumen project claude.ai "Can-Product Monitor"; isinya disamakan dengan §1 spek ini).
+Status: **Fase 1 ditulis di branch `feat/canva-insights`** (2026-10-28): skema, parser, API, impor manual. Diuji ke DB lokal: total breakdowns = acuan brief, impor ulang idempoten, batch rusak ditolak, API HTTP (401/403/413/422/200) sesuai. **Fase 2 collector ditulis** (`tools/canva-insights-collector/`), diuji dengan Canva palsu; belum diuji dengan akun Canva sungguhan. Fase 3 belum. Brief kerja: [`../backlog/canva-insights-implementation.md`](../backlog/canva-insights-implementation.md). Ringkasan endpoint per field: [`../canva-insights-endpoints.md`](../canva-insights-endpoints.md) (salinan dokumen project claude.ai "Can-Product Monitor"; isinya disamakan dengan §1 spek ini).
 
 Tujuan: menyimpan snapshot harian **Applies** dan **Usages** per template Canva dari 5 akun Creator, menautkannya ke `Task` di production dashboard, lalu menampilkan performa per template, per brand, dan per designer di halaman `/insights`.
 
@@ -261,6 +261,8 @@ Catatan: satu `Task` bisa punya beberapa template (`qtySubmit` > 1, varian bahas
 
 **Deteksi parameter paginasi**: saat token `B` pertama ditemukan, coba berurutan `continuation`, `continuationToken`, `cursor`, `pageToken`. Parameter benar = respons berisi baris yang berbeda dari halaman pertama. Simpan nama yang berhasil di konfigurasi lokal dan catat di spek ini.
 
+**Pemeriksaan Cloudflare** (2026-10-28): profil Chrome Playwright yang belum login mendapat halaman "Just a moment…" pada kunjungan kedua. Collector mendeteksinya (judul halaman, > 15 detik) dan melapor `ERROR` "pemeriksaan Cloudflare"; tidak pernah mencoba melewatinya. Belum diketahui apakah profil yang sudah login juga terkena (uji Fase 2 bersama user).
+
 ### 5.4 Fetch dari dalam halaman
 Request dijalankan via `page.evaluate(fetch(url, { headers, credentials: 'include' }))` di tab Canva, sehingga cookie, origin, dan TLS sama dengan dashboard asli.
 
@@ -301,6 +303,7 @@ Meniru halaman **Template usages** Canva:
 * ~~Apakah `TaskCanvaLink` berisi desain sumber template~~: **tidak** (2026-10-28, §6).
 
 ## 10. Risiko
+* Pemeriksaan anti-bot Cloudflare pada Chrome yang dikendalikan Playwright (§5.3): bila muncul tiap hari, jadwal otomatis gagal untuk brand itu dan perlu jalan manual lewat `login`.
 * Endpoint internal, bisa berubah/diblokir: mitigasi payload mentah + parser bervers + fail-closed + peringatan sync.
 * Ketentuan layanan Canva: read-only, data akun sendiri, 1×/hari, berurutan, dari browser asli di jaringan rumah.
 * HAR berisi cookie/token aktif: jangan commit HAR; logout + login ulang kelima akun setelah HAR dibagikan.

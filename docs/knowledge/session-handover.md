@@ -47,7 +47,9 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 * DB lokal: skema gabungan diterapkan lewat SQL aditif (tanpa DROP). Data aset dipulihkan dari VPS (`pg_dump --data-only` `asset_categories` + `assets`: 7 + 142 baris), `notion_databases.purpose = asset_library` dipasang ulang di "Asset Library". 1 baris `asset_productions` lokal (data uji) tidak bisa dipulihkan.
 * **Fase 1 terverifikasi di DB lokal**: 5 brand ter-seed (Chital = akun "Chital Graphic"), 4 fixture diimpor, total breakdowns = acuan brief, impor ulang idempoten, batch rusak `REJECTED` tanpa perubahan data, API HTTP 200/401/403/413/422 sesuai. `INSIGHTS_INGEST_TOKEN` lokal ditambahkan ke `.env`.
 * **Tautan task**: link task = `canva.link` ke desain kerja, bukan desain sumber `I` → `design_id` 0/200. Aturan judul diperluas (nama task + satu kata jenis): 21 tertaut, 0 ambigu. Detail spek §6.
-* **Berikutnya**: Fase 2 (collector Playwright, uji 1 brand bersama user). Fixture Chital belum ada.
+* **Fase 2** (`tools/canva-insights-collector/`, `.mjs` + Playwright 1.64, dikecualikan dari tsc/eslint): `login`, `run [--brand] [--dry-run] [--backfill]`, deteksi paginasi → `config.json`, laporan run, log `~/Library/Logs/canva-insights-collector.log`, template launchd 08:15, README. Diuji: 7 tes unit (`npm test`), e2e Canva palsu → API lokal (OK, paginasi terdeteksi; data uji Chital dihapus), Chrome asli profil kosong → `NEEDS_LOGIN`.
+* **Temuan**: kunjungan kedua profil belum login → halaman Cloudflare "Just a moment…". Collector berhenti & lapor `ERROR`, tidak mencoba melewati. Belum tahu apakah profil yang sudah login ikut terkena.
+* **Berikutnya (butuh user)**: `node collect.mjs login <slug>` 1 brand, `run --brand <slug> --dry-run`, lalu `run --brand <slug>` ke `http://127.0.0.1:3002/can-freelance/api/insights/*` (token lokal sudah di `.env`); bandingkan 1 template dengan dashboard Canva; catat parameter paginasi di spek §1.3/§9.
 * Fase 3 wajib: jangan jumlahkan `audience = "ALL"` bersama `B`/`C` (spek §4).
 
 ---
