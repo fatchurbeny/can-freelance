@@ -40,17 +40,11 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 
 ## 📝 Sesi Terakhir
 
-### 2026-10-28 — Canva Insights Fase 1 + merge Asset Library (Claude Code, `⚙️ [Backend & Database]` + `🔄 [API & Notion Integration]` + `🏛️ [Knowledge Ops]`)
-* Spek: [`canva-insights-spec.md`](canva-insights-spec.md), brief: [`../backlog/canva-insights-implementation.md`](../backlog/canva-insights-implementation.md), mapping field: [`../canva-insights-endpoints.md`](../canva-insights-endpoints.md).
-* `fccb674`: 6 model `Canva*` + `Account.canvaBrandId`, `src/lib/canva-insights/*`, route `/api/insights/{ingest,runs,known-ids}`, action `canva-insights.ts`, script `seed-canva-brands.ts` & `import-canva-insights.ts`. Parser lolos 4 fixture (total breakdowns = acuan brief), data rusak & brand asing ditolak.
-* `b5d4a03`: merge `feat/asset-library` (konflik skema = gabung kedua sisi; `user-role-spec` Akses aset = versi asset-library). `tsc` lolos.
-* DB lokal: skema gabungan diterapkan lewat SQL aditif (tanpa DROP). Data aset dipulihkan dari VPS (`pg_dump --data-only` `asset_categories` + `assets`: 7 + 142 baris), `notion_databases.purpose = asset_library` dipasang ulang di "Asset Library". 1 baris `asset_productions` lokal (data uji) tidak bisa dipulihkan.
-* **Fase 1 terverifikasi di DB lokal**: 5 brand ter-seed (Chital = akun "Chital Graphic"), 4 fixture diimpor, total breakdowns = acuan brief, impor ulang idempoten, batch rusak `REJECTED` tanpa perubahan data, API HTTP 200/401/403/413/422 sesuai. `INSIGHTS_INGEST_TOKEN` lokal ditambahkan ke `.env`.
-* **Tautan task**: link task = `canva.link` ke desain kerja, bukan desain sumber `I` → `design_id` 0/200. Aturan judul diperluas (nama task + satu kata jenis): 21 tertaut, 0 ambigu. Detail spek §6.
-* **Fase 2** (`tools/canva-insights-collector/`, `.mjs` + Playwright 1.64, dikecualikan dari tsc/eslint): `login`, `run [--brand] [--dry-run] [--backfill]`, deteksi paginasi → `config.json`, laporan run, log `~/Library/Logs/canva-insights-collector.log`, template launchd 08:15, README. Diuji: 7 tes unit (`npm test`), e2e Canva palsu → API lokal (OK, paginasi terdeteksi; data uji Chital dihapus), Chrome asli profil kosong → `NEEDS_LOGIN`.
-* **Temuan**: kunjungan kedua profil belum login → halaman Cloudflare "Just a moment…". Collector berhenti & lapor `ERROR`, tidak mencoba melewati. Belum tahu apakah profil yang sudah login ikut terkena.
-* **Berikutnya (butuh user)**: `node collect.mjs login <slug>` 1 brand, `run --brand <slug> --dry-run`, lalu `run --brand <slug>` ke `http://127.0.0.1:3002/can-freelance/api/insights/*` (token lokal sudah di `.env`); bandingkan 1 template dengan dashboard Canva; catat parameter paginasi di spek §1.3/§9.
-* Fase 3 wajib: jangan jumlahkan `audience = "ALL"` bersama `B`/`C` (spek §4).
+### 2026-10-28 — Canva Insights Fase 1–2 + merge Asset Library (Claude Code, `⚙️ [Backend & Database]` + `🔄 [API & Notion Integration]`)
+* Detail lengkap sesi ini di arsip (`grep "Canva Insights Fase 1" archive/`). Spek: [`canva-insights-spec.md`](canva-insights-spec.md), brief: [`../backlog/canva-insights-implementation.md`](../backlog/canva-insights-implementation.md).
+* **Fase 1 selesai & terverifikasi** di DB lokal (skema, parser, API ingest/runs/known-ids, impor manual, 5 brand ter-seed). Tautan task lewat judul (21/200); ID desain tidak bisa dipakai (spek §6).
+* **Fase 2 = extension Chrome** `tools/canva-insights-extension/` (Playwright + launchd dibatalkan: Cloudflare tidak lolos). Teruji dengan `chrome`/Canva palsu → API lokal.
+* **Berikutnya (butuh user)**: load unpacked, URL `http://127.0.0.1:3002/can-freelance` + token lokal (`.env`), sinkronkan zahra (centang 365 hari), bandingkan 1 template dengan Canva, catat parameter paginasi di spek §1.3/§9. Lalu Fase 3 (`/insights`; jangan jumlahkan `audience = "ALL"` bersama `B`/`C`).
 
 ---
 

@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "Can-Freelance Canva Insights",
+  "version": "1.0.0",
+  "description": "Kirim Applies/Usages dashboard Canva Creator ke dashboard can-freelance (satu klik per brand).",
+  "minimum_chrome_version": "116",
+  "permissions": ["webRequest", "scripting", "storage"],
+  "host_permissions": [
+    "https://www.canva.com/*",
+    "https://portal.fatchurbeny.com/*",
+    "http://127.0.0.1/*",
+    "http://localhost/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "Canva Insights",
+    "default_popup": "popup.html"
+  },
+  "options_page": "options.html"
+}

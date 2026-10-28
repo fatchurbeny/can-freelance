@@ -87,7 +87,7 @@ Cookie sesi + `x-canva-authz`, `x-canva-user`, `x-canva-brand`, `x-canva-app` (`
 
 ## Keputusan arsitektur (28 Okt 2026)
 - Dashboard can-freelance tidak memanggil Canva. Data diambil di browser lalu di-POST ke `/can-freelance/api/insights/ingest` (`INSIGHTS_INGEST_TOKEN`).
-- Collector = script Node + Playwright (Google Chrome, 5 profil) dijadwalkan launchd di iMac rumah, 08:15 WIB.
+- Collector = extension Chrome di browser harian (`tools/canva-insights-extension/`), klik "Sinkronkan sekarang" per brand. Rencana Playwright + launchd dibatalkan karena pemeriksaan Cloudflare (2026-10-28).
 - Halaman `/insights` meniru "Template usages" Canva: filter brand / Free & Pro / rentang tanggal, KPI + delta, grafik area, tabel berhalaman (10/25/50/100), status sync per brand.
 - Fixture HAR bersih: `scratch/canva-insights-fixtures/*.json` (zahra-art, impro, uicreative, antler; Chital belum ada).
 

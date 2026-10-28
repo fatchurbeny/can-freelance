@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <title>Pengaturan Canva Insights</title>
+  <link rel="stylesheet" href="ui.css">
+  <style>body { max-width: 520px; padding: 24px; }</style>
+</head>
+<body>
+  <h1>Pengaturan Canva Insights</h1>
+  <p class="muted">Data dikirim ke API dashboard can-freelance. Token sesi Canva tidak pernah dikirim ke sana.</p>
+  <form id="form" class="box">
+    <label>URL dashboard
+      <input type="url" id="baseUrl" placeholder="https://portal.fatchurbeny.com/can-freelance" required>
+    </label>
+    <label>Token ingest (<code>INSIGHTS_INGEST_TOKEN</code>)
+      <input type="password" id="token" autocomplete="off" required>
+    </label>
+    <label>Nama perangkat (muncul di status sync)
+      <input type="text" id="host" placeholder="macbook-beni">
+    </label>
+    <button type="submit">Simpan</button>
+    <button type="button" id="test" class="secondary">Uji koneksi</button>
+  </form>
+  <p id="msg"></p>
+  <p class="muted" id="pagination"></p>
+  <script type="module" src="options.js"></script>
+</body>
+</html>

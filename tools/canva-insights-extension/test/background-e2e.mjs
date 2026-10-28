@@ -1,0 +1,80 @@
+// Uji manual background.js dengan `chrome` palsu + Canva palsu → API dashboard sungguhan.
+// Pakai: BASE_URL=http://127.0.0.1:3002/can-freelance TOKEN=... BRAND=BADxbxKIT_Y node test/background-e2e.mjs
+const DAY = 86_400_000;
+const brandId = process.env.BRAND;
+const store = { local: new Map(), session: new Map() };
+const area = (m) => ({
+  async get(keys) {
+    const list = keys == null ? [...m.keys()] : [keys].flat();
+    return Object.fromEntries(list.filter((k) => m.has(k)).map((k) => [k, structuredClone(m.get(k))]));
+  },
+  async set(obj) { for (const [k, v] of Object.entries(obj)) m.set(k, structuredClone(v)); },
+  async remove(keys) { for (const k of [keys].flat()) m.delete(k); },
+});
+let onHeaders, onMessage;
+const canvaCalls = [];
+globalThis.chrome = {
+  webRequest: { onBeforeSendHeaders: { addListener: (cb) => { onHeaders = cb; } } },
+  tabs: {
+    onRemoved: { addListener() {} },
+    async update(tabId) {
+      // Dashboard dimuat → request creatorinsight pertama membawa header sesi.
+      setTimeout(() => onHeaders({ tabId, requestHeaders: [
+        { name: 'X-Canva-Authz', value: 'secret-session-token' }, { name: 'x-canva-brand', value: brandId },
+        { name: 'x-canva-user', value: 'UAEtest' }, { name: 'x-canva-app', value: 'home' }, { name: 'cookie', value: 'nope' },
+      ] }), 300);
+    },
+  },
+  storage: { local: area(store.local), session: area(store.session) },
+  action: { setBadgeText() {}, setBadgeBackgroundColor() {} },
+  runtime: { onMessage: { addListener: (cb) => { onMessage = cb; } } },
+  scripting: {
+    async executeScript({ world, func, args }) {
+      if (world !== 'MAIN') throw new Error('harus MAIN world');
+      return [{ result: await func(...args) }];
+    },
+  },
+};
+
+const ids = Array.from({ length: 8 }, (_, i) => `EAHbg00000${i}`);
+const realFetch = globalThis.fetch;
+globalThis.fetch = async (url, init) => {
+  const u = new URL(url);
+  if (u.host !== 'www.canva.com') return realFetch(url, init);
+  canvaCalls.push({ path: u.pathname, headers: init.headers, credentials: init.credentials });
+  const p = (k) => u.searchParams.getAll(k);
+  const now = Date.now();
+  const from = Number(p('fromDate')[0] ?? p('after')[0]);
+  const to = Number(p('toDate')[0] ?? Math.floor(now / DAY) * DAY + DAY);
+  const days = []; for (let d = from; d < to; d += DAY) days.push(d);
+  let body;
+  if (u.pathname.endsWith('/content/usages') && p('type')[0] === 'BY_BRAND') body = { A: ids.map((e) => ({ e, C: 3, D: 1, j: now - 30 * DAY })) };
+  else if (u.pathname.endsWith('/content/usages')) {
+    const rows = days.flatMap((d) => p('contentIds').map((e) => ({ e, k: d, l: d + DAY, C: 2, D: 1, F: 'C' })));
+    const off = Number(p('cursor')[0] ?? 0); const page = rows.slice(off, off + Number(p('limit')[0]));
+    body = off + page.length < rows.length ? { A: page, B: String(off + page.length) } : { A: page };
+  } else if (u.pathname.endsWith('/breakdowns')) body = { A: days.map((d) => ({ e: d, f: d + DAY, C: 6, D: 3, F: 'C' })) };
+  else if (u.pathname.endsWith('/tier_scores')) body = { A: days.map((d) => ({ A: 2, B: d, C: 'LOW', F: 0.5 })) };
+  else body = { A: p('id').map((A) => ({ A, I: 'DAHbg000000', R: `BG ${A}`, T: [], 0: 'none', d: 12, D: brandId })) };
+  return new Response(`'"])}while(1);</x>//${JSON.stringify(body)}`, { status: 200 });
+};
+
+await chrome.storage.local.set({ settings: { baseUrl: process.env.BASE_URL, token: process.env.TOKEN, host: 'bg-e2e' } });
+await import('../background.js');
+let reply;
+onMessage({ type: 'sync', tabId: 7, backfill: false }, {}, (r) => { reply = r; });
+console.log('reply', reply);
+for (let i = 0; i < 120; i++) {
+  await new Promise((r) => setTimeout(r, 1000));
+  const { status } = await chrome.storage.local.get('status');
+  if (status?.state === 'done') {
+    const { settings, lastRuns } = await chrome.storage.local.get(['settings', 'lastRuns']);
+    console.log('result', JSON.stringify(status.result));
+    console.log('paginationParam', settings.paginationParam, '| lastRuns', JSON.stringify(lastRuns));
+    const sent = canvaCalls[0].headers;
+    console.log('canva calls', canvaCalls.length, '| credentials', canvaCalls[0].credentials, '| headers sent', Object.keys(sent).sort().join(','));
+    console.log('status lines contain token?', JSON.stringify(status.lines).includes('secret-session-token'));
+    process.exit(0);
+  }
+}
+console.log('timeout'); process.exit(1);

@@ -1,6 +1,6 @@
 # Spec: Canva Insights Tracker
 
-Status: **Fase 1 ditulis di branch `feat/canva-insights`** (2026-10-28): skema, parser, API, impor manual. Diuji ke DB lokal: total breakdowns = acuan brief, impor ulang idempoten, batch rusak ditolak, API HTTP (401/403/413/422/200) sesuai. **Fase 2 collector ditulis** (`tools/canva-insights-collector/`), diuji dengan Canva palsu; belum diuji dengan akun Canva sungguhan. Fase 3 belum. Brief kerja: [`../backlog/canva-insights-implementation.md`](../backlog/canva-insights-implementation.md). Ringkasan endpoint per field: [`../canva-insights-endpoints.md`](../canva-insights-endpoints.md) (salinan dokumen project claude.ai "Can-Product Monitor"; isinya disamakan dengan §1 spek ini).
+Status: **Fase 1 ditulis di branch `feat/canva-insights`** (2026-10-28): skema, parser, API, impor manual. Diuji ke DB lokal: total breakdowns = acuan brief, impor ulang idempoten, batch rusak ditolak, API HTTP (401/403/413/422/200) sesuai. **Fase 2 = extension Chrome** (`tools/canva-insights-extension/`), diuji dengan `chrome` & Canva palsu terhadap API lokal; belum diuji dengan akun Canva sungguhan. Fase 3 belum. Brief kerja: [`../backlog/canva-insights-implementation.md`](../backlog/canva-insights-implementation.md). Ringkasan endpoint per field: [`../canva-insights-endpoints.md`](../canva-insights-endpoints.md) (salinan dokumen project claude.ai "Can-Product Monitor"; isinya disamakan dengan §1 spek ini).
 
 Tujuan: menyimpan snapshot harian **Applies** dan **Usages** per template Canva dari 5 akun Creator, menautkannya ke `Task` di production dashboard, lalu menampilkan performa per template, per brand, dan per designer di halaman `/insights`.
 
@@ -104,13 +104,12 @@ Cookie sesi + `x-canva-authz`, `x-canva-user`, `x-canva-brand`, `x-canva-app: ho
 ## 3. Arsitektur
 
 ```
-iMac di rumah (selalu menyala)                         VPS: can-freelance
-launchd 08:15 WIB
-  └─ collector (Node + Playwright, Google Chrome)
-       untuk tiap brand (profil Chrome sendiri):
-         buka dashboard Creator → tangkap header x-canva-*
-         fetch endpoint §1 dari dalam halaman  ──POST──▶  /can-freelance/api/insights/ingest
-         (ikuti paginasi)                                  (Bearer INSIGHTS_INGEST_TOKEN)
+Chrome harian user (extension MV3)                     VPS: can-freelance
+user buka dashboard Creator → klik "Sinkronkan sekarang" (1× per brand per hari)
+  └─ service worker extension
+       tangkap header x-canva-* (webRequest, brand dari x-canva-brand)
+       fetch endpoint §1 dari dalam tab (MAIN world)  ──POST──▶  /can-freelance/api/insights/ingest
+       (ikuti paginasi)                                  (Bearer INSIGHTS_INGEST_TOKEN)
                                                                │
                                                                ▼
                                                      PostgreSQL: batch mentah → parser → tabel harian
@@ -121,7 +120,7 @@ launchd 08:15 WIB
 
 ### 3.1 Keputusan
 1. **Data diambil di browser, bukan dari server.** Server tidak menyimpan cookie/token Canva: menyimpannya berarti kredensial 5 akun Creator ada di VPS; sesi kedaluwarsa dan login butuh MFA sehingga cron server rapuh; dan akses terjadwal 5 akun dari satu IP datacenter lebih mencurigakan daripada dari browser rumah.
-2. **Collector = script Playwright di iMac rumah**, dijadwalkan launchd 1×/hari. Sebelumnya direncanakan Chrome extension, diganti karena extension hanya jalan bila jendela profil Chrome terbuka (tidak andal di mesin tanpa pengawas). Extension "Sync sekarang" untuk laptop bisa ditambah nanti dengan inti kode yang sama (opsional, belum diputuskan).
+2. **Collector = extension Chrome di browser harian** (`tools/canva-insights-extension/`), user menekan "Sinkronkan sekarang" di dashboard Creator tiap brand. Rencana sebelumnya (script Playwright + launchd di iMac, tanpa pengawas) **dibatalkan 2026-10-28**: Chrome yang dikendalikan Playwright mendapat pemeriksaan anti-bot Cloudflare ("Just a moment…", kotak "Verify you are human" yang tidak lolos), termasuk saat login manual. Melewati pemeriksaan itu tidak dilakukan. Konsekuensi: sinkronisasi butuh satu klik per brand; tanpa klik, data brand itu tertinggal (UI memberi peringatan > 48 jam).
 3. **Dashboard tidak pernah memanggil Canva.** Hanya menerima data lewat API ingest.
 4. **Simpan mentah dulu, normalisasi kemudian.** Nama field Canva hasil minify bisa berubah. Tiap respons disimpan di `CanvaIngestBatch.payload` lalu diparse oleh parser bervers; batch lama bisa diparse ulang. Parser **fail-closed**: `C`/`D` bukan angka atau `e` hilang → batch `REJECTED`, tidak ada baris ditulis.
 5. **Idempoten.** Collector selalu mengambil ulang **14 hari terakhir**, server upsert per (template, tanggal, audiens). Hari dalam 7 hari terakhir ditandai "sementara" di UI.
@@ -249,9 +248,9 @@ Catatan: satu `Task` bisa punya beberapa template (`qtySubmit` > 1, varian bahas
 * `GET /api/insights/known-ids?brandId=…` → `{ ids, missingMetadata }`: template ID yang sudah dikenal (agar template sepi tetap diambil hariannya) dan yang belum punya judul (perlu `templates`).
 * Jalur manual (Server Action, permission `integration.manage`): unggah/tempel JSON respons atau file fixture → handler parse yang sama, `source = "manual"`.
 
-### 5.3 Urutan kerja collector per brand
-1. Buka profil Chrome brand → buka dashboard Creator. Bila diarahkan ke halaman login → lapor `NEEDS_LOGIN`, lanjut brand berikutnya.
-2. Tangkap header `x-canva-*` dari request `creatorinsight` pertama halaman. Pastikan `x-canva-brand` = brandId yang diharapkan.
+### 5.3 Urutan kerja extension per brand
+1. User membuka dashboard Creator (akun brand yang login) dan menekan "Sinkronkan sekarang". Brand = `x-canva-brand`; brand yang belum terdaftar ditolak server (403).
+2. Header `x-canva-*` ditangkap `webRequest` dari request `creatorinsight` dashboard (bila belum ada, tab dimuat ulang dan ditunggu 30 detik). Disimpan hanya di `chrome.storage.session`.
 3. `BY_BRAND` 90 hari → daftar ID, ikuti token paginasi.
 4. Gabung dengan `known-ids` dari server.
 5. `BY_CONTENT` per kelompok 50 ID, `limit=100`, `contentRoyalties=B&C`, rentang 14 hari terakhir (run pertama: sejak publish, maks 365 hari, dipecah per 90 hari), ikuti token.
@@ -261,7 +260,9 @@ Catatan: satu `Task` bisa punya beberapa template (`qtySubmit` > 1, varian bahas
 
 **Deteksi parameter paginasi**: saat token `B` pertama ditemukan, coba berurutan `continuation`, `continuationToken`, `cursor`, `pageToken`. Parameter benar = respons berisi baris yang berbeda dari halaman pertama. Simpan nama yang berhasil di konfigurasi lokal dan catat di spek ini.
 
-**Pemeriksaan Cloudflare** (2026-10-28): profil Chrome Playwright yang belum login mendapat halaman "Just a moment…" pada kunjungan kedua. Collector mendeteksinya (judul halaman, > 15 detik) dan melapor `ERROR` "pemeriksaan Cloudflare"; tidak pernah mencoba melewatinya. Belum diketahui apakah profil yang sudah login juga terkena (uji Fase 2 bersama user).
+Request ke Canva lalu dijalankan lewat `chrome.scripting.executeScript({ world: 'MAIN' })` di tab dashboard (cookie & origin asli). Sinkron pertama tiap brand: opsi "Ambil 365 hari" di popup. Parameter paginasi yang terdeteksi disimpan di `chrome.storage.local`.
+
+**Pemeriksaan Cloudflare** (2026-10-28): Chrome yang dikendalikan Playwright mendapat halaman "Just a moment…" dan kotak "Verify you are human" yang tidak lolos setelah dicentang user. Karena itu jalur Playwright dihapus dan diganti extension (§3.1 butir 2).
 
 ### 5.4 Fetch dari dalam halaman
 Request dijalankan via `page.evaluate(fetch(url, { headers, credentials: 'include' }))` di tab Canva, sehingga cookie, origin, dan TLS sama dengan dashboard asli.
@@ -291,10 +292,10 @@ Meniru halaman **Template usages** Canva:
 | Fase | Isi | Di mana |
 | :--- | :--- | :--- |
 | 1 | Skema + seed `canvaBrandId`, parser, API ingest/runs/known-ids, jalur unggah manual, pencocokan task | MacBook (repo) |
-| 2 | Collector Playwright, diuji 1 brand di MacBook, deteksi paginasi | MacBook (`tools/canva-insights-collector/`) |
+| 2 | Extension Chrome "Sinkronkan sekarang", diuji 1 brand di MacBook, deteksi paginasi | MacBook (`tools/canva-insights-extension/`) |
 | 3 | Halaman `/insights` | MacBook (repo) |
-| 4 | Pasang di iMac: 5 profil, login, launchd, Energy settings | iMac |
-| 5 | Agregasi designer, widget task drawer, extension "Sync sekarang" (opsional) | nanti |
+| 4 | Pasang extension di profil Chrome tim yang memegang akun brand; rutinitas sinkron harian | Chrome user |
+| 5 | Agregasi designer, widget task drawer | nanti |
 
 ## 9. Pertanyaan terbuka
 * Nama parameter token paginasi (dideteksi collector, §5.3).
@@ -303,7 +304,7 @@ Meniru halaman **Template usages** Canva:
 * ~~Apakah `TaskCanvaLink` berisi desain sumber template~~: **tidak** (2026-10-28, §6).
 
 ## 10. Risiko
-* Pemeriksaan anti-bot Cloudflare pada Chrome yang dikendalikan Playwright (§5.3): bila muncul tiap hari, jadwal otomatis gagal untuk brand itu dan perlu jalan manual lewat `login`.
+* Sinkronisasi bergantung pada klik manual per brand (§3.1 butir 2): data bisa tertinggal bila lupa; mitigasi peringatan > 48 jam di `/insights`.
 * Endpoint internal, bisa berubah/diblokir: mitigasi payload mentah + parser bervers + fail-closed + peringatan sync.
 * Ketentuan layanan Canva: read-only, data akun sendiri, 1×/hari, berurutan, dari browser asli di jaringan rumah.
 * HAR berisi cookie/token aktif: jangan commit HAR; logout + login ulang kelima akun setelah HAR dibagikan.
@@ -316,3 +317,4 @@ Meniru halaman **Template usages** Canva:
 5. Collector dipindah dari Chrome extension ke **script Playwright + launchd di iMac rumah** (iMac selalu menyala).
 6. Ditemukan field `I` (ID desain sumber) dan `0` (lisensi) di metadata template → pencocokan task lewat ID desain jadi metode utama.
 7. Fixture HAR yang sudah dibersihkan: `scratch/canva-insights-fixtures/*.json` (gitignored).
+8. (Claude Code) Playwright terkena pemeriksaan Cloudflare yang tidak lolos → user memilih **kembali ke extension Chrome** (klik per brand). `tools/canva-insights-collector/` dihapus; logika urutan kerja/paginasi dipakai ulang di `tools/canva-insights-extension/`.

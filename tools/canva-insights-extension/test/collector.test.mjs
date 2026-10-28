@@ -1,10 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { buildUrl, fetchAllPages, PaginationError, parseCanvaJson } from '../lib/canva.mjs';
-import { collectBrand } from '../lib/collect-brand.mjs';
-import { DAY_MS, rangeChunks, startOfUtcDay } from '../lib/util.mjs';
-
-process.env.CANVA_INSIGHTS_LOG = '/dev/null';
+import { buildUrl, fetchAllPages, PaginationError, parseCanvaJson } from '../lib/canva.js';
+import { collectBrand } from '../lib/collect-brand.js';
+import { DAY_MS, rangeChunks, startOfUtcDay } from '../lib/util.js';
 
 const NOW = Date.UTC(2026, 9, 28, 1, 15); // 28 Okt 2026 08:15 WIB
 

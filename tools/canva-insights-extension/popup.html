@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <title>Canva Insights</title>
+  <link rel="stylesheet" href="ui.css">
+  <style>body { width: 340px; padding: 12px; }</style>
+</head>
+<body>
+  <h1>Canva Insights → can-freelance</h1>
+  <div id="setup" class="box" hidden>
+    <p class="bad">URL dashboard dan token belum diisi.</p>
+    <button id="open-options" class="secondary">Buka Pengaturan</button>
+  </div>
+  <div id="not-dashboard" class="box" hidden>
+    <p>Buka dashboard Creator Canva untuk akun brand yang ingin disinkronkan.</p>
+    <button id="open-dashboard">Buka dashboard Creator</button>
+  </div>
+  <div id="ready" class="box" hidden>
+    <p>Sinkronkan akun Canva yang sedang login di tab ini. Brand dikenali otomatis.</p>
+    <label><input type="checkbox" id="backfill"> Ambil 365 hari (sinkron pertama brand ini)</label>
+    <button id="sync">Sinkronkan sekarang</button>
+  </div>
+  <div class="box">
+    <p id="state" class="muted">Belum ada sinkronisasi.</p>
+    <pre id="lines"></pre>
+  </div>
+  <div class="box">
+    <p class="muted">Sinkron terakhir per brand</p>
+    <table id="runs"></table>
+  </div>
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

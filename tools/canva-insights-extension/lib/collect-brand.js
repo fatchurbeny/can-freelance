@@ -1,5 +1,5 @@
-import { fetchAllPages } from './canva.mjs';
-import { chunk, DAY_MS, log, rangeChunks, startOfUtcDay } from './util.mjs';
+import { fetchAllPages } from './canva.js';
+import { chunk, DAY_MS, log, rangeChunks, startOfUtcDay } from './util.js';
 
 /** Rentang harian yang diambil ulang tiap run (spek §3.1 butir 5). */
 export const DAILY_DAYS = 14;

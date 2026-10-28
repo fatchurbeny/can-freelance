@@ -56,20 +56,18 @@ Impor keempat fixture lewat jalur manual, lalu cek:
 - [ ] Laporkan ke user: berapa template ter-tautkan ke task via `design_id`, via `title`, dan berapa yang belum tertaut.
 - [ ] `npx tsc --noEmit` lolos.
 
-## 2. Fase 2 — Collector Playwright (diuji di MacBook)
+## 2. Fase 2 — Extension Chrome (diuji di MacBook)
 
-Lokasi: `tools/canva-insights-collector/` — paket Node mandiri (`package.json` sendiri, dependensi hanya `playwright`), **JavaScript `.mjs`** agar tidak ikut typecheck Next. Tambahkan `tools/` ke `exclude` di `tsconfig.json` dan pastikan tidak ikut build Next/graphify.
+> **Diubah 2026-10-28.** Rencana awal (script Playwright + launchd di iMac) dibatalkan: Chrome yang dikendalikan Playwright terkena pemeriksaan Cloudflare yang tidak lolos. Penggantinya extension MV3 di Chrome harian (spek §3.1 butir 2, §5.3).
 
-- [ ] `config.example.json`: `{ ingestUrl, runsUrl, knownIdsUrl, token, host, brands: [{ slug, name, brandId, profileDir }] }`. `config.json` asli di-gitignore. Default `profileDir`: `~/Library/Application Support/canva-insights-collector/profiles/<slug>`.
-- [ ] `node collect.mjs login <slug>`: buka Google Chrome (`chromium.launchPersistentContext(profileDir, { channel: 'chrome', headless: false })`) ke canva.com untuk login manual + MFA, tutup saat user menekan Enter.
-- [ ] `node collect.mjs run [--brand <slug>] [--dry-run] [--backfill]`: urutan spek §5.3 per brand, fetch dari dalam halaman (§5.4), POST tiap respons ke ingest. `--dry-run` menulis respons ke `./out/<slug>/` tanpa POST.
-- [ ] Deteksi parameter paginasi (spek §5.3): simpan nama yang berhasil ke `config.json` (`paginationParam`) dan **perbarui spek §1.3 dan §9** dengan hasilnya.
-- [ ] Lapor `NEEDS_LOGIN` bila diarahkan ke halaman login; lanjut ke brand berikutnya; exit code ≠ 0 bila ada brand gagal.
-- [ ] Log ke `~/Library/Logs/canva-insights-collector.log` tanpa header/cookie.
-- [ ] `launchd/com.kelaskreator.canva-insights.plist` (template, belum dipasang): `StartCalendarInterval` 08:15 waktu lokal, `StandardOutPath`/`StandardErrorPath` ke log di atas.
-- [ ] `README.md`: instalasi di iMac (Node, `npm i`, `npx playwright install` **tidak** perlu karena memakai `channel: 'chrome'`), login 5 profil, `launchctl bootstrap gui/$(id -u) …plist`, Energy settings (cegah sleep, start after power failure) atau `pmset repeat wake`.
+Lokasi: `tools/canva-insights-extension/` (dikecualikan dari `tsconfig.json` dan eslint; tidak ikut build Next/graphify).
 
-**Uji di MacBook (bersama user)**: user menjalankan `login` untuk satu brand, lalu `run --brand <slug> --dry-run`, lalu `run --brand <slug>` ke dev server lokal (`http://127.0.0.1:3002/can-freelance/api/insights/ingest`). Bandingkan angka satu template dengan dashboard Canva.
+- [x] `manifest.json` MV3: `webRequest`, `scripting`, `storage`; host `www.canva.com`, `portal.fatchurbeny.com`, `127.0.0.1`/`localhost`.
+- [x] Service worker: header `x-canva-*` via `webRequest` (hanya `chrome.storage.session`), fetch endpoint dari tab (MAIN world), urutan spek §5.3 (`lib/collect-brand.js`), POST tiap respons ke ingest, laporan run, status + badge.
+- [x] Popup "Sinkronkan sekarang" (+ "Ambil 365 hari" untuk sinkron pertama), daftar sinkron terakhir per brand. Halaman Pengaturan: URL dashboard, token, nama perangkat, uji koneksi.
+- [x] Deteksi parameter paginasi → `chrome.storage.local` (`paginationParam`).
+- [x] Tes: `npm test` (logika murni) + `test/background-e2e.mjs` (`chrome` & Canva palsu → API lokal).
+- [ ] **Uji bersama user**: load unpacked, isi URL lokal + token, sinkronkan satu brand, bandingkan satu template dengan dashboard Canva, **perbarui spek §1.3 dan §9** dengan parameter paginasi.
 
 ## 3. Fase 3 — Halaman `/insights` (Frontend)
 
@@ -91,5 +89,5 @@ Ikuti spek §7 dan invariant `CLAUDE.md` (Inter, `"use client"` di baris 1, `rou
 - [ ] Jangan `git push` tanpa instruksi user. Rilis ke VPS butuh `prisma db push` manual + `INSIGHTS_INGEST_TOKEN` di `.next/standalone/.env`.
 
 ## 5. Di luar cakupan sesi ini
-- Pemasangan di iMac (Fase 4) — dilakukan user di rumah memakai README collector.
+- Pemasangan extension di profil Chrome tim (Fase 4) — memakai README extension.
 - Agregasi per designer, widget task drawer, extension "Sync sekarang" (Fase 5).
