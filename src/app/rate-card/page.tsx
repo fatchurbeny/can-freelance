@@ -11,8 +11,12 @@ import ContractRateEditor from '@/components/ContractRateEditor';
 
 export const dynamic = 'force-dynamic';
 
-export default async function RateCardPage() {
-  await requireAccess(['rateCard.view']);
+export default async function RateCardPage({ searchParams }: { searchParams: Promise<{ tab?: string; new?: string; from?: string }> }) {
+  const access = await requireAccess(['rateCard.view']);
+  const params = await searchParams;
+  const initialTab = params.tab === 'kontrak' || params.tab === 'bundle' ? params.tab : 'doctype';
+  // Dari wizard production: langsung buka Kontrak Baru (bila boleh edit), lalu kembali ke wizard
+  const openNewContract = initialTab === 'kontrak' && params.new === '1' && access.allows('rateCard.edit');
   const doctypes = await getDoctypes();
   const platforms = await listPlatformsAction();
   const [bundles, bundleUnits, bundleDoctypes] = await Promise.all([
@@ -80,6 +84,7 @@ export default async function RateCardPage() {
           {/* Bottom Block Container: Continuous Card for Tabs + Toolbar + Table */}
           <div className="w-full rounded-none border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] divide-y divide-[#f0f0f0] dark:divide-[#272a34] shadow-none">
             <DoctypeTable doctypes={doctypes as any} contractRate={contractRate ?? 15000} platforms={platforms}
+              initialTab={initialTab} openNewContract={openNewContract} returnToWizard={params.from === 'wizard'}
               bundles={JSON.parse(JSON.stringify(bundles))} bundleUnits={bundleUnits} bundleDoctypes={bundleDoctypes} />
           </div>
         </main>

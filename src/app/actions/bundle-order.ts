@@ -4,6 +4,7 @@ import { denyUnless, denyWrite } from '@/lib/access';
 import prisma from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { createTaskAction, updateTaskFieldsAction } from '@/app/actions/qa';
+import { parseTaskMonthToKey, taskMonthsInRange } from '@/lib/period-utils';
 
 export interface CreateBundleOrderInput {
   bundleId: string;
@@ -13,7 +14,8 @@ export interface CreateBundleOrderInput {
   /** Judul order; dipakai sebagai awalan nama tiap task. */
   title: string;
   bodyText?: string;
-  orderType?: 'Trial' | 'Kontrak';
+  /** Order periode dari kontrak bundle: bundle, designer, harga & tipe diambil dari kontrak. Tanpa ini = Trial. */
+  contractId?: string | null;
   /** Bulan payout ke designer; kosong = masuk antrian Closing. */
   payoutMonth?: string | null;
   paymentType?: 'Full' | 'DP';
@@ -28,25 +30,53 @@ export async function createBundleOrderAction(input: CreateBundleOrderInput) {
   try {
     const title = input.title.trim();
     if (!title) return { success: false, error: 'Judul order wajib diisi.' };
-    if (!input.designerId) return { success: false, error: 'Designer / agency wajib dipilih.' };
     if (!input.period.trim()) return { success: false, error: 'Periode wajib diisi.' };
 
+    // Order kontrak: semua data inti mengikuti kontrak; periode harus di dalam masa kontrak & belum dipakai
+    const contract = input.contractId
+      ? await prisma.bundleContract.findUnique({ where: { id: input.contractId }, include: { orders: { select: { period: true } } } })
+      : null;
+    if (input.contractId && !contract) return { success: false, error: 'Kontrak tidak ditemukan.' };
+    if (contract) {
+      const periodKey = parseTaskMonthToKey(input.period);
+      const allowed = taskMonthsInRange(contract.contractStartDate, contract.contractEndDate);
+      if (!periodKey || !allowed.some((m) => parseTaskMonthToKey(m) === periodKey)) {
+        return { success: false, error: `Periode di luar masa kontrak (${allowed[0]} – ${allowed[allowed.length - 1]}).` };
+      }
+      if (contract.orders.some((o) => parseTaskMonthToKey(o.period) === periodKey)) {
+        return { success: false, error: 'Periode ini sudah punya order di kontrak yang sama.' };
+      }
+    }
+    const designerId = contract ? contract.designerId : input.designerId;
+    if (!designerId) return { success: false, error: 'Designer / agency wajib dipilih.' };
+
     const bundle = await prisma.bundle.findUnique({
-      where: { id: input.bundleId },
+      where: { id: contract ? contract.bundleId : input.bundleId },
       include: { items: { orderBy: { sortOrder: 'asc' }, include: { productionUnit: true } } },
     });
     if (!bundle) return { success: false, error: 'Bundle tidak ditemukan.' };
     if (!bundle.isActive) return { success: false, error: 'Bundle tidak aktif.' };
     if (bundle.items.length === 0) return { success: false, error: 'Bundle belum punya komponen.' };
 
+    const price = contract ? contract.price : bundle.price;
     const paymentType = input.paymentType === 'DP' ? 'DP' : 'Full';
     const dpAmount = paymentType === 'DP' ? Number(input.dpAmount) : 0;
-    if (paymentType === 'DP' && (!Number.isFinite(dpAmount) || dpAmount <= 0 || dpAmount >= Number(bundle.price))) {
-      return { success: false, error: 'Nominal DP harus lebih dari 0 dan kurang dari harga paket.' };
+    if (paymentType === 'DP' && (!Number.isFinite(dpAmount) || dpAmount <= 0 || dpAmount >= Number(price))) {
+      return { success: false, error: 'Nominal DP harus lebih dari 0 dan kurang dari harga.' };
     }
 
     const order = await prisma.bundleOrder.create({
-      data: { bundleId: bundle.id, designerId: input.designerId, period: input.period.trim(), price: bundle.price, paymentType, dpAmount, orderType: input.orderType === 'Kontrak' ? 'Kontrak' : 'Trial', payoutMonth: input.payoutMonth?.trim() || null },
+      data: {
+        bundleId: bundle.id,
+        designerId,
+        period: input.period.trim(),
+        price,
+        paymentType,
+        dpAmount,
+        orderType: contract ? 'Kontrak' : 'Trial',
+        contractId: contract?.id ?? null,
+        payoutMonth: input.payoutMonth?.trim() || null,
+      },
     });
 
     const failures: string[] = [];
@@ -54,7 +84,7 @@ export async function createBundleOrderAction(input: CreateBundleOrderInput) {
       const res = await createTaskAction({
         productionUnitId: item.productionUnitId,
         name: `${title} — ${item.productionUnit.name}`,
-        designerId: input.designerId,
+        designerId,
         doctypeId: item.doctypeId,
         pages: item.pages,
         qtySubmit: 1,
@@ -88,6 +118,8 @@ export async function deleteBundleOrderAction(orderId: string) {
   try {
     const tasks = await prisma.task.count({ where: { bundleOrderId: orderId } });
     if (tasks > 0) return { success: false, error: 'Order masih punya task. Hapus task-nya dulu.' };
+    const contract = await prisma.bundleContract.findUnique({ where: { trialOrderId: orderId }, select: { id: true } });
+    if (contract) return { success: false, error: 'Trial ini sudah dijadikan kontrak, tidak bisa dihapus.' };
     await prisma.bundleOrder.delete({ where: { id: orderId } });
     revalidatePath('/billing-statement');
     return { success: true };
@@ -137,16 +169,59 @@ export async function setBundleOrderPayoutMonthAction(orderIds: string[], payout
   }
 }
 
-/** Trial yang sudah oke dijadikan kontrak (order berikutnya dibuat manual per periode). */
-export async function convertBundleOrderToContractAction(orderId: string) {
+/**
+ * Trial yang lolos (semua task approved) dijadikan kontrak bundle berperiode. Order trial tetap tercatat
+ * sebagai Trial; order tiap periode kontrak dibuat manual lewat `createBundleOrderAction({ contractId })`.
+ */
+export async function createBundleContractAction(input: {
+  trialOrderId: string;
+  price: number;
+  contractStartDate: string;
+  contractEndDate: string;
+  notes?: string | null;
+}) {
   const denied = await denyWrite('billing.view');
   if (denied) return denied as never;
   try {
-    await prisma.bundleOrder.update({ where: { id: orderId }, data: { orderType: 'Kontrak' } });
+    const trial = await prisma.bundleOrder.findUnique({
+      where: { id: input.trialOrderId },
+      include: {
+        contractFromTrial: { select: { id: true } },
+        designer: { select: { status: true } },
+        tasks: { select: { designStatus: { select: { countsAsApproved: true } } } },
+      },
+    });
+    if (!trial) return { success: false, error: 'Order trial tidak ditemukan.' };
+    if (trial.orderType !== 'Trial') return { success: false, error: 'Hanya order Trial yang bisa dijadikan kontrak.' };
+    if (trial.contractFromTrial) return { success: false, error: 'Trial ini sudah dijadikan kontrak.' };
+    const approved = trial.tasks.filter((t) => t.designStatus?.countsAsApproved).length;
+    if (trial.tasks.length === 0 || approved < trial.tasks.length) {
+      return { success: false, error: `Trial belum lolos: ${approved}/${trial.tasks.length} task approved.` };
+    }
+    if (!trial.designerId) return { success: false, error: 'Trial belum punya designer / agency.' };
+    if (trial.designer?.status === 'Resign') return { success: false, error: 'Designer trial berstatus Resign.' };
+
+    if (!Number.isFinite(input.price) || input.price <= 0) return { success: false, error: 'Harga per periode wajib diisi (lebih dari 0).' };
+    const start = new Date(`${input.contractStartDate}T00:00:00Z`);
+    const end = new Date(`${input.contractEndDate}T00:00:00Z`);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return { success: false, error: 'Periode kontrak wajib diisi.' };
+    if (end < start) return { success: false, error: 'Tanggal akhir harus setelah tanggal mulai.' };
+
+    const contract = await prisma.bundleContract.create({
+      data: {
+        bundleId: trial.bundleId,
+        designerId: trial.designerId,
+        trialOrderId: trial.id,
+        price: Math.round(input.price),
+        contractStartDate: start,
+        contractEndDate: end,
+        notes: input.notes?.trim() || null,
+      },
+    });
     revalidatePath('/billing-statement');
-    return { success: true };
-  } catch {
-    return { success: false, error: 'Gagal menjadikan kontrak karena terjadi kesalahan pada sistem. Silakan coba lagi.' };
+    return { success: true, contractId: contract.id };
+  } catch (error: any) {
+    return { success: false, error: error.message || 'Gagal membuat kontrak bundle.' };
   }
 }
 

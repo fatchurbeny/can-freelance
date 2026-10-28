@@ -53,3 +53,13 @@ Nilai status dari Notion API bisa bervariasi dalam penulisan huruf kapital maupu
 * **Field tambahan**: pull menyimpan semua properti non-inti ke `Task.customFields` (`extractCustomFields`). Edit dari app mengirim patch `customFields` (digabung, nilai kosong menghapus key) dan push hanya field `ProductionField` yang `editable`, dikonversi `toNotionPropertyValue` sesuai tipe di skema Notion.
 * **Membuat/ganti nama properti** dari app: `ensureCustomProperty` / `renameProperty` (`notion-provision.ts`, via `dataSources.update`). Rename ikut mengganti key di `tasks.custom_fields` (SQL jsonb). App tidak pernah menghapus properti Notion.
 * Pull menimpa `customFields` dengan nilai Notion setiap sync (sama seperti field inti), jadi push harus selesai lebih dulu.
+
+---
+
+## 📦 Asset Library ⇄ Notion (`src/lib/notion-assets.ts`)
+* **App = sumber input utama**, database Notion "Asset Library" (properti: Name, Kategori, Tag, Production, Edit URL, Public View URL, Halaman, Catatan, Status Aktif/Arsip) = mirror dua arah.
+* **Push**: simpan aset → `syncStatus: PENDING_PUSH` → `pushAssetToNotion` di background (diserialkan per aset). Page baru berisi blok `embed` public view link; saat link berubah embed Canva lama dihapus lalu ditambah (bukan lewat antrean body task yang menghapus semua blok). Properti yang tidak ada di skema dilewati. Aset `PENDING_PUSH`/`ERROR` dikirim ulang di awal `syncNotionData` (`pushPendingAssets`).
+* **Pull**: `syncAssetsFromNotion` dipanggil setelah loop production (filter `last_edited_time` sama dengan task). Aset yang belum `SYNCED` tidak ditimpa. Mode full mengarsipkan aset yang page-nya hilang. Kategori baru dari Notion dibuat otomatis.
+* **Brief → relation**: `updateTaskFieldsAction`/`createTaskAction` mem-parse section `## 📦 Assets` (`parseAssetSection`), mencocokkan aset lewat `canvaDesignId`, mengisi `TaskAsset`, dan menulis relation `Assets` bila skema task punya properti relation itu. Pull task: `TaskAsset` = aset dari brief + aset dari relation yang tidak ada di brief. `syncTaskAssetLinks` menulis secara **diff** (hapus yang hilang, tambah yang baru, perbarui `pages`) sehingga `TaskAsset.createdAt` = tanggal aset pertama dipakai di brief; Asset Report menghitung Applies dari tanggal ini.
+* **Relation `Assets`** dibuat per production lewat Notion Config → Asset Library ("Buat relation", mengubah skema database live) atau otomatis saat database task production dibuat/diganti (`ensureAssetsRelationForTaskDb`). `Assets` ada di `APP_MANAGED_PROPERTIES` (bukan Field Tambahan).
+* **Body task**: `markdownToNotionBlocks` kini mengubah `[teks](url)` di bullet/paragraf menjadi rich text link (dulu literal).

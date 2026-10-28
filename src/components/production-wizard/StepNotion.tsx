@@ -9,6 +9,7 @@ import {
 } from '@/app/actions/production-unit';
 import { addNotionPageAction } from '@/app/actions/notion-config';
 import PortalSelect from '../production-fields/PortalSelect';
+import InfoTip from '../InfoTip';
 import type { WizardData } from './types';
 
 interface Report {
@@ -165,11 +166,11 @@ export default function StepNotion({ data, platformId, onChange, onReadyChange }
                       >
                         {savingPage ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}Simpan ke daftar page
                       </button>
+                      <InfoTip label="Simpan ke daftar page">Tanpa disimpan, page ini hanya dipakai untuk production ini.</InfoTip>
                       <label className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300 cursor-pointer">
                         <input type="checkbox" checked={makeDefault} onChange={(e) => setMakeDefault(e.target.checked)} className="w-4 h-4 accent-gray-900" />Jadikan default
                       </label>
                     </div>
-                    <p className="text-[11px] text-gray-500 dark:text-gray-400">Tanpa disimpan, page ini hanya dipakai untuk production ini.</p>
                   </>
                 )}
               </>

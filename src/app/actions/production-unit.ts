@@ -3,7 +3,10 @@
 import { revalidatePath } from 'next/cache';
 import prisma from '@/lib/prisma';
 import { getAccess, denyUnless, denyWrite } from '@/lib/access';
-import { encrypt, decrypt } from '@/lib/encryption';
+import { registerNotionDatabase } from '@/lib/notion-registry';
+import { ensureAssetsRelationForTaskDb, syncAssetProductionsAfterUnitChange } from '@/lib/notion-assets';
+import { runInBackground } from '@/lib/background-sync';
+import { ASSET_PLATFORM_OUTPUT } from '@/lib/asset-productions';
 import { syncNotionData } from '@/lib/sync-notion';
 import {
   createTaskDatabase,
@@ -26,34 +29,10 @@ export async function getProductionUnitsAction() {
   return JSON.parse(JSON.stringify(units));
 }
 
-/**
- * Daftarkan database Task production ke daftar Notion Config → Databases agar fitur yang masih
- * membaca daftar itu (QA, Parameter Issue, opsi Doctype) ikut mengenalnya. Lewati bila ID sudah
- * terdaftar atau Notion Config belum ada. Best-effort: kegagalan tidak membatalkan aksi production.
- */
-async function registerNotionDatabase(name: string, databaseId: string, parentPageId?: string | null) {
-  try {
-    const config = await prisma.notionConfig.findFirst({ include: { databases: true } });
-    if (!config || !databaseId) return;
-    const normalize = (id: string) => id.replace(/-/g, '').toLowerCase();
-    const target = normalize(databaseId);
-    const parent = parentPageId ? normalize(parentPageId) : null;
-    const existing = config.databases.find((db) => {
-      try { return normalize(decrypt(db.encryptedDatabaseId, db.iv)) === target; } catch { return false; }
-    });
-    if (existing) {
-      // Dipakai lagi oleh production: keluarkan dari arsip, lengkapi page induk
-      if (existing.archived || (!existing.parentPageId && parent)) {
-        await prisma.notionDatabase.update({ where: { id: existing.id }, data: { archived: false, parentPageId: existing.parentPageId ?? parent } });
-      }
-      return;
-    }
-    const { iv, encryptedData } = encrypt(databaseId);
-    await prisma.notionDatabase.create({ data: { name, encryptedDatabaseId: encryptedData, iv, configId: config.id, parentPageId: parent } });
-    try { revalidatePath('/notion-config', 'layout'); } catch {}
-  } catch (error: any) {
-    console.warn(`Gagal mendaftarkan database Notion "${name}" ke Notion Config:`, error?.message || error);
-  }
+/** Asset Library (relation "Assets") hanya untuk production berplatform Canva. */
+async function isCanvaPlatform(platformId: string): Promise<boolean> {
+  const platform = await prisma.platform.findUnique({ where: { id: platformId }, select: { outputType: true } });
+  return platform?.outputType === ASSET_PLATFORM_OUTPUT;
 }
 
 async function findUnit(unitId: string) {
@@ -83,6 +62,7 @@ export async function createProductionTaskDatabaseAction(input: { unitId: string
       data: { notionTaskDbId: databaseId, notionParentPageId: parentPageId },
     });
     await registerNotionDatabase(unit.name, databaseId, parentPageId);
+    if (await isCanvaPlatform(unit.platformId)) await ensureAssetsRelationForTaskDb(databaseId);
 
     revalidatePath('/production', 'layout');
     return { success: true, created: true, databaseId };
@@ -161,6 +141,18 @@ export async function listPlatformsAction() {
   if (denied) return denied as never;
   const platforms = await prisma.platform.findMany({ orderBy: { createdAt: 'asc' } });
   return JSON.parse(JSON.stringify(platforms));
+}
+
+/** Kelengkapan platform setelah production dibuat (doctype & akun masih kosong → tampilkan pengingat). */
+export async function getPlatformSetupAction(platformId: string) {
+  const denied = await denyUnless('production.create');
+  if (denied) return denied as never;
+  const [platform, doctypes, accounts] = await Promise.all([
+    prisma.platform.findUnique({ where: { id: platformId }, select: { name: true } }),
+    prisma.doctype.count({ where: { platformId } }),
+    prisma.account.count({ where: { platformId } }),
+  ]);
+  return { success: true as const, name: platform?.name ?? '', doctypes, accounts };
 }
 
 /** Daftar page induk untuk database Task baru (Notion Config → Pages), default lebih dulu. */
@@ -265,6 +257,11 @@ export async function createProductionUnitAction(input: CreateProductionUnitInpu
       },
     });
     await registerNotionDatabase(name, databaseId, parentPageId);
+    // Production Canva baru: relation "Assets" + masuk opsi Production di database Notion Asset Library
+    if (platform.outputType === ASSET_PLATFORM_OUTPUT) {
+      await ensureAssetsRelationForTaskDb(databaseId);
+      runInBackground('Opsi production Asset Library', () => syncAssetProductionsAfterUnitChange());
+    }
 
     try { revalidatePath('/production', 'layout'); } catch (_) {}
     return { success: true, unit: JSON.parse(JSON.stringify(unit)) };
@@ -316,6 +313,7 @@ export async function setProductionUnitArchivedAction(input: { unitId: string; a
   try {
     await findUnit(input.unitId);
     await prisma.productionUnit.update({ where: { id: input.unitId }, data: { isActive: !input.archived } });
+    if (!input.archived) runInBackground('Opsi production Asset Library', () => syncAssetProductionsAfterUnitChange());
     const sync = await syncAfterProductionChange();
     revalidateProduction();
     return { success: true, sync };
@@ -395,7 +393,13 @@ export async function updateProductionUnitAction(input: UpdateProductionUnitInpu
       },
     });
 
-    if (databaseChanged) await registerNotionDatabase(name, databaseId);
+    if (databaseChanged) {
+      await registerNotionDatabase(name, databaseId);
+      if (unit.platform.outputType === ASSET_PLATFORM_OUTPUT) await ensureAssetsRelationForTaskDb(databaseId);
+    }
+    if (name !== unit.name && unit.platform.outputType === ASSET_PLATFORM_OUTPUT) {
+      runInBackground('Rename production di Asset Library', () => syncAssetProductionsAfterUnitChange({ renamedUnitId: unit.id }));
+    }
     const sync = databaseChanged ? await syncAfterProductionChange() : undefined;
     revalidateProduction();
     return { success: true, unit: JSON.parse(JSON.stringify(updated)), sync, databaseChanged };

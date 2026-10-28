@@ -60,7 +60,7 @@ export const CORE_PROPERTIES: CoreProperty[] = [
 /** Hanya tipe select/multi_select/status yang punya opsi dinamis. */
 const OPTION_TYPES = new Set<CoreType>(['select', 'multi_select', 'status']);
 
-async function getNotionClient(): Promise<Client> {
+export async function getNotionClient(): Promise<Client> {
   const config = await prisma.notionConfig.findFirst();
   if (!config) throw new Error('Konfigurasi Notion belum ada. Isi API key di Notion Config dulu.');
   const apiKey = decrypt(config.encryptedApiKey, config.iv);
@@ -169,12 +169,12 @@ export interface SchemaReport {
   extra: string[];
 }
 
-async function resolveDataSourceId(client: Client, databaseId: string): Promise<string> {
+export async function resolveDataSourceId(client: Client, databaseId: string): Promise<string> {
   const db: any = await client.databases.retrieve({ database_id: databaseId });
   return db.data_sources?.[0]?.id || databaseId;
 }
 
-async function retrieveSchema(client: Client, databaseId: string): Promise<Record<string, any>> {
+export async function retrieveSchema(client: Client, databaseId: string): Promise<Record<string, any>> {
   const dataSourceId = await resolveDataSourceId(client, databaseId);
   const ds: any = await (client as any).dataSources.retrieve({ data_source_id: dataSourceId });
   return ds.properties || {};
@@ -374,17 +374,117 @@ export async function checkParentPage(pageId: string): Promise<string> {
   return titleProp?.title?.map((t: any) => t.plain_text).join('') || 'Tanpa judul';
 }
 
-/** Database yang ada langsung di dalam page (blok child_database). Hanya membaca. */
-export async function listChildDatabases(pageId: string): Promise<{ id: string; title: string }[]> {
+// Blok wadah yang isinya ikut dibaca (database di dalam kolom / toggle tetap ditemukan).
+const CONTAINER_BLOCKS = new Set(['column_list', 'column', 'toggle', 'synced_block', 'callout']);
+
+/**
+ * Database di bawah sebuah page: langsung di page, di dalam kolom/toggle, dan di sub-page sampai
+ * kedalaman `pageDepth` (default 1, mis. page "Canva Assets" yang berisi database). Database di
+ * sub-page yang hanya berisi satu database diberi nama sub-page-nya (nama yang tampil di sidebar Notion).
+ */
+export async function listChildDatabases(pageId: string, pageDepth = 1): Promise<{ id: string; title: string }[]> {
   const client = await getNotionClient();
-  const found: { id: string; title: string }[] = [];
-  let cursor: string | undefined;
-  do {
-    const res: any = await client.blocks.children.list({ block_id: pageId, start_cursor: cursor, page_size: 100 });
-    for (const block of res.results) {
-      if (block.type === 'child_database') found.push({ id: block.id, title: block.child_database?.title || 'Tanpa judul' });
+  const found: { id: string; title: string; viaPage: string | null }[] = [];
+  const seen = new Set<string>();
+
+  const walk = async (blockId: string, depth: number, viaPage: string | null) => {
+    let cursor: string | undefined;
+    do {
+      const res: any = await client.blocks.children.list({ block_id: blockId, start_cursor: cursor, page_size: 100 });
+      for (const block of res.results) {
+        if (block.type === 'child_database') {
+          if (seen.has(block.id)) continue;
+          seen.add(block.id);
+          found.push({ id: block.id, title: block.child_database?.title || 'Tanpa judul', viaPage });
+        } else if (block.type === 'child_page' && depth < pageDepth) {
+          await walk(block.id, depth + 1, block.child_page?.title || null).catch(() => {});
+        } else if (block.has_children && CONTAINER_BLOCKS.has(block.type)) {
+          await walk(block.id, depth, viaPage).catch(() => {});
+        }
+      }
+      cursor = res.has_more ? res.next_cursor : undefined;
+    } while (cursor);
+  };
+
+  await walk(pageId, 0, null);
+  const perPage = new Map<string, number>();
+  found.forEach((f) => { if (f.viaPage) perPage.set(f.viaPage, (perPage.get(f.viaPage) ?? 0) + 1); });
+  return found.map((f) => ({
+    id: f.id,
+    title: f.viaPage ? (perPage.get(f.viaPage) === 1 ? f.viaPage : `${f.viaPage} · ${f.title}`) : f.title,
+  }));
+}
+
+/**
+ * Buat database "Asset Library" di bawah page induk (mirror Asset Library app). Mengembalikan id database.
+ * `properties` disusun oleh pemanggil (lihat ASSET_PROPERTY_SCHEMA di notion-assets.ts).
+ */
+export async function createDatabaseWithProperties(
+  parentPageId: string,
+  title: string,
+  properties: Record<string, any>,
+): Promise<string> {
+  const client = await getNotionClient();
+  const created: any = await client.databases.create({
+    parent: { type: 'page_id', page_id: parentPageId },
+    title: [{ type: 'text', text: { content: title } }],
+    initial_data_source: { properties },
+  } as any);
+  return created.id as string;
+}
+
+/**
+ * Tambahkan properti yang belum ada (nama → schema). Properti yang sudah ada tidak disentuh,
+ * kecuali opsi select/multi_select yang digabung lewat ensureSelectOptions. Idempotent.
+ */
+export async function ensureProperties(databaseId: string, properties: Record<string, any>): Promise<string[]> {
+  const client = await getNotionClient();
+  const actual = await retrieveSchema(client, databaseId);
+  const missing: Record<string, any> = {};
+  for (const [name, schema] of Object.entries(properties)) {
+    if (!actual[name]) missing[name] = schema;
+  }
+  if (Object.keys(missing).length > 0) {
+    const dataSourceId = await resolveDataSourceId(client, databaseId);
+    await (client as any).dataSources.update({ data_source_id: dataSourceId, properties: missing });
+  }
+  for (const [name, schema] of Object.entries(properties)) {
+    const type = Object.keys(schema)[0];
+    const options: { name: string }[] = schema[type]?.options ?? [];
+    if (actual[name] && OPTION_TYPES.has(type as CoreType) && options.length) {
+      await ensureSelectOptions(databaseId, name, options.map((o) => o.name));
     }
-    cursor = res.has_more ? res.next_cursor : undefined;
-  } while (cursor);
-  return found;
+  }
+  return Object.keys(missing);
+}
+
+export type RelationState = 'exists' | 'created' | 'conflict';
+
+/**
+ * Pastikan database `databaseId` punya properti relation `name` ke database `targetDatabaseId`
+ * (dual: database target ikut mendapat kolom balik). Nama dipakai properti lain → 'conflict'.
+ */
+export async function ensureRelationProperty(
+  databaseId: string,
+  name: string,
+  targetDatabaseId: string,
+  opts: { create?: boolean } = {},
+): Promise<RelationState | 'missing'> {
+  const client = await getNotionClient();
+  const actual = await retrieveSchema(client, databaseId);
+  const existing = actual[name];
+  const targetDataSourceId = await resolveDataSourceId(client, targetDatabaseId);
+  const compact = (id: string | undefined) => (id || '').replace(/-/g, '').toLowerCase();
+  if (existing) {
+    if (existing.type !== 'relation') return 'conflict';
+    const linked = existing.relation?.data_source_id || existing.relation?.database_id;
+    return compact(linked) === compact(targetDataSourceId) || compact(linked) === compact(targetDatabaseId) ? 'exists' : 'conflict';
+  }
+  if (opts.create === false) return 'missing';
+  const dataSourceId = await resolveDataSourceId(client, databaseId);
+  await (client as any).dataSources.update({
+    data_source_id: dataSourceId,
+    properties: { [name]: { relation: { data_source_id: targetDataSourceId, type: 'dual_property', dual_property: {} } } },
+  });
+  return 'created';
 }

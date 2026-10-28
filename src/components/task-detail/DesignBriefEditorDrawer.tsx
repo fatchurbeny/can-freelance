@@ -2,10 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Edit3, Palette, X } from 'lucide-react';
+import { Edit3, LayoutGrid, Palette, X } from 'lucide-react';
 import TaskBodyEditor from '../TaskBodyEditor';
 import ImageColorPalettePicker from '../ImageColorPalettePicker';
 import { classifyHeading } from './brief-parser';
+import AssetPicker from '../assets/AssetPicker';
+import { useAccess } from '@/context/AccessContext';
 
 /** Ganti section palet (dan gambar referensi bila palet baru membawanya) di markdown brief. */
 export function mergePaletteMarkdown(body: string, paletteMarkdown: string): string {
@@ -24,6 +26,10 @@ interface Props {
   value: string;
   onChange: (next: string) => void;
   onInsertPalette: (paletteMarkdown: string) => void;
+  /** Section "📦 Assets" baru dari Asset Library (string kosong = hapus section). */
+  onInsertAssets?: (sectionMarkdown: string) => void;
+  /** Production task; picker hanya menampilkan aset untuk production ini. */
+  productionUnitId?: string;
   onClose: () => void;
   subtitle?: string;
   /** Harus di atas z-index drawer induk. */
@@ -38,12 +44,22 @@ export default function DesignBriefEditorDrawer({
   value,
   onChange,
   onInsertPalette,
+  onInsertAssets,
+  productionUnitId,
   onClose,
   subtitle = 'Preview tampil di drawer sebelah kiri',
   zClassName = 'z-[60]',
 }: Props) {
   const [shown, setShown] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const closeRef = useRef(onClose);
+  const pickerOpenRef = useRef(false);
+  const access = useAccess();
+  const canUseLibrary = !!onInsertAssets && (!access.enabled || access.permissions.includes('asset.view'));
+
+  useEffect(() => {
+    pickerOpenRef.current = pickerOpen;
+  }, [pickerOpen]);
 
   useEffect(() => {
     closeRef.current = onClose;
@@ -56,7 +72,9 @@ export default function DesignBriefEditorDrawer({
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
       e.stopImmediatePropagation();
-      closeRef.current();
+      // Picker aset terbuka: Escape menutup picker saja
+      if (pickerOpenRef.current) setPickerOpen(false);
+      else closeRef.current();
     };
     window.addEventListener('keydown', onKey, true);
     return () => {
@@ -97,7 +115,35 @@ export default function DesignBriefEditorDrawer({
         </button>
       </div>
 
+      {canUseLibrary && (
+        <div className="flex shrink-0 border-b border-[#f0f0f0] dark:border-[#272a34]">
+          <button
+            type="button"
+            onClick={() => setPickerOpen((v) => !v)}
+            aria-expanded={pickerOpen}
+            className={`relative flex min-h-11 flex-1 items-center justify-center gap-2 text-xs font-bold transition-colors cursor-pointer ${
+              pickerOpen ? 'bg-white text-[#ff5e1f] dark:bg-[#0d0e12]' : 'bg-gray-50/50 text-gray-700 hover:text-[#ff5e1f] dark:bg-[#16181d]/50 dark:text-gray-300'
+            }`}
+          >
+            <LayoutGrid className="w-3.5 h-3.5" />
+            Ambil dari Library
+            {pickerOpen && <span className="absolute inset-x-0 bottom-0 h-[2px] bg-[#ff5e1f]" />}
+          </button>
+        </div>
+      )}
+
       <div className="flex flex-1 flex-col gap-4 overflow-y-auto bg-[#f8f9fb] dark:bg-[#16181d]/60 p-5">
+        {pickerOpen && onInsertAssets && (
+          <AssetPicker
+            body={value}
+            productionUnitId={productionUnitId}
+            onClose={() => setPickerOpen(false)}
+            onInsert={(md) => {
+              onInsertAssets(md);
+              setPickerOpen(false);
+            }}
+          />
+        )}
         {!hasPaletteSection && (
           <div className="bg-white dark:bg-[#0d0e12] border border-[#f0f0f0] dark:border-[#272a34]">
             <div className="flex items-center gap-2 px-4 py-3 border-b border-[#f0f0f0] dark:border-[#272a34] text-[13px] font-bold text-gray-900 dark:text-white">

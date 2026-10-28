@@ -3,8 +3,12 @@ import prisma from '@/lib/prisma';
 import { 
   parseTaskMonthToKey, 
   INDONESIAN_FULL_MONTHS, 
-  INDONESIAN_SHORT_MONTHS 
+  INDONESIAN_SHORT_MONTHS,
+  taskMonthsInRange,
 } from '@/lib/period-utils';
+
+/** Label tab Overview untuk task tanpa akun/brand. */
+export const NO_BRAND_LABEL = 'Tanpa Brand';
 
 export interface DashboardFilters {
   brandName?: string | null;
@@ -81,7 +85,9 @@ export async function getDashboardData(filters: DashboardFilters) {
   // 2. Resolve account/brand ID
   let accountId: string | null = null;
   let accountName: string | null = null;
-  if (filters.brandName && filters.brandName !== 'Semua Brand') {
+  // Tab "Tanpa Brand" = task tanpa akun/brand (mis. task order bundle).
+  const noBrand = filters.brandName === NO_BRAND_LABEL;
+  if (filters.brandName && filters.brandName !== 'Semua Brand' && !noBrand) {
     const acc = await prisma.account.findFirst({
       where: {
         displayName: {
@@ -133,9 +139,15 @@ export async function getDashboardData(filters: DashboardFilters) {
   const accId = accountId;
 
   // Helpers for SQL conditions
-  const accFilter = accId
-    ? Prisma.sql`AND EXISTS (SELECT 1 FROM task_accounts ta WHERE ta.task_id = t.id AND ta.account_id = ${accId}::uuid)`
-    : Prisma.empty;
+  const accFilter = noBrand
+    ? Prisma.sql`AND NOT EXISTS (SELECT 1 FROM task_accounts ta WHERE ta.task_id = t.id)`
+    : accId
+      ? Prisma.sql`AND EXISTS (SELECT 1 FROM task_accounts ta WHERE ta.task_id = t.id AND ta.account_id = ${accId}::uuid)`
+      : Prisma.empty;
+  // Untuk query yang LEFT JOIN task_accounts langsung (dikelompokkan per brand)
+  const joinedAccFilter = noBrand
+    ? Prisma.sql`AND ta.account_id IS NULL`
+    : accId ? Prisma.sql`AND ta.account_id = ${accId}::uuid` : Prisma.empty;
 
   const unitFilter = filters.productionUnitId
     ? Prisma.sql`AND t.production_unit_id = ${filters.productionUnitId}::uuid`
@@ -304,16 +316,16 @@ export async function getDashboardData(filters: DashboardFilters) {
   const trenVolume = await prisma.$queryRaw<{ month: string; brand: string; task_count: bigint; template_count: number; page_count: number }[]>(Prisma.sql`
     SELECT
       t.task_month AS month,
-      a.display_name AS brand,
+      COALESCE(a.display_name, ${NO_BRAND_LABEL}) AS brand,
       COUNT(DISTINCT t.id) AS task_count,
       COALESCE(SUM(t.qty_submit), 0)::float AS template_count,
       COALESCE(SUM(t.qty_submit * t.pages), 0)::float AS page_count
     FROM tasks t
-    JOIN task_accounts ta ON ta.task_id = t.id
-    JOIN accounts a ON a.id = ta.account_id
+    LEFT JOIN task_accounts ta ON ta.task_id = t.id
+    LEFT JOIN accounts a ON a.id = ta.account_id
     WHERE 1=1
     ${periodsFilter}
-    ${accId ? Prisma.sql`AND ta.account_id = ${accId}::uuid` : Prisma.empty}
+    ${joinedAccFilter}
     GROUP BY 1, 2
     ORDER BY 1, 2
   `);
@@ -329,15 +341,15 @@ export async function getDashboardData(filters: DashboardFilters) {
         COUNT(*) AS task_count,
         row_number() OVER (PARTITION BY t.task_month, a.display_name ORDER BY COUNT(*) DESC) as row_num
       FROM tasks t
-      JOIN task_accounts ta ON ta.task_id = t.id
-      JOIN accounts a ON a.id = ta.account_id
+      LEFT JOIN task_accounts ta ON ta.task_id = t.id
+      LEFT JOIN accounts a ON a.id = ta.account_id
       JOIN doctypes dt ON dt.id = t.doctype_id
       WHERE 1=1
       ${periodsFilter}
-      ${accId ? Prisma.sql`AND ta.account_id = ${accId}::uuid` : Prisma.empty}
+      ${joinedAccFilter}
       GROUP BY 1, 2, 3
     )
-    SELECT task_month, brand, doctype, task_count, row_num
+    SELECT task_month, COALESCE(brand, ${NO_BRAND_LABEL}) AS brand, doctype, task_count, row_num
     FROM ranked
     ORDER BY task_month, brand, task_count DESC
   `);
@@ -347,10 +359,10 @@ export async function getDashboardData(filters: DashboardFilters) {
   // Widget 7: Distribusi Template
   // -------------------------------------------------------------
   const distribusiTemplate = await prisma.$queryRaw<{ brand: string; templates: number }[]>(Prisma.sql`
-    SELECT a.display_name AS brand, COALESCE(SUM(t.qty_submit), 0)::float AS templates
+    SELECT COALESCE(a.display_name, ${NO_BRAND_LABEL}) AS brand, COALESCE(SUM(t.qty_submit), 0)::float AS templates
     FROM tasks t
-    JOIN task_accounts ta ON ta.task_id = t.id
-    JOIN accounts a ON a.id = ta.account_id
+    LEFT JOIN task_accounts ta ON ta.task_id = t.id
+    LEFT JOIN accounts a ON a.id = ta.account_id
     WHERE 1=1
     ${periodsFilter}
     GROUP BY a.display_name
@@ -369,14 +381,14 @@ export async function getDashboardData(filters: DashboardFilters) {
         COALESCE(MAX(t.pages), 0)::float AS page_count,
         row_number() OVER (PARTITION BY a.display_name ORDER BY COUNT(t.id) DESC) as row_num
       FROM tasks t
-      JOIN task_accounts ta ON ta.task_id = t.id
-      JOIN accounts a ON a.id = ta.account_id
+      LEFT JOIN task_accounts ta ON ta.task_id = t.id
+      LEFT JOIN accounts a ON a.id = ta.account_id
       JOIN doctypes dt ON dt.id = t.doctype_id
       WHERE 1=1
       ${periodsFilter}
       GROUP BY 1, 2
     )
-    SELECT brand, doctype, task_count, template_count, page_count, row_num
+    SELECT COALESCE(brand, ${NO_BRAND_LABEL}) AS brand, doctype, task_count, template_count, page_count, row_num
     FROM ranked
     ORDER BY brand, task_count DESC
   `);
@@ -835,8 +847,49 @@ export async function getBundleClosingQueue() {
   return orders.map((o) => mapBundleOrderRow(o, '')).filter((r) => r.completed);
 }
 
+const bundleContractInclude = {
+  select: {
+    id: true,
+    price: true,
+    contractStartDate: true,
+    contractEndDate: true,
+    notes: true,
+    trialOrderId: true,
+    trialOrder: { select: { period: true } },
+    orders: { select: { period: true } },
+  },
+} as const;
+
+type BundleContractPayload = Prisma.BundleContractGetPayload<typeof bundleContractInclude>;
+
+/** Ringkasan kontrak bundle untuk client: periode bulan, yang sudah dipakai order, dan periode berikutnya. */
+function mapBundleContract(c: BundleContractPayload) {
+  const periods = taskMonthsInRange(c.contractStartDate, c.contractEndDate);
+  const usedKeys = new Set(c.orders.map((o) => parseTaskMonthToKey(o.period)).filter(Boolean));
+  const usedPeriods = periods.filter((p) => usedKeys.has(parseTaskMonthToKey(p)));
+  const lastUsedIndex = periods.reduce((last, p, i) => (usedKeys.has(parseTaskMonthToKey(p)) ? i : last), -1);
+  // Bulan setelah order kontrak terakhir; belum ada order = bulan pertama kontrak
+  const nextPeriod = periods.slice(lastUsedIndex + 1).find((p) => !usedKeys.has(parseTaskMonthToKey(p))) ?? null;
+  return {
+    id: c.id,
+    price: Number(c.price),
+    start: c.contractStartDate.toISOString().slice(0, 10),
+    end: c.contractEndDate.toISOString().slice(0, 10),
+    notes: c.notes,
+    trialOrderId: c.trialOrderId,
+    trialPeriod: c.trialOrder?.period ?? null,
+    periods,
+    usedPeriods,
+    nextPeriod,
+  };
+}
+
+export type BundleContractSummary = ReturnType<typeof mapBundleContract>;
+
 const bundleOrderInclude = {
   bundle: { select: { name: true } },
+  contract: bundleContractInclude,
+  contractFromTrial: bundleContractInclude,
   designer: { select: { id: true, displayName: true, status: true, isAgency: true } },
   tasks: { select: { id: true, name: true, designStatus: { select: { countsAsApproved: true } }, productionUnit: { select: { name: true } } } },
 } as const;
@@ -844,9 +897,17 @@ const bundleOrderInclude = {
 function mapBundleOrderRow(o: Prisma.BundleOrderGetPayload<{ include: typeof bundleOrderInclude }>, period: string) {
   const approved = o.tasks.filter((t) => t.designStatus?.countsAsApproved).length;
   const completed = o.tasks.length > 0 && approved === o.tasks.length;
+  const contract = o.contract ? mapBundleContract(o.contract) : null;
   return {
     id: o.id,
+    bundleId: o.bundleId,
     bundleName: o.bundle.name,
+    /** Kontrak tempat order ini menjadi satu periode (order Kontrak). */
+    contract,
+    /** Kontrak yang lahir dari order Trial ini. */
+    trialContract: o.contractFromTrial ? mapBundleContract(o.contractFromTrial) : null,
+    /** Urutan periode order ini di kontrak, mis. 2 dari 12. */
+    contractPeriodIndex: contract && o.period ? contract.periods.findIndex((p) => parseTaskMonthToKey(p) === parseTaskMonthToKey(o.period)) + 1 : 0,
     designerId: o.designerId,
     designerName: o.designer?.displayName ?? '-',
     isAgency: o.designer?.isAgency ?? false,

@@ -116,7 +116,7 @@ export default function DistribusiWidget({ data, brandName }: DistribusiWidgetPr
             Distribusi Template
           </h3>
           <p className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">
-            Jumlah Task Tiap Bulan - {brandName === 'Semua Brand' ? 'Semua Brand (6)' : brandName}
+            Jumlah Task Tiap Bulan - {brandName}
           </p>
         </div>
         <span className="font-sans text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-[#ff5e1f]/10 text-[#ff5e1f] dark:text-[#ff7038] border border-[#ff5e1f]/20 uppercase whitespace-nowrap shrink-0">

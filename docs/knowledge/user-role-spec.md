@@ -57,16 +57,14 @@ Hubungan dengan Account & Team: ya. Baris **Brand** di detail task (`TaskDetailS
 | Account & Team, Rate Card (edit) | ✓ | ✓ | ✓ | baca | – | – |
 | Billing, Payroll | ✓ | – | – | ✓ | milik sendiri | – |
 | Integrasi, manajemen user | ✓ | – | – | – | – | – |
-| Asset Library & Asset Production — lihat (`asset.view`) *(rencana)* | ✓ | ✓ | ✓ | – | ✓ (FT & FL) | – |
-| Asset — kelola (`asset.manage`) *(rencana)* | ✓ semua | production sendiri | production sendiri | – | – | – |
+| Asset Library — lihat (`asset.view`) | ✓ | ✓ | ✓ | – | ✓ (FT & FL) | – |
+| Asset Library — kelola, Asset Report (`asset.manage`) | ✓ semua | production sendiri | production sendiri | – | – | – |
 
-### Akses aset (diputuskan 2026-10-25, belum diimplementasi)
-- **Asset Production** = aset/kategori dengan `productionUnitId` terisi; **Asset Library** = `productionUnitId` null (bersama semua production). Rencana fitur: [`../backlog/resources-library.md`](../backlog/resources-library.md).
-- `asset.view`: Admin, AD, PM, `designer_fulltime`, `designer_freelance` (freelance boleh, aset bukan nama brand). Tidak untuk Finance & Viewer. Aset production hanya terlihat oleh member production itu (`can(user, 'asset.view', asset.productionUnitId)`); aset library terlihat oleh semua pemilik `asset.view`.
-- `asset.manage` (tambah/edit/arsip aset & kategori): Admin, AD, PM. AD/PM hanya untuk production tempat mereka ber-membership (`can(user, 'asset.manage', asset.productionUnitId)`).
-- **Library bersama hanya bisa diubah membership global** (praktiknya Admin). Jangan memakai `can(user, 'asset.manage')` tanpa production untuk ini: tanpa `productionUnitId`, `can()` bernilai true bila ada membership mana pun yang punya izin itu, sehingga PM satu production ikut bisa mengedit library. Butuh helper yang mewajibkan membership `productionUnitId = null`.
-- "Ambil dari Library" di Design Brief mengikuti `task.edit` (tanpa permission baru). Notion Config → Asset Library tetap `integration.manage`.
-- Implementasi: tambah ke `Permission`/`ROLE_PERMISSIONS`, `NAV_REQUIREMENTS['/assets'] = ['asset.view']`, dua baris `FEATURE_MATRIX`, action tulis aset memakai `denyWrite`; perbarui artboard 6 wireframe User & Role. Tidak ada perubahan tabel Role/Membership/User.
+### Akses aset (2026-10-25)
+- Cakupan aset = `Asset.productions` (`AssetProduction`); kosong = **aset bersama** semua production Canva. Designer/AD/PM melihat aset bersama + aset production mereka (`loadAssetLibrary(access.unitIds)`).
+- `asset.view`: Admin, AD, PM, designer FT & FL. **Tidak** untuk Finance & Viewer (kartu Assets di brief tetap terlihat lewat `kanban.view`).
+- `asset.manage`: AD/PM hanya aset yang **semua** production-nya ada di membership mereka (`canManageAsset`), wajib ≥1 production. Aset bersama, kategori, Sync, dan Impor Notion hanya membership global (`canManageAllAssets`, praktiknya Admin). Asset Report untuk AD/PM sudah difilter ke production sendiri.
+- Jangan memakai `can(user, 'asset.manage')` tanpa production untuk aset bersama: itu true untuk membership production mana pun. Guard server: `denyAssetScope` / `denyAssetGlobal` di `src/app/actions/assets.ts`.
 
 ## Login ID + PIN
 - **ID unik per orang**, format dengan awalan tipe: `FT-001` (full-time), `FL-014` (freelance). Disimpan di `User.userCode` (unique) + `User.employmentType` (`FULL_TIME` | `FREELANCE`).

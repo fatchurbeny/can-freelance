@@ -82,7 +82,7 @@ export default function PipelineWidget({ data, inQueue, brandName }: PipelineWid
             Task Pipeline
           </h3>
           <p className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">
-            Distribusi Task Per Tahap Pipeline - {brandName === 'Semua Brand' ? 'Semua Brand (6)' : brandName}
+            Distribusi Task Per Tahap Pipeline - {brandName}
           </p>
         </div>
         <div className="flex items-center gap-2">

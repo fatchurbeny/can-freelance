@@ -1,12 +1,13 @@
-export type BriefKind = 'image' | 'palette' | 'links' | 'keywords' | 'custom' | 'notes';
+export type BriefKind = 'image' | 'palette' | 'links' | 'assets' | 'keywords' | 'custom' | 'notes';
 
 export const BRIEF_ORDER: Record<BriefKind, number> = {
   image: 1,
   palette: 2,
   links: 3,
-  keywords: 4,
-  custom: 5,
-  notes: 6,
+  assets: 4,
+  keywords: 5,
+  custom: 6,
+  notes: 7,
 };
 
 export const NOTES_HEADING = 'Catatan untuk Designer';
@@ -23,6 +24,7 @@ export function classifyHeading(heading: string): BriefKind {
   const h = cleanHeading(heading).toLowerCase();
   if (h.includes('image') || h.includes('gambar')) return 'image';
   if (h.includes('palette') || h.includes('warna')) return 'palette';
+  if (/\bassets?\b/.test(h)) return 'assets';
   if (h.includes('wireframe') || h.includes('template') || h.includes('refrence') || h.includes('reference')) return 'links';
   if (h.includes('keyword')) return 'keywords';
   if (h.includes('catatan') || h.includes('note')) return 'notes';

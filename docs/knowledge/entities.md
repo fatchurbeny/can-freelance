@@ -79,3 +79,16 @@ Kredensial database Notion ID, API Key, dan histori log eksekusi sync (`status`,
 * Katalog tipe & konversi nilai: `src/lib/notion-field-types.ts`. Kelola lewat `src/app/actions/production-field.ts` (drawer Edit Production → Struktur Field & Field Tambahan).
 * **`NotionPage`** (tabel `notion_pages`): page induk untuk database Task baru, satu `isDefault`. Diatur di Notion Config → Pages & Databases (Tambah Page, Default, Pindai, Lepas). Wizard production memakai dropdown page (default terpilih) + opsi "Page lain…" (bisa disimpan ke daftar). Input menerima ID atau link (`normalizeNotionId`).
 * **`NotionDatabase.archived` / `parentPageId`**: database terdaftar otomatis dari production; "Pindai" mendaftarkan database lama di dalam page. Arsip = disembunyikan & tidak dipakai sebagai database default QA/Doctype, tetap terdaftar. Database milik production (aktif maupun diarsipkan) mengikuti status production-nya dan diatur di Production Hub (aksi di tabel = link Production Hub); tombol Arsipkan hanya untuk database tanpa production, dan server menolak mengarsipkan database milik production. Tombol Add Database & Delete dihapus.
+
+---
+
+## 📦 Asset Library (`asset_categories`, `assets`, `task_assets`)
+Katalog aset Canva untuk designer (jalur manual, tanpa Canva API). Backlog/rencana: [`../backlog/resources-library.md`](../backlog/resources-library.md).
+* **`AssetCategory`**: tab di `/assets` (`name` unik, `sortOrder`, `archived`). Seed: Icon, Ilustrasi, Template, Mockup.
+* **`Asset`**: `title`, `categoryId`, `tags[]`, `editUrl` (link `/edit`, butuh login akun tim), `previewUrl` (public view link `/view`, wajib; divalidasi `publicViewUrlError`), `coverUrl` (upload `/api/uploads/<file>`; null = thumbnail Canva), `pages`, `notes`, `status` (`active`|`archived`), `canvaDesignId` (dari previewUrl, untuk mencocokkan link di brief), `notionPageId`, `syncStatus` (`PENDING_PUSH` default | `SYNCED` | `ERROR`), `lastSyncedAt`, `lastEditedTime`.
+* **`AssetProduction`** (`assetId`+`productionUnitId`): production yang boleh memakai aset; **hanya production berplatform Canva** (`platform.outputType = canva_link`, `canvaProductionUnits`). Kosong = semua production Canva. Notion: properti `Production` multi-select (database lama ber-select diubah otomatis saat push).
+* **`TaskAsset`** (`taskId`+`assetId`, `pages`): sumber hitungan "Dipakai di N task". Diisi dari section `## 📦 Assets` brief (app & pull) + relation Notion `Assets`.
+* **`NotionDatabase.purpose`**: `"asset_library"` menandai database mirror Asset Library (maks. satu aktif).
+
+* **`BundleContract`** (`bundle_contracts`): kontrak bundle dari trial yang lolos — `bundleId`, `designerId`, `trialOrderId` (unik), `price` (per periode), `contractStartDate`/`contractEndDate` (DATE), `notes`. **`BundleOrder.contractId`** = order periode kontrak (`orderType = 'Kontrak'`). Ringkasan untuk UI: `mapBundleContract` di `src/lib/queries.ts` (periods, usedPeriods, nextPeriod). Helper periode: `nextTaskMonth`, `taskMonthsInRange` (`period-utils.ts`).
+* **`Platform.contractEndDate`** (DATE): akhir kontrak platform (Rate Card → Kontrak).

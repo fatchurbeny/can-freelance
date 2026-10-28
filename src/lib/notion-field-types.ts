@@ -38,10 +38,11 @@ export const NOTION_FIELD_TYPES: Record<string, NotionFieldTypeInfo> = {
   last_edited_by: { label: 'Diubah oleh', editable: false, creatable: false, filterable: false },
 };
 
-/** Properti yang ditulis & ditampilkan app sendiri (output Dropbox), bukan field tambahan. */
+/** Properti yang ditulis & ditampilkan app sendiri (output Dropbox, relation Asset Library), bukan field tambahan. */
 export const UPLOAD_LINK_PROPERTY = 'Upload Link';
 export const DROPBOX_LINK_PROPERTY = 'Dropbox Link';
-export const APP_MANAGED_PROPERTIES = new Set([UPLOAD_LINK_PROPERTY, DROPBOX_LINK_PROPERTY]);
+export const ASSETS_RELATION_PROPERTY = 'Assets';
+export const APP_MANAGED_PROPERTIES = new Set([UPLOAD_LINK_PROPERTY, DROPBOX_LINK_PROPERTY, ASSETS_RELATION_PROPERTY]);
 
 /** Tipe yang tidak pernah ditampilkan di app (fitur khusus Notion). */
 export const IGNORED_FIELD_TYPES = new Set(['button', 'verification']);

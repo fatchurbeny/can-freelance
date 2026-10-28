@@ -46,6 +46,7 @@ export default function BundleOrderDetailDrawer({ row, onClose, actions, designe
   const remaining = row.price - paidAmount;
   const dp = dateLabel(row.dpPaidAt);
   const lunas = dateLabel(row.paidAt);
+  const contract = row.trialContract ?? row.contract ?? null;
 
   return createPortal(
     <div className="fixed inset-0 z-70">
@@ -65,6 +66,12 @@ export default function BundleOrderDetailDrawer({ row, onClose, actions, designe
         <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden divide-y divide-[#f0f0f0] dark:divide-[#272a34]">
           <Row label="Tipe Order">
             <span className={`px-2 py-0.5 text-[10px] font-bold ${row.orderType === 'Kontrak' ? 'bg-violet-500/10 text-violet-600 dark:text-violet-400' : 'bg-amber-500/10 text-amber-700 dark:text-amber-400'}`}>{row.orderType === 'Kontrak' ? 'KONTRAK' : 'TRIAL'}</span>
+            {row.orderType === 'Kontrak' && row.contract && row.contractPeriodIndex ? (
+              <span className="font-medium text-gray-500">periode {row.contractPeriodIndex}/{row.contract.periods.length}</span>
+            ) : null}
+            {row.orderType === 'Trial' && row.trialContract && (
+              <span className="px-2 py-0.5 text-[10px] font-bold bg-violet-500/10 text-violet-600 dark:text-violet-400">DIKONTRAK</span>
+            )}
           </Row>
           <div className="flex items-stretch text-xs min-h-[44px]">
             <div className={LABEL}>Designer / Agency</div>
@@ -83,7 +90,26 @@ export default function BundleOrderDetailDrawer({ row, onClose, actions, designe
             <span className={`px-2 py-0.5 text-[11px] font-bold ${row.completed ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-amber-500/10 text-amber-600'}`}>{row.completed ? 'COMPLETED' : 'IN PROGRESS'}</span>
             <span className="font-medium text-gray-500">{row.approvedTasks}/{row.totalTasks} task approved</span>
           </Row>
-          <Row label="Harga Paket"><span className="text-emerald-600 dark:text-emerald-400">{money(row.price)}</span></Row>
+          <Row label={row.contract ? 'Harga Kontrak' : 'Harga Paket'}><span className="text-emerald-600 dark:text-emerald-400">{money(row.price)}</span></Row>
+
+          {contract && (
+            <>
+              <SectionTitle>Kontrak bundle</SectionTitle>
+              <Row label="Periode kontrak">
+                {dateLabel(contract.start)} – {dateLabel(contract.end)}
+                <span className="font-medium text-gray-500">{contract.periods.length} periode</span>
+              </Row>
+              <Row label="Harga / periode"><span className="text-emerald-600 dark:text-emerald-400">{money(contract.price)}</span></Row>
+              <Row label="Order dibuat">
+                {contract.usedPeriods.length}/{contract.periods.length} periode
+                <span className="font-medium text-gray-500">
+                  {contract.nextPeriod ? `berikutnya ${contract.nextPeriod}` : 'semua periode sudah dipesan'}
+                </span>
+              </Row>
+              {contract.trialPeriod && <Row label="Trial asal">{contract.trialPeriod}</Row>}
+              {contract.notes && <Row label="Catatan"><span className="whitespace-pre-wrap font-medium">{contract.notes}</span></Row>}
+            </>
+          )}
 
           <SectionTitle>Pembayaran ke designer</SectionTitle>
           <Row label="Skema">{row.paymentType === 'DP' ? 'DP + Pelunasan' : 'Lunas'}</Row>

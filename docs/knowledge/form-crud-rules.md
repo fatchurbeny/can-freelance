@@ -127,3 +127,14 @@ Seluruh antarmuka UI (tabel data, subtitle handle brand/doctype, nominal mata ua
 - **Dilarang keras** menggunakan `font-mono` untuk subtitle handle nama, identifier doctype, atau nominal mata uang pada tabel/form UI.
 - `font-mono` HANYA diizinkan secara terbatas pada **Notion Database ID / UUID**, **Secret Token / API Key**, **Blok Kode (`<code>`)**, dan **Terminal Sync Console Logs**.
 
+
+---
+
+## ⓘ 9. Info Field: Ikon + Tooltip, Bukan Baris Catatan
+
+Penjelasan field **tidak** ditulis sebagai paragraf/baris catatan di bawah input (mengganggu fokus mengisi). Pakai pola berikut:
+
+- **Ikon ⓘ di sel label** → `src/components/InfoTip.tsx` (`<InfoTip label="Nama field">teks</InfoTip>`). Tooltip muncul saat hover / fokus keyboard, di-portal `fixed` agar tidak terpotong `overflow-y-auto` drawer.
+- **Satuan & fakta pendek inline** di sel nilai, teks kecil abu-abu: `/ halaman`, `/ periode`, `Sen–Jum`, slug URL di kanan input nama production.
+- **Tetap tampil inline** (bukan tooltip): pesan error/validasi, peringatan (amber), status sementara (mis. "Link canva.link diubah otomatis"), dan info sekali-lihat yang penting (PIN awal).
+- Periode kontrak: `ContractPeriodField` (preset 3 Bulan / 6 Bulan / 1 Tahun / Custom → `DateRangePicker`).

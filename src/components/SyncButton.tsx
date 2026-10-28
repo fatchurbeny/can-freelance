@@ -224,8 +224,21 @@ export default function SyncButton({ initialSyncLog, isCollapsed = false }: Sync
       });
     } finally {
       setIsSyncing(false);
+      // Halaman lain (mis. Notion Config → Sinkronisasi) memuat ulang riwayat sync
+      window.dispatchEvent(new Event('notion-sync-finished'));
     }
   };
+
+  // Tombol "Sync Sekarang" di halaman lain memakai alur & modal yang sama
+  const handleSyncRef = useRef(handleSync);
+  useEffect(() => {
+    handleSyncRef.current = handleSync;
+  });
+  useEffect(() => {
+    const onRequest = () => handleSyncRef.current('incremental');
+    window.addEventListener('notion-sync-request', onRequest);
+    return () => window.removeEventListener('notion-sync-request', onRequest);
+  }, []);
 
   return (
     <>

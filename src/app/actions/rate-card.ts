@@ -144,16 +144,87 @@ export async function createDoctypeAction(values: {
   }
 }
 
-/** Tarif dasar per halaman untuk satu platform (kontrak platform). */
-export async function updatePlatformBaseRateAction(platformSlug: string, baseRate: number) {
+
+const PLATFORM_OUTPUT_TYPES = ['canva_link', 'dropbox_link'] as const;
+
+/**
+ * Kontrak baru = platform baru beserta tarif dasar per halaman dan tanggal berlaku.
+ * Kontrak dibuat dulu di Rate Card, baru production dibuat di wizard (hanya platform berkontrak).
+ * Jenis output hanya yang dikenal app (Canva Link / Dropbox Link); jenis lain butuh pekerjaan kode.
+ */
+export async function createContractAction(input: {
+  name: string;
+  outputType: string;
+  baseRate: number;
+  contractStartDate: string;
+  contractEndDate: string;
+}) {
   const denied = await denyWrite('rateCard.edit');
   if (denied) return denied as never;
   try {
-    if (!Number.isFinite(baseRate) || baseRate < 0) return { success: false, error: 'Tarif harus angka valid.' };
-    await prisma.platform.update({ where: { slug: platformSlug }, data: { baseRate: Math.round(baseRate) } });
+    const name = input.name?.trim();
+    if (!name) throw new Error('Nama platform wajib diisi.');
+    if (name.length > 60) throw new Error('Nama platform maksimal 60 karakter.');
+    if (!(PLATFORM_OUTPUT_TYPES as readonly string[]).includes(input.outputType)) throw new Error('Jenis output tidak dikenal.');
+    if (!Number.isFinite(input.baseRate) || input.baseRate <= 0) throw new Error('Tarif dasar wajib diisi (lebih dari 0).');
+    const start = new Date(`${input.contractStartDate}T00:00:00Z`);
+    const end = new Date(`${input.contractEndDate}T00:00:00Z`);
+    if (!input.contractStartDate || Number.isNaN(start.getTime())) throw new Error('Tanggal mulai kontrak wajib diisi.');
+    if (!input.contractEndDate || Number.isNaN(end.getTime())) throw new Error('Tanggal akhir kontrak wajib diisi.');
+    if (end < start) throw new Error('Tanggal akhir harus setelah tanggal mulai.');
+
+    const duplicate = await prisma.platform.findFirst({ where: { name: { equals: name, mode: 'insensitive' } }, select: { id: true } });
+    if (duplicate) throw new Error('Platform dengan nama ini sudah punya kontrak.');
+    const base = name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'platform';
+    let slug = base;
+    for (let i = 2; await prisma.platform.findUnique({ where: { slug }, select: { id: true } }); i++) slug = `${base}-${i}`;
+
+    const platform = await prisma.platform.create({
+      data: {
+        name,
+        slug,
+        outputType: input.outputType,
+        baseRate: Math.round(input.baseRate),
+        contractStartDate: start,
+        contractEndDate: end,
+      },
+    });
     revalidatePath('/rate-card');
-    return { success: true };
+    revalidatePath('/production', 'layout');
+    return { success: true as const, platform: { id: platform.id, name: platform.name, slug: platform.slug } };
   } catch (error: any) {
-    return { success: false, error: error.message || 'Gagal menyimpan tarif dasar.' };
+    return { success: false as const, error: error.message || 'Gagal membuat kontrak.' };
+  }
+}
+
+/** Edit kontrak (Rate Card → klik baris): nama, tarif dasar, periode. Jenis output tidak diubah. */
+export async function updateContractAction(input: { id: string; name: string; baseRate: number; contractStartDate: string; contractEndDate: string }) {
+  const denied = await denyWrite('rateCard.edit');
+  if (denied) return denied as never;
+  try {
+    const name = input.name?.trim();
+    if (!name) throw new Error('Nama platform wajib diisi.');
+    if (name.length > 60) throw new Error('Nama platform maksimal 60 karakter.');
+    if (!Number.isFinite(input.baseRate) || input.baseRate <= 0) throw new Error('Tarif dasar wajib diisi (lebih dari 0).');
+    const start = new Date(`${input.contractStartDate}T00:00:00Z`);
+    const end = new Date(`${input.contractEndDate}T00:00:00Z`);
+    if (!input.contractStartDate || Number.isNaN(start.getTime())) throw new Error('Tanggal mulai kontrak wajib diisi.');
+    if (!input.contractEndDate || Number.isNaN(end.getTime())) throw new Error('Tanggal akhir kontrak wajib diisi.');
+    if (end < start) throw new Error('Tanggal akhir harus setelah tanggal mulai.');
+    const duplicate = await prisma.platform.findFirst({
+      where: { name: { equals: name, mode: 'insensitive' }, id: { not: input.id } },
+      select: { id: true },
+    });
+    if (duplicate) throw new Error('Platform dengan nama ini sudah punya kontrak.');
+
+    const platform = await prisma.platform.update({
+      where: { id: input.id },
+      data: { name, baseRate: Math.round(input.baseRate), contractStartDate: start, contractEndDate: end },
+    });
+    revalidatePath('/rate-card');
+    revalidatePath('/production', 'layout');
+    return { success: true as const, platform: { id: platform.id, name: platform.name, slug: platform.slug } };
+  } catch (error: any) {
+    return { success: false as const, error: error.message || 'Gagal menyimpan kontrak.' };
   }
 }

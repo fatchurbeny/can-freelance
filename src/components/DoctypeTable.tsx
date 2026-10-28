@@ -1,6 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
+import ContractDrawer from './ContractDrawer';
+import { workingDaysInRange } from './DateRangePicker';
 import { Layers, FileText, Search, ShieldCheck, Sparkles, Calendar, DollarSign } from 'lucide-react';
 import RateCardRow from './RateCardRow';
 import AddDoctypeButton from './AddDoctypeButton';
@@ -8,7 +12,6 @@ import ContractRateEditor from './ContractRateEditor';
 import { DoctypeItem } from './DoctypeSlideModal';
 import DoctypeToolbar, { DoctypeFilters, EMPTY_DOCTYPE_FILTERS, FilterGroup } from './DoctypeToolbar';
 import type { SortKey } from './SortControl';
-import PlatformRateModal from './PlatformRateModal';
 import { Pencil, Package, Plus } from 'lucide-react';
 import BundleSlideModal, { BundleView, BundleUnitOption, BundleDoctypeOption } from './BundleSlideModal';
 
@@ -18,11 +21,24 @@ interface Props {
   bundles?: BundleView[];
   bundleUnits?: BundleUnitOption[];
   bundleDoctypes?: BundleDoctypeOption[];
-  platforms?: { id: string; name: string; slug: string; outputType: string; createdAt: string | Date; baseRate?: number | null; contractStartDate?: string | Date | null }[];
+  platforms?: { id: string; name: string; slug: string; outputType: string; createdAt: string | Date; baseRate?: number | null; contractStartDate?: string | Date | null; contractEndDate?: string | Date | null }[];
+  /** Tab awal (`/rate-card?tab=kontrak`). */
+  initialTab?: 'doctype' | 'bundle' | 'kontrak';
+  /** Buka drawer Kontrak Baru saat halaman dimuat (`&new=1`). */
+  openNewContract?: boolean;
+  /** Dibuka dari wizard production: setelah kontrak dibuat, kembali ke wizard. */
+  returnToWizard?: boolean;
 }
 
-export default function DoctypeTable({ doctypes, contractRate, platforms = [], bundles = [], bundleUnits = [], bundleDoctypes = [] }: Props) {
-  const [activeTab, setActiveTab] = useState<'doctype' | 'bundle' | 'kontrak'>('doctype');
+export default function DoctypeTable({ doctypes, contractRate, platforms = [], bundles = [], bundleUnits = [], bundleDoctypes = [], initialTab = 'doctype', openNewContract = false, returnToWizard = false }: Props) {
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState<'doctype' | 'bundle' | 'kontrak'>(initialTab);
+  // Drawer kontrak: 'new' = Kontrak Baru, id platform = Edit Kontrak
+  const [contractDrawer, setContractDrawer] = useState<'new' | string | null>(null);
+  // Drawer (portal) dibuka setelah mount agar HTML server dan client sama
+  useEffect(() => {
+    if (openNewContract) setContractDrawer('new');
+  }, [openNewContract]);
   const [searchQuery, setSearchQuery] = useState('');
 
   const [sortKey, setSortKey] = useState<SortKey>('lastEdited');
@@ -52,7 +68,6 @@ export default function DoctypeTable({ doctypes, contractRate, platforms = [], b
       if (bSort === 'nameDesc') return y.name.localeCompare(x.name);
       return new Date(y.updatedAt).getTime() - new Date(x.updatedAt).getTime();
     });
-  const [rateModalSlug, setRateModalSlug] = useState<string | null>(null);
   const platformRates: Record<string, number> = Object.fromEntries(platforms.map((p) => [p.slug, p.baseRate ?? contractRate]));
 
   // Kontrak = satu baris per platform (tarif dasar masih global sampai Platform.baseRate ada)
@@ -211,11 +226,11 @@ export default function DoctypeTable({ doctypes, contractRate, platforms = [], b
             action={
               <button
                 type="button"
-                onClick={() => setRateModalSlug(platforms[0]?.slug ?? 'canva')}
+                onClick={() => setContractDrawer('new')}
                 className="flex items-center gap-1.5 px-5 h-full text-xs font-sans font-bold uppercase tracking-wider bg-[#ff5e1f] hover:bg-[#ff7038] text-white transition-colors cursor-pointer"
               >
-                <Pencil className="w-3.5 h-3.5" />
-                <span>Edit Tarif Dasar</span>
+                <Plus className="w-3.5 h-3.5" />
+                <span>Kontrak Baru</span>
               </button>
             }
           />
@@ -308,13 +323,14 @@ export default function DoctypeTable({ doctypes, contractRate, platforms = [], b
                 <th className="px-4 py-3 text-center font-semibold whitespace-nowrap">OUTPUT</th>
                 <th className="px-4 py-3 text-center font-semibold whitespace-nowrap">TARIF DASAR / HALAMAN</th>
                 <th className="px-4 py-3 text-center font-semibold whitespace-nowrap">HARI KERJA</th>
-                <th className="px-4 py-3 text-center font-semibold whitespace-nowrap">BERLAKU SEJAK</th>
+                <th className="px-4 py-3 text-center font-semibold whitespace-nowrap">PERIODE</th>
                 <th className="px-4 py-3 text-center font-semibold whitespace-nowrap">DOCTYPE</th>
+                <th className="px-4 py-3 text-center font-semibold w-[110px] whitespace-nowrap border-l border-[#f0f0f0] dark:border-[#272a34]">AKSI</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#f0f0f0] dark:divide-[#272a34] bg-white dark:bg-[#0d0e12]">
               {contractRows.map((p) => (
-                <tr key={p.id} onClick={() => setRateModalSlug(p.slug)} className="cursor-pointer hover:bg-gray-50/80 dark:hover:bg-[#16181d] transition-colors border-b border-[#f0f0f0] dark:border-[#272a34]">
+                <tr key={p.id} onClick={() => setContractDrawer(p.id)} className="cursor-pointer hover:bg-gray-50/80 dark:hover:bg-[#16181d] transition-colors border-b border-[#f0f0f0] dark:border-[#272a34]">
                   <td className="pl-5 pr-4 py-3">
                     <div className="flex flex-col min-w-0">
                       <span className="font-bold text-gray-900 dark:text-white truncate">{p.name}</span>
@@ -325,14 +341,34 @@ export default function DoctypeTable({ doctypes, contractRate, platforms = [], b
                     <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-gray-100 dark:bg-[#20232b] text-gray-700 dark:text-gray-300">{outputLabel(p.outputType)}</span>
                   </td>
                   <td className="px-4 py-3 text-center font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">{p.baseRate == null ? <span className="text-amber-600 dark:text-amber-400 font-bold">Belum berkontrak</span> : `Rp ${p.baseRate.toLocaleString('id-ID')}`}</td>
-                  <td className="px-4 py-3 text-center text-gray-700 dark:text-gray-300 whitespace-nowrap">25 hari / bulan</td>
-                  <td className="px-4 py-3 text-center text-gray-700 dark:text-gray-300 whitespace-nowrap">{p.contractStartDate ? new Date(p.contractStartDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '26 Jan 2026'}</td>
+                  <td className="px-4 py-3 text-center text-gray-700 dark:text-gray-300 whitespace-nowrap" title="Senin–Jumat di periode kontrak; libur nasional belum dikurangi">
+                    {p.contractStartDate && p.contractEndDate
+                      ? `${workingDaysInRange(new Date(p.contractStartDate).toISOString().slice(0, 10), new Date(p.contractEndDate).toISOString().slice(0, 10)).toLocaleString('id-ID')} hari`
+                      : '25 hari / bulan'}
+                  </td>
+                  <td className="px-4 py-3 text-center text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                    {(() => {
+                      const fmt = (d: string | Date) => new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+                      if (!p.contractStartDate) return '26 Jan 2026';
+                      return p.contractEndDate ? `${fmt(p.contractStartDate)} – ${fmt(p.contractEndDate)}` : `Sejak ${fmt(p.contractStartDate)}`;
+                    })()}
+                  </td>
                   <td className="px-4 py-3 text-center text-gray-700 dark:text-gray-300">{doctypes.filter((d) => d.platform?.slug === p.slug).length}</td>
+                  <td className="px-4 py-2 text-center border-l border-[#f0f0f0] dark:border-[#272a34]">
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setContractDrawer(p.id); }}
+                      aria-label={`Edit kontrak ${p.name}`}
+                      className="inline-flex h-8 items-center gap-1.5 border border-[#f0f0f0] bg-white px-3 text-[11px] font-bold text-gray-700 hover:text-[#ff5e1f] dark:border-[#272a34] dark:bg-[#16181d] dark:text-gray-300 cursor-pointer"
+                    >
+                      <Pencil className="h-3 w-3" /> Edit
+                    </button>
+                  </td>
                 </tr>
               ))}
               {contractRows.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center text-xs text-gray-400 dark:text-gray-500">Tidak ada kontrak platform yang sesuai.</td>
+                  <td colSpan={7} className="px-4 py-12 text-center text-xs text-gray-400 dark:text-gray-500">Tidak ada kontrak platform yang sesuai.</td>
                 </tr>
               ) : null}
             </tbody>
@@ -346,13 +382,20 @@ export default function DoctypeTable({ doctypes, contractRate, platforms = [], b
         units={bundleUnits}
         doctypes={bundleDoctypes}
       />
-      <PlatformRateModal
-        open={rateModalSlug !== null}
-        onClose={() => setRateModalSlug(null)}
-        platforms={platforms}
-        platformSlug={rateModalSlug ?? 'canva'}
-        rates={platformRates}
-      />
+      {contractDrawer && (
+        <ContractDrawer
+          key={contractDrawer}
+          contract={contractDrawer === 'new' ? null : platforms.find((p) => p.id === contractDrawer) ?? null}
+          onClose={() => setContractDrawer(null)}
+          onSaved={(platform) => {
+            const created = contractDrawer === 'new';
+            setContractDrawer(null);
+            toast.success(created ? `Kontrak ${platform.name} dibuat` : `Kontrak ${platform.name} diperbarui`);
+            if (created && returnToWizard) router.push('/production/new');
+            else router.refresh();
+          }}
+        />
+      )}
     </div>
   );
 }

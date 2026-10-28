@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import DesignBriefPreview from './DesignBriefPreview';
 import { useAccess } from '@/context/AccessContext';
 import DesignBriefEditorDrawer, { mergePaletteMarkdown } from './DesignBriefEditorDrawer';
+import { mergeAssetsMarkdown } from '@/lib/asset-brief';
 import { NOTES_HEADING, shufflePaletteMarkdown } from './brief-parser';
 
 interface Comment {
@@ -24,6 +25,8 @@ interface Props {
   sendingComment: boolean;
   /** Dipanggil saat drawer Edit Brief (kanan) dibuka/ditutup, agar drawer task bergeser ke kiri. */
   onEditorOpenChange?: (open: boolean) => void;
+  /** Production task; picker Asset Library hanya menampilkan aset untuk production ini. */
+  productionUnitId?: string;
 }
 
 const BODY_DEBOUNCE_MS = 1500;
@@ -37,6 +40,7 @@ export default function DesignBriefSection({
   onDeleteComment,
   sendingComment,
   onEditorOpenChange,
+  productionUnitId,
 }: Props) {
   const access = useAccess();
   // Brief hanya diubah oleh role manajemen (task.edit); designer hanya membaca & berkomentar.
@@ -106,6 +110,14 @@ export default function DesignBriefSection({
 
   const handleInsertPalette = (paletteMarkdown: string) => {
     const next = mergePaletteMarkdown(draftBody, paletteMarkdown);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    pendingRef.current = null;
+    setDraftBody(next);
+    onBodyTextChange(next);
+  };
+
+  const handleInsertAssets = (sectionMarkdown: string) => {
+    const next = mergeAssetsMarkdown(draftBody, sectionMarkdown);
     if (timerRef.current) clearTimeout(timerRef.current);
     pendingRef.current = null;
     setDraftBody(next);
@@ -254,6 +266,8 @@ export default function DesignBriefSection({
           value={draftBody}
           onChange={handleDraftChange}
           onInsertPalette={handleInsertPalette}
+          onInsertAssets={handleInsertAssets}
+          productionUnitId={productionUnitId}
           onClose={toggleMode}
           subtitle="Tersimpan otomatis · preview di drawer task"
         />

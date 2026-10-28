@@ -6,6 +6,16 @@ import { Client } from '@notionhq/client';
 import { encrypt, decrypt } from '@/lib/encryption';
 import { revalidatePath } from 'next/cache';
 import { checkParentPage, listChildDatabases, normalizeNotionId } from '@/lib/notion-provision';
+import { runInBackground } from '@/lib/background-sync';
+import {
+  ASSET_PROPERTY_MAP,
+  createAssetDatabase,
+  ensureAssetsRelationForTaskDb,
+  getAssetDatabase,
+  linkExistingAssetDatabase,
+  pushPendingAssets,
+} from '@/lib/notion-assets';
+import { ASSET_PLATFORM_OUTPUT } from '@/lib/asset-productions';
 
 const API_KEY_MASK = '••••••••••••••••';
 const DOCTYPE_PROPERTY_NAME = 'Doctype';
@@ -73,6 +83,7 @@ export async function getNotionConfigAction() {
       syncInterval: config.syncInterval,
       databases: config.databases.filter((db) => !db.archived).map((db) => ({ id: db.id, name: db.name, maskedDatabaseId: maskText(decrypt(db.encryptedDatabaseId, db.iv), 4, 4) })),
       pageCount: config.pages.length,
+      defaultPageName: config.pages.find((p) => p.isDefault)?.name ?? null,
       contractRate: config.contractRate,
     };
   } catch (error) {
@@ -204,6 +215,8 @@ export async function getNotionPagesAndDatabasesAction() {
         parentPageId: db.parentPageId,
         parentPageName: db.parentPageId ? pageNames.get(db.parentPageId) ?? null : null,
         productions: used.map((u) => ({ name: u.name, isActive: u.isActive })),
+        /** Kegunaan khusus (mis. "asset_library"); dikelola di tab-nya sendiri, bukan diarsipkan di sini. */
+        purpose: db.purpose,
       };
     });
     const pages = config.pages.map((p) => ({
@@ -323,5 +336,133 @@ export async function setNotionDatabaseArchivedAction(input: { id: string; archi
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message || 'Gagal mengubah database.' };
+  }
+}
+
+// ── Asset Library (database mirror aset + relation "Assets" di database task) ──
+
+/** Status database Asset Library, kandidat database, dan relation per production. Membaca Notion. */
+export async function getAssetNotionStatusAction() {
+  const denied = await denyUnless('integration.manage');
+  if (denied) return denied as never;
+  try {
+    const config = await getConfig();
+    if (!config) return { success: true as const, exists: false as const };
+    const db = await getAssetDatabase();
+    const units = await prisma.productionUnit.findMany({ where: { isActive: true }, orderBy: { createdAt: 'asc' }, include: { platform: true } });
+    const taskDbIds = new Set(units.map((u) => compactId(u.notionTaskDbId)));
+    // Relation "Assets" hanya relevan untuk production berplatform Canva
+    const canvaUnits = units.filter((u) => u.platform.outputType === ASSET_PLATFORM_OUTPUT);
+    const pageNames = new Map(config.pages.map((p) => [p.pageId, p.name]));
+    const candidates = config.databases
+      .filter((row) => !row.archived && row.id !== db?.rowId)
+      .filter((row) => { try { return !taskDbIds.has(compactId(decrypt(row.encryptedDatabaseId, row.iv))); } catch { return false; } })
+      .map((row) => ({ id: row.id, name: row.name }));
+    const [total, pending, failed, last] = await Promise.all([
+      prisma.asset.count(),
+      prisma.asset.count({ where: { syncStatus: 'PENDING_PUSH' } }),
+      prisma.asset.count({ where: { syncStatus: 'ERROR' } }),
+      prisma.asset.aggregate({ _max: { lastSyncedAt: true } }),
+    ]);
+    const relations = db
+      ? await Promise.all(canvaUnits.map(async (u) => ({
+          unitId: u.id,
+          unitName: u.name,
+          state: u.notionTaskDbId ? await ensureAssetsRelationForTaskDb(u.notionTaskDbId, { create: false }) : 'missing',
+        })))
+      : [];
+    return {
+      success: true as const,
+      exists: true as const,
+      database: db ? { name: db.name, parentPageName: db.parentPageId ? pageNames.get(db.parentPageId) ?? null : null } : null,
+      pages: config.pages.map((p) => ({ id: p.id, name: p.name, isDefault: p.isDefault })),
+      candidates,
+      counts: { total, pending, failed, lastSyncedAt: last._max.lastSyncedAt ? last._max.lastSyncedAt.getTime() : null },
+      relations,
+      propertyMap: ASSET_PROPERTY_MAP,
+    };
+  } catch (error: any) {
+    return { success: false as const, error: error.message || 'Gagal memuat status Asset Library.' };
+  }
+}
+
+/** Buat database "Asset Library" di page induk terdaftar, lalu kirim semua aset. */
+export async function createAssetDatabaseAction(pageRowId: string) {
+  const denied = await denyWrite('integration.manage');
+  if (denied) return denied as never;
+  try {
+    const page = await prisma.notionPage.findUnique({ where: { id: pageRowId } });
+    if (!page) throw new Error('Page induk tidak ditemukan.');
+    await createAssetDatabase(page.pageId);
+    await afterAssetDatabaseLinked();
+    return { success: true as const };
+  } catch (error: any) {
+    return { success: false as const, error: error.message || 'Gagal membuat database Asset Library.' };
+  }
+}
+
+/** Pakai database terdaftar (bukan database task) sebagai Asset Library; properti yang kurang ditambahkan. */
+export async function linkAssetDatabaseAction(databaseRowId: string) {
+  const denied = await denyWrite('integration.manage');
+  if (denied) return denied as never;
+  try {
+    const row = await prisma.notionDatabase.findUnique({ where: { id: databaseRowId } });
+    if (!row) throw new Error('Database tidak ditemukan.');
+    const added = await linkExistingAssetDatabase(decrypt(row.encryptedDatabaseId, row.iv), row.name, row.parentPageId);
+    await afterAssetDatabaseLinked();
+    return { success: true as const, added };
+  } catch (error: any) {
+    return { success: false as const, error: error.message || 'Gagal menghubungkan database Asset Library.' };
+  }
+}
+
+/** Buat relation "Assets" di database task satu production. */
+export async function createAssetsRelationAction(unitId: string) {
+  const denied = await denyWrite('integration.manage');
+  if (denied) return denied as never;
+  try {
+    const unit = await prisma.productionUnit.findUnique({ where: { id: unitId }, include: { platform: true } });
+    if (!unit?.notionTaskDbId) throw new Error('Production ini belum punya database Notion.');
+    if (unit.platform.outputType !== ASSET_PLATFORM_OUTPUT) throw new Error('Asset Library hanya untuk production berplatform Canva.');
+    const state = await ensureAssetsRelationForTaskDb(unit.notionTaskDbId);
+    if (state === 'conflict') throw new Error('Database task sudah punya properti "Assets" dengan tipe/target lain. Ganti namanya di Notion dulu.');
+    if (state === 'no_asset_db') throw new Error('Database Asset Library belum terhubung.');
+    if (state === 'error') throw new Error('Gagal membuat relation di Notion. Cek akses integrasi ke database task.');
+    return { success: true as const, state };
+  } catch (error: any) {
+    return { success: false as const, error: error.message || 'Gagal membuat relation.' };
+  }
+}
+
+// Relation "Assets" di database task production yang sudah ada dibuat per production lewat tombol
+// "Buat relation" (mengubah skema database live tim); production baru otomatis dibuatkan.
+async function afterAssetDatabaseLinked() {
+  runInBackground('Kirim Asset Library ke Notion', async () => {
+    await pushPendingAssets(500);
+  });
+  revalidatePath('/notion-config', 'layout');
+  revalidatePath('/assets');
+}
+
+/** Riwayat sync terbaru untuk tab Sinkronisasi. */
+export async function getRecentSyncLogsAction(limit = 10) {
+  const denied = await denyUnless('integration.manage');
+  if (denied) return denied as never;
+  try {
+    const logs = await prisma.syncLog.findMany({ orderBy: { startedAt: 'desc' }, take: Math.min(Math.max(limit, 1), 50) });
+    return {
+      success: true as const,
+      logs: logs.map((l) => ({
+        id: l.id,
+        startedAt: l.startedAt.getTime(),
+        finishedAt: l.finishedAt ? l.finishedAt.getTime() : null,
+        status: l.status,
+        mode: l.mode,
+        recordsSynced: l.recordsSynced,
+        errorMessage: l.errorMessage,
+      })),
+    };
+  } catch (error: any) {
+    return { success: false as const, error: error.message || 'Gagal memuat riwayat sync.' };
   }
 }

@@ -34,6 +34,15 @@ Entri yang dipindah dari `session-handover.md`. Cari dengan `grep`; jangan dibac
 * Semua belum di-commit (user cek sendiri dulu).
 * **Dirilis ke VPS 2026-10-20** (`npm run deploy:vps`, `🛡️ [DevOps & Release]`) dari working tree `feat/bundle-order-designer` termasuk perubahan di atas yang belum di-commit; healthcheck gerbang login lolos. Tanpa perubahan skema Prisma.
 
+### 2026-10-24 — Designer bisa download statement sendiri (Claude Code, `🎨 [Frontend & UI/UX]`)
+* `OwnBillingView` (billing untuk role designer) kini punya tombol **Download Statement** → `/billing-statement/print?designerId=<milik sendiri>&paymentMonth=…` (tab baru). Guard di print page sudah membatasi `billing.view.own` ke `designerId` sendiri.
+* Print page: Rate/Poll tidak lagi hardcode `15000` (pakai `priceFor`, `-` bila belum ada harga); payout 0 untuk designer `Resign` (sama dengan halaman billing).
+* Print page kini memuat **Order Bundle** yang masuk payout bulan itu (`getBundleOrdersForPeriod` → `payoutByDesigner`, designer Resign = 0): tabel bundle + Subtotal Satuan/Bundle + Total; ringkasan Total Payout = satuan + bundle. `OwnBillingView` juga memakai `payoutByDesigner` agar total sama persis.
+* Deretan chip bulan di `OwnBillingView` diganti dropdown (`billing/OwnMonthSelect.tsx`, pakai `SelectDropdown`, ubah `paymentMonth` di URL); default = bulan terbaru (`availableMonths[0]`). Diuji desktop + mobile 375px.
+* Tombol pakai `next/link` (bukan `<a>`) agar basePath `/can-freelance` ikut; `<a>` biasa → 404.
+* Diuji lokal (Admin "Lihat sebagai" Putery): tombol muncul, print Putery Sept-2026 = IDR 2.700.000 (sama dengan billing), print designer lain dialihkan. Tabel bundle belum teruji visual: satu-satunya order lokal (Slides-Colony) task-nya masih Draft. Belum di-commit.
+* Catatan: panel Notion Sync di sidebar sudah admin-only (`integration.manage`); PM/AD multi-production = beberapa baris Membership (by design).
+
 ### 2026-10-24 — Field Notion dinamis per production, putaran 1 (Claude Code, `⚙️ [Backend & Database]`)
 * Production yang baru ditambahkan (wizard, buat database, atau ganti database di Edit Production) otomatis terdaftar di Notion Config → Databases (`registerNotionDatabase`). Halaman Notion Config dipertahankan. Backfill SC-Element & SC-Canva baru dilakukan di DB lokal, **VPS belum**.
 * Skema baru: `ProductionUnit.disabledFields`, model `ProductionField`. Detail di `entities.md` dan `data-flows.md` (bagian "Nama Properti & Field Tambahan").
@@ -56,6 +65,18 @@ Entri yang dipindah dari `session-handover.md`. Cari dengan `grep`; jangan dibac
 * Database uji di Notion dan barisnya di Notion Config → Databases boleh dihapus manual.
 * **Notion Config → Pages & Databases** (pengganti halaman Databases, tabel gaya Production Hub, copy Bahasa Indonesia): daftar page induk (`NotionPage`, default = Impro-Freelance) + database terdaftar. Status arsip database milik production mengikuti production (Production Hub); Arsipkan/Pulihkan hanya untuk database tanpa production. Halaman Notion Config responsif (2 kolom mulai `xl`). `NotionConfig.defaultParentPageId` dihapus. Lokal: test, test-1, test-2 didaftarkan lewat Pindai (Belum dipakai, tidak diarsipkan). VPS perlu `db push` + isi page.
 * Belum di-commit.
+
+### 2026-10-24 — Asset Library: jalur manual + mirror Notion (Claude Code, `⚙️ [Backend & Database]`, `🎨 [Frontend & UI/UX]`, `🔄 [API & Notion Integration]`)
+* Branch `feat/asset-library` di worktree `.claude/worktrees/asset-library` (sesi lain sedang mengerjakan share link task di checkout utama). Belum di-commit.
+* Skema baru `AssetCategory`, `Asset`, `TaskAsset`, `NotionDatabase.purpose`; diterapkan ke DB lokal lewat SQL tambahan saja (bukan `db push`, agar tabel `task_share_links` sesi lain tidak terhapus). VPS perlu `db push` saat rilis.
+* Permission `asset.view` (semua role) & `asset.manage` (Admin/AD/PM). Halaman `/assets`, picker **Ambil dari Library** di drawer Edit Design Brief (2 stage), kartu Assets di preview brief, kartu Asset Library di Notion Config. Detail: `modules.md`, `data-flows.md`, `entities.md`, issues #34.
+* Relation `Assets` untuk production yang sudah ada dibuat manual per production (mengubah skema database live tim).
+* Diuji lokal (`AUTH_MODE=off`, port 3012): tambah aset, validasi `/edit`, embed & cover thumbnail Canva, judul otomatis oEmbed, picker + Escape, preview brief, mobile 375px & dark.
+* **Uji tulis Notion lolos** (disetujui user): database **Asset Library** dibuat di page Impro-Freelance (terdaftar `purpose=asset_library` di DB lokal); push aset (properti + 1 blok embed); edit di Notion → Sync di `/assets` → catatan & tag masuk app; arsip dari app → Status Arsip di Notion, embed tidak dobel. Relation `Assets` dibuat **hanya di SC-Canva** (kolom balik "Related to slides-colony (Assets)" di database aset).
+* **Belum diuji**: brief task → relation `Assets` terisi (butuh menyimpan brief task sungguhan) dan gating role via "Lihat sebagai". Aset uji "UJI Putry – …" sudah diarsipkan (app & Notion).
+* Desain: https://claude.ai/artifact/HKviEpNcfcL5V7MD3iYjLj. Wireframe role belum diperbarui untuk permission baru.
+* Lanjutan (belum di-commit setelah `4d01967`): canva.link di-resolve ke link /view; Production aset multi-select (`AssetProduction`, hanya platform `canva_link`); kontrak platform dibuat di Rate Card → Kontrak (`ContractDrawer`, periode + hari kerja Sen–Jum, edit per baris; wizard production hanya platform berkontrak); **Trial → Kontrak bundle** pakai `BundleContract` (lihat `business-rules.md`). Diuji lokal; data uji dibersihkan. **VPS perlu `prisma db push`** (asset_productions, bundle_contracts, bundle_orders.contract_id, platforms.contract_end_date).
+* **Notion Config redesign** (desain https://claude.ai/artifact/YRw7bLhyXB641efBa2J8DN): satu halaman bertab Koneksi / Pages & Databases / Sinkronisasi / Asset Library / Email Notifikasi; `NotionDatabasesClient` dihapus. Database Asset Library di daftar database berlabel "Asset Library" (tidak bisa diarsipkan di sana). Juga: sidebar mobile `z-45` agar menutupi tab sticky. Diuji lokal desktop + 375px.
 
 ### 2026-10-24 — Share link publik task (Claude Code, `⚙️ [Backend & Database]` + `🎨 [Frontend & UI/UX]`)
 * Model baru `TaskShareLink` (db push lokal sudah; **VPS perlu `prisma db push`**), permission `task.share` (Admin, AD, PM).
@@ -87,3 +108,11 @@ Entri yang dipindah dari `session-handover.md`. Cari dengan `grep`; jangan dibac
 * UI: kartu segmen "Order Bundle" dan header grup Payout Breakdown menampilkan "+ IDR x menunggu task approved"; baris order belum complete diberi badge amber. Commit `6c3057d`, dirilis ke VPS (healthcheck lolos); tampilan belum dicek visual.
 * Notion: opsi select Doctype = `notionKey`, bukan `displayName` (displayName "PPTX, Slides, Keynote" ditolak karena koma). Create/update task & push sync kini kirim `notionKey` (`95cab85`, sudah di VPS).
 * Dropbox `invalid_client`: `.next/standalone/.env` VPS tidak punya `DROPBOX_APP_KEY/SECRET`. Ditambahkan dari `.env` lokal (backup `.env.bak-*`), PM2 di-reload; probe token → `invalid_grant` (client valid). Refresh token tersimpan belum terbukti valid: bila sync Dropbox masih gagal, hubungkan ulang Dropbox dari VPS.
+### 2026-10-24 — Asset Library, Notion Config bertab, kontrak platform & bundle (Claude Code, `⚙️ [Backend & Database]`, `🎨 [Frontend & UI/UX]`, `🔄 [API & Notion Integration]`)
+* Branch `feat/asset-library` (worktree `.claude/worktrees/asset-library`), commit `d5cb65b` + merge `6baf129`. Rincian lengkap di arsip `archive/session-handover-from-2026-10-17.md`.
+* Asset Library (`/assets`, mirror Notion, picker di Design Brief, Production multi-select hanya platform Canva), Notion Config satu halaman bertab, kontrak platform di Rate Card → Kontrak (periode preset 3/6/12 bulan atau Custom + hari kerja Sen–Jum; info field via ikon ⓘ `InfoTip` di semua form: wizard, User, Asset, Doctype, Core field — aturan `form-crud-rules.md` §9), **Trial → Kontrak bundle** via `BundleContract`. Production Hub: kolom Designer (punya task di production) & Doctype (aktif per platform). Overview: tab "Tanpa Brand" untuk task tanpa akun (issues #35). Aturan: `business-rules.md`; modul: `modules.md`; entitas: `entities.md`.
+* **Rilis VPS 2026-10-24**: skema VPS ditambah via SQL aditif dari `prisma migrate diff` (tanpa DROP, 1 transaksi; 9 tabel baru termasuk `task_share_links`, kolom `contract_id`, `contract_end_date`, `purpose`, dll.) + 4 kategori aset default; `migrate diff` setelahnya kosong. `npm run deploy:vps` lolos healthcheck; log error PM2 bersih.
+* Notion: database "Asset Library" di Impro-Freelance (uji) + relation `Assets` hanya di SC-Canva. Belum diuji: drawer Jadikan Kontrak bundle di browser (tak ada trial approved lokal), brief → relation `Assets`, gating role "Lihat sebagai". Wireframe role belum diperbarui.
+
+### 2026-10-25 — Rilis Asset Library lanjutan (dipindah dari handover)
+* Sub-tab Notion Config (Asset Library / Pages & Databases / Sinkronisasi, `?sub=`), impor aset dari database Notion (+ perbarui judul & tag), `canva_design_id` unik, pindai database di sub-page, ikon & ilustrasi kategori (3D, Shape & Label), info field via `InfoTip`, preset periode kontrak, kolom Designer/Doctype di Production Hub, tab "Tanpa Brand" di Overview.
