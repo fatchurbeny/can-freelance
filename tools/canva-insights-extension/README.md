@@ -30,6 +30,7 @@ URL dashboard lain harus ditambahkan dulu ke `host_permissions` di `manifest.jso
 
 ### Membaca status
 
+- **Panel slide-over** di kanan halaman Canva Creator (`canva.com/creators/…`): isinya sama dengan popup dan selalu tampil. Klik tab "Canva Insights" di tepi kanan untuk menciutkan/membuka; titik di tab menunjukkan status (biru berdenyut = berjalan, hijau = berhasil, merah = gagal, oranye = terhenti/perlu login). Pilihan buka/ciut diingat.
 - **Popup**: kartu status berwarna — *Siap*, *Sedang sinkron* (persen, halaman & baris yang sudah masuk, lama berjalan, langkah aktif dari 6 langkah, mis. "Angka harian per template · grup 19/25"), *Berhasil* (ringkasan + durasi), *Gagal* / *Perlu login* (alasan + "Yang perlu dilakukan"), *Terhenti* (tidak ada kabar > 2 menit: tab Canva ditutup, Chrome dimuat ulang, atau Mac tidur).
 - **Badge ikon**: `…` berjalan, `OK` berhasil, `!` gagal; arahkan kursor ke ikon untuk keterangan.
 - **Notifikasi Chrome** muncul saat sinkron selesai (berhasil atau gagal).

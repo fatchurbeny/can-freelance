@@ -19,6 +19,9 @@ const STAGES = [
 const HEARTBEAT_STALE_MS = 2 * 60 * 1000;
 const NUM = new Intl.NumberFormat('id-ID');
 const $ = (id) => document.getElementById(id);
+
+// ?embed=1: dimuat di panel slide-over halaman Canva (slideover.js), lebar mengikuti panel.
+if (new URLSearchParams(location.search).has('embed')) document.body.classList.add('embed');
 const brandName = (id) => BRANDS[id] ?? id;
 
 function duration(ms) {
@@ -144,7 +147,7 @@ $('open-options').addEventListener('click', () => chrome.runtime.openOptionsPage
 $('open-dashboard').addEventListener('click', () => {
   if (tab?.id) chrome.tabs.update(tab.id, { url: DASHBOARD_URL });
   else chrome.tabs.create({ url: DASHBOARD_URL });
-  window.close();
+  if (!document.body.classList.contains('embed')) window.close();
 });
 $('sync').addEventListener('click', async () => {
   $('sync').disabled = true;
