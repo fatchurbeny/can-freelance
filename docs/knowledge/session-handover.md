@@ -10,7 +10,7 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 
 ## 📌 Status Aktif
 
-* **Branch**: `feat/asset-library` (PR #9, Auto-fix aktif) **dirilis ke VPS 2026-10-25** (terakhir `23736dd`), belum di-merge ke `main` · **Peran terakhir**: `🛡️ [DevOps & Release]`
+* **Branch**: `feat/canva-insights` = `feat/bundle-order-designer` + merge `feat/asset-library` (PR #9) + Canva Insights Fase 1. Belum di-push, belum di-merge ke `main` · **Peran terakhir**: `⚙️ [Backend & Database]`, `🔄 [API & Notion Integration]`
 * **Multi-Production**: Fase 1–8 sebagian besar selesai (Production Hub, platform per production, Dropbox File Request untuk Envato Elements, Bundle & Order Bundle, tarif per platform). Detail rencana: [`multi-production-plan.md`](multi-production-plan.md).
 * **User Role Fase 1**: login ID + PIN 6 digit, role berbasis permission, Membership per ProductionUnit, "Lihat sebagai", halaman `/user-role`, `/profile`. Spec: [`user-role-spec.md`](user-role-spec.md). `AUTH_MODE=session` aktif di `.env` lokal dan VPS Biznet GIO.
 * **Sidebar**: pindah ke `layout.tsx` (`AppSidebar`), grup dropdown gaya pohon. Pola baku: [`sidebar-dropdown-pattern.md`](sidebar-dropdown-pattern.md).
@@ -18,45 +18,36 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 ## ⏳ Belum Selesai / Menunggu
 
 * Ganti PIN admin `FT-001` (menunggu user).
-* Kode di VPS kini = working tree `feat/bundle-order-designer` (sebagian belum di-commit) → commit & merge ke `main`.
-* Rilis berikutnya ke VPS perlu `prisma db push` manual (`TaskShareLink`, Notion Pages & Databases).
-* Kode di VPS = `feat/asset-library` `23736dd`. Backup DB sebelum rilis: `~/db-backups/can-freelance-20261025-130650-pre-unique-design.dump`. **SSH VPS kini juga di port 2222** (`/etc/systemd/system/ssh.socket.d/port.conf`) karena jaringan kantor & hotspot memblokir port 22 keluar: deploy `VPS_SSH_PORT=2222 npm run deploy:vps`.
+* **Kode VPS**: `feat/asset-library` `23736dd` dirilis 2026-10-25, lalu working tree `feat/bundle-order-designer` dirilis 2026-10-27 (tanpa kode Asset Library). Rilis berikutnya sebaiknya dari `feat/canva-insights` (berisi keduanya) + SQL aditif hasil `prisma migrate diff` (tabel Canva, `accounts.canva_brand_id`; `bundle_contracts`/`contract_id` bila belum ada) + `INSIGHTS_INGEST_TOKEN`.
+* Backup DB VPS: `~/db-backups/can-freelance-20261025-130650-pre-unique-design.dump`. **SSH VPS juga di port 2222**: deploy `VPS_SSH_PORT=2222 npm run deploy:vps`. Env app VPS ada di `.next/standalone/.env` (tidak ada `.env` di root app).
 * Tombol "Download all Statement" di `/billing-statement` mengarah ke `/api/billing/download-all` yang tidak ada (dan `<a>` tanpa basePath) → selalu 404.
 * Print statement (`/billing-statement/print`) memanggil `window.print()` otomatis.
 * Escape saat dropdown terbuka di drawer `/user-role` menutup seluruh drawer (isian hilang).
-* Sync `Dropbox Link` ke Notion (perlu file diunggah ke File Request).
-* Tab Email Notifications & Overview di production Elements masih konten Canva.
-* Kanban per platform masih didiskusikan.
-* Backlog: [Resources Library](../backlog/resources-library.md) (jalur manual, tahap desain; model akses sudah diputuskan), [Role kustom & matriks](../backlog/custom-roles-matrix.md), [Design Brief autosave](../backlog/task-drawer-design-brief-autosave.md).
-* Impor katalog Notion "Canva Assets" (sub-page Impro-Freelance; kini terbaca lewat Pindai) belum dijalankan di VPS.
-* Asset Library di VPS terhubung ke database Notion "Asset Library" (121 aset); cek relation `Assets` per production di Notion Config. Dropbox VPS: `invalid_client` di log (cek kredensial).
+* Sync `Dropbox Link` ke Notion (perlu file diunggah ke File Request). Dropbox VPS: `invalid_client` di log.
+* Tab Email Notifications & Overview di production Elements masih konten Canva. Kanban per platform masih didiskusikan.
+* Impor katalog Notion "Canva Assets" belum dijalankan di VPS (VPS kini 142 aset).
+* Backlog: [Role kustom & matriks](../backlog/custom-roles-matrix.md), [Design Brief autosave](../backlog/task-drawer-design-brief-autosave.md).
 
 ## ⚠️ Gotcha yang Masih Berlaku
 
+* **DB lokal dipakai bersama semua branch/worktree.** `db push` dari branch yang skemanya tidak memuat tabel branch lain akan **menghapus** tabel itu (2026-10-28: tabel aset hilang, dipulihkan dari VPS). Sebelum `db push`, cek `npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script` tidak berisi `DROP`; bila ada, gabungkan branch dulu atau terapkan SQL aditif via `prisma db execute`.
 * **Designer task bundle = designer order bundle** (sumber utama). Ganti hanya lewat drawer order di Billing Statement → Order Bundle (`updateBundleOrderDesignerAction`, ikut ubah semua task + Notion). `updateTaskFieldsAction` menolak designer berbeda, task drawer menampilkannya read-only, dan sync Notion tidak menimpa designer task bundle.
-* Setelah `db push`, **restart dev server** (client Prisma lama memberi error "Unknown argument"). `deploy:vps` **tidak** menjalankan `db push`: rilis dengan perubahan skema perlu `prisma db push` manual di VPS.
+* Setelah `db push`, **restart dev server** (client Prisma lama memberi error "Unknown argument"). `deploy:vps` **tidak** menjalankan `db push`.
 * Dropdown di dalam container `overflow-*` terpotong; render lewat portal `fixed`.
 * Push body Notion memakai antrean in-memory per `pageId` (`src/lib/notion-body-push.ts`); efektif untuk 1 proses PM2, cluster >1 butuh lock DB.
 * Ubah UI/role → perbarui wireframe: https://claude.ai/artifact/Fvq1og4yp9W5YTAz298HQL
-* Env baru di VPS harus ditambahkan juga ke **`.next/standalone/.env`** (kasus `DROPBOX_APP_KEY` 2026-10-27; berlaku juga untuk `INSIGHTS_INGEST_TOKEN`).
+* Env baru di VPS harus ditambahkan ke **`.next/standalone/.env`** (berlaku untuk `INSIGHTS_INGEST_TOKEN`).
 
 ## 📝 Sesi Terakhir
 
-### 2026-10-28 — Canva Insights Fase 1 (Claude Code, `⚙️ [Backend & Database]` + `🔄 [API & Notion Integration]` + `🏛️ [Knowledge Ops]`)
-* Branch `feat/canva-insights` (dari tip `feat/bundle-order-designer`), **belum di-commit**. Spek: [`canva-insights-spec.md`](canva-insights-spec.md), brief: [`../backlog/canva-insights-implementation.md`](../backlog/canva-insights-implementation.md), mapping field: [`../canva-insights-endpoints.md`](../canva-insights-endpoints.md).
-* Ditulis: 6 model `Canva*` + `Account.canvaBrandId` (sudah `prisma generate`), `src/lib/canva-insights/*`, route `/api/insights/{ingest,runs,known-ids}`, action `canva-insights.ts`, script `seed-canva-brands.ts` & `import-canva-insights.ts`. Selisih dari skema spek dicatat di spek §4.
-* Teruji tanpa DB: parser lolos 4 fixture, total breakdowns 28 Sep–27 Okt = angka acuan brief, data rusak & brand asing ditolak, `tsc` lolos.
-* **Menunggu user**: `npx prisma db push` + restart dev server, `INSIGHTS_INGEST_TOKEN` di `.env`, lalu seed + impor fixture (cek idempoten & laporan tautan task). Fixture Chital belum ada.
+### 2026-10-28 — Canva Insights Fase 1 + merge Asset Library (Claude Code, `⚙️ [Backend & Database]` + `🔄 [API & Notion Integration]` + `🏛️ [Knowledge Ops]`)
+* Spek: [`canva-insights-spec.md`](canva-insights-spec.md), brief: [`../backlog/canva-insights-implementation.md`](../backlog/canva-insights-implementation.md), mapping field: [`../canva-insights-endpoints.md`](../canva-insights-endpoints.md).
+* `fccb674`: 6 model `Canva*` + `Account.canvaBrandId`, `src/lib/canva-insights/*`, route `/api/insights/{ingest,runs,known-ids}`, action `canva-insights.ts`, script `seed-canva-brands.ts` & `import-canva-insights.ts`. Parser lolos 4 fixture (total breakdowns = acuan brief), data rusak & brand asing ditolak.
+* `b5d4a03`: merge `feat/asset-library` (konflik skema = gabung kedua sisi; `user-role-spec` Akses aset = versi asset-library). `tsc` lolos.
+* DB lokal: skema gabungan diterapkan lewat SQL aditif (tanpa DROP). Data aset dipulihkan dari VPS (`pg_dump --data-only` `asset_categories` + `assets`: 7 + 142 baris), `notion_databases.purpose = asset_library` dipasang ulang di "Asset Library". 1 baris `asset_productions` lokal (data uji) tidak bisa dipulihkan.
+* **Berikutnya**: restart dev server, `INSIGHTS_INGEST_TOKEN` di `.env`, seed brand + impor fixture (cek idempoten & laporan tautan task), lalu Fase 2 (collector). Fixture Chital belum ada.
 * Fase 3 wajib: jangan jumlahkan `audience = "ALL"` bersama `B`/`C` (spek §4).
-* Archived: entri 2026-10-27 (Summary Order Bundle, Notion doctype, Dropbox env VPS) → `archive/session-handover-from-2026-10-17.md`.
-### 2026-10-25 — Batas akses aset per role (Claude Code, `🛡️ [Security]`/`🎨 [Frontend & UI/UX]`)
-* `asset.view` dicabut dari Finance & Viewer. `asset.manage` kini per production: helper `canManageAsset`/`canManageAllAssets` (`permissions.ts`), guard `denyAssetScope`/`denyAssetGlobal` di `actions/assets.ts`; UI `/assets` menyembunyikan Sync/+Kategori untuk non-Admin, Edit/Arsip hanya aset production sendiri, form AD/PM wajib pilih production sendiri. Baris "Asset Report" di matriks. Detail: `user-role-spec.md` › Akses aset.
-* Diuji: Lihat sebagai PM uji `FT-002` (Lamongan, kini **nonaktif**) + skrip helper (14 kasus). Simpan aset sebagai PM tidak diuji di browser (pratinjau hanya-baca). Commit `23736dd`, **dirilis ke VPS 2026-10-25** (port SSH 2222, tanpa perubahan skema); healthcheck lolos, `/assets` & `/asset-report` → 307 login.
-* Commit `f3bd86c` di `feat/bundle-order-designer` memuat versi **rencana** Akses aset (`productionUnitId` tunggal) → saat merge pakai versi branch ini.
-* `.claude/launch.json` utama: `asset-library-dev` = AUTH_MODE=off (port 3012); `asset-library-auth` = worktree dengan login (port 3004).
 
-### 2026-10-25 — Rilis Asset Library lanjutan (Claude Code, `🎨 [Frontend & UI/UX]`, `🔄 [API & Notion Integration]`, `🛡️ [DevOps & Release]`)
-* **Asset Report** (`/asset-report`, menu di bawah Production, sub-menu per kategori; desain https://claude.ai/artifact/1bRjBCU85gn84C85Cm27Lb): diuji lokal dengan data uji sementara (sudah dihapus); **dirilis ke VPS 2026-10-25** (`8f8e837`, tanpa perubahan skema). Wireframe role belum diperbarui untuk menu ini.
 ---
 
 ## Catatan untuk LLM / Editor Selanjutnya
