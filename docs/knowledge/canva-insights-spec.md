@@ -276,6 +276,8 @@ Request dijalankan via `page.evaluate(fetch(url, { headers, credentials: 'includ
 **Temuan 2026-10-28 (fixture 4 brand vs DB lokal)**: semua 462 `TaskCanvaLink.url` berupa short link `canva.link/…` (tanpa ID desain). Diresolve, link itu mengarah ke `/view` **desain kerja designer** (mis. task "Marketing Process Flow" → `DAHXf1bxfKQ`), sedangkan template punya desain sumber baru hasil publish (`I` = `DAHYhL9r9kI`). Jadi `design_id` = 0 dari 200 template; judul (aturan + satu kata) = 21 tertaut, 0 ambigu (antler 0, impro 5, uicreative 5, zahra 11). Sisanya lewat antrean manual di `/insights`.
 
 ## 7. UI `/insights`
+
+**Diubah 2026-10-28 (user):** tampil sebagai **tab baru "Canva Insights" di halaman Production** (setelah Email Notifications), dropdown brand (Semua brand / per brand) dan **line chart gabungan semua brand** (toggle Applies/Usages). Desain: https://claude.ai/artifact/DdcA2ANNvf8tK4VR6QEUVy (artboard Semua brand + Zahra Art, data asli fixture). Rincian di bawah tetap berlaku untuk isi tab.
 Permission baru `insights.view` (Admin, Art Director, Project Manager; bukan freelance/viewer). Grup sidebar sesuai [`sidebar-dropdown-pattern.md`](sidebar-dropdown-pattern.md). Standar Cloudflare (`rounded-none`, tabel simetris, toolbar datar), font `Inter`.
 
 Meniru halaman **Template usages** Canva:
