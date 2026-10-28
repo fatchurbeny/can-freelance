@@ -233,7 +233,8 @@ Catatan: satu `Task` bisa punya beberapa template (`qtySubmit` > 1, varian bahas
 * `CanvaBrandDaily` dan `CanvaTierScore` juga punya `batchId` + `updatedAt` (jejak batch terakhir yang menulis baris).
 * `CanvaIngestBatch.runId` (opsional) menautkan batch ke `CanvaCollectorRun`; `CanvaCollectorRun.status` juga bisa `RUNNING` (run belum dilaporkan selesai).
 * `audience = "ALL"` muncul bila `BY_CONTENT` diminta tanpa `contentRoyalties` (fixture punya contoh ini). Query UI wajib memakai baris `B`/`C` dan memakai `ALL` hanya bila tidak ada baris `B`/`C` untuk template + hari itu, agar tidak terhitung ganda.
-* Penghapusan payload mentah > 60 hari belum dibuat.
+* **Retensi** (`src/lib/canva-insights/retention.ts`): payload batch > 60 hari diganti `{ "purgedAt": … }` (tanpa ubah skema), baris batch > 365 hari dihapus. Berjalan otomatis setelah `POST /api/insights/runs` `finish` (maks. 1× per 12 jam per proses); manual: `npx tsx scripts/prune-canva-insights.ts [--dry-run]`. Reparse melewati batch yang sudah dikosongkan.
+* **Proyeksi ukuran** (diukur 2026-10-28 dari sinkron zahra): ±0,33 baris harian per template per hari, ±152 byte/baris; respons mentah ±4,4 KB per halaman 100 baris. Asumsi 5 brand × ±1.200 template: backfill 365 hari ±75–115 MB, tumbuh ±115 MB/tahun; payload mentah dengan retensi 60 hari ±80 MB (tetap), tanpa retensi ±500 MB/tahun.
 
 ## 5. API & collector
 

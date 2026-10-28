@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { authorizeCollector, readJsonBody } from '@/lib/canva-insights/api-auth';
+import { maybePruneIngestBatches } from '@/lib/canva-insights/retention';
 
 const FINAL_STATUSES = ['OK', 'NEEDS_LOGIN', 'ERROR'] as const;
 
@@ -48,6 +49,12 @@ export async function POST(request: Request) {
       },
     });
     if (updated.count === 0) return NextResponse.json({ error: 'Run tidak ditemukan' }, { status: 404 });
+    // Retensi payload mentah ikut berjalan di sini (maks. 2× sehari) agar tidak butuh cron terpisah.
+    const pruned = await maybePruneIngestBatches().catch((e) => {
+      console.error('[insights/runs] retensi gagal', e);
+      return null;
+    });
+    if (pruned && (pruned.payloadsPurged || pruned.batchesDeleted)) console.log('[insights/runs] retensi', pruned);
     return NextResponse.json({ ok: true });
   }
 

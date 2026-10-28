@@ -43,6 +43,8 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 ### 2026-10-28 — Canva Insights Fase 1–2 + merge Asset Library (Claude Code, `⚙️ [Backend & Database]` + `🔄 [API & Notion Integration]`)
 * Detail lengkap sesi ini di arsip (`grep "Canva Insights Fase 1" archive/`). Spek: [`canva-insights-spec.md`](canva-insights-spec.md), brief: [`../backlog/canva-insights-implementation.md`](../backlog/canva-insights-implementation.md).
 * **Fase 1 selesai & terverifikasi** di DB lokal (skema, parser, API ingest/runs/known-ids, impor manual, 5 brand ter-seed). Tautan task lewat judul (21/200); ID desain tidak bisa dipakai (spek §6).
+* **Retensi payload** dibuat (spek §4): payload > 60 hari dikosongkan, batch > 365 hari dihapus, otomatis setelah run selesai. Proyeksi DB 5 brand: ±270–310 MB tahun pertama, lalu ±115 MB/tahun.
+* ⚠️ Timestamp yang ditulis Prisma (adapter `pg`) tersimpan −7 jam (UTC tanpa zona dibaca sebagai Asia/Jakarta), mis. `published_at` & `started_at`; kolom `date` aman. Kemungkinan berlaku di seluruh app; belum diperiksa/diperbaiki.
 * **Fase 2 = extension Chrome** `tools/canva-insights-extension/` (Playwright + launchd dibatalkan: Cloudflare tidak lolos). Teruji dengan `chrome`/Canva palsu → API lokal.
 * **Berikutnya (butuh user)**: load unpacked, URL `http://127.0.0.1:3002/can-freelance` + token lokal (`.env`), sinkronkan zahra (centang 365 hari), bandingkan 1 template dengan Canva, catat parameter paginasi di spek §1.3/§9. Lalu Fase 3 (`/insights`; jangan jumlahkan `audience = "ALL"` bersama `B`/`C`).
 

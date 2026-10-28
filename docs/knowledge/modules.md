@@ -33,7 +33,7 @@ Dokumen ini memetakan struktur modul aplikasi Next.js 16 (App Router), Server Ac
 * **`src/lib/prisma.ts`**:
   * Inisialisasi prisma client dengan adapter Pg pool.
 * **`src/lib/canva-insights/`** (spek [`canva-insights-spec.md`](canva-insights-spec.md)):
-  * `parse.ts` parser murni per endpoint (fail-closed, `PARSER_VERSION`), `ingest.ts` simpan batch → parse → upsert, `match.ts` tautan template ↔ task, `reparse.ts` parse ulang batch, `import.ts` jalur manual, `api-auth.ts` guard Bearer `INSIGHTS_INGEST_TOKEN`.
+  * `parse.ts` parser murni per endpoint (fail-closed, `PARSER_VERSION`), `ingest.ts` simpan batch → parse → upsert, `match.ts` tautan template ↔ task, `reparse.ts` parse ulang batch, `retention.ts` retensi payload (60 hari) & batch (365 hari), `import.ts` jalur manual, `api-auth.ts` guard Bearer `INSIGHTS_INGEST_TOKEN`.
   * Route collector (di luar gerbang proxy, auth token sendiri): `POST /api/insights/ingest`, `POST /api/insights/runs`, `GET /api/insights/known-ids`.
   * Action `src/app/actions/canva-insights.ts` (`integration.manage`) dan script `scripts/import-canva-insights.ts` untuk impor fixture.
 
