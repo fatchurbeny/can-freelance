@@ -84,7 +84,7 @@ Semua timestamp dalam ms UTC. **Rollup harian = hari UTC** (dikonfirmasi user).
 ### 1.3 Paginasi
 * Respons `content/usages` membawa `"B": "<token>"` (mis. `"1e"`) bila masih ada halaman berikutnya; tidak ada `B` = halaman terakhir.
 * **`limit` menghitung baris, bukan template.** Contoh nyata (HAR zahra.art): `BY_CONTENT` dengan 50 `contentIds`, rentang 29 Agu–29 Sep (31 hari) dan `limit=50` hanya mengembalikan **50 baris yang mencakup 3 hari pertama (29–31 Agu) untuk 26 template**, plus `B="1e"`. Tanpa mengikuti token, 28 hari sisanya hilang tanpa error. Karena itu collector **wajib** mengikuti token sampai `B` tidak ada.
-* Nama parameter untuk mengirim token **belum terlihat di HAR mana pun** (dugaan `continuation`). Collector mendeteksinya sendiri (§5.3).
+* Nama parameter untuk mengirim token = **`continuation`** (terdeteksi extension pada sinkron zahra.art 2026-10-28, lalu disimpan di `chrome.storage.local`).
 
 ### 1.4 Header
 Cookie sesi + `x-canva-authz`, `x-canva-user`, `x-canva-brand`, `x-canva-app: home`, `x-canva-request`, `x-canva-accept-prefix: no-prefix`. `x-canva-authz` = token sesi, **tidak pernah disimpan**.
@@ -234,7 +234,8 @@ Catatan: satu `Task` bisa punya beberapa template (`qtySubmit` > 1, varian bahas
 * `CanvaIngestBatch.runId` (opsional) menautkan batch ke `CanvaCollectorRun`; `CanvaCollectorRun.status` juga bisa `RUNNING` (run belum dilaporkan selesai).
 * `audience = "ALL"` muncul bila `BY_CONTENT` diminta tanpa `contentRoyalties` (fixture punya contoh ini). Query UI wajib memakai baris `B`/`C` dan memakai `ALL` hanya bila tidak ada baris `B`/`C` untuk template + hari itu, agar tidak terhitung ganda.
 * **Retensi** (`src/lib/canva-insights/retention.ts`): payload batch > 60 hari diganti `{ "purgedAt": … }` (tanpa ubah skema), baris batch > 365 hari dihapus. Berjalan otomatis setelah `POST /api/insights/runs` `finish` (maks. 1× per 12 jam per proses); manual: `npx tsx scripts/prune-canva-insights.ts [--dry-run]`. Reparse melewati batch yang sudah dikosongkan.
-* **Proyeksi ukuran** (diukur 2026-10-28 dari sinkron zahra): ±0,33 baris harian per template per hari, ±152 byte/baris; respons mentah ±4,4 KB per halaman 100 baris. Asumsi 5 brand × ±1.200 template: backfill 365 hari ±75–115 MB, tumbuh ±115 MB/tahun; payload mentah dengan retensi 60 hari ±80 MB (tetap), tanpa retensi ±500 MB/tahun.
+* **Ukuran nyata sinkron 365 hari zahra.art** (1.236 template): 247 ribu baris harian = 36 MB; 2.594 batch mentah = 13 MB. Dengan 5 brand serupa: ±180 MB data harian setahun + ±65 MB payload mentah (sebelum retensi 60 hari memangkasnya).
+* **Proyeksi awal** (diukur 2026-10-28 dari sebagian sinkron zahra, kemungkinan terlalu rendah): ±0,33 baris harian per template per hari, ±152 byte/baris; respons mentah ±4,4 KB per halaman 100 baris. Asumsi 5 brand × ±1.200 template: backfill 365 hari ±75–115 MB, tumbuh ±115 MB/tahun; payload mentah dengan retensi 60 hari ±80 MB (tetap), tanpa retensi ±500 MB/tahun.
 
 ## 5. API & collector
 
@@ -264,6 +265,10 @@ Catatan: satu `Task` bisa punya beberapa template (`qtySubmit` > 1, varian bahas
 Request ke Canva lalu dijalankan lewat `chrome.scripting.executeScript({ world: 'MAIN' })` di tab dashboard (cookie & origin asli). Sinkron pertama tiap brand: opsi "Ambil 365 hari" di popup. Parameter paginasi yang terdeteksi disimpan di `chrome.storage.local`.
 
 **Pemeriksaan Cloudflare** (2026-10-28): Chrome yang dikendalikan Playwright mendapat halaman "Just a moment…" dan kotak "Verify you are human" yang tidak lolos setelah dicentang user. Karena itu jalur Playwright dihapus dan diganti extension (§3.1 butir 2).
+
+**Endpoint templates wajib memakai parameter dashboard** (`staging=false&deleted=false&forcePrerequisites=canva_pro&filesFromPage=0&filesToPage=1&includeContentFiles=false&previewFileSizes=200&previewFileTypes=A&fileLocationType=B&mode=C&limit=100`). Tanpa itu (sinkron zahra pertama) Canva hanya mengembalikan 64 dari 1.186 template dan tanpa URL thumbnail.
+
+**Verifikasi zahra.art 2026-10-28** (rentang 28 Sep–28 Okt): Applies brand **324.699 = dashboard Canva**; 7 template terbaru sama persis dengan tabel Canva (Usages Sales Growth Roadmap 109 vs 107 di halaman Canva yang dimuat lebih awal). Jumlah harian per template (324.702) ≈ total akun (324.699).
 
 ### 5.4 Fetch dari dalam halaman
 Request dijalankan via `page.evaluate(fetch(url, { headers, credentials: 'include' }))` di tab Canva, sehingga cookie, origin, dan TLS sama dengan dashboard asli.
@@ -303,7 +308,7 @@ Meniru halaman **Template usages** Canva:
 | 5 | Agregasi designer, widget task drawer | nanti |
 
 ## 9. Pertanyaan terbuka
-* Nama parameter token paginasi (dideteksi collector, §5.3).
+* ~~Nama parameter token paginasi~~: `continuation` (2026-10-28).
 * Konfirmasi `F=B` = Free (cek template dengan `0 = "none"`).
 * Arti `d`, `N`, `O` di metadata template dan `A`, `D`, `E`, `G` (serta pastinya `F`) di `tier_scores`.
 * ~~Apakah `TaskCanvaLink` berisi desain sumber template~~: **tidak** (2026-10-28, §6).

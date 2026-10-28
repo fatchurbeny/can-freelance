@@ -8,6 +8,24 @@ export const DISCOVERY_DAYS = 90;
 /** --backfill: sejarah maksimal yang diambil, dipecah per potongan (spek §5.3 langkah 5). */
 export const BACKFILL_DAYS = 365;
 
+/**
+ * Parameter yang dikirim dashboard Creator sendiri ke endpoint templates (HAR zahra.art). Tanpa ini
+ * Canva hanya mengembalikan sebagian template dan tanpa URL thumbnail (`m[0].C[0].A`).
+ */
+const TEMPLATE_PARAMS = {
+  staging: 'false',
+  deleted: 'false',
+  forcePrerequisites: 'canva_pro',
+  filesFromPage: '0',
+  filesToPage: '1',
+  includeContentFiles: 'false',
+  previewFileSizes: '200',
+  previewFileTypes: 'A',
+  fileLocationType: 'B',
+  mode: 'C',
+  limit: '100',
+};
+
 /** Langkah sinkron, urut; `onStage` menerima key ini untuk progres di popup. */
 export const STAGES = [
   { key: 'discover', label: 'Daftar template aktif (90 hari)' },
@@ -128,7 +146,7 @@ export async function collectBrand({ brand, fetchJson, server, pagination, runId
   const missing = new Set(known.missingMetadata);
   for (const id of ids) if (!knownSet.has(id)) missing.add(id);
   for (const group of chunk([...missing].sort(), 50)) {
-    await pages('templates', { id: group });
+    await pages('templates', { id: group, ...TEMPLATE_PARAMS });
   }
 
   return summary;

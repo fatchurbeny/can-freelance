@@ -69,7 +69,7 @@ Simpan baris utuh sebagai `raw`. Tier terlambat lebih lama (diambil 28 Okt → b
 ## Paginasi
 - Respons `content/usages` membawa `"B": "<token>"` (mis. `"1e"`) bila masih ada halaman berikutnya; tanpa `B` = halaman terakhir.
 - **`limit` menghitung baris, bukan template.** Contoh nyata (HAR zahra.art): `BY_CONTENT` 50 template, rentang 29 Agu–29 Sep (31 hari), `limit=50` → hanya **50 baris yang mencakup 3 hari pertama (29–31 Agu) untuk 26 template**, plus `B="1e"`. Tanpa mengikuti token, 28 hari sisanya hilang tanpa error.
-- Nama parameter untuk mengirim token belum terlihat di HAR mana pun; collector akan mendeteksinya (coba `continuation`, `continuationToken`, `cursor`, `pageToken`).
+- Nama parameter untuk mengirim token = **`continuation`** (terdeteksi 2026-10-28).
 
 ## Brand yang dipantau (5)
 | Brand | Canva brandId | Canva user |
@@ -92,7 +92,7 @@ Cookie sesi + `x-canva-authz`, `x-canva-user`, `x-canva-brand`, `x-canva-app` (`
 - Fixture HAR bersih: `scratch/canva-insights-fixtures/*.json` (zahra-art, impro, uicreative, antler; Chital belum ada).
 
 ## Pertanyaan terbuka
-- Nama parameter token paginasi.
+- ~~Nama parameter token paginasi~~: `continuation`.
 - Konfirmasi `F=B` = Free.
 - Arti `d`, `N`, `O` (templates) dan `A`, `D`, `E`, `G` (tier_scores).
 - ~~Apakah link Canva di task = desain sumber template~~: **tidak**, link task = `canva.link` ke desain kerja; pencocokan pakai judul (spek §6).
