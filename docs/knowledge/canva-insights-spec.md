@@ -278,6 +278,8 @@ Request dijalankan via `page.evaluate(fetch(url, { headers, credentials: 'includ
 ## 7. UI `/insights`
 
 **Diubah 2026-10-28 (user):** tampil sebagai **tab baru "Canva Insights" di halaman Production** (setelah Email Notifications), dropdown brand (Semua brand / per brand) dan **line chart gabungan semua brand** (toggle Applies/Usages). Desain: https://claude.ai/artifact/DdcA2ANNvf8tK4VR6QEUVy (artboard Semua brand + Zahra Art, data asli fixture). Rincian di bawah tetap berlaku untuk isi tab.
+**Diimplementasi 2026-10-28** (`src/components/canva-insights/`, `getCanvaInsightsAction`, `src/lib/canva-insights/queries.ts`): tab muncul di `/production/[slug]` bila user punya `insights.view` untuk production itu **dan** platform-nya punya akun dengan `canvaBrandId`; brand = akun platform tersebut. Data dimuat lewat server action saat tab dibuka; filter brand/rentang/audiens disimpan di localStorage (bukan URL query, karena tab Production berbasis state). Perubahan Usages per Applies ditampilkan dalam poin persen. Belum: drawer template & tautkan task manual, wireframe role.
+
 Permission baru `insights.view` (Admin, Art Director, Project Manager; bukan freelance/viewer). Grup sidebar sesuai [`sidebar-dropdown-pattern.md`](sidebar-dropdown-pattern.md). Standar Cloudflare (`rounded-none`, tabel simetris, toolbar datar), font `Inter`.
 
 Meniru halaman **Template usages** Canva:

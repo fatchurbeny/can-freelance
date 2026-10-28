@@ -44,9 +44,9 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 * Detail lengkap sesi ini di arsip (`grep "Canva Insights Fase 1" archive/`). Spek: [`canva-insights-spec.md`](canva-insights-spec.md), brief: [`../backlog/canva-insights-implementation.md`](../backlog/canva-insights-implementation.md).
 * **Fase 1 selesai & terverifikasi** di DB lokal (skema, parser, API ingest/runs/known-ids, impor manual, 5 brand ter-seed). Tautan task lewat judul (21/200); ID desain tidak bisa dipakai (spek §6).
 * **Retensi payload** dibuat (spek §4): payload > 60 hari dikosongkan, batch > 365 hari dihapus, otomatis setelah run selesai. Proyeksi DB 5 brand: ±270–310 MB tahun pertama, lalu ±115 MB/tahun.
-* ⚠️ Timestamp yang ditulis Prisma (adapter `pg`) tersimpan −7 jam (UTC tanpa zona dibaca sebagai Asia/Jakarta), mis. `published_at` & `started_at`; kolom `date` aman. Kemungkinan berlaku di seluruh app; belum diperiksa/diperbaiki.
+* ⚠️ Timestamp yang ditulis Prisma (adapter `pg`) **tampak** −7 jam bila dibaca langsung di psql (sesi Asia/Jakarta); lewat Prisma (termasuk `$queryRaw`) nilainya kembali benar. Jangan bandingkan kolom timestamp dengan `now()` di SQL; hitung batas waktu di JS.
 * **Fase 2 = extension Chrome** `tools/canva-insights-extension/` (Playwright + launchd dibatalkan: Cloudflare tidak lolos). Teruji dengan `chrome`/Canva palsu → API lokal.
-* **Berikutnya (butuh user)**: load unpacked, URL `http://127.0.0.1:3002/can-freelance` + token lokal (`.env`), sinkronkan zahra (centang 365 hari), bandingkan 1 template dengan Canva, catat parameter paginasi di spek §1.3/§9. Lalu Fase 3 = **tab "Canva Insights" di Production** (desain https://claude.ai/artifact/DdcA2ANNvf8tK4VR6QEUVy; jangan jumlahkan `audience = "ALL"` bersama `B`/`C`).
+* **Berikutnya (butuh user)**: load unpacked, URL `http://127.0.0.1:3002/can-freelance` + token lokal (`.env`), sinkronkan zahra (centang 365 hari), bandingkan 1 template dengan Canva, catat parameter paginasi di spek §1.3/§9. **Fase 3 dibangun**: tab "Canva Insights" di Production (permission `insights.view`; diverifikasi di dev `AUTH_MODE=off` port 3013, config `insights-noauth`). Sisa: drawer template + tautkan task manual, perbarui wireframe role. Desain https://claude.ai/artifact/DdcA2ANNvf8tK4VR6QEUVy ( jangan jumlahkan `audience = "ALL"` bersama `B`/`C`).
 
 ---
 

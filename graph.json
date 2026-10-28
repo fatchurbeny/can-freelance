@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "generatedAt": "2026-10-28T13:30:47.906Z",
+  "generatedAt": "2026-10-28T14:07:43.534Z",
   "nodes": [
     {
       "id": "page:/account-team",
@@ -769,6 +769,62 @@
       "group": "React Components",
       "filepath": "src/components/BundleSlideModal.tsx",
       "details": "React UI Component in src/components/BundleSlideModal.tsx"
+    },
+    {
+      "id": "component:BrandCompareTable",
+      "label": "BrandCompareTable",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/canva-insights/BrandCompareTable.tsx",
+      "details": "React UI Component in src/components/canva-insights/BrandCompareTable.tsx"
+    },
+    {
+      "id": "component:CanvaInsightsTab",
+      "label": "CanvaInsightsTab",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/canva-insights/CanvaInsightsTab.tsx",
+      "details": "React UI Component in src/components/canva-insights/CanvaInsightsTab.tsx"
+    },
+    {
+      "id": "component:format",
+      "label": "format",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/canva-insights/format.ts",
+      "details": "React UI Component in src/components/canva-insights/format.ts"
+    },
+    {
+      "id": "component:InsightsKpis",
+      "label": "InsightsKpis",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/canva-insights/InsightsKpis.tsx",
+      "details": "React UI Component in src/components/canva-insights/InsightsKpis.tsx"
+    },
+    {
+      "id": "component:InsightsToolbar",
+      "label": "InsightsToolbar",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/canva-insights/InsightsToolbar.tsx",
+      "details": "React UI Component in src/components/canva-insights/InsightsToolbar.tsx"
+    },
+    {
+      "id": "component:InsightsTrendChart",
+      "label": "InsightsTrendChart",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/canva-insights/InsightsTrendChart.tsx",
+      "details": "React UI Component in src/components/canva-insights/InsightsTrendChart.tsx"
+    },
+    {
+      "id": "component:TemplateTable",
+      "label": "TemplateTable",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/canva-insights/TemplateTable.tsx",
+      "details": "React UI Component in src/components/canva-insights/TemplateTable.tsx"
     },
     {
       "id": "component:CategorySelectCell",
@@ -1763,6 +1819,22 @@
       "details": "Server/shared library in src/lib/canva-insights/parse.ts"
     },
     {
+      "id": "lib:canva-insights/queries",
+      "label": "canva-insights/queries.ts",
+      "type": "action",
+      "group": "Server Actions & Lib",
+      "filepath": "src/lib/canva-insights/queries.ts",
+      "details": "Server/shared library in src/lib/canva-insights/queries.ts"
+    },
+    {
+      "id": "lib:canva-insights/range",
+      "label": "canva-insights/range.ts",
+      "type": "action",
+      "group": "Server Actions & Lib",
+      "filepath": "src/lib/canva-insights/range.ts",
+      "details": "Server/shared library in src/lib/canva-insights/range.ts"
+    },
+    {
       "id": "lib:canva-insights/reparse",
       "label": "canva-insights/reparse.ts",
       "type": "action",
@@ -1777,6 +1849,14 @@
       "group": "Server Actions & Lib",
       "filepath": "src/lib/canva-insights/retention.ts",
       "details": "Server/shared library in src/lib/canva-insights/retention.ts"
+    },
+    {
+      "id": "lib:canva-insights/view",
+      "label": "canva-insights/view.ts",
+      "type": "action",
+      "group": "Server Actions & Lib",
+      "filepath": "src/lib/canva-insights/view.ts",
+      "details": "Server/shared library in src/lib/canva-insights/view.ts"
     },
     {
       "id": "lib:canva-link-resolve",
@@ -2938,7 +3018,31 @@
     },
     {
       "source": "action:canva-insights",
+      "target": "lib:prisma",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:canva-insights",
       "target": "lib:canva-insights/import",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:canva-insights",
+      "target": "lib:canva-insights/queries",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:canva-insights",
+      "target": "lib:canva-insights/range",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:canva-insights",
+      "target": "lib:canva-insights/view",
       "relation": "invokes",
       "confidence": "EXTRACTED"
     },
@@ -2952,6 +3056,12 @@
       "source": "action:canva-insights",
       "target": "lib:canva-insights/api-auth",
       "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:canva-insights",
+      "target": "model:ProductionUnit",
+      "relation": "queries",
       "confidence": "EXTRACTED"
     },
     {
@@ -4318,13 +4428,13 @@
     },
     {
       "source": "page:/production/[slug]",
-      "target": "model:Task",
+      "target": "model:Account",
       "relation": "queries",
       "confidence": "EXTRACTED"
     },
     {
       "source": "page:/production/[slug]",
-      "target": "model:Account",
+      "target": "model:Task",
       "relation": "queries",
       "confidence": "EXTRACTED"
     },
@@ -5265,6 +5375,132 @@
       "confidence": "EXTRACTED"
     },
     {
+      "source": "component:BrandCompareTable",
+      "target": "lib:canva-insights/view",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:BrandCompareTable",
+      "target": "component:format",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:CanvaInsightsTab",
+      "target": "action:canva-insights",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:CanvaInsightsTab",
+      "target": "lib:canva-insights/range",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:CanvaInsightsTab",
+      "target": "lib:canva-insights/view",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:CanvaInsightsTab",
+      "target": "component:BrandCompareTable",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:CanvaInsightsTab",
+      "target": "component:InsightsKpis",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:CanvaInsightsTab",
+      "target": "component:InsightsToolbar",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:CanvaInsightsTab",
+      "target": "component:InsightsTrendChart",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:CanvaInsightsTab",
+      "target": "component:TemplateTable",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:CanvaInsightsTab",
+      "target": "component:format",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:InsightsKpis",
+      "target": "lib:canva-insights/view",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:InsightsKpis",
+      "target": "component:format",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:InsightsToolbar",
+      "target": "component:SelectDropdown",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:InsightsToolbar",
+      "target": "lib:canva-insights/range",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:InsightsToolbar",
+      "target": "lib:canva-insights/view",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:InsightsToolbar",
+      "target": "component:format",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:InsightsTrendChart",
+      "target": "lib:canva-insights/view",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:InsightsTrendChart",
+      "target": "component:format",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:TemplateTable",
+      "target": "lib:canva-insights/view",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:TemplateTable",
+      "target": "component:format",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
       "source": "component:CloudflareTopBar",
       "target": "component:TopBar",
       "relation": "renders",
@@ -6184,6 +6420,12 @@
     },
     {
       "source": "component:ProductionView",
+      "target": "component:CanvaInsightsTab",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:ProductionView",
       "target": "component:CreateTaskSlideModal",
       "relation": "renders",
       "confidence": "EXTRACTED"
@@ -6850,6 +7092,42 @@
     },
     {
       "source": "lib:canva-insights/match",
+      "target": "model:CanvaTemplate",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:canva-insights/queries",
+      "target": "lib:prisma",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:canva-insights/queries",
+      "target": "lib:canva-insights/view",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:canva-insights/queries",
+      "target": "model:Account",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:canva-insights/queries",
+      "target": "model:CanvaTierScore",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:canva-insights/queries",
+      "target": "model:CanvaCollectorRun",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:canva-insights/queries",
       "target": "model:CanvaTemplate",
       "relation": "queries",
       "confidence": "EXTRACTED"

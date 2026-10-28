@@ -33,21 +33,22 @@ export type Permission =
   | 'user.manage'
   | 'production.create'
   | 'asset.view' // lihat Asset Library & pakai di Design Brief
-  | 'asset.manage'; // tambah/edit/arsip aset & kategori
+  | 'asset.manage' // tambah/edit/arsip aset & kategori
+  | 'insights.view'; // tab Canva Insights di Production (Applies/Usages per brand)
 
 const ALL: readonly Permission[] = [
   'overview.view', 'kanban.view', 'task.create', 'task.edit', 'task.edit.own', 'task.share',
   'parameterIssue.view', 'emailNotification.view', 'uploadLink.view', 'dropboxLink.view',
   'account.view', 'accountTeam.view', 'rateCard.view', 'rateCard.edit',
   'billing.view', 'billing.view.own', 'integration.manage', 'user.manage', 'production.create',
-  'asset.view', 'asset.manage',
+  'asset.view', 'asset.manage', 'insights.view',
 ];
 
 const MANAGEMENT: readonly Permission[] = [
   'overview.view', 'kanban.view', 'task.create', 'task.edit', 'task.share',
   'parameterIssue.view', 'emailNotification.view', 'uploadLink.view', 'dropboxLink.view',
   'account.view', 'accountTeam.view', 'rateCard.view', 'rateCard.edit',
-  'asset.view', 'asset.manage',
+  'asset.view', 'asset.manage', 'insights.view',
 ];
 
 export const ROLE_LABELS: Record<RoleKey, string> = {
@@ -233,6 +234,7 @@ export const FEATURE_MATRIX: FeatureRow[] = [
     level: (_r, p) => (has(p, 'asset.manage') ? 'full' : has(p, 'asset.view') ? 'limited' : 'none'),
   },
   { label: 'Asset Report', level: (_r, p) => (has(p, 'asset.manage') ? 'full' : 'none') },
+  { label: 'Production › Canva Insights', level: (_r, p) => (has(p, 'insights.view') ? 'full' : 'none') },
   { label: 'Notion Config / Integrasi', level: (_r, p) => (has(p, 'integration.manage') ? 'full' : 'none') },
   { label: 'User & Role · Buat Akun Login', level: (_r, p) => (has(p, 'user.manage') ? 'full' : 'none') },
   { label: 'Lihat sebagai (pratinjau hanya-baca)', level: (_r, p) => (has(p, 'user.manage') ? 'full' : 'none') },

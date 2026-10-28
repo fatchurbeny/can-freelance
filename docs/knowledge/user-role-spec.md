@@ -59,6 +59,7 @@ Hubungan dengan Account & Team: ya. Baris **Brand** di detail task (`TaskDetailS
 | Integrasi, manajemen user | ✓ | – | – | – | – | – |
 | Asset Library — lihat (`asset.view`) | ✓ | ✓ | ✓ | – | ✓ (FT & FL) | – |
 | Asset Library — kelola, Asset Report (`asset.manage`) | ✓ semua | production sendiri | production sendiri | – | – | – |
+| Production › Canva Insights (`insights.view`) | ✓ | production sendiri | production sendiri | – | – | – |
 
 ### Akses aset (2026-10-25)
 - Cakupan aset = `Asset.productions` (`AssetProduction`); kosong = **aset bersama** semua production Canva. Designer/AD/PM melihat aset bersama + aset production mereka (`loadAssetLibrary(access.unitIds)`).

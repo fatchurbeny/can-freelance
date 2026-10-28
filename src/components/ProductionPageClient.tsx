@@ -17,6 +17,7 @@ interface Props {
   unresolvedEmailCount?: number;
   canCreateTask?: boolean;
   canSeeIssueTabs?: boolean;
+  canSeeInsights?: boolean;
 }
 
 export default function ProductionPageClient({
@@ -32,6 +33,7 @@ export default function ProductionPageClient({
   unresolvedEmailCount = 0,
   canCreateTask = true,
   canSeeIssueTabs = true,
+  canSeeInsights = false,
 }: Props) {
   const [createOpen, setCreateOpen] = useState(false);
 
@@ -59,6 +61,7 @@ export default function ProductionPageClient({
             unresolvedEmailCount={unresolvedEmailCount}
             canCreateTask={canCreateTask}
             canSeeIssueTabs={canSeeIssueTabs}
+            canSeeInsights={canSeeInsights}
           />
         </main>
       </div>

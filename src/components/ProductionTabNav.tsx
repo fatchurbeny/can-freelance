@@ -1,8 +1,8 @@
 'use client';
 
-import { LayoutDashboard, Kanban, AlertCircle, Mail } from 'lucide-react';
+import { LayoutDashboard, Kanban, AlertCircle, Mail, LineChart } from 'lucide-react';
 
-export type ProductionTab = 'overview' | 'kanban' | 'parameterIssue' | 'emailNotification';
+export type ProductionTab = 'overview' | 'kanban' | 'parameterIssue' | 'emailNotification' | 'insights';
 
 interface Props {
   activeTab: ProductionTab;
@@ -25,6 +25,7 @@ export default function ProductionTabNav({ activeTab, onTabChange, issueCount, e
     { id: 'kanban', label: 'Kanban Board', icon: Kanban },
     { id: 'parameterIssue', label: 'Parameter Issue', icon: AlertCircle, count: issueCount },
     { id: 'emailNotification', label: 'Email Notifications', icon: Mail, count: emailIssueCount },
+    { id: 'insights', label: 'Canva Insights', icon: LineChart },
   ];
 
   const visibleTabs = tabs.filter((t) => !hiddenTabs.includes(t.id));
