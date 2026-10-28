@@ -14,8 +14,6 @@ const COLLECTOR_VERSION = 1;
 const HEADER_WAIT_MS = 30_000;
 const MAX_STATUS_LINES = 15;
 const MAX_LINE_CHARS = 140;
-/** Yab (Chromium) menolak storage.local.set bila terlalu sering/besar: status ditulis maks. tiap 5 detik. */
-const STATUS_WRITE_MS = 5000;
 
 // ── Header sesi dari request dashboard Creator ─────────────────────────────────
 const lastHeaders = new Map();
@@ -92,37 +90,34 @@ function pageFetcher(tabId, sessionHeaders) {
   };
 }
 
-// ── Status untuk popup ─────────────────────────────────────────────────────────
+// ── Status untuk popup & panel ─────────────────────────────────────────────────
+// Status berjalan hanya di memori service worker; popup/panel memintanya lewat pesan `getStatus`.
+// Yab (Chromium) menolak storage.local.set ("Exceeded storage quota"), jadi storage hanya dipakai
+// untuk hasil akhir & riwayat (jarang ditulis, kegagalannya diabaikan).
 let lines = [];
+let current = { state: 'idle' };
 
-let pending = {};
-let lastWrite = 0;
-let writeTimer = null;
+function setStatus(patch) {
+  current = { ...current, ...patch, lines };
+}
 
-/**
- * Simpan status untuk popup/panel. Tulisan digabung dan dibatasi tiap 5 detik (kecuali `force`), dan
- * kegagalan penyimpanan (mis. kuota browser) hanya dicatat: tidak boleh menghentikan sinkronisasi.
- */
-async function setStatus(patch, { force = false } = {}) {
-  pending = { ...pending, ...patch };
-  const wait = STATUS_WRITE_MS - (Date.now() - lastWrite);
-  if (!force && wait > 0) {
-    writeTimer ??= setTimeout(() => {
-      writeTimer = null;
-      setStatus({}, { force: true });
-    }, wait);
-    return;
-  }
-  const next = pending;
-  pending = {};
-  lastWrite = Date.now();
+async function persist(items) {
   try {
-    const { status = {} } = await chrome.storage.local.get('status');
-    await chrome.storage.local.set({ status: { ...status, ...next, lines } });
+    await chrome.storage.local.set(items);
   } catch (e) {
-    console.warn('[canva-insights] status tidak tersimpan:', e?.message ?? e);
+    console.warn('[canva-insights] penyimpanan ditolak browser:', e?.message ?? e);
   }
 }
+
+// Saat service worker mulai: buang status lama (versi sebelumnya menulisnya terus-menerus) dan
+// tampilkan hasil sinkron terakhir yang tersimpan.
+chrome.storage.local.remove('status').catch(() => {});
+chrome.storage.local
+  .get('lastResult')
+  .then(({ lastResult }) => {
+    if (lastResult && current.state === 'idle') current = { state: 'done', ...lastResult, lines: [] };
+  })
+  .catch(() => {});
 
 setLogSink((level, message) => {
   const line = `${new Date().toLocaleTimeString('id-ID')} ${message}`.slice(0, MAX_LINE_CHARS);
@@ -240,7 +235,7 @@ async function runSync(tabId, { backfill }) {
     }
   } finally {
     if (pagination.detected && pagination.param) {
-      await chrome.storage.local.set({ settings: { ...settings, paginationParam: pagination.param } }).catch(() => {});
+      await persist({ settings: { ...settings, paginationParam: pagination.param } });
       log('INFO', `Parameter paginasi "${pagination.param}" disimpan; catat di spek §1.3 & §9`);
     }
     await server.finishRun(runId, status, message).catch((e) => log('ERROR', `Gagal melapor run: ${e.message}`));
@@ -266,7 +261,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   lines = [];
   sendResponse({ started: true });
   badge('…', '#6b7280', 'sinkron berjalan');
-  setStatus({ state: 'running', startedAt: Date.now(), heartbeatAt: Date.now(), progress: null, stage: null, brandId: null, result: null }, { force: true }).then(async () => {
+  setStatus({ state: 'running', startedAt: Date.now(), heartbeatAt: Date.now(), progress: null, stage: null, brandId: null, result: null });
+  (async () => {
     let result;
     const startedAt = Date.now();
     try {
@@ -277,17 +273,20 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     result.durationMs = Date.now() - startedAt;
     const ok = result.status === 'OK';
     log(ok ? 'INFO' : 'WARN', `${ok ? 'Berhasil' : 'Gagal'}: ${result.message}`);
-    try {
-      const { lastRuns = {} } = await chrome.storage.local.get('lastRuns');
-      if (result.brandId) lastRuns[result.brandId] = { status: result.status, message: result.message, at: Date.now() };
-      await chrome.storage.local.set({ lastRuns });
-    } catch (e) {
-      console.warn('[canva-insights] riwayat sinkron tidak tersimpan:', e?.message ?? e);
-    }
-    await setStatus({ state: 'done', finishedAt: Date.now(), result }, { force: true });
+    const finishedAt = Date.now();
+    setStatus({ state: 'done', finishedAt, result });
+    const { lastRuns = {} } = await chrome.storage.local.get('lastRuns').catch(() => ({}));
+    if (result.brandId) lastRuns[result.brandId] = { status: result.status, message: result.message, at: finishedAt };
+    await persist({ lastRuns, lastResult: { finishedAt, result, stage: current.stage ?? null } });
     badge(ok ? 'OK' : '!', ok ? '#16a34a' : '#dc2626', ok ? 'sinkron terakhir berhasil' : 'sinkron terakhir gagal');
     notify(ok ? 'Sinkron Canva Insights berhasil' : 'Sinkron Canva Insights gagal', `${result.message}${result.hint ? ` ${result.hint}` : ''}`);
     running = false;
-  });
+  })();
+  return false;
+});
+
+chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+  if (msg?.type !== 'getStatus') return false;
+  sendResponse({ ...current, lines });
   return false;
 });

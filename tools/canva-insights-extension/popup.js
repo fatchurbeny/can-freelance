@@ -140,7 +140,12 @@ function render({ settings = {}, status = {}, lastRuns = {} }) {
 }
 
 async function refresh() {
-  render(await chrome.storage.local.get(['settings', 'status', 'lastRuns']));
+  const [stored, status] = await Promise.all([
+    chrome.storage.local.get(['settings', 'lastRuns']).catch(() => ({})),
+    // Status langsung dari service worker (tidak disimpan di storage; lihat background.js).
+    chrome.runtime.sendMessage({ type: 'getStatus' }).catch(() => null),
+  ]);
+  render({ ...stored, status: status ?? {} });
 }
 
 $('open-options').addEventListener('click', () => chrome.runtime.openOptionsPage());
@@ -160,8 +165,8 @@ $('sync').addEventListener('click', async () => {
 chrome.storage.onChanged.addListener((_changes, area) => {
   if (area === 'local') refresh();
 });
-// Segarkan teks waktu ("berjalan 12 menit") walau tidak ada perubahan data.
-setInterval(refresh, 15000);
+// Status diminta ulang tiap detik selama popup/panel terbuka.
+setInterval(refresh, 1000);
 
 [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 await refresh();

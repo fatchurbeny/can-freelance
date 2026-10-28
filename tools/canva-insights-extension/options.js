@@ -36,9 +36,13 @@ $('form').addEventListener('submit', async (e) => {
     show('URL ini tidak ada di host_permissions manifest.json; tambahkan origin-nya lalu muat ulang extension.', false);
     return;
   }
-  const { settings: current = {} } = await chrome.storage.local.get('settings');
-  await chrome.storage.local.set({ settings: { ...current, ...next } });
-  show('Tersimpan.', true);
+  try {
+    const { settings: current = {} } = await chrome.storage.local.get('settings');
+    await chrome.storage.local.set({ settings: { ...current, ...next } });
+    show('Tersimpan.', true);
+  } catch (err) {
+    show(`Browser menolak menyimpan pengaturan: ${err.message}`, false);
+  }
 });
 
 $('test').addEventListener('click', async () => {

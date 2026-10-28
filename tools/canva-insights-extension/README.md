@@ -36,7 +36,7 @@ URL dashboard lain harus ditambahkan dulu ke `host_permissions` di `manifest.jso
 - **Notifikasi Chrome** muncul saat sinkron selesai (berhasil atau gagal).
 - **Log teknis** ada di bagian bawah popup (dilipat).
 
-Diuji juga di **Yab** (Chromium). Yab menolak `storage.local.set` yang terlalu sering ("Exceeded storage quota"), jadi status hanya ditulis tiap 5 detik dan kegagalan penyimpanan tidak menghentikan sinkron; header sesi disimpan di memori service worker.
+Diuji juga untuk **Yab** (Chromium), yang menolak `storage.local.set` ("Exceeded storage quota"). Status sinkron hanya ada di memori service worker dan dibaca popup/panel lewat pesan `getStatus`; `storage.local` hanya untuk pengaturan, riwayat & hasil terakhir, dan kegagalannya tidak menghentikan sinkron. `test/background-e2e.mjs` dengan `FAIL_STORAGE=1` menguji kondisi ini.
 
 Jangan memuat ulang (reload) extension saat sinkron berjalan: prosesnya terputus. Data yang sudah masuk tetap tersimpan; sinkronkan lagi untuk melanjutkan.
 

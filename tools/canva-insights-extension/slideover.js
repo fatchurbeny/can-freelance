@@ -59,18 +59,22 @@
   handle.addEventListener('click', () => {
     const open = !wrap.classList.contains('open');
     setOpen(open);
-    chrome.storage.local.set({ panelOpen: open });
+    chrome.storage.local.set({ panelOpen: open }).catch(() => {});
   });
 
-  chrome.storage.local.get(['panelOpen', 'status']).then(({ panelOpen = true, status }) => {
-    setOpen(panelOpen);
-    paint(status);
-  });
-  chrome.storage.onChanged.addListener((changes, area) => {
-    if (area !== 'local') return;
-    if (changes.status) paint(changes.status.newValue);
-    if (changes.panelOpen) setOpen(changes.panelOpen.newValue);
-  });
+  chrome.storage.local
+    .get('panelOpen')
+    .then(({ panelOpen = true }) => setOpen(panelOpen))
+    .catch(() => setOpen(true));
+
+  // Status hidup ada di service worker (bukan storage); minta tiap 3 detik untuk titik di tab panel.
+  const poll = () =>
+    chrome.runtime
+      .sendMessage({ type: 'getStatus' })
+      .then(paint)
+      .catch(() => {});
+  poll();
+  setInterval(poll, 3000);
 
   document.documentElement.appendChild(host);
 })();

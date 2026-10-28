@@ -9,13 +9,19 @@ const area = (m) => ({
     return Object.fromEntries(list.filter((k) => m.has(k)).map((k) => [k, structuredClone(m.get(k))]));
   },
   async set(obj) {
-    // FAIL_STORAGE=1 meniru Yab: status ditolak "Exceeded storage quota" (pengaturan tetap tersimpan).
-    if (process.env.FAIL_STORAGE && !('settings' in obj)) throw new Error('Invalid call to browser.storage.local.set(). Exceeded storage quota.');
+    // FAIL_STORAGE=1 meniru Yab: semua storage.local.set ditolak "Exceeded storage quota".
+    if (process.env.FAIL_STORAGE && m === store.local && !seeding) throw new Error('Invalid call to browser.storage.local.set(). Exceeded storage quota.');
     for (const [k, v] of Object.entries(obj)) m.set(k, structuredClone(v));
   },
   async remove(keys) { for (const k of [keys].flat()) m.delete(k); },
 });
-let onHeaders, onMessage;
+let onHeaders;
+const messageListeners = [];
+function send(msg, sender = {}) {
+  let reply;
+  for (const l of messageListeners) l(msg, sender, (r) => { reply = r; });
+  return reply;
+}
 const canvaCalls = [];
 globalThis.chrome = {
   webRequest: { onBeforeSendHeaders: { addListener: (cb) => { onHeaders = cb; } } },
@@ -32,7 +38,7 @@ globalThis.chrome = {
   storage: { local: area(store.local), session: area(store.session) },
   action: { setBadgeText() {}, setBadgeBackgroundColor() {}, setTitle() {} },
   notifications: { create: (o) => console.log('notification:', o.title, '|', o.message) },
-  runtime: { onMessage: { addListener: (cb) => { onMessage = cb; } } },
+  runtime: { onMessage: { addListener: (cb) => messageListeners.push(cb) } },
   scripting: {
     async executeScript({ world, func, args }) {
       if (world !== 'MAIN') throw new Error('harus MAIN world');
@@ -64,28 +70,18 @@ globalThis.fetch = async (url, init) => {
   return new Response(`'"])}while(1);</x>//${JSON.stringify(body)}`, { status: 200 });
 };
 
+let seeding = true;
 await chrome.storage.local.set({ settings: { baseUrl: process.env.BASE_URL, token: process.env.TOKEN, host: 'bg-e2e' } });
+seeding = false;
 await import('../background.js');
-let reply;
-onMessage({ type: 'sync', tabId: 7, backfill: false }, {}, (r) => { reply = r; });
+const reply = send({ type: 'sync', tabId: 7, backfill: false });
 console.log('reply', reply);
-if (process.env.FAIL_STORAGE) {
-  // Status tidak bisa disimpan; tunggu run selesai lewat API dashboard.
-  for (let i = 0; i < 120; i++) {
-    await new Promise((r) => setTimeout(r, 1000));
-    const res = await realFetch(`${process.env.BASE_URL}/api/insights/known-ids?brandId=${brandId}`, { headers: { Authorization: `Bearer ${process.env.TOKEN}` } }).then((r) => r.json());
-    if (res.ids?.length === ids.length && res.missingMetadata?.length === 0) {
-      console.log('FAIL_STORAGE: sinkron tetap selesai,', res.ids.length, 'template berjudul; canva calls', canvaCalls.length);
-      process.exit(0);
-    }
-  }
-  console.log('FAIL_STORAGE: timeout'); process.exit(1);
-}
 for (let i = 0; i < 120; i++) {
   await new Promise((r) => setTimeout(r, 1000));
-  const { status } = await chrome.storage.local.get('status');
+  const status = send({ type: 'getStatus' });
   if (status?.state === 'done') {
-    const { settings, lastRuns } = await chrome.storage.local.get(['settings', 'lastRuns']);
+    const { settings = {}, lastRuns = null } = await chrome.storage.local.get(['settings', 'lastRuns']);
+    if (process.env.FAIL_STORAGE) console.log('FAIL_STORAGE: status tetap terbaca lewat pesan meski storage menolak');
     console.log('result', JSON.stringify(status.result));
     console.log('lines', JSON.stringify(status.lines.map((l) => l.replace(/^\S+ /, ''))));
     console.log('paginationParam', settings.paginationParam, '| lastRuns', JSON.stringify(lastRuns));
