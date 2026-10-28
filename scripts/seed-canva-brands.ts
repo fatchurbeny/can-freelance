@@ -8,7 +8,7 @@
 import prisma from '../src/lib/prisma';
 
 const BRANDS = [
-  { slug: 'chital', brandId: 'BADxbxKIT_Y', names: ['chital'] },
+  { slug: 'chital', brandId: 'BADxbxKIT_Y', names: ['chital', 'chital graphic'] },
   { slug: 'zahra', brandId: 'BAEtJgfxnTk', names: ['zahra.art', 'zahra art', 'zahra'] },
   { slug: 'impro', brandId: 'BAEUTwNzf0Y', names: ['impro', 'improstd'] },
   { slug: 'uicreative', brandId: 'BAEWutmc71I', names: ['uicreative.net', 'uicreative', 'ui creative'] },

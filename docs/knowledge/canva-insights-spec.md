@@ -1,6 +1,6 @@
 # Spec: Canva Insights Tracker
 
-Status: **Fase 1 ditulis di branch `feat/canva-insights`** (2026-10-28): skema, parser, API, impor manual. Belum `db push`, belum diuji ke DB; Fase 2–3 belum. Brief kerja: [`../backlog/canva-insights-implementation.md`](../backlog/canva-insights-implementation.md). Ringkasan endpoint per field: [`../canva-insights-endpoints.md`](../canva-insights-endpoints.md) (salinan dokumen project claude.ai "Can-Product Monitor"; isinya disamakan dengan §1 spek ini).
+Status: **Fase 1 ditulis di branch `feat/canva-insights`** (2026-10-28): skema, parser, API, impor manual. Diuji ke DB lokal: total breakdowns = acuan brief, impor ulang idempoten, batch rusak ditolak, API HTTP (401/403/413/422/200) sesuai. Fase 2–3 belum. Brief kerja: [`../backlog/canva-insights-implementation.md`](../backlog/canva-insights-implementation.md). Ringkasan endpoint per field: [`../canva-insights-endpoints.md`](../canva-insights-endpoints.md) (salinan dokumen project claude.ai "Can-Product Monitor"; isinya disamakan dengan §1 spek ini).
 
 Tujuan: menyimpan snapshot harian **Applies** dan **Usages** per template Canva dari 5 akun Creator, menautkannya ke `Task` di production dashboard, lalu menampilkan performa per template, per brand, dan per designer di halaman `/insights`.
 
@@ -265,11 +265,11 @@ Catatan: satu `Task` bisa punya beberapa template (`qtySubmit` > 1, varian bahas
 Request dijalankan via `page.evaluate(fetch(url, { headers, credentials: 'include' }))` di tab Canva, sehingga cookie, origin, dan TLS sama dengan dashboard asli.
 
 ## 6. Pencocokan template ↔ task
-1. **ID desain (utama)**: ambil ID desain dari `TaskCanvaLink.url` dan `Task.outputUrl` (regex `/design/(D[A-Za-z0-9_-]{10})`), cocokkan dengan `CanvaTemplate.sourceDesignId`. → `matchMethod = "design_id"`.
-2. **Judul (cadangan)**: normalisasi judul vs `Task.name` pada task dengan `TaskAccount` = akun brand tersebut. Hanya bila tepat satu kandidat. → `"title"`.
+1. **ID desain**: ambil ID desain dari `TaskCanvaLink.url` dan `Task.outputUrl` (regex `/design/(D[A-Za-z0-9_-]{10})`), cocokkan dengan `CanvaTemplate.sourceDesignId`. → `matchMethod = "design_id"`. Praktis tidak pernah cocok (lihat temuan di bawah); dipertahankan bila suatu saat link desain sumber disimpan di task.
+2. **Judul (metode utama)**: judul ternormalisasi (huruf kecil, non-alfanumerik → spasi) = `Task.name`, **atau `Task.name` + satu kata jenis** (judul template = nama task + "Presentation"/"Post"/"Story"/…), pada task dengan `TaskAccount` = akun brand tersebut. Hanya bila tepat satu kandidat. → `"title"`.
 3. **Manual**: antrean "Belum tertaut" di `/insights`. → `"manual"`, tidak pernah ditimpa otomatis.
 
-Perlu dicek saat implementasi: apakah link di `TaskCanvaLink` memang desain sumber template (bukan salinan). Bila tingkat kecocokan ID desain rendah, laporkan ke user.
+**Temuan 2026-10-28 (fixture 4 brand vs DB lokal)**: semua 462 `TaskCanvaLink.url` berupa short link `canva.link/…` (tanpa ID desain). Diresolve, link itu mengarah ke `/view` **desain kerja designer** (mis. task "Marketing Process Flow" → `DAHXf1bxfKQ`), sedangkan template punya desain sumber baru hasil publish (`I` = `DAHYhL9r9kI`). Jadi `design_id` = 0 dari 200 template; judul (aturan + satu kata) = 21 tertaut, 0 ambigu (antler 0, impro 5, uicreative 5, zahra 11). Sisanya lewat antrean manual di `/insights`.
 
 ## 7. UI `/insights`
 Permission baru `insights.view` (Admin, Art Director, Project Manager; bukan freelance/viewer). Grup sidebar sesuai [`sidebar-dropdown-pattern.md`](sidebar-dropdown-pattern.md). Standar Cloudflare (`rounded-none`, tabel simetris, toolbar datar), font `Inter`.
@@ -298,7 +298,7 @@ Meniru halaman **Template usages** Canva:
 * Nama parameter token paginasi (dideteksi collector, §5.3).
 * Konfirmasi `F=B` = Free (cek template dengan `0 = "none"`).
 * Arti `d`, `N`, `O` di metadata template dan `A`, `D`, `E`, `G` (serta pastinya `F`) di `tier_scores`.
-* Apakah `TaskCanvaLink` berisi desain sumber template (§6).
+* ~~Apakah `TaskCanvaLink` berisi desain sumber template~~: **tidak** (2026-10-28, §6).
 
 ## 10. Risiko
 * Endpoint internal, bisa berubah/diblokir: mitigasi payload mentah + parser bervers + fail-closed + peringatan sync.

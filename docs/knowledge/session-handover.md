@@ -45,7 +45,9 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 * `fccb674`: 6 model `Canva*` + `Account.canvaBrandId`, `src/lib/canva-insights/*`, route `/api/insights/{ingest,runs,known-ids}`, action `canva-insights.ts`, script `seed-canva-brands.ts` & `import-canva-insights.ts`. Parser lolos 4 fixture (total breakdowns = acuan brief), data rusak & brand asing ditolak.
 * `b5d4a03`: merge `feat/asset-library` (konflik skema = gabung kedua sisi; `user-role-spec` Akses aset = versi asset-library). `tsc` lolos.
 * DB lokal: skema gabungan diterapkan lewat SQL aditif (tanpa DROP). Data aset dipulihkan dari VPS (`pg_dump --data-only` `asset_categories` + `assets`: 7 + 142 baris), `notion_databases.purpose = asset_library` dipasang ulang di "Asset Library". 1 baris `asset_productions` lokal (data uji) tidak bisa dipulihkan.
-* **Berikutnya**: restart dev server, `INSIGHTS_INGEST_TOKEN` di `.env`, seed brand + impor fixture (cek idempoten & laporan tautan task), lalu Fase 2 (collector). Fixture Chital belum ada.
+* **Fase 1 terverifikasi di DB lokal**: 5 brand ter-seed (Chital = akun "Chital Graphic"), 4 fixture diimpor, total breakdowns = acuan brief, impor ulang idempoten, batch rusak `REJECTED` tanpa perubahan data, API HTTP 200/401/403/413/422 sesuai. `INSIGHTS_INGEST_TOKEN` lokal ditambahkan ke `.env`.
+* **Tautan task**: link task = `canva.link` ke desain kerja, bukan desain sumber `I` → `design_id` 0/200. Aturan judul diperluas (nama task + satu kata jenis): 21 tertaut, 0 ambigu. Detail spek §6.
+* **Berikutnya**: Fase 2 (collector Playwright, uji 1 brand bersama user). Fixture Chital belum ada.
 * Fase 3 wajib: jangan jumlahkan `audience = "ALL"` bersama `B`/`C` (spek §4).
 
 ---

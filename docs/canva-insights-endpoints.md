@@ -95,7 +95,7 @@ Cookie sesi + `x-canva-authz`, `x-canva-user`, `x-canva-brand`, `x-canva-app` (`
 - Nama parameter token paginasi.
 - Konfirmasi `F=B` = Free.
 - Arti `d`, `N`, `O` (templates) dan `A`, `D`, `E`, `G` (tier_scores).
-- Apakah link Canva di task = desain sumber template.
+- ~~Apakah link Canva di task = desain sumber template~~: **tidak**, link task = `canva.link` ke desain kerja; pencocokan pakai judul (spek §6).
 
 ## Keamanan
 HAR berisi cookie/token aktif → logout & login ulang Canva di kelima akun; jangan commit HAR ke repo.

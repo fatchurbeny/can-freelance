@@ -4,7 +4,9 @@ import { extractDesignId } from './parse';
 /**
  * Tautkan template Canva ke Task (docs/knowledge/canva-insights-spec.md §6):
  * 1. ID desain sumber (`I`) = ID desain di TaskCanvaLink.url / Task.outputUrl → "design_id".
- * 2. Judul ternormalisasi = Task.name, tepat satu kandidat di akun brand yang sama → "title".
+ * 2. Judul ternormalisasi = Task.name (boleh + satu kata jenis), tepat satu kandidat di akun brand yang sama → "title".
+ * Catatan 2026-10-28: link task berupa canva.link ke desain kerja designer, bukan desain sumber `I`,
+ * sehingga langkah 1 praktis tidak pernah cocok; judul jadi metode utama.
  * Hanya template yang belum tertaut; tautan "manual" tidak pernah disentuh.
  */
 
@@ -16,6 +18,17 @@ export interface MatchSummary {
 
 function normalizeTitle(value: string | null | undefined): string {
   return (value ?? '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+/**
+ * Judul template Canva = nama task + satu kata jenis (mis. "Marketing Process Flow" →
+ * "Marketing Process Flow Presentation"), jadi cocok bila sama persis atau hanya bertambah satu kata.
+ */
+function titleMatches(templateTitle: string, taskName: string): boolean {
+  if (!taskName) return false;
+  if (templateTitle === taskName) return true;
+  const rest = templateTitle.startsWith(`${taskName} `) ? templateTitle.slice(taskName.length + 1) : null;
+  return !!rest && !rest.includes(' ');
 }
 
 /** designId → taskId; ID yang menunjuk ke lebih dari satu task dianggap ambigu (null). */
@@ -77,7 +90,7 @@ export async function matchTemplates(templateIds?: string[]): Promise<MatchSumma
     if (!taskId && t.accountId && t.title) {
       const title = normalizeTitle(t.title);
       const candidates = accountTasks.filter(
-        (task) => normalizeTitle(task.name) === title && task.taskAccounts.some((a) => a.accountId === t.accountId),
+        (task) => titleMatches(title, normalizeTitle(task.name)) && task.taskAccounts.some((a) => a.accountId === t.accountId),
       );
       if (candidates.length === 1) {
         taskId = candidates[0].id;
