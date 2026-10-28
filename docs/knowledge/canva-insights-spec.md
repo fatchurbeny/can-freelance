@@ -310,6 +310,7 @@ Meniru halaman **Template usages** Canva:
 ## 9. Pertanyaan terbuka
 * ~~Nama parameter token paginasi~~: `continuation` (2026-10-28).
 * Konfirmasi `F=B` = Free (cek template dengan `0 = "none"`).
+* **Thumbnail template**: dengan parameter dashboard pun `m[0].C` kosong (sinkron zahra 2026-10-28: judul 1.236/1.236, thumbnail hanya 50 dari fixture HAR). Sumber URL thumbnail yang dipakai dashboard Canva belum diketahui.
 * Arti `d`, `N`, `O` di metadata template dan `A`, `D`, `E`, `G` (serta pastinya `F`) di `tier_scores`.
 * ~~Apakah `TaskCanvaLink` berisi desain sumber template~~: **tidak** (2026-10-28, §6).
 
