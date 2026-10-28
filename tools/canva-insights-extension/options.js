@@ -23,10 +23,18 @@ async function allowed(baseUrl) {
   }
 }
 
-const { settings = {} } = await chrome.storage.local.get('settings');
+function updateTokenInfo() {
+  const n = $('token').value.trim().length;
+  $('token-len').textContent = `${n} karakter`;
+}
+$('token').addEventListener('input', updateTokenInfo);
+$('show-token').addEventListener('change', (e) => $('token').classList.toggle('masked', !e.target.checked));
+
+const { settings = {} } = await chrome.storage.local.get('settings').catch(() => ({}));
 $('baseUrl').value = settings.baseUrl ?? DEFAULT_URL;
 $('token').value = settings.token ?? '';
 $('host').value = settings.host ?? '';
+updateTokenInfo();
 if (settings.paginationParam) $('pagination').textContent = `Parameter paginasi terdeteksi: ${settings.paginationParam}`;
 
 $('form').addEventListener('submit', async (e) => {

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <title>Pengaturan Canva Insights</title>
   <link rel="stylesheet" href="ui.css">
-  <style>body { max-width: 520px; padding: 24px; }</style>
+  <style>body { max-width: 520px; padding: 24px; } .masked { -webkit-text-security: disc; }</style>
 </head>
 <body>
   <h1>Pengaturan Canva Insights</h1>
@@ -14,8 +14,11 @@
       <input type="url" id="baseUrl" placeholder="https://portal.fatchurbeny.com/can-freelance" required>
     </label>
     <label>Token ingest (<code>INSIGHTS_INGEST_TOKEN</code>)
-      <input type="password" id="token" autocomplete="off" required>
+      <!-- Bukan type="password": pengelola password browser (mis. Yab) mengisinya otomatis dengan password lain. -->
+      <input type="text" id="token" class="masked" autocomplete="off" autocapitalize="off" spellcheck="false" data-1p-ignore data-lpignore="true" data-form-type="other" required>
     </label>
+    <p class="muted" style="margin-top: -4px"><span id="token-len">0 karakter</span> · token lokal can-freelance = 64 karakter ·
+      <label style="display: inline; margin: 0"><input type="checkbox" id="show-token"> Tampilkan</label></p>
     <label>Nama perangkat (muncul di status sync)
       <input type="text" id="host" placeholder="macbook-beni">
     </label>
