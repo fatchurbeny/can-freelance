@@ -151,7 +151,7 @@ $('open-dashboard').addEventListener('click', () => {
 });
 $('sync').addEventListener('click', async () => {
   $('sync').disabled = true;
-  const res = await chrome.runtime.sendMessage({ type: 'sync', tabId: tab.id, backfill: $('backfill').checked });
+  const res = await chrome.runtime.sendMessage({ type: 'sync', tabId: tab?.id, backfill: $('backfill').checked });
   $('sync').disabled = false;
   if (!res?.started) {
     setCard('warn', 'Belum bisa mulai', res?.error ?? 'Extension tidak merespons.', null, 'Bila tidak ada sinkron yang terlihat berjalan, tunggu 2 menit lalu klik lagi, atau muat ulang tab dashboard Creator.');

@@ -197,8 +197,14 @@ async function runSync(tabId, { backfill }) {
   return { brandId, status, message, hint, progress: { ...progress } };
 }
 
-chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg?.type !== 'sync') return false;
+  // Dari panel slide-over, `sender.tab` = tab Canva; dipakai bila popup tidak bisa membaca tab aktif.
+  const tabId = msg.tabId ?? sender.tab?.id;
+  if (!tabId) {
+    sendResponse({ started: false, error: 'Tab Canva tidak dikenali. Buka dashboard Creator lalu klik Sinkronkan dari sana.' });
+    return false;
+  }
   if (running && Date.now() - lastBeat < STUCK_MS) {
     sendResponse({ started: false, error: `Sinkronisasi sedang berjalan (kabar terakhir ${Math.round((Date.now() - lastBeat) / 1000)} detik lalu). Tunggu sampai selesai.` });
     return false;
@@ -213,7 +219,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     let result;
     const startedAt = Date.now();
     try {
-      result = await runSync(msg.tabId, { backfill: !!msg.backfill });
+      result = await runSync(tabId, { backfill: !!msg.backfill });
     } catch (e) {
       result = { brandId: null, ...explainError(e) };
     }
