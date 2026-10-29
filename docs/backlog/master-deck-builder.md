@@ -1,6 +1,6 @@
 # Backlog: Master Deck Builder (slide master otomatis untuk production Dropbox)
 
-Status: **rencana, belum dikerjakan**. Flow: https://claude.ai/artifact/XoQAVhocSqm7r9cHjYMTMM · Desain UI: https://claude.ai/artifact/5vK7jUxXuAWGWZDV76TETE (page **v2 · impro.std**)
+Status: **⏸️ HOLD sejak 2026-10-29** setelah F1 (Checklist QA) dan F2 (centang dari folder Dropbox) selesai. F3+ belum dikerjakan; arah terakhir: app macOS + dashboard (lihat session handover). Flow: https://claude.ai/artifact/XoQAVhocSqm7r9cHjYMTMM · Desain UI: https://claude.ai/artifact/5vK7jUxXuAWGWZDV76TETE (page **v2 · impro.std**)
 
 Dokumen ini memuat **alur dan keputusan**. Spesifikasi teknis (layar, komponen, data, fase, acceptance criteria) ada di [`../../design-handoff/IMPLEMENTATION-slide-master-builder.md`](../../design-handoff/IMPLEMENTATION-slide-master-builder.md). Bila keduanya berbeda, spec yang berlaku.
 

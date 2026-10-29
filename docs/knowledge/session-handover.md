@@ -44,7 +44,7 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 * Rencana: [`../backlog/master-deck-builder.md`](../backlog/master-deck-builder.md) · spec + status per fase: [`../../design-handoff/IMPLEMENTATION-slide-master-builder.md`](../../design-handoff/IMPLEMENTATION-slide-master-builder.md) (§7). Detail sesi di arsip (`grep "Slide Master" archive/`).
 * **F1** (Checklist QA per Doctype, gerbang In Review) + **fallback Notion** ("Buat di Notion") di-commit, dirilis ke VPS, PR fatchurbeny/can-freelance#10.
 * **F2** (centang otomatis dari folder Dropbox: `src/lib/dropbox-checklist.ts`, kolom `tasks.dropbox_folder_path/dropbox_files/dropbox_scanned_at`): dibuat & diuji lokal; SQL `prisma/sql/2026-10-29-task-dropbox-scan.sql` **belum dijalankan di VPS**, belum dirilis. `markdownToNotionBlocks` kini di `src/lib/notion-body-blocks.ts`.
-* Berikutnya: F3 (`MasterDeckJob`, worker python-pptx + LibreOffice di VPS, halaman `/slide-master-builder`, permission `masterdeck.review`).
+* **⏸️ HOLD (keputusan user 2026-10-29).** Arah yang dibahas sebelum hold: VPS (1 vCPU, RAM 961 MB, swap terpakai) **tidak cocok** untuk worker; builder jadi **app macOS terpisah** yang terhubung ke dashboard lewat API ber-token, membaca folder Dropbox lokal ("Available offline", akun App Folder yang sama), mencentang checklist otomatis penuh (validasi file + Master Slides), dan mengekspor ke `/_master/` lokal (Dropbox meng-upload). Keputusan terbuka: Mac stasiun mana, In Review otomatis atau diklik QA, ketersediaan Keynote/PowerPoint. Wireframe perlu page v3 (artboard 0 revisi kecil, Antrean digambar ulang sebagai jendela Mac, Review/Layout/Export diadaptasi, + menu bar/onboarding).
 
 ---
 
