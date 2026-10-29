@@ -109,34 +109,31 @@ export default function ChecklistQASection({ state, stage, canEdit, onToggle, on
       <ul className="divide-y divide-[#f0f0f0] dark:divide-[#272a34] border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12]">
         {state.items.map((item) => {
           const busy = busyLabel === item.label;
+          const kind = itemFileKind(item.label);
+          const inFolder = !!kind && foundKinds.has(kind);
           return (
             <li key={item.label}>
               <label className={`flex items-center gap-3 px-4 py-3 text-xs ${editable ? 'cursor-pointer hover:bg-gray-50/80 dark:hover:bg-[#16181d]/80' : 'cursor-default'}`}>
-                {stage === 'pre' ? (
-                  <span className="size-4 shrink-0 border border-[#E4E4E7] dark:border-[#272a34]" aria-hidden="true" />
-                ) : (
-                  <input
-                    type="checkbox"
-                    checked={item.checked}
-                    disabled={!editable || !!busyLabel}
-                    onChange={(e) => toggle(item.label, e.target.checked)}
-                    className="size-4 shrink-0 accent-[#ff5e1f] disabled:cursor-not-allowed"
-                  />
-                )}
+                <input
+                  type="checkbox"
+                  checked={item.checked}
+                  disabled={!editable || !!busyLabel}
+                  onChange={(e) => toggle(item.label, e.target.checked)}
+                  className="size-4 shrink-0 accent-[#ff5e1f] disabled:cursor-not-allowed"
+                />
                 <span className={`flex-1 font-semibold ${item.checked ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-300'}`}>{item.label}</span>
                 {busy ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin text-[#ff5e1f]" />
-                ) : stage === 'pre' ? (
+                ) : stage === 'pre' && !item.checked && !inFolder ? (
+                  // Draft: item yang belum ada filenya ditandai sebagai deliverable wajib
                   <span className="rounded-[5px] border border-[#E4E4E7] bg-[#FAFAFA] px-[7px] py-px text-[11px] text-[#3F3F46] dark:border-[#272a34] dark:bg-[#16181d] dark:text-gray-300">Wajib</span>
                 ) : (
                   <span className="flex items-center gap-1.5">
-                    {(() => {
-                      const kind = itemFileKind(item.label);
-                      if (kind && foundKinds.has(kind)) return <span className={BLUE_PILL}>Dropbox</span>;
-                      if (kind && !item.checked) return <span className={RED_PILL}>Belum ada</span>;
-                      if (!item.checked) return <span className={RED_PILL}>Belum</span>;
-                      return null;
-                    })()}
+                    {inFolder ? (
+                      <span className={BLUE_PILL}>Dropbox</span>
+                    ) : !item.checked ? (
+                      <span className={RED_PILL}>{kind ? 'Belum ada' : 'Belum'}</span>
+                    ) : null}
                     {item.checked && <Check className="w-3.5 h-3.5 text-[#15803D]" />}
                   </span>
                 )}
