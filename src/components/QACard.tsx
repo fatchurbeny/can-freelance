@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { MessageSquare, FileText, MoreHorizontal, Copy, Trash2, Loader2, AlertTriangle, ListChecks } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { duplicateTaskAction, deleteTaskAction } from '@/app/actions/qa';
-import { checklistTone, isApprovedStatus, isInReviewStatus, parseChecklistSection } from '@/lib/checklist-qa';
+import { checklistTone, isApprovedStatus, isInReviewStatus, isQaStatus, parseChecklistSection } from '@/lib/checklist-qa';
+import { readSnapshot, waitingFileReasons } from '@/lib/dropbox-files';
 import { CHECKLIST_TONE_CLASS } from './task-detail/ChecklistQASection';
 
 export interface QATask {
@@ -15,6 +16,8 @@ export interface QATask {
   designer: { id: string; displayName: string; avatarColor: string | null } | null;
   doctype: { id: string; displayName: string; qaChecklist?: string[] } | null;
   bodyText?: string | null;
+  /** Snapshot folder Dropbox (lib/dropbox-files.ts) */
+  dropboxFiles?: unknown;
   productionUnit?: { platform: { outputType: string } } | null;
   designStatus: { id: string; notionKey: string; displayName: string } | null;
   taskAccounts: { account: { id: string; displayName: string; color: string | null } }[];
@@ -130,6 +133,9 @@ export default function QACard({ task, onOpen, dimmed = false, onDragStateChange
   // Status sudah lewat QA (diubah di Notion) padahal checklist belum lengkap
   const checklistMissed = !!checklist && checklist.done < checklist.total
     && (isInReviewStatus(task.designStatus) || isApprovedStatus(task.designStatus));
+  // QA tapi folder Dropbox belum lengkap (PDF belum ada / ada .zip); hanya bila folder sudah pernah diperiksa
+  const snapshot = checklist && isQaStatus(task.designStatus) ? readSnapshot(task.dropboxFiles) : null;
+  const waitingReasons = snapshot ? waitingFileReasons(snapshot.files) : [];
 
   return (
     <>
@@ -274,6 +280,15 @@ export default function QACard({ task, onOpen, dimmed = false, onDragStateChange
               <ListChecks className="w-3 h-3" />
               {checklist.done}/{checklist.total}
             </button>
+          )}
+
+          {waitingReasons.length > 0 && (
+            <span
+              title={waitingReasons.join(' · ')}
+              className="inline-flex items-center rounded-[4px] border border-[#FED7AA] bg-[#FFF7ED] px-1.5 py-0.5 font-sans text-[10px] font-semibold leading-none text-[#C2410C] dark:border-orange-900/60 dark:bg-orange-950/30 dark:text-orange-400"
+            >
+              Menunggu file
+            </span>
           )}
 
           {checklistMissed && (

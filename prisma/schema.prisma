@@ -190,6 +190,11 @@ model Task {
   customFields     Json?           @map("custom_fields")
   outputUrl        String?         @map("output_url")
   uploadRequestUrl String?         @map("upload_request_url")
+  /// Folder Dropbox tujuan File Request (disimpan saat dibuat; task lama: dihitung lalu disimpan saat folder ditemukan).
+  dropboxFolderPath String?        @map("dropbox_folder_path")
+  /// Snapshot isi folder Dropbox terakhir (lib/dropbox-checklist.ts): { files: [{ name, size, modified }] }.
+  dropboxFiles     Json?           @map("dropbox_files")
+  dropboxScannedAt DateTime?       @map("dropbox_scanned_at") @db.Timestamptz(6)
   bundleId         String?         @map("bundle_id") @db.Uuid
   bundleItemId     String?         @map("bundle_item_id") @db.Uuid
   bundleOrderId    String?         @map("bundle_order_id") @db.Uuid

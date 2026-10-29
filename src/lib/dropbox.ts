@@ -174,6 +174,25 @@ export async function folderHasFiles(path: string): Promise<boolean> {
   }
 }
 
+/** File di folder (tidak rekursif); null bila folder belum ada. */
+export async function listFolderFiles(path: string): Promise<{ name: string; size: number; modified: string }[] | null> {
+  try {
+    const files: { name: string; size: number; modified: string }[] = [];
+    let res = await dbxRpc('files/list_folder', { path, limit: 2000 });
+    for (;;) {
+      for (const e of res.entries || []) {
+        if (e['.tag'] === 'file') files.push({ name: e.name, size: Number(e.size ?? 0), modified: e.server_modified ?? '' });
+      }
+      if (!res.has_more) break;
+      res = await dbxRpc('files/list_folder/continue', { cursor: res.cursor });
+    }
+    return files.sort((a, b) => a.name.localeCompare(b.name));
+  } catch (err: any) {
+    if (String(err.summary || '').includes('not_found')) return null;
+    throw err;
+  }
+}
+
 /** Link publik folder (dibuat sekali; bila sudah ada, dipakai ulang). */
 export async function getOrCreateFolderLink(path: string): Promise<string> {
   try {

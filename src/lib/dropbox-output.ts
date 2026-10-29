@@ -34,7 +34,8 @@ export async function attachUploadRequest(taskId: string): Promise<void> {
 
   const folder = taskFolderPath(unit.dropboxRoot, task.taskMonth, task.name ?? 'Untitled');
   const url = await createFileRequest(task.name ?? 'Upload', folder);
-  await prisma.task.update({ where: { id: task.id }, data: { uploadRequestUrl: url } });
+  // Path disimpan: dipakai pemindai checklist meski task di-rename sesudahnya
+  await prisma.task.update({ where: { id: task.id }, data: { uploadRequestUrl: url, dropboxFolderPath: folder } });
 
   // Tulis ke Notion hanya untuk task yang berasal dari Notion (bukan dibuat lokal/mock)
   const fromNotion = isNotionLinked(task.notionPageId);

@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { Check, FileText, Loader2, Lock } from 'lucide-react';
+import { Check, FileText, FolderOpen, Loader2, Lock, RefreshCw } from 'lucide-react';
 import { checklistTone, type ChecklistState } from '@/lib/checklist-qa';
+import { fileKind, itemFileKind, waitingFileReasons, type DropboxFileInfo, type FileKind } from '@/lib/dropbox-files';
 
 /** Tahap tampilan checklist mengikuti status task (spec §3.2). */
 export type ChecklistStage = 'pre' | 'progress' | 'qa' | 'done';
@@ -15,8 +16,8 @@ export const CHECKLIST_TONE_CLASS: Record<ReturnType<typeof checklistTone>, stri
 
 const STAGE_NOTE: Record<ChecklistStage, string> = {
   pre: 'Daftar ini adalah deliverable yang wajib diunggah designer. File satuan, tanpa .zip.',
-  progress: 'Designer sedang mengerjakan. Checklist dikonfirmasi QA saat task masuk QA.',
-  qa: 'QA mengonfirmasi setiap file di folder Dropbox task. In Review terbuka setelah semua item tercentang.',
+  progress: 'Tercentang otomatis saat designer mengunggah file. Checklist dikonfirmasi QA saat task masuk QA.',
+  qa: 'Format file tercentang otomatis dari folder Dropbox, lalu QA mengonfirmasi. In Review terbuka setelah semua item tercentang.',
   done: 'Checklist sudah lengkap.',
 };
 
@@ -27,10 +28,29 @@ interface Props {
   canEdit: boolean;
   onToggle: (label: string, checked: boolean) => Promise<void>;
   onMoveToInReview: () => Promise<void>;
+  /** Snapshot folder Dropbox task (null = belum pernah diperiksa). */
+  files: DropboxFileInfo[] | null;
+  scannedAt: string | null;
+  onRescan: () => Promise<void>;
 }
 
-export default function ChecklistQASection({ state, stage, canEdit, onToggle, onMoveToInReview }: Props) {
+const KIND_LABEL: Record<FileKind, string> = {
+  pptx: 'PPTX', ppt: 'PPT', key: 'KEY', pdf: 'PDF', image: 'PNG', zip: 'ZIP', other: 'FILE',
+};
+
+const BLUE_PILL = 'rounded-[5px] border border-[#BFDBFE] bg-[#EFF6FF] px-[7px] py-px text-[11px] text-[#1D4ED8] dark:border-blue-900/60 dark:bg-blue-950/30 dark:text-blue-400';
+const RED_PILL = 'rounded-[5px] border border-[#FECACA] bg-[#FEF2F2] px-[7px] py-px text-[11px] text-[#DC2626] dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-400';
+
+function formatSize(bytes: number): string {
+  if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+}
+
+export default function ChecklistQASection({ state, stage, canEdit, onToggle, onMoveToInReview, files, scannedAt, onRescan }: Props) {
   const [busyLabel, setBusyLabel] = useState<string | null>(null);
+  const [rescanning, setRescanning] = useState(false);
+  const foundKinds = new Set((files ?? []).map((f) => fileKind(f.name)));
+  const waiting = files ? waitingFileReasons(files) : [];
   const [moving, setMoving] = useState(false);
   const tone = checklistTone(state.done, state.total);
   const editable = canEdit && stage === 'qa';
@@ -42,6 +62,15 @@ export default function ChecklistQASection({ state, stage, canEdit, onToggle, on
       await onToggle(label, checked);
     } finally {
       setBusyLabel(null);
+    }
+  };
+
+  const rescan = async () => {
+    setRescanning(true);
+    try {
+      await onRescan();
+    } finally {
+      setRescanning(false);
     }
   };
 
@@ -99,16 +128,68 @@ export default function ChecklistQASection({ state, stage, canEdit, onToggle, on
                   <Loader2 className="w-3.5 h-3.5 animate-spin text-[#ff5e1f]" />
                 ) : stage === 'pre' ? (
                   <span className="rounded-[5px] border border-[#E4E4E7] bg-[#FAFAFA] px-[7px] py-px text-[11px] text-[#3F3F46] dark:border-[#272a34] dark:bg-[#16181d] dark:text-gray-300">Wajib</span>
-                ) : item.checked ? (
-                  <Check className="w-3.5 h-3.5 text-[#15803D]" />
                 ) : (
-                  <span className="rounded-[5px] border border-[#FECACA] bg-[#FEF2F2] px-[7px] py-px text-[11px] text-[#DC2626] dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-400">Belum</span>
+                  <span className="flex items-center gap-1.5">
+                    {(() => {
+                      const kind = itemFileKind(item.label);
+                      if (kind && foundKinds.has(kind)) return <span className={BLUE_PILL}>Dropbox</span>;
+                      if (kind && !item.checked) return <span className={RED_PILL}>Belum ada</span>;
+                      if (!item.checked) return <span className={RED_PILL}>Belum</span>;
+                      return null;
+                    })()}
+                    {item.checked && <Check className="w-3.5 h-3.5 text-[#15803D]" />}
+                  </span>
                 )}
               </label>
             </li>
           );
         })}
       </ul>
+
+      {stage !== 'pre' && (
+        <div className="border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12]">
+          <div className="flex items-center gap-2 border-b border-[#f0f0f0] dark:border-[#272a34] px-4 py-2.5">
+            <FolderOpen className="w-3.5 h-3.5 text-gray-400" />
+            <p className="flex-1 text-[11px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">
+              File di Dropbox{files ? ` (${files.length} file)` : ''}
+            </p>
+            <button
+              type="button"
+              onClick={rescan}
+              disabled={rescanning}
+              className="flex items-center gap-1.5 text-[11px] font-semibold text-gray-600 dark:text-gray-300 hover:text-[#ff5e1f] disabled:opacity-50 cursor-pointer"
+            >
+              <RefreshCw className={`w-3 h-3 ${rescanning ? 'animate-spin' : ''}`} />
+              Periksa folder
+            </button>
+          </div>
+          {waiting.length > 0 && (
+            <p className="border-b border-[#FED7AA] bg-[#FFF7ED] px-4 py-2 text-[11px] font-semibold text-[#C2410C] dark:border-orange-900/60 dark:bg-orange-950/30 dark:text-orange-400">
+              Menunggu file: {waiting.join(' · ')}
+            </p>
+          )}
+          {!files ? (
+            <p className="px-4 py-3 text-[11px] text-gray-500 dark:text-gray-400">Folder belum diperiksa. Klik "Periksa folder" atau tunggu sync berikutnya.</p>
+          ) : files.length === 0 ? (
+            <p className="px-4 py-3 text-[11px] text-gray-500 dark:text-gray-400">Folder masih kosong.</p>
+          ) : (
+            <ul className="divide-y divide-[#f0f0f0] dark:divide-[#272a34]">
+              {files.map((f) => (
+                <li key={f.name} className="flex items-center gap-2.5 px-4 py-2 text-xs">
+                  <span className={`w-11 shrink-0 text-center ${fileKind(f.name) === 'zip' ? RED_PILL : BLUE_PILL}`}>{KIND_LABEL[fileKind(f.name)]}</span>
+                  <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-gray-800 dark:text-gray-200" title={f.name}>{f.name}</span>
+                  <span className="shrink-0 text-[11px] text-gray-400">{formatSize(f.size)}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+          {scannedAt && (
+            <p className="border-t border-[#f0f0f0] dark:border-[#272a34] px-4 py-1.5 text-[10px] text-gray-400">
+              Diperiksa {new Date(scannedAt).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+            </p>
+          )}
+        </div>
+      )}
 
       {stage === 'qa' && (
         <div className="flex flex-col gap-2">

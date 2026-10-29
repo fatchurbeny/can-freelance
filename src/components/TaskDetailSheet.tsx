@@ -10,8 +10,9 @@ import {
 import {
   updateTaskStatusAction, addCommentAction, getTaskCommentsAction,
   deleteCommentAction, updateTaskFieldsAction, fetchTaskMetadataOptionsAction,
-  toggleChecklistItemAction, createMissingNotionPageAction, TaskUpdatePayload
+  toggleChecklistItemAction, createMissingNotionPageAction, scanTaskDropboxAction, TaskUpdatePayload
 } from '@/app/actions/qa';
+import { readSnapshot, type DropboxFileInfo } from '@/lib/dropbox-files';
 import { isMissingNotionPage } from '@/lib/notion-link';
 import { validateTemplateLink } from '@/lib/validate-template-link';
 import type { CardAction } from './QACard';
@@ -43,6 +44,9 @@ interface QATask {
   canvaLinks: { id: string; url: string }[];
   uploadRequestUrl?: string | null;
   outputUrl?: string | null;
+  /** Snapshot folder Dropbox (lib/dropbox-files.ts) */
+  dropboxFiles?: unknown;
+  dropboxScannedAt?: string | Date | null;
   customFields?: Record<string, unknown> | null;
   productionUnitId?: string;
   productionUnit?: { platform: { outputType: string } } | null;
@@ -94,6 +98,8 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved, 
   // Halaman Notion yang baru dibuat lewat "Buat di Notion" (task prop belum ter-refresh)
   const [createdNotionUrl, setCreatedNotionUrl] = useState<string | null>(null);
   const [creatingNotionPage, setCreatingNotionPage] = useState(false);
+  const [dropboxFiles, setDropboxFiles] = useState<DropboxFileInfo[] | null>(null);
+  const [dropboxScannedAt, setDropboxScannedAt] = useState<string | null>(null);
   const [openTab, setOpenTab] = useState<BriefTab>('brief');
   // Privasi per role: freelance tidak melihat brand/akun; Dropbox Link hanya untuk yang berhak.
   const canSeeBrand = !access.enabled || access.permissions.includes('account.view');
@@ -167,6 +173,8 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved, 
     setTaskMonth(task.taskMonth || '');
     setBodyText(task.bodyText || '');
     setCreatedNotionUrl(null);
+    setDropboxFiles(readSnapshot(task.dropboxFiles)?.files ?? null);
+    setDropboxScannedAt(task.dropboxScannedAt ? new Date(task.dropboxScannedAt).toISOString() : null);
     // Status QA → buka tab Checklist QA (hanya bila task punya checklist; dicek di DesignBriefSection)
     setOpenTab(initialTab ?? (isQaStatus(task.designStatus) ? 'checklist' : 'brief'));
     setSelectedAccountIds(task?.taskAccounts?.map(ta => ta.account.id) || []);
@@ -306,6 +314,18 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved, 
       toast.success('Halaman Notion dibuat');
     } else {
       toast.error(res.error || 'Gagal membuat halaman Notion');
+    }
+  };
+
+  const handleRescanDropbox = async () => {
+    const res = await scanTaskDropboxAction(task.id);
+    if (res.success && 'dropboxScannedAt' in res) {
+      if (res.bodyText !== undefined) setBodyText(res.bodyText ?? '');
+      setDropboxFiles(res.dropboxFiles?.files ?? []);
+      setDropboxScannedAt(res.dropboxScannedAt ?? null);
+      toast.success('Folder Dropbox diperiksa');
+    } else {
+      toast.error(res.error || 'Gagal memeriksa folder Dropbox');
     }
   };
 
@@ -1021,6 +1041,9 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved, 
                   canEdit={canEditChecklist}
                   onToggle={handleToggleChecklist}
                   onMoveToInReview={handleMoveToInReview}
+                  files={dropboxFiles}
+                  scannedAt={dropboxScannedAt}
+                  onRescan={handleRescanDropbox}
                 />
               ),
             } : undefined}

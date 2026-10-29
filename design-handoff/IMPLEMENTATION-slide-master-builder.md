@@ -249,7 +249,15 @@ Perubahan status langsung di Notion tidak bisa diblokir → saat sync, tandai ka
 - [x] Tidak ada properti baru di database Notion.
 - [x] `npx tsc --noEmit` lulus; Inter di semua UI baru.
 
-Belum termasuk F1 (menunggu F2/F3): kartu "Slide Master" + tautan "Buka di Slide Master Builder", daftar "File di Dropbox", badge "Menunggu file", dan blok Deliverable di tab Design Brief.
+Belum termasuk F1 (menunggu F3): kartu "Slide Master" + tautan "Buka di Slide Master Builder", dan blok Deliverable di tab Design Brief.
+
+### Status F2 (2026-10-29): centang otomatis dari folder Dropbox
+
+* `Task.dropboxFolderPath` disimpan saat File Request dibuat (`attachUploadRequest`); task lama memakai path hitungan lalu menyimpannya saat folder ditemukan. `Task.dropboxFiles` (snapshot `{ files: [{ name, size, modified }] }`) + `dropboxScannedAt`. SQL aditif: `prisma/sql/2026-10-29-task-dropbox-scan.sql`.
+* `scanDropboxChecklists()` (`src/lib/dropbox-checklist.ts`): `files/list_folder` per task Dropbox yang belum disetujui; item yang file-nya ada (`src/lib/dropbox-files.ts`: PPTX `.pptx`, PPT `.ppt`, Keynote `.key`, Preview gambar) dicentang **hanya bila baru muncul sejak snapshot sebelumnya**, jadi centang yang dilepas QA tidak dipasang ulang. Body baru di-push ke Notion.
+* Dipicu: akhir sync Notion (termasuk Sync Now), task masuk QA (drag/tombol/dropdown), tombol "Periksa folder" di tab Checklist QA (`scanTaskDropboxAction`).
+* UI: label sumber per item (`Dropbox` / `Belum ada`), daftar "File di Dropbox (n file)" + waktu periksa, alasan "Menunggu file" (PDF belum ada, ada `.zip`), badge **Menunggu file** di kartu kanban untuk task QA.
+* Diverifikasi dengan folder asli "Trial Slides Colony" (1 `.pptx`): PPTX tercentang + section terkirim ke Notion, scan ulang tidak mencentang apa pun, badge dan daftar file tampil, tombol "Periksa folder" bekerja.
 
 Acceptance criteria (F3): Antrean global punya filter Production dan hanya memuat job dari production tempat user menjadi anggota (diverifikasi via "Lihat sebagai").
 

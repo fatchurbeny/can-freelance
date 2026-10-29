@@ -13,6 +13,7 @@ import {
 } from '@/lib/production-field-mapping';
 import { Prisma } from '../../generated/prisma';
 import { syncDropboxOutputs } from '@/lib/dropbox-output';
+import { scanDropboxChecklists } from '@/lib/dropbox-checklist';
 import { pushPendingAssets, syncAssetsFromNotion, syncTaskAssetLinks } from '@/lib/notion-assets';
 import { ASSETS_RELATION_PROPERTY } from '@/lib/notion-field-types';
 import { isQaStatusName } from '@/lib/checklist-qa';
@@ -956,6 +957,13 @@ export async function syncNotionData(mode: NotionSyncMode = 'incremental') {
         await syncDropboxOutputs();
       } catch (dbxErr: any) {
         console.warn('Dropbox output sync skipped:', dbxErr.message);
+      }
+
+      // Checklist QA: snapshot isi folder + centang format yang baru diunggah
+      try {
+        await scanDropboxChecklists();
+      } catch (dbxErr: any) {
+        console.warn('Dropbox checklist scan skipped:', dbxErr.message);
       }
 
       // Asset Library: tarik perubahan dari database Notion aset

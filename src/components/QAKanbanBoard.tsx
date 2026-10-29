@@ -18,6 +18,7 @@ interface QATask {
   languages?: string[];
   license?: string | null;
   bodyText?: string | null;
+  dropboxFiles?: unknown;
   productionUnit?: { platform: { outputType: string } } | null;
 }
 

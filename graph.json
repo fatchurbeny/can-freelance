@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "generatedAt": "2026-10-29T08:06:33.932Z",
+  "generatedAt": "2026-10-29T08:25:32.060Z",
   "nodes": [
     {
       "id": "page:/account-team",
@@ -1915,6 +1915,22 @@
       "details": "Server/shared library in src/lib/doctype-presets.ts"
     },
     {
+      "id": "lib:dropbox-checklist",
+      "label": "dropbox-checklist.ts",
+      "type": "action",
+      "group": "Server Actions & Lib",
+      "filepath": "src/lib/dropbox-checklist.ts",
+      "details": "Server/shared library in src/lib/dropbox-checklist.ts"
+    },
+    {
+      "id": "lib:dropbox-files",
+      "label": "dropbox-files.ts",
+      "type": "action",
+      "group": "Server Actions & Lib",
+      "filepath": "src/lib/dropbox-files.ts",
+      "details": "Server/shared library in src/lib/dropbox-files.ts"
+    },
+    {
       "id": "lib:dropbox-output",
       "label": "dropbox-output.ts",
       "type": "action",
@@ -1977,6 +1993,14 @@
       "group": "Server Actions & Lib",
       "filepath": "src/lib/notion-assets.ts",
       "details": "Server/shared library in src/lib/notion-assets.ts"
+    },
+    {
+      "id": "lib:notion-body-blocks",
+      "label": "notion-body-blocks.ts",
+      "type": "action",
+      "group": "Server Actions & Lib",
+      "filepath": "src/lib/notion-body-blocks.ts",
+      "details": "Server/shared library in src/lib/notion-body-blocks.ts"
     },
     {
       "id": "lib:notion-body-push",
@@ -3534,6 +3558,12 @@
     },
     {
       "source": "action:qa",
+      "target": "lib:notion-body-blocks",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:qa",
       "target": "lib:notion-body-push",
       "relation": "invokes",
       "confidence": "EXTRACTED"
@@ -3547,6 +3577,18 @@
     {
       "source": "action:qa",
       "target": "lib:dropbox-output",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:qa",
+      "target": "lib:dropbox-checklist",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:qa",
+      "target": "lib:dropbox-files",
       "relation": "invokes",
       "confidence": "EXTRACTED"
     },
@@ -6522,6 +6564,12 @@
     },
     {
       "source": "component:QACard",
+      "target": "lib:dropbox-files",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:QACard",
       "target": "component:ChecklistQASection",
       "relation": "renders",
       "confidence": "EXTRACTED"
@@ -6665,6 +6713,12 @@
       "confidence": "EXTRACTED"
     },
     {
+      "source": "component:ChecklistQASection",
+      "target": "lib:dropbox-files",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
       "source": "component:CustomFieldsSection",
       "target": "component:FieldValueInput",
       "relation": "renders",
@@ -6775,6 +6829,12 @@
     {
       "source": "component:TaskDetailSheet",
       "target": "action:qa",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:TaskDetailSheet",
+      "target": "lib:dropbox-files",
       "relation": "invokes",
       "confidence": "EXTRACTED"
     },
@@ -7253,6 +7313,66 @@
       "confidence": "EXTRACTED"
     },
     {
+      "source": "lib:dropbox-checklist",
+      "target": "lib:prisma",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:dropbox-checklist",
+      "target": "lib:dropbox",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:dropbox-checklist",
+      "target": "lib:dropbox-files",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:dropbox-checklist",
+      "target": "lib:checklist-qa",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:dropbox-checklist",
+      "target": "component:brief-parser",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:dropbox-checklist",
+      "target": "lib:notion-link",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:dropbox-checklist",
+      "target": "lib:notion-provision",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:dropbox-checklist",
+      "target": "lib:notion-body-push",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:dropbox-checklist",
+      "target": "lib:notion-body-blocks",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:dropbox-checklist",
+      "target": "model:Task",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
       "source": "lib:dropbox-output",
       "target": "lib:prisma",
       "relation": "invokes",
@@ -7418,6 +7538,12 @@
       "source": "lib:notion-assets",
       "target": "model:TaskAsset",
       "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:notion-body-blocks",
+      "target": "component:brief-parser",
+      "relation": "renders",
       "confidence": "EXTRACTED"
     },
     {
@@ -7657,6 +7783,12 @@
     {
       "source": "action:sync-notion",
       "target": "lib:dropbox-output",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:sync-notion",
+      "target": "lib:dropbox-checklist",
       "relation": "invokes",
       "confidence": "EXTRACTED"
     },
