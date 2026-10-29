@@ -58,8 +58,23 @@ async function ensureTemplates(
   }
 }
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Hari yang belum selesai saat batch diambil. Canva sempat mengirim angka parsial hari ini lalu
+ * menyembunyikannya sampai harinya selesai; menyimpannya membuat total lebih besar dari dashboard Canva.
+ */
+const isComplete = (date: Date, receivedAt: Date) => date.getTime() + DAY_MS <= receivedAt.getTime();
+
 /** Tulis hasil parse; mengembalikan jumlah baris yang di-upsert. */
-async function applyParsed(tx: Tx, parsed: ParsedBatch, brandId: string, accountId: string, batchId: string): Promise<number> {
+async function applyParsed(
+  tx: Tx,
+  parsed: ParsedBatch,
+  brandId: string,
+  accountId: string,
+  batchId: string,
+  receivedAt: Date,
+): Promise<number> {
   switch (parsed.endpoint) {
     case 'content.by_brand':
       await ensureTemplates(tx, brandId, accountId, parsed.templates);
@@ -67,7 +82,8 @@ async function applyParsed(tx: Tx, parsed: ParsedBatch, brandId: string, account
 
     case 'content.by_content':
       await ensureTemplates(tx, brandId, accountId, parsed.templates);
-      for (const d of parsed.daily) {
+      const daily = parsed.daily.filter((d) => isComplete(d.date, receivedAt));
+      for (const d of daily) {
         const values = { applies: d.applies, usages: d.usages, batchId };
         await tx.canvaTemplateDaily.upsert({
           where: { templateId_date_audience: { templateId: d.templateId, date: d.date, audience: d.audience } },
@@ -75,10 +91,11 @@ async function applyParsed(tx: Tx, parsed: ParsedBatch, brandId: string, account
           update: values,
         });
       }
-      return parsed.daily.length;
+      return daily.length;
 
-    case 'brand.breakdowns':
-      for (const d of parsed.brandDaily) {
+    case 'brand.breakdowns': {
+      const brandDaily = parsed.brandDaily.filter((d) => isComplete(d.date, receivedAt));
+      for (const d of brandDaily) {
         const values = { applies: d.applies, usages: d.usages, batchId };
         await tx.canvaBrandDaily.upsert({
           where: { canvaBrandId_date_audience: { canvaBrandId: brandId, date: d.date, audience: d.audience } },
@@ -86,7 +103,8 @@ async function applyParsed(tx: Tx, parsed: ParsedBatch, brandId: string, account
           update: values,
         });
       }
-      return parsed.brandDaily.length;
+      return brandDaily.length;
+    }
 
     case 'tier_scores':
       for (const t of parsed.tiers) {
@@ -146,7 +164,7 @@ export async function processBatch(batchId: string): Promise<IngestResult & { te
 
   const rowCount = await prisma.$transaction(
     async (tx) => {
-      const n = await applyParsed(tx, parsed, batch.canvaBrandId, accountId, batchId);
+      const n = await applyParsed(tx, parsed, batch.canvaBrandId, accountId, batchId, batch.receivedAt);
       await tx.canvaIngestBatch.update({
         where: { id: batchId },
         data: { status: 'PARSED', error: null, rowCount: n, parserVersion: PARSER_VERSION },

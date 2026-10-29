@@ -17,6 +17,7 @@ interface Props {
   data: NonNullable<InsightsData['templates']>;
   filters: TemplateFilters;
   onChange: (patch: Partial<TemplateFilters>) => void;
+  scale: number;
 }
 
 const PAGE_SIZES = [10, 25, 50, 100];
@@ -33,7 +34,7 @@ function SortHeader({ label, sort, active, onSort, align = 'left' }: { label: st
   );
 }
 
-export default function TemplateTable({ data, filters, onChange }: Props) {
+export default function TemplateTable({ data, filters, onChange, scale }: Props) {
   const [search, setSearch] = useState(filters.search);
   useEffect(() => {
     if (search === filters.search) return;
@@ -102,7 +103,7 @@ export default function TemplateTable({ data, filters, onChange }: Props) {
               </tr>
             )}
             {data.rows.map((t) => {
-              const da = delta(t.applies, t.prevApplies);
+              const da = delta(t.applies, t.prevApplies, scale);
               return (
                 <tr key={t.id} className="hover:bg-gray-50/50 dark:hover:bg-[#16181d]/50">
                   <td className="px-5 py-2.5">

@@ -54,7 +54,8 @@ export interface InsightsTemplateView {
 }
 
 export interface InsightsData {
-  range: { from: string; to: string; prevFrom: string; prevTo: string; days: string[] };
+  /** `scale`: pengali total sekarang untuk persen pembanding (rata-rata per hari, lihat range.ts). */
+  range: { from: string; to: string; prevFrom: string; prevTo: string; days: string[]; scale: number };
   brands: InsightsBrandView[];
   templates: {
     rows: InsightsTemplateView[];

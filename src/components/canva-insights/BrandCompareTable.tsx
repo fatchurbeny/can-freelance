@@ -18,7 +18,15 @@ function SyncCell({ brand }: { brand: InsightsBrandView }) {
   );
 }
 
-export default function BrandCompareTable({ brands, onSelect }: { brands: InsightsBrandView[]; onSelect: (id: string) => void }) {
+export default function BrandCompareTable({
+  brands,
+  scale,
+  onSelect,
+}: {
+  brands: InsightsBrandView[];
+  scale: number;
+  onSelect: (id: string) => void;
+}) {
   return (
     <section aria-labelledby="insights-compare" className="bg-white dark:bg-[#0d0e12]">
       <div className="px-5 py-3.5 border-b border-[#f0f0f0] dark:border-[#272a34]">
@@ -38,8 +46,8 @@ export default function BrandCompareTable({ brands, onSelect }: { brands: Insigh
           </thead>
           <tbody className="divide-y divide-[#f0f0f0] dark:divide-[#272a34]">
             {brands.map((b, i) => {
-              const da = delta(b.applies, b.prevApplies);
-              const du = delta(b.usages, b.prevUsages);
+              const da = delta(b.applies, b.prevApplies, scale);
+              const du = delta(b.usages, b.prevUsages, scale);
               return (
                 <tr key={b.brandId} className="hover:bg-gray-50/50 dark:hover:bg-[#16181d]/50">
                   <td className="px-5 py-3">

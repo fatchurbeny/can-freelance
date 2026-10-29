@@ -16,9 +16,10 @@ export function fmtRange(from: string, to: string): string {
 
 export type Tone = 'up' | 'down' | 'flat' | 'none';
 
-export function delta(cur: number, prev: number): { text: string; tone: Tone } {
+/** `scale` = InsightsData.range.scale: membandingkan rata-rata per hari seperti Canva. */
+export function delta(cur: number, prev: number, scale = 1): { text: string; tone: Tone } {
   if (!prev) return { text: cur ? 'baru' : '—', tone: 'none' };
-  const v = ((cur - prev) / prev) * 100;
+  const v = ((cur * scale - prev) / prev) * 100;
   if (Math.abs(v) < 0.05) return { text: '0,0%', tone: 'flat' };
   const s = Math.abs(v).toFixed(1).replace('.', ',');
   return v < 0 ? { text: `▼ ${s}%`, tone: 'down' } : { text: `▲ ${s}%`, tone: 'up' };

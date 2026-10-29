@@ -134,6 +134,7 @@ export default function CanvaInsightsTab({ productionUnitId }: { productionUnitI
       {data && brands.length > 0 && !brand && (
         <div className={loading ? 'opacity-60 transition-opacity' : ''}>
           <InsightsKpis
+            scale={data.range.scale}
             brands={brands}
             fourth={{
               label: 'Brand tersinkron',
@@ -152,7 +153,7 @@ export default function CanvaInsightsTab({ productionUnitId }: { productionUnitI
               .filter(({ b }) => b.hasData)
               .map(({ b, style }) => ({ key: b.brandId, name: b.name, color: style.color, dash: style.dash, values: b.series[metric] }))}
           />
-          <BrandCompareTable brands={brands} onSelect={selectBrand} />
+          <BrandCompareTable brands={brands} scale={data.range.scale} onSelect={selectBrand} />
         </div>
       )}
 
@@ -172,6 +173,7 @@ export default function CanvaInsightsTab({ productionUnitId }: { productionUnitI
             </span>
           </div>
           <InsightsKpis
+            scale={data.range.scale}
             brands={[brand]}
             fourth={{
               label: 'Template',
@@ -189,7 +191,7 @@ export default function CanvaInsightsTab({ productionUnitId }: { productionUnitI
               { key: 'usages', name: 'Usages', color: '#64748b', dash: '7 5', values: brand.series.usages },
             ]}
           />
-          {data.templates && <TemplateTable data={data.templates} filters={tpl} onChange={changeTemplates} />}
+          {data.templates && <TemplateTable data={data.templates} filters={tpl} onChange={changeTemplates} scale={data.range.scale} />}
         </div>
       )}
     </div>

@@ -49,18 +49,26 @@ export function presetRange(preset: Exclude<RangePreset, 'custom'>, now = Date.n
   }
 }
 
-/** Validasi + periode pembanding dengan panjang sama tepat sebelum `from`. */
-export function comparisonRange(from: string, to: string) {
+/**
+ * Validasi + periode pembanding seperti dashboard Canva (request breakdowns kedua, 2026-10-29):
+ * pembanding = `from` − (N−1) hari s/d `from`, jadi hari `from` ikut di kedua periode. Persen Canva
+ * membandingkan rata-rata per hari: periode sekarang dibagi hari yang sudah selesai (hari ini belum
+ * dihitung Canva), pembanding dibagi N. `scale` mengalikan total sekarang agar sebanding.
+ */
+export function comparisonRange(from: string, to: string, now = Date.now()) {
   const f = parseDay(from);
   const t = parseDay(to);
   if (f === null || t === null || t < f) throw new Error('Rentang tanggal tidak valid.');
   const days = Math.round((t - f) / DAY_MS) + 1;
   if (days > MAX_RANGE_DAYS) throw new Error(`Rentang maksimal ${MAX_RANGE_DAYS} hari.`);
+  const today = Math.floor(now / DAY_MS) * DAY_MS;
+  const completeDays = Math.min(days, Math.max(1, Math.round((today - f) / DAY_MS)));
   return {
     from,
     to,
-    prevFrom: isoDay(f - days * DAY_MS),
-    prevTo: isoDay(f - DAY_MS),
+    prevFrom: isoDay(f - (days - 1) * DAY_MS),
+    prevTo: from,
     days: Array.from({ length: days }, (_, i) => isoDay(f + i * DAY_MS)),
+    scale: days / completeDays,
   };
 }

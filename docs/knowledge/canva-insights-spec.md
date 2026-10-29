@@ -80,6 +80,7 @@ Semua timestamp dalam ms UTC. **Rollup harian = hari UTC** (dikonfirmasi user).
 * Respons terlambat **±1 hari**: breakdowns yang diambil 28 Okt berakhir di 27 Okt (UTC).
 * Namun dashboard Canva sendiri menulis **"Data shown may exclude the last 7 days"**, jadi angka 7 hari terakhir masih bisa bertambah/direvisi. Contoh: breakdowns zahra.art hari terakhir (27 Okt) berisi Applies `0` tetapi Usages `796`.
 * Konsekuensi: collector mengambil ulang **14 hari terakhir** setiap run, server upsert, dan UI menandai **7 hari terakhir sebagai "sementara"**.
+* **Hari yang belum selesai tidak disimpan** (2026-10-29): Canva sempat mengirim baris parsial hari ini (Chital 29 Okt: Usages 63 pukul 02:02 UTC), lalu menyembunyikannya sampai harinya selesai. Ingest membuang baris harian (`by_content`, `breakdowns`) yang harinya belum berakhir saat batch diterima (`date + 1 hari > receivedAt`).
 
 ### 1.3 Paginasi
 * Respons `content/usages` membawa `"B": "<token>"` (mis. `"1e"`) bila masih ada halaman berikutnya; tidak ada `B` = halaman terakhir.
@@ -289,7 +290,8 @@ Permission baru `insights.view` (Admin, Art Director, Project Manager; bukan fre
 
 Meniru halaman **Template usages** Canva:
 * **Toolbar**: brand (5 + "Semua brand"), audiens (Free & Pro / Free / Pro), rentang tanggal (Last 7/30/90 days, This month, Last month, kustom). Filter disimpan di URL query.
-* **KPI**: Total Applies, Total Usages + delta % vs periode sebelumnya yang sama panjang (panah hijau/merah); tier terbaru per brand.
+* **KPI**: Total Applies, Total Usages + delta % vs periode pembanding (panah hijau/merah); tier terbaru per brand.
+* **Periode pembanding & persen ala Canva** (dicek dari request dashboard Canva Chital, 2026-10-29): rentang `from`..`to` sepanjang N hari dibanding `from − (N−1)` .. `from` (hari `from` ikut di kedua periode; Last 30 days 29 Sep–29 Okt → 30 Agu–29 Sep). Persen = rata-rata per hari: total sekarang ÷ hari yang sudah selesai vs total pembanding ÷ N (`comparisonRange().scale`). Chital: −22,5% / −8,1%, Canva menampilkan 23% / 8% (dibulatkan). "Sebelumnya" tetap menampilkan total mentah periode pembanding. Rumus sama untuk semua brand.
 * **Grafik area** Applies & Usages harian (recharts), catatan "data 7 hari terakhir mungkin belum lengkap".
 * **Tabel template**: thumbnail, judul, lisensi, Published, Total Applies + delta, Total Usages + delta, task/designer tertaut, rasio Usages/Applies. Kolom angka bisa diurutkan. Template yang terbit dalam rentang diberi label "baru".
 * **Paginasi server-side**: baris per halaman 10/25/50/100 (default 25), "1–25 dari N". Agregasi `SUM` per template + `LIMIT/OFFSET` di SQL (`Prisma.sql`).

@@ -81,7 +81,9 @@ export async function getCanvaInsightsAction(
         if (i !== undefined) {
           series.applies[i] = p.applies;
           series.usages[i] = p.usages;
-        } else if (p.day <= range.prevTo) {
+        }
+        // Hari `from` ada di kedua periode (pembanding ala Canva).
+        if (p.day <= range.prevTo) {
           prevApplies += p.applies;
           prevUsages += p.usages;
         }

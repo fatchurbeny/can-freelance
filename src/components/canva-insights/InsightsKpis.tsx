@@ -9,9 +9,11 @@ interface Props {
   brands: InsightsBrandView[];
   /** Kartu ke-4: status sinkron (semua brand) atau jumlah template (satu brand). */
   fourth: { label: string; value: string; pill: string; sub: string };
+  /** InsightsData.range.scale (persen = rata-rata per hari). */
+  scale: number;
 }
 
-export default function InsightsKpis({ brands, fourth }: Props) {
+export default function InsightsKpis({ brands, fourth, scale }: Props) {
   const sum = (key: 'applies' | 'usages' | 'prevApplies' | 'prevUsages') => brands.reduce((a, b) => a + b[key], 0);
   const applies = sum('applies');
   const usages = sum('usages');
@@ -20,8 +22,8 @@ export default function InsightsKpis({ brands, fourth }: Props) {
   const ratioDelta = pointDelta(applies ? usages / applies : 0, prevApplies ? prevUsages / prevApplies : 0, prevApplies > 0);
 
   const cards = [
-    { label: 'Total Applies', icon: MousePointerClick, value: fmtNum(applies), d: delta(applies, prevApplies), sub: `Sebelumnya ${fmtNum(prevApplies)}` },
-    { label: 'Total Usages', icon: Activity, value: fmtNum(usages), d: delta(usages, prevUsages), sub: `Sebelumnya ${fmtNum(prevUsages)}` },
+    { label: 'Total Applies', icon: MousePointerClick, value: fmtNum(applies), d: delta(applies, prevApplies, scale), sub: `Sebelumnya ${fmtNum(prevApplies)}` },
+    { label: 'Total Usages', icon: Activity, value: fmtNum(usages), d: delta(usages, prevUsages, scale), sub: `Sebelumnya ${fmtNum(prevUsages)}` },
     { label: 'Usages per Applies', icon: Percent, value: ratio(usages, applies), d: ratioDelta, sub: `Sebelumnya ${ratio(prevUsages, prevApplies)}` },
   ];
 
