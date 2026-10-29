@@ -255,8 +255,8 @@ Acceptance criteria (F3): Antrean global punya filter Production dan hanya memua
 
 ## 8. Catatan perbaikan (prasyarat F2–F4)
 
-- [ ] Dropbox VPS `invalid_client`: periksa app key/secret di `.next/standalone/.env` VPS, hubungkan ulang.
-- [ ] Tambah scope `files.content.write` di Dropbox App Console, hubungkan ulang akun (lokal + VPS).
+- [x] *(beres, dicek 2026-10-29: refresh token VPS OK)* Dropbox VPS `invalid_client`: periksa app key/secret di `.next/standalone/.env` VPS, hubungkan ulang.
+- [x] *(sudah ada di lokal & VPS, dicek 2026-10-29)* Tambah scope `files.content.write` di Dropbox App Console, hubungkan ulang akun (lokal + VPS).
 
 ## 9. Pertanyaan terbuka
 

@@ -18,12 +18,12 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 ## ⏳ Belum Selesai / Menunggu
 
 * Ganti PIN admin `FT-001` (menunggu user).
-* **Kode VPS**: `feat/asset-library` `23736dd` dirilis 2026-10-25, lalu working tree `feat/bundle-order-designer` dirilis 2026-10-27 (tanpa kode Asset Library). Rilis berikutnya sebaiknya dari `feat/canva-insights` (berisi keduanya) + SQL aditif hasil `prisma migrate diff` (tabel Canva, `accounts.canva_brand_id`; `bundle_contracts`/`contract_id` bila belum ada) + `INSIGHTS_INGEST_TOKEN`.
-* Backup DB VPS: `~/db-backups/can-freelance-20261025-130650-pre-unique-design.dump`. **SSH VPS juga di port 2222**: deploy `VPS_SSH_PORT=2222 npm run deploy:vps`. Env app VPS ada di `.next/standalone/.env` (tidak ada `.env` di root app).
+* **Kode VPS**: `feat/canva-insights` `4fe3b1a` (Asset Library + Bundle + Canva Insights + Slide Master F1 + fallback Notion) dirilis 2026-10-29 15:2x WIB; SQL aditif diterapkan (tabel Canva, `accounts.canva_brand_id`, `doctypes.qa_checklist` + isi checklist Doctype presentasi); `migrate diff` VPS ↔ skema = kosong. `INSIGHTS_INGEST_TOKEN` baru ditambahkan ke `.next/standalone/.env` VPS (ambil nilainya lewat SSH untuk extension). Brand Canva belum di-seed di VPS (`scripts/seed-canva-brands.ts`) → tab Canva Insights belum tampil di sana. Branch belum di-push.
+* Backup DB VPS terakhir: `~/db-backups/can-freelance-20261029-151332-pre-slide-master-f1.dump`. **SSH VPS juga di port 2222**: deploy `VPS_SSH_PORT=2222 npm run deploy:vps`. Env app VPS ada di `.next/standalone/.env` (tidak ada `.env` di root app).
 * Tombol "Download all Statement" di `/billing-statement` mengarah ke `/api/billing/download-all` yang tidak ada (dan `<a>` tanpa basePath) → selalu 404.
 * Print statement (`/billing-statement/print`) memanggil `window.print()` otomatis.
 * Escape saat dropdown terbuka di drawer `/user-role` menutup seluruh drawer (isian hilang).
-* Sync `Dropbox Link` ke Notion (perlu file diunggah ke File Request). Dropbox VPS: `invalid_client` di log.
+* Sync `Dropbox Link` ke Notion (perlu file diunggah ke File Request). Dropbox VPS sehat (cek 2026-10-29: refresh token OK, scope termasuk `files.content.write` ada di lokal & VPS).
 * Tab Email Notifications & Overview di production Elements masih konten Canva. Kanban per platform masih didiskusikan.
 * Impor katalog Notion "Canva Assets" belum dijalankan di VPS (VPS kini 142 aset).
 * Backlog: [Role kustom & matriks](../backlog/custom-roles-matrix.md), [Design Brief autosave](../backlog/task-drawer-design-brief-autosave.md).

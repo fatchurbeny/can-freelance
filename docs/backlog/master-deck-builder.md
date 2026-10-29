@@ -29,8 +29,8 @@ Status job: `QUEUED → FETCHING → ANALYZING → READY_REVIEW → REBUILDING �
 * **Item checklist mengikuti Doctype** (keputusan user 2026-10-29): disimpan di kolom baru `Doctype.qaChecklist`. Doctype presentasi (`PPTX, Slides, Keynote`) membutuhkan lima item di atas; Doctype tanpa daftar = tanpa checklist dan tanpa gerbang. Rincian: spec §5.0.
 
 ## Catatan perbaikan (prasyarat F2–F4)
-* [ ] Dropbox VPS `invalid_client`: periksa app key/secret di `.next/standalone/.env` VPS, hubungkan ulang akun.
-* [ ] Tambah scope `files.content.write` di Dropbox App Console, hubungkan ulang akun (lokal + VPS) agar hasil bisa ditulis ke `/_master/`.
+* [x] *(beres, dicek 2026-10-29: refresh token VPS OK)* Dropbox VPS `invalid_client`: periksa app key/secret di `.next/standalone/.env` VPS, hubungkan ulang akun.
+* [x] *(sudah ada di lokal & VPS, dicek 2026-10-29)* Tambah scope `files.content.write` di Dropbox App Console, hubungkan ulang akun (lokal + VPS) agar hasil bisa ditulis ke `/_master/`.
 
 ## Perubahan yang dibutuhkan
 * Skema (F1): `Doctype.qaChecklist String[]` (SQL aditif).
