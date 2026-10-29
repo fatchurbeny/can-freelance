@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Review overlay</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#FF5B1F}a:hover{color:#D9440E}
+</style>
+</helmet>
+<div style="min-height: 1040px; display: flex; flex-wrap: wrap; background: #FFFFFF; color: #18181B; font-family: Inter, system-ui, sans-serif; font-size: 14px; line-height: 1.45">
+
+  <!-- ============ SIDEBAR impro.std ============ -->
+  <aside style="flex: 1 1 220px; max-width: 262px; min-width: 0; border-right: 1px solid #ECECEF; display: flex; flex-direction: column; background: #FFFFFF">
+    <div style="height: 70px; box-sizing: border-box; padding: 0 22px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #ECECEF">
+      <span style="width: 32px; height: 32px; border-radius: 9px; background: #FF5B1F; color: #FFFFFF; display: grid; place-items: center; font-size: 13px; font-weight: 700; box-shadow: 0 2px 8px rgba(255,91,31,0.35)">IS</span>
+      <span style="font-size: 17px; font-weight: 600">impro.std</span>
+    </div>
+    <nav aria-label="Navigasi utama" style="padding: 26px 14px; display: flex; flex-direction: column; gap: 2px; flex: 1">
+      <sc-for list="{{nav}}" as="g" hint-placeholder-count="3">
+        <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; color: #71717A; padding: {{g.pad}}">{{g.label}}</div>
+        <sc-for list="{{g.items}}" as="i" hint-placeholder-count="3">
+          <a href="{{i.href}}" style="box-sizing: border-box; {{i.row}}">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="{{i.ic}}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{i.d}}"/></svg>
+            <span style="flex: 1">{{i.t}}</span>
+            <sc-if value="{{i.hasBadge}}" hint-placeholder-val="{{ false }}"><span style="font-size: 12px; font-weight: 600; padding: 1px 7px; border-radius: 6px; background: #FF5B1F; color: #FFFFFF">{{i.badge}}</span></sc-if>
+            <sc-if value="{{i.hasChev}}" hint-placeholder-val="{{ false }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="{{i.chevC}}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{i.chev}}"/></svg></sc-if>
+          </a>
+          <sc-if value="{{i.hasKids}}" hint-placeholder-val="{{ false }}">
+            <div style="margin-left: 22px; padding-left: 14px; border-left: 1px solid #E4E4E7; display: flex; flex-direction: column; gap: 4px; padding-block: 4px 8px">
+              <sc-for list="{{i.kids}}" as="k" hint-placeholder-count="4"><a href="{{k.href}}" style="box-sizing: border-box; {{k.s}}">{{k.t}}</a></sc-for>
+            </div>
+          </sc-if>
+        </sc-for>
+      </sc-for>
+    </nav>
+    <div style="border-top: 1px solid #ECECEF">
+      <button type="button" style="width: 100%; font: inherit; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 15px; border: none; border-bottom: 1px solid #ECECEF; background: #F7F7F8; color: #18181B; cursor: pointer; min-height: 50px">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.9-4M4 13a8 8 0 0 0 14.9 4"/><path d="M4 4v4h4M20 20v-4h-4"/></svg>Sync Now (Daily 00:00)</button>
+      <div style="display: flex; justify-content: space-between; padding: 13px 18px; font-size: 13.5px; border-bottom: 1px solid #ECECEF">
+        <span style="color: #71717A">Status</span>
+        <span style="display: inline-flex; align-items: center; gap: 7px; color: #15803D; font-weight: 600"><span style="width: 7px; height: 7px; border-radius: 50%; background: #22C55E"></span>Postgres Active</span>
+      </div>
+      <div style="padding: 13px 18px 16px; font-size: 13.5px; display: flex; flex-direction: column; gap: 2px">
+        <span style="color: #71717A">Terakhir Sync :</span>
+        <span style="font-weight: 600">Success - 0 Data</span>
+        <span style="color: #71717A; font-size: 12.5px">Today • 13.00.03</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column">
+    <header style="min-height: 70px; box-sizing: border-box; padding: 0 28px; border-bottom: 1px solid #E9E9EC; display: flex; flex-wrap: nowrap; align-items: center; justify-content: space-between; gap: 12px">
+      <div style="display: flex; align-items: center; gap: 10px; font-size: 17px; white-space: nowrap; min-width: 0">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#FF5B1F" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h18v12H3zM3 9h18M8 9v8M8 21h8M12 17v4"/></svg>
+        <a href="Main.dc.html" style="color: #71717A; text-decoration: none">Slide Master Builder</a><span style="color: #D4D4D8">/</span><span style="font-weight: 600">Business Proposal Deck</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px; flex-wrap: nowrap; flex: none">
+        <label style="display: flex; align-items: center; gap: 10px; border: 1px solid #E4E4E7; border-radius: 10px; padding: 0 8px 0 12px; height: 40px; color: #A1A1AA; min-width: 160px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+          <input type="search" placeholder="Search" aria-label="Search" style="border: none; outline: none; font: inherit; width: 80px; color: #18181B; background: transparent">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #52525B; background: #F4F4F5; border: 1px solid #E4E4E7; border-radius: 5px; padding: 1px 6px">⌘ K</span>
+        </label>
+        <button type="button" aria-label="Mode gelap" style="width: 40px; height: 40px; border: 1px solid #E4E4E7; border-radius: 10px; background: #FFFFFF; display: grid; place-items: center; cursor: pointer">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#3F3F46" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>
+        </button>
+        <button type="button" style="height: 40px; display: flex; align-items: center; gap: 10px; border: 1px solid #E4E4E7; border-radius: 10px; background: #FFFFFF; padding: 0 14px; font: inherit; font-weight: 500; cursor: pointer; color: #18181B">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF5B1F" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Semua Bulan
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <button type="button" style="height: 40px; display: flex; align-items: center; gap: 10px; border: 1px solid #E4E4E7; border-radius: 10px; background: #FFFFFF; padding: 0 12px; font: inherit; font-weight: 500; cursor: pointer; color: #18181B">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF5B1F" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Admin
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #52525B; background: #F4F4F5; border: 1px solid #E4E4E7; border-radius: 5px; padding: 1px 6px">FT-001</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div style="flex: 1; padding: 36px 28px; background-color: #FAFAFA; background-image: radial-gradient(#E4E4E7 1px, transparent 1px); background-size: 18px 18px">
+      <section style="background: #FFFFFF; border: 1px solid #E4E4E7">
+        <!-- tabs -->
+        <div role="tablist" style="display: flex; flex-wrap: wrap; border-bottom: 1px solid #E4E4E7; background: #FAFAFA">
+          <a href="Main.dc.html" role="tab" aria-selected="false" style="display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-right: 1px solid #E4E4E7; color: #52525B; font-size: 15px; text-decoration: none">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M7 4v16M12 4v10M17 4v6"/></svg>Antrean
+            <span style="font-size: 12px; font-weight: 600; background: #F4F4F5; color: #3F3F46; border-radius: 6px; padding: 2px 7px">6</span></a>
+          <a href="Review.dc.html" role="tab" aria-selected="true" style="display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-right: 1px solid #E4E4E7; border-bottom: 2px solid #FF5B1F; margin-bottom: -1px; background: #FFFFFF; color: #18181B; font-weight: 600; font-size: 15px; text-decoration: none">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#FF5B1F" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/></svg>Review Overlay
+            <span style="font-size: 12px; font-weight: 600; background: #F4F4F5; color: #3F3F46; border-radius: 6px; padding: 2px 7px">10</span></a>
+          <a href="Layouts.dc.html" role="tab" aria-selected="false" style="display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-right: 1px solid #E4E4E7; color: #52525B; font-size: 15px; text-decoration: none">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M3 9h18M9 9v11"/></svg>Layout &amp; Theme
+            <span style="font-size: 12px; font-weight: 600; background: #F4F4F5; color: #3F3F46; border-radius: 6px; padding: 2px 7px">19</span></a>
+          <a href="Export.dc.html" role="tab" aria-selected="false" style="display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-right: 1px solid #E4E4E7; color: #52525B; font-size: 15px; text-decoration: none">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Ekspor &amp; Verifikasi</a>
+        </div>
+        <!-- toolbar -->
+        <div style="display: flex; flex-wrap: wrap; align-items: stretch; border-bottom: 1px solid #E4E4E7; min-height: 50px">
+          <button type="button" aria-label="Cari elemen" style="width: 52px; border: none; border-right: 1px solid #E4E4E7; background: #FFFFFF; display: grid; place-items: center; cursor: pointer">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#3F3F46" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+          </button>
+          <button type="button" style="display: flex; align-items: center; gap: 10px; padding: 0 18px; border: none; border-right: 1px solid #E4E4E7; background: #FFFFFF; font: inherit; color: #27272A; cursor: pointer">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v16M6 14l6 6 6-6"/></svg>Keyakinan Terendah
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div role="group" aria-label="Layer" style="display: flex; align-items: center; gap: 14px; padding: 0 18px; border-right: 1px solid #E4E4E7; font-size: 13px">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3F3F46" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M4 12h16M4 17h7"/><circle cx="17" cy="7" r="2"/><circle cx="14" cy="17" r="2"/></svg>
+            <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer"><input type="checkbox" checked="{{showM}}" onChange="{{togM}}" style="accent-color: #4F46E5">Master</label>
+            <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer"><input type="checkbox" checked="{{showL}}" onChange="{{togL}}" style="accent-color: #16A34A">Layout</label>
+            <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer"><input type="checkbox" checked="{{showK}}" onChange="{{togK}}" style="accent-color: #52525B">Konten</label>
+          </div>
+          <div role="group" aria-label="Latar" style="display: flex; align-items: center; padding: 0 14px; border-right: 1px solid #E4E4E7">
+            <div style="display: inline-flex; background: #F4F4F5; border-radius: 8px; padding: 3px">
+              <button type="button" onClick="{{setPdf}}" style="font: inherit; font-size: 13px; border: none; border-radius: 6px; padding: 5px 11px; cursor: pointer; background: {{pdfBg}}; color: #18181B; font-weight: 500">Render PDF</button>
+              <button type="button" onClick="{{setWire}}" style="font: inherit; font-size: 13px; border: none; border-radius: 6px; padding: 5px 11px; cursor: pointer; background: {{wireBg}}; color: #18181B; font-weight: 500">Wireframe</button>
+            </div>
+          </div>
+          <span style="flex: 1"></span>
+          <button type="button" onClick="{{acceptHigh}}" style="display: flex; align-items: center; gap: 10px; padding: 0 24px; border: none; background: #FF5B1F; color: #FFFFFF; font: inherit; font-weight: 600; letter-spacing: 0.04em; cursor: pointer; min-height: 50px">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg>TERIMA SEMUA ≥ 90%</button>
+        </div>
+
+        <!-- kolom -->
+        <div style="display: grid; grid-template-columns: 150px minmax(0, 1fr) 330px">
+
+          <!-- rail -->
+          <div style="border-right: 1px solid #E4E4E7; min-width: 0">
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 14px; border-bottom: 1px solid #E4E4E7">
+              <span style="font-weight: 600">Slide</span>
+              <span style="min-width: 22px; height: 22px; box-sizing: border-box; padding: 0 6px; border: 1px solid #E4E4E7; border-radius: 5px; display: grid; place-items: center; font-size: 12px; font-weight: 600">20</span>
+            </div>
+            <div style="padding: 10px; display: flex; flex-direction: column; gap: 6px; max-height: 760px; overflow-y: auto">
+              <sc-for list="{{thumbs}}" as="t" hint-placeholder-count="8">
+                <button type="button" onClick="{{t.pick}}" aria-label="Slide {{t.n}}" style="display: flex; gap: 6px; align-items: flex-start; padding: 4px; border-radius: 6px; border: none; box-shadow: {{t.ring}}; background: {{t.rowBg}}; cursor: pointer; font: inherit">
+                  <span style="font-size: 11px; color: #71717A; width: 14px; text-align: right; padding-top: 1px">{{t.n}}</span>
+                  <span style="position: relative; display: block; width: 104px; height: 58px; border-radius: 2px; overflow: hidden; background: {{t.bg}}; box-shadow: 0 0 0 1px rgba(24,24,27,0.08)">
+                    <span style="box-sizing: border-box; {{t.panel}}"></span>
+                    <sc-if value="{{t.lines}}" hint-placeholder-val="{{ true }}">
+                      <span style="position: absolute; left: 5px; top: 4px; width: 10px; height: 5px; background: #FF5504"></span>
+                      <span style="position: absolute; left: 5px; top: 14px; width: 36px; height: 4px; background: #18181B"></span>
+                    </sc-if>
+                    <sc-if value="{{t.llm}}" hint-placeholder-val="{{ false }}">
+                      <span style="position: absolute; right: 3px; bottom: 3px; width: 8px; height: 8px; border-radius: 50%; background: #9333EA; box-shadow: 0 0 0 2px #FFFFFF"></span>
+                    </sc-if>
+                  </span>
+                </button>
+              </sc-for>
+            </div>
+          </div>
+
+          <!-- kanvas -->
+          <div style="border-right: 1px solid #E4E4E7; min-width: 0">
+            <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 20px; border-bottom: 1px solid #E4E4E7">
+              <span style="display: flex; align-items: center; gap: 8px; font-weight: 600"><span style="width: 8px; height: 8px; border-radius: 50%; background: #3B82F6"></span>Slide 2 · Setting the Stage</span>
+              <span style="display: flex; gap: 6px; font-size: 12px">
+                <span style="padding: 1px 7px; border-radius: 5px; border: 1px solid #E4E4E7; background: #FAFAFA; color: #3F3F46; font-weight: 500">asal: 1_Title Slide</span>
+                <span style="padding: 1px 7px; border-radius: 5px; border: 1px solid #BBF7D0; background: #F0FDF4; color: #15803D">usulan: Title + 2 Photos</span>
+              </span>
+            </div>
+            <div style="padding: 20px; display: flex; flex-direction: column; gap: 14px">
+              <div style="overflow-x: auto; background: #F4F4F5; border: 1px solid #E4E4E7; padding: 18px 0">
+                <div style="position: relative; width: 600px; height: 338px; margin: 0 auto; box-shadow: 0 1px 2px rgba(24,24,27,0.08), 0 6px 18px rgba(24,24,27,0.08); overflow: visible">
+                  <div style="position: absolute; left: 0; top: 0; width: 800px; height: 450px; transform: scale(0.75); transform-origin: 0 0; background: {{slideBg}}; font-family: 'Plus Jakarta Sans', Inter, sans-serif">
+                    <sc-if value="{{isPdf}}" hint-placeholder-val="{{ true }}">
+                      <div style="position: absolute; left: 33px; top: 12px; font-size: 45px; line-height: 1.15; color: #FF5504">01</div>
+                      <div style="position: absolute; left: 33px; top: 89px; font-size: 10px; color: #18181B">#businessproposal</div>
+                      <div style="position: absolute; left: 33px; top: 104px; font-size: 40px; line-height: 1.2; color: #18181B; white-space: nowrap">Setting <span style="color: #FF5504">the Stage</span></div>
+                      <div style="position: absolute; right: 32px; top: 37px; font-size: 10px; color: #18181B">Presentation <b>Template</b></div>
+                      <div style="position: absolute; left: 483px; top: 110px; width: 252px; display: flex; gap: 8px; font-size: 8px; line-height: 1.35; color: #18181B">
+                        <span style="color: #FF5504">(01)</span><span>Presenting a forward-thinking business proposal designed to build trust<br><span style="color: #FF5504; font-weight: 600">#businessproposal</span></span>
+                      </div>
+                      <div style="position: absolute; left: 228px; top: 173px; width: 125px; height: 125px; background: #CFC8BB; display: grid; place-items: center">
+                        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#8C8476" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="1.5"/><circle cx="9" cy="10" r="1.8"/><path d="M21 16l-5-5-8 8"/></svg>
+                      </div>
+                      <div style="position: absolute; left: 492px; top: 173px; width: 125px; height: 125px; background: #CFC8BB; display: grid; place-items: center">
+                        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#8C8476" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="1.5"/><circle cx="9" cy="10" r="1.8"/><path d="M21 16l-5-5-8 8"/></svg>
+                      </div>
+                      <div style="position: absolute; left: 428px; top: 94px; width: 20px; height: 20px; background: #18181B"></div>
+                      <div style="position: absolute; left: 448px; top: 114px; width: 20px; height: 20px; background: #FF5504"></div>
+                      <div style="position: absolute; left: 33px; top: 302px; width: 330px; display: flex; flex-direction: column; gap: 3px">
+                        <span style="font-size: 12px; color: #FF5504">2027</span>
+                        <span style="font-size: 8px; line-height: 1.4; color: #18181B">This Business Proposal presentation is crafted to help you communicate vision, value, and opportunity with clarity and impact. It guides potential investors, partners, or clients through your goals</span>
+                      </div>
+                      <svg style="position: absolute; left: 45px; top: 413px" width="18" height="13" viewBox="0 0 18 13" aria-hidden="true"><path d="M0 6.5A6.5 6.5 0 0 1 6.5 0H14L18 13H9L12 8.5H6.5A2 2 0 0 1 6.5 4.5" fill="#FF5504"/></svg>
+                    </sc-if>
+                    <sc-for list="{{overlays}}" as="o" hint-placeholder-count="6">
+                      <button type="button" onClick="{{o.pick}}" aria-label="{{o.name}}" style="box-sizing: border-box; {{o.box}}">
+                        <span style="box-sizing: border-box; {{o.chip}}">{{o.short}}</span>
+                      </button>
+                    </sc-for>
+                  </div>
+                </div>
+              </div>
+              <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; font-size: 13px; color: #71717A">
+                <span>Klik kotak di slide atau kartu di kanan untuk melihat alasannya.</span>
+                <span style="display: flex; gap: 6px">
+                  <button type="button" style="font: inherit; font-size: 13px; padding: 7px 12px; border: 1px solid #E4E4E7; border-radius: 8px; background: #FFFFFF; color: #18181B; cursor: pointer; min-height: 36px">← Slide 1</button>
+                  <button type="button" style="font: inherit; font-size: 13px; padding: 7px 12px; border: 1px solid #E4E4E7; border-radius: 8px; background: #FFFFFF; color: #18181B; cursor: pointer; min-height: 36px">Slide 3 →</button>
+                </span>
+              </div>
+
+              <!-- detail -->
+              <div style="border: 1px solid #E4E4E7; display: flex; flex-direction: column">
+                <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 16px; border-bottom: 1px solid #E4E4E7; background: #FAFAFA">
+                  <span style="display: flex; align-items: center; gap: 10px">
+                    <span style="font-weight: 600; font-size: 15px">{{sel.name}}</span>
+                    <span style="box-sizing: border-box; {{sel.catPill}}">{{sel.cat}}</span>
+                    <span style="box-sizing: border-box; {{sel.srcPill}}">{{sel.src}}</span>
+                  </span>
+                  <span style="font-size: 13px; color: #52525B">{{sel.target}}</span>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr))">
+                  <div style="padding: 14px 16px; border-right: 1px solid #E4E4E7; display: flex; flex-direction: column; gap: 10px">
+                    <div style="display: flex; flex-direction: column; gap: 5px">
+                      <div style="display: flex; justify-content: space-between; font-size: 12.5px; color: #71717A"><span>Keyakinan</span><span style="font-family: 'JetBrains Mono', monospace; color: #18181B">{{sel.conf}}%</span></div>
+                      <div style="height: 6px; background: #F4F4F5; border-radius: 999px; overflow: hidden"><div style="box-sizing: border-box; {{sel.bar}}"></div></div>
+                    </div>
+                    <p style="margin: 0; font-size: 13px; color: #3F3F46">{{sel.why}}</p>
+                  </div>
+                  <div style="padding: 14px 16px; display: flex; flex-direction: column; gap: 12px">
+                    <dl style="margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; font-size: 12.5px">
+                      <dt style="color: #71717A">Posisi</dt><dd style="margin: 0; font-family: 'JetBrains Mono', monospace; font-size: 12px">{{sel.pos}}</dd>
+                      <dt style="color: #71717A">Gaya</dt><dd style="margin: 0; font-family: 'JetBrains Mono', monospace; font-size: 12px">{{sel.style}}</dd>
+                      <dt style="color: #71717A">Status</dt><dd style="margin: 0"><span style="box-sizing: border-box; {{sel.statusPill}}">{{sel.status}}</span></dd>
+                    </dl>
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px">
+                      <button type="button" onClick="{{accept}}" style="font: inherit; font-size: 13px; font-weight: 600; padding: 8px 16px; border-radius: 8px; border: none; background: #FF5B1F; color: #FFFFFF; cursor: pointer; min-height: 38px">Terima</button>
+                      <button type="button" onClick="{{reject}}" style="font: inherit; font-size: 13px; padding: 8px 14px; border-radius: 8px; border: 1px solid #E4E4E7; background: #FFFFFF; color: #18181B; cursor: pointer; min-height: 38px">Tolak</button>
+                      <label for="moveto" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Pindah kategori</label>
+                      <select id="moveto" style="font: inherit; font-size: 13px; padding: 8px 10px; border-radius: 8px; border: 1px solid #E4E4E7; background: #FFFFFF; color: #18181B; min-height: 38px">
+                        <option>Pindah ke…</option><option>Master</option><option>Layout</option><option>Konten</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- elemen -->
+          <div style="min-width: 0">
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid #E4E4E7">
+              <span style="display: flex; align-items: center; gap: 8px; font-weight: 600"><span style="width: 8px; height: 8px; border-radius: 50%; background: #22C55E"></span>Elemen</span>
+              <span style="display: flex; align-items: center; gap: 8px">
+                <span style="font-size: 12px; color: #71717A">{{doneCount}} diputuskan</span>
+                <span style="min-width: 22px; height: 22px; box-sizing: border-box; padding: 0 6px; border: 1px solid #E4E4E7; border-radius: 5px; display: grid; place-items: center; font-size: 12px; font-weight: 600">10</span>
+              </span>
+            </div>
+            <ul style="list-style: none; margin: 0; padding: 0">
+              <sc-for list="{{items}}" as="it" hint-placeholder-count="10">
+                <li style="border-bottom: 1px solid #E4E4E7">
+                  <button type="button" onClick="{{it.pick}}" style="width: 100%; text-align: left; font: inherit; color: #18181B; padding: 13px 16px; border: none; background: {{it.rowBg}}; box-shadow: {{it.ring}}; cursor: pointer; display: flex; flex-direction: column; gap: 8px">
+                    <span style="display: flex; align-items: center; gap: 10px">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg>
+                      <span style="font-size: 14.5px">{{it.name}}</span>
+                    </span>
+                    <span style="display: flex; flex-wrap: wrap; gap: 5px; font-size: 12px">
+                      <span style="box-sizing: border-box; {{it.numPill}}">{{it.conf}}%</span>
+                      <span style="box-sizing: border-box; {{it.catPill}}">{{it.cat}}</span>
+                      <span style="box-sizing: border-box; {{it.srcPill}}">{{it.src}}</span>
+                      <sc-if value="{{it.hasStatus}}" hint-placeholder-val="{{ false }}">
+                        <span style="box-sizing: border-box; {{it.statusPill}}">{{it.status}}</span>
+                      </sc-if>
+                    </span>
+                  </button>
+                </li>
+              </sc-for>
+            </ul>
+            <a href="Layouts.dc.html" style="margin: 16px; display: flex; justify-content: center; align-items: center; gap: 8px; border: 1px solid #E4E4E7; border-radius: 8px; color: #18181B; text-decoration: none; font-weight: 500; padding: 11px; min-height: 44px; box-sizing: border-box">Lanjut ke Layout &amp; Theme
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1040}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { sel: 'title', view: 'pdf', m: true, l: true, k: true, slide: 2, status: {} };
+  }
+  renderVals() {
+    const I = {
+      grid: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z',
+      prod: 'M8 3h11a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM4 7v12a2 2 0 0 0 2 2h10',
+      smb: 'M3 5h18v12H3zM3 9h18M8 9v8M8 21h8M12 17v4',
+      team: 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21a7 7 0 0 1 14 0M16 3.5a4 4 0 0 1 0 7.5M18 14a6 6 0 0 1 4 7',
+      rate: 'M3 6h18v12H3zM3 10h18M7 15h3',
+      bill: 'M6 3h9l5 5v13H6zM14 3v6h6M9 13h6M9 17h6',
+      role: 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21a7 7 0 0 1 12-5M16 15l1.5 1.5L21 13',
+      gear: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 13a7.5 7.5 0 0 0 0-2l2-1.5-2-3.5-2.4 1a7.5 7.5 0 0 0-1.7-1L15 3.5h-4l-.4 2.5a7.5 7.5 0 0 0-1.7 1l-2.4-1-2 3.5 2 1.5a7.5 7.5 0 0 0 0 2l-2 1.5 2 3.5 2.4-1a7.5 7.5 0 0 0 1.7 1l.4 2.5h4l.4-2.5a7.5 7.5 0 0 0 1.7-1l2.4 1 2-3.5z'
+    };
+    const NAV = (act) => {
+      const row = (on) => 'display:flex;align-items:center;gap:10px;padding:9px 8px;border-radius:8px;text-decoration:none;font-size:15px;white-space:nowrap;' + (on ? 'background:#FFF4EE;color:#D9440E;font-weight:600' : 'color:#27272A');
+      const kid = (on) => 'display:block;padding:7px 12px;border-radius:8px;text-decoration:none;font-size:14.5px;' + (on ? 'border:1px solid #E4E4E7;background:#FFFFFF;color:#FF5B1F;font-weight:500;box-shadow:0 1px 2px rgba(24,24,27,.05)' : 'border:1px solid transparent;color:#3F3F46');
+      const it = (t, d, o) => Object.assign({ t, d, href: '#', ic: '#FF5B1F', row: row(false), hasBadge: false, badge: '', hasChev: false, chev: '', chevC: '#A1A1AA', hasKids: false, kids: [] }, o || {});
+      const open = act === 'sc_elements';
+      return [
+        { label: 'GET STARTED', pad: '0 10px 10px', items: [
+          it('Overview', I.grid, { ic: '#71717A', hasChev: true, chev: 'M9 6l6 6-6 6', chevC: '#FF5B1F' }),
+          it('Production', I.prod, { href: 'Kanban.dc.html', hasChev: true, chev: open ? 'M6 9l6 6 6-6' : 'M9 6l6 6-6 6', hasKids: open, kids: [
+            { t: 'Freelance Lamongan', href: '#', s: kid(false) }, { t: 'SC_Elements', href: 'Kanban.dc.html', s: kid(true) },
+            { t: 'SC_Canva', href: '#', s: kid(false) }, { t: '+  Tambah Production', href: '#', s: kid(false) }] }),
+          it('Slide Master Builder', I.smb, { href: 'Main.dc.html', row: row(act === 'smb'), hasBadge: true, badge: '6' })
+        ] },
+        { label: 'BUILD', pad: '22px 10px 10px', items: [it('Account & Team', I.team), it('Rate Card', I.rate), it('Billing Statement', I.bill)] },
+        { label: 'MANAGE & OBSERVE', pad: '22px 10px 10px', items: [it('User & Role', I.role), it('Notion Config', I.gear)] }
+      ];
+    };
+    const S = this.state;
+    const base = 'font-size:12px;padding:1px 7px;border-radius:5px;white-space:nowrap;display:inline-block;';
+    const P = {
+      indigo: base + 'border:1px solid #C7D2FE;background:#EEF2FF;color:#4F46E5',
+      green: base + 'border:1px solid #BBF7D0;background:#F0FDF4;color:#15803D',
+      neutral: base + 'border:1px solid #E4E4E7;background:#FAFAFA;color:#3F3F46;font-weight:500',
+      purple: base + 'border:1px solid #E9D5FF;background:#FAF5FF;color:#9333EA',
+      red: base + 'border:1px solid #FECACA;background:#FEF2F2;color:#DC2626',
+      orange: base + 'border:1px solid #FED7AA;background:#FFF7ED;color:#C2410C'
+    };
+    const CAT = {
+      M: { label: 'Master', c: '#4F46E5', soft: '#EEF2FF', border: '2px solid #4F46E5', pill: P.indigo },
+      L: { label: 'Layout', c: '#16A34A', soft: '#F0FDF4', border: '2px dashed #16A34A', pill: P.green },
+      K: { label: 'Konten', c: '#52525B', soft: '#F4F4F5', border: '1.5px dotted #71717A', pill: P.neutral }
+    };
+    const data = [
+      { id: 'desc', cat: 'K', name: 'Blok deskripsi', short: 'Deskripsi', target: 'usulan: placeholder bertingkat', conf: 58, src: 'LLM', x: 478, y: 105, w: 262, h: 40,
+        why: 'Pola "(01) + paragraf + tag" berulang di beberapa slide, tapi posisinya berbeda-beda. Heuristik menilai ini konten. LLM mengusulkan placeholder Deskripsi dengan level 2 untuk tag oranye.', pos: 'x 580 · y 131 pt', style: '12pt · accent1 di level 2' },
+      { id: 'deco', cat: 'K', name: 'Motif kotak', short: 'Motif', target: 'tetap konten', conf: 72, src: 'Heuristik', x: 424, y: 90, w: 48, h: 48,
+        why: 'Pasangan kotak hitam dan oranye muncul di banyak slide dengan posisi berbeda. Diperlakukan sebagai dekorasi per slide.', pos: 'x 514 · y 113 pt', style: 'tx1 + accent1' },
+      { id: 'body', cat: 'K', name: 'Tahun + paragraf', short: 'Paragraf', target: 'tetap konten', conf: 90, src: 'Heuristik', x: 30, y: 298, w: 336, h: 62,
+        why: 'Isi teks berbeda di setiap slide dan tidak punya pasangan posisi yang konsisten.', pos: 'x 40 · y 363 pt', style: '12pt · tx1' },
+      { id: 'num', cat: 'L', name: 'Nomor section', short: 'Nomor', target: '→ placeholder nomor', conf: 95, src: 'Heuristik', x: 33, y: 13, w: 233, h: 60,
+        why: 'Dua digit berurutan (01 sampai 18) di posisi yang persis sama pada 18 slide.', pos: 'x 40 · y 17 pt', style: '+mj-lt 54pt · accent1' },
+      { id: 'tag', cat: 'L', name: 'Tag', short: 'Tag', target: '→ placeholder tag', conf: 95, src: 'Heuristik', x: 33, y: 87, w: 147, h: 16,
+        why: 'Teks identik "#businessproposal" di posisi sama pada 18 slide, selalu tergrup dengan judul.', pos: 'x 40 · y 106 pt', style: '+mn-lt 12pt · tx1' },
+      { id: 'title', cat: 'L', name: 'Judul', short: 'Title', target: '→ title placeholder', conf: 98, src: 'Heuristik', x: 33, y: 103, w: 390, h: 54,
+        why: 'Teks dengan font terbesar di area atas. Posisi dan lebarnya sama di 18 dari 18 slide konten, dengan kata kedua selalu berwarna accent1.', pos: 'x 40 · y 124 pt · w 468', style: '+mj-lt 48pt · tx1 + accent1' },
+      { id: 'p1', cat: 'L', name: 'Foto 1', short: 'Foto 1', target: '→ picture placeholder', conf: 100, src: 'Sudah ada', x: 228, y: 173, w: 125, h: 125,
+        why: 'Picture placeholder yang sudah ada di layout asal. Hanya diberi nama yang jelas.', pos: 'x 273 · y 208 pt', style: 'crop persegi' },
+      { id: 'p2', cat: 'L', name: 'Foto 2', short: 'Foto 2', target: '→ picture placeholder', conf: 100, src: 'Sudah ada', x: 492, y: 173, w: 125, h: 125,
+        why: 'Picture placeholder yang sudah ada di layout asal. Hanya diberi nama yang jelas.', pos: 'x 590 · y 208 pt', style: 'crop persegi' },
+      { id: 'label', cat: 'M', name: 'Label header', short: 'Header', target: 'tetap di Master', conf: 100, src: 'Sudah ada', x: 576, y: 33, w: 192, h: 18,
+        why: 'Sudah berada di slide master dan tampil di 18 dari 20 slide. Slide 10 dan 20 menyembunyikannya.', pos: 'x 691 · y 42 pt', style: '12pt · rata kanan' },
+      { id: 'logo', cat: 'M', name: 'Logo', short: 'Logo', target: 'tetap di Master', conf: 100, src: 'Sudah ada', x: 41, y: 409, w: 26, h: 21,
+        why: 'Freeform di slide master dengan isi accent1. Cover menimpa logo ini dengan versi bg1.', pos: 'x 54 · y 496 pt', style: 'fill accent1' }
+    ];
+    const vis = { M: S.m, L: S.l, K: S.k };
+    const st = S.status;
+    const pick = (id) => () => this.setState({ sel: id });
+    const isWire = S.view === 'wire';
+    const srcPill = (s) => s === 'LLM' ? P.purple : P.neutral;
+    const stPill = (s) => s === 'ok' ? P.green : P.red;
+    const overlays = data.filter((d) => vis[d.cat]).map((d) => {
+      const c = CAT[d.cat]; const on = d.id === S.sel;
+      const fill = isWire ? '#FFFFFF' : (on ? c.soft + 'CC' : 'transparent');
+      return {
+        name: d.name, short: d.short, pick: pick(d.id),
+        box: 'position:absolute;left:' + d.x + 'px;top:' + d.y + 'px;width:' + d.w + 'px;height:' + d.h + 'px;border:' + c.border + ';' + (on ? 'outline:3px solid #FF5B1F;outline-offset:3px;' : '') + 'background:' + fill + ';border-radius:2px;cursor:pointer;padding:0;font:inherit',
+        chip: 'position:absolute;left:-2px;top:-22px;font-family:Inter,sans-serif;font-size:13px;font-weight:600;line-height:1;padding:4px 6px;border-radius:4px;white-space:nowrap;color:#FFFFFF;background:' + (d.src === 'LLM' ? '#9333EA' : c.c)
+      };
+    });
+    const items = data.map((d) => {
+      const c = CAT[d.cat]; const on = d.id === S.sel; const s = st[d.id];
+      return {
+        name: d.name, conf: d.conf, cat: c.label, src: d.src, pick: pick(d.id),
+        numPill: P.neutral, catPill: c.pill, srcPill: srcPill(d.src),
+        hasStatus: !!s, status: s === 'ok' ? 'Diterima' : 'Ditolak', statusPill: s ? stPill(s) : P.neutral,
+        rowBg: on ? '#FFF7F3' : '#FFFFFF',
+        ring: on ? 'inset 0 0 0 1.5px #FF5B1F' : 'none'
+      };
+    });
+    const d = data.find((x) => x.id === S.sel) || data[0];
+    const c = CAT[d.cat]; const s = st[d.id];
+    const barC = d.conf >= 80 ? '#16A34A' : d.conf >= 70 ? '#EAB308' : '#9333EA';
+    const sel = {
+      name: d.name, target: d.target, conf: d.conf, why: d.why, pos: d.pos, style: d.style,
+      cat: c.label, catPill: c.pill, src: d.src === 'LLM' ? 'Usulan LLM' : d.src, srcPill: srcPill(d.src),
+      bar: 'height:100%;width:' + d.conf + '%;background:' + barC,
+      status: s === 'ok' ? 'Diterima' : s === 'no' ? 'Ditolak' : 'Belum diputuskan',
+      statusPill: s ? stPill(s) : P.neutral
+    };
+    const kinds = { 1: 'cover', 9: 'splitO', 12: 'splitD', 20: 'close' };
+    const thumbs = Array.from({ length: 20 }, (_, i) => {
+      const n = i + 1; const k = kinds[n] || 'light';
+      const bg = k === 'cover' || k === 'close' ? '#FF5504' : '#E3DED4';
+      const panel = k === 'cover' ? 'position:absolute;left:71%;top:0;width:29%;height:100%;background:#18181B'
+        : k === 'close' ? 'position:absolute;left:0;top:0;width:69%;height:100%;background:#18181B'
+        : k === 'splitO' ? 'position:absolute;left:53%;top:0;width:47%;height:100%;background:#FF5504'
+        : k === 'splitD' ? 'position:absolute;left:53%;top:0;width:47%;height:100%;background:#18181B' : 'display:none';
+      const on = n === S.slide;
+      return { n, bg, panel, lines: k !== 'cover' && k !== 'close', llm: n === 9 || n === 12,
+        ring: on ? 'inset 0 0 0 1.5px #FF5B1F' : 'none', rowBg: on ? '#FFF7F3' : 'transparent',
+        pick: () => this.setState({ slide: n }) };
+    });
+    const set = (v) => () => { const ns = Object.assign({}, st); ns[S.sel] = v; this.setState({ status: ns }); };
+    const acceptHigh = () => { const ns = Object.assign({}, st); data.forEach((x) => { if (x.conf >= 90 && !ns[x.id]) ns[x.id] = 'ok'; }); this.setState({ status: ns }); };
+    return {
+      nav: NAV('smb'), thumbs, overlays, items, sel, acceptHigh,
+      doneCount: Object.keys(st).length,
+      accept: set('ok'), reject: set('no'),
+      isPdf: !isWire,
+      slideBg: isWire ? '#FFFFFF' : '#E3DED4',
+      pdfBg: isWire ? 'transparent' : '#FFFFFF', wireBg: isWire ? '#FFFFFF' : 'transparent',
+      setPdf: () => this.setState({ view: 'pdf' }), setWire: () => this.setState({ view: 'wire' }),
+      showM: S.m, showL: S.l, showK: S.k,
+      togM: () => this.setState({ m: !S.m }), togL: () => this.setState({ l: !S.l }), togK: () => this.setState({ k: !S.k })
+    };
+  }
+}
+</script>
+</body>
+</html>

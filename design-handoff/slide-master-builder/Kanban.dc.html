@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>SC_Elements — Kanban Board</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#FF5B1F}a:hover{color:#D9440E}
+</style>
+</helmet>
+<div style="position: relative; min-height: 1240px; display: flex; flex-wrap: wrap; background: #FFFFFF; color: #18181B; font-family: Inter, system-ui, sans-serif; font-size: 14px; line-height: 1.45">
+
+  <!-- ============ SIDEBAR impro.std ============ -->
+  <aside style="flex: 1 1 220px; max-width: 262px; min-width: 0; border-right: 1px solid #ECECEF; display: flex; flex-direction: column; background: #FFFFFF">
+    <div style="height: 70px; box-sizing: border-box; padding: 0 22px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #ECECEF">
+      <span style="width: 32px; height: 32px; border-radius: 9px; background: #FF5B1F; color: #FFFFFF; display: grid; place-items: center; font-size: 13px; font-weight: 700; box-shadow: 0 2px 8px rgba(255,91,31,0.35)">IS</span>
+      <span style="font-size: 17px; font-weight: 600">impro.std</span>
+    </div>
+    <nav aria-label="Navigasi utama" style="padding: 26px 14px; display: flex; flex-direction: column; gap: 2px; flex: 1">
+      <sc-for list="{{nav}}" as="g" hint-placeholder-count="3">
+        <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; color: #71717A; padding: {{g.pad}}">{{g.label}}</div>
+        <sc-for list="{{g.items}}" as="i" hint-placeholder-count="3">
+          <a href="{{i.href}}" style="box-sizing: border-box; {{i.row}}">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="{{i.ic}}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{i.d}}"/></svg>
+            <span style="flex: 1">{{i.t}}</span>
+            <sc-if value="{{i.hasBadge}}" hint-placeholder-val="{{ false }}"><span style="font-size: 12px; font-weight: 600; padding: 1px 7px; border-radius: 6px; background: #FF5B1F; color: #FFFFFF">{{i.badge}}</span></sc-if>
+            <sc-if value="{{i.hasChev}}" hint-placeholder-val="{{ false }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="{{i.chevC}}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{i.chev}}"/></svg></sc-if>
+          </a>
+          <sc-if value="{{i.hasKids}}" hint-placeholder-val="{{ false }}">
+            <div style="margin-left: 22px; padding-left: 14px; border-left: 1px solid #E4E4E7; display: flex; flex-direction: column; gap: 4px; padding-block: 4px 8px">
+              <sc-for list="{{i.kids}}" as="k" hint-placeholder-count="4"><a href="{{k.href}}" style="box-sizing: border-box; {{k.s}}">{{k.t}}</a></sc-for>
+            </div>
+          </sc-if>
+        </sc-for>
+      </sc-for>
+    </nav>
+    <div style="border-top: 1px solid #ECECEF">
+      <button type="button" style="width: 100%; font: inherit; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 15px; border: none; border-bottom: 1px solid #ECECEF; background: #F7F7F8; color: #18181B; cursor: pointer; min-height: 50px">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.9-4M4 13a8 8 0 0 0 14.9 4"/><path d="M4 4v4h4M20 20v-4h-4"/></svg>Sync Now (Daily 00:00)</button>
+      <div style="display: flex; justify-content: space-between; padding: 13px 18px; font-size: 13.5px; border-bottom: 1px solid #ECECEF">
+        <span style="color: #71717A">Status</span>
+        <span style="display: inline-flex; align-items: center; gap: 7px; color: #15803D; font-weight: 600"><span style="width: 7px; height: 7px; border-radius: 50%; background: #22C55E"></span>Postgres Active</span>
+      </div>
+      <div style="padding: 13px 18px 16px; font-size: 13.5px; display: flex; flex-direction: column; gap: 2px">
+        <span style="color: #71717A">Terakhir Sync :</span>
+        <span style="font-weight: 600">Success - 0 Data</span>
+        <span style="color: #71717A; font-size: 12.5px">Today • 13.00.03</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column">
+    <header style="min-height: 70px; box-sizing: border-box; padding: 0 28px; border-bottom: 1px solid #ECECEF; display: flex; flex-wrap: nowrap; align-items: center; justify-content: space-between; gap: 12px">
+      <div style="display: flex; align-items: center; gap: 10px; font-size: 17px; white-space: nowrap; min-width: 0">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#FF5B1F" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3h11a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM4 7v12a2 2 0 0 0 2 2h10"/></svg>
+        <span style="color: #71717A">Production</span><span style="color: #D4D4D8">/</span><span style="font-weight: 600">SC_Elements</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px; flex-wrap: nowrap; flex: none">
+        <label style="display: flex; align-items: center; gap: 10px; border: 1px solid #E4E4E7; border-radius: 10px; padding: 0 8px 0 12px; height: 40px; color: #A1A1AA">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+          <input type="search" placeholder="Search" aria-label="Search" style="border: none; outline: none; font: inherit; width: 84px; color: #18181B; background: transparent">
+          <span style="font-size: 11px; font-weight: 600; color: #52525B; background: #F4F4F5; border: 1px solid #E4E4E7; border-radius: 5px; padding: 1px 6px">⌘ K</span>
+        </label>
+        <button type="button" aria-label="Mode gelap" style="width: 40px; height: 40px; border: 1px solid #E4E4E7; border-radius: 10px; background: #FFFFFF; display: grid; place-items: center; cursor: pointer">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#3F3F46" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>
+        </button>
+        <button type="button" style="height: 40px; display: flex; align-items: center; gap: 10px; border: 1px solid #E4E4E7; border-radius: 10px; background: #FFFFFF; padding: 0 14px; font: inherit; font-weight: 500; cursor: pointer; color: #18181B">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF5B1F" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Semua Bulan
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <button type="button" style="height: 40px; display: flex; align-items: center; gap: 10px; border: 1px solid #E4E4E7; border-radius: 10px; background: #FFFFFF; padding: 0 12px; font: inherit; font-weight: 500; cursor: pointer; color: #18181B">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF5B1F" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="10" cy="8" r="4"/><path d="M3 21a7 7 0 0 1 12-5M16 15l1.5 1.5L21 13"/></svg>Admin
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #52525B; background: #F4F4F5; border: 1px solid #E4E4E7; border-radius: 5px; padding: 1px 6px">FT-001</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div style="flex: 1; padding: 36px 36px 48px; background-color: #FAFAFA; background-image: radial-gradient(#E7E7EA 1px, transparent 1px); background-size: 20px 20px">
+      <section style="background: #FFFFFF; border: 1px solid #E4E4E7">
+        <div role="tablist" style="display: flex; flex-wrap: wrap; border-bottom: 1px solid #E4E4E7">
+          <span role="tab" aria-selected="false" style="display: flex; align-items: center; gap: 10px; padding: 15px 20px; border-right: 1px solid #E4E4E7; color: #3F3F46; font-size: 16px">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></svg>Overview</span>
+          <span role="tab" aria-selected="true" style="display: flex; align-items: center; gap: 10px; padding: 15px 20px; border-right: 1px solid #E4E4E7; border-bottom: 2px solid #FF5B1F; margin-bottom: -1px; color: #18181B; font-weight: 600; font-size: 16px">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#FF5B1F" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M7 4v16M12 4v10M17 4v6"/></svg>Kanban Board</span>
+          <span role="tab" aria-selected="false" style="display: flex; align-items: center; gap: 10px; padding: 15px 20px; border-right: 1px solid #E4E4E7; color: #3F3F46; font-size: 16px">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16v.5"/></svg>Parameter Issue</span>
+          <span role="tab" aria-selected="false" style="display: flex; align-items: center; gap: 10px; padding: 15px 20px; border-right: 1px solid #E4E4E7; color: #3F3F46; font-size: 16px">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="1.5"/><path d="M3 7l9 6 9-6"/></svg>Email Notifications
+            <span style="font-size: 12px; font-weight: 600; background: #F4F4F5; color: #3F3F46; border-radius: 6px; padding: 2px 8px">35</span></span>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; align-items: stretch; border-bottom: 1px solid #E4E4E7; min-height: 52px">
+          <button type="button" aria-label="Cari task" style="width: 52px; border: none; border-right: 1px solid #E4E4E7; background: #FFFFFF; display: grid; place-items: center; cursor: pointer">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#3F3F46" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+          </button>
+          <button type="button" style="display: flex; align-items: center; gap: 10px; padding: 0 18px; border: none; border-right: 1px solid #E4E4E7; background: #FFFFFF; font: inherit; font-size: 15px; color: #27272A; cursor: pointer">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v16M6 14l6 6 6-6"/></svg>Last Edited
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <button type="button" style="display: flex; align-items: center; gap: 10px; padding: 0 18px; border: none; border-right: 1px solid #E4E4E7; background: #FFFFFF; font: inherit; font-size: 15px; color: #27272A; cursor: pointer">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M4 12h16M4 17h7"/><circle cx="17" cy="7" r="2"/><circle cx="14" cy="17" r="2"/></svg>Filter
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <span style="flex: 1"></span>
+          <button type="button" style="display: flex; align-items: center; gap: 10px; padding: 0 26px; border: none; background: #FF5B1F; color: #FFFFFF; font: inherit; font-size: 15px; font-weight: 600; letter-spacing: 0.04em; cursor: pointer; min-height: 52px">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>ADD NEW TASK</button>
+        </div>
+
+        <div style="overflow-x: auto">
+          <div style="display: grid; grid-template-columns: repeat(6, minmax(220px, 1fr)); min-width: 1360px">
+            <sc-for list="{{cols}}" as="col" hint-placeholder-count="6">
+              <div style="border-right: 1px solid #E4E4E7; min-width: 0; min-height: 900px">
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid #E4E4E7">
+                  <span style="display: flex; align-items: center; gap: 9px; font-weight: 600; font-size: 15px"><span style="box-sizing: border-box; {{col.dot}}"></span>{{col.title}}</span>
+                  <span style="min-width: 24px; height: 24px; box-sizing: border-box; padding: 0 6px; border: 1px solid #E4E4E7; border-radius: 5px; display: grid; place-items: center; font-size: 12px; font-weight: 600">{{col.count}}</span>
+                </div>
+                <sc-if value="{{col.empty}}" hint-placeholder-val="{{ false }}">
+                  <div style="padding: 28px 16px; text-align: center; color: #71717A">No {{col.title}} tasks.</div>
+                </sc-if>
+                <sc-for list="{{col.cards}}" as="c" hint-placeholder-count="2">
+                  <div style="padding: 16px; border-bottom: 1px solid #E4E4E7; display: flex; flex-direction: column; gap: 10px; background: {{c.bg}}">
+                    <button type="button" onClick="{{c.open}}" style="display: flex; gap: 10px; align-items: flex-start; padding: 0; border: none; background: transparent; text-align: left; font: inherit; color: #18181B; cursor: pointer">
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg>
+                      <span style="font-size: 15px">{{c.name}}</span>
+                    </button>
+                    <span style="display: flex; flex-wrap: wrap; gap: 5px; align-items: center">
+                      <sc-for list="{{c.pills}}" as="p" hint-placeholder-count="6"><span style="box-sizing: border-box; {{p.s}}">{{p.t}}</span></sc-for>
+                      <button type="button" onClick="{{c.openQa}}" aria-label="Checklist QA {{c.done}} dari 5, buka detail" style="box-sizing: border-box; {{c.ind}}">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 12l3 3 5-6"/></svg>{{c.done}}/5</button>
+                      <sc-if value="{{c.hasWarn}}" hint-placeholder-val="{{ false }}">
+                        <span style="font-size: 12px; padding: 1px 7px; border-radius: 5px; border: 1px solid #FED7AA; background: #FFF7ED; color: #C2410C; white-space: nowrap">Menunggu file</span>
+                      </sc-if>
+                    </span>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- ============ DRAWER DETAIL TASK (mengikuti drawer produksi) ============ -->
+  <sc-if value="{{dr.open}}" hint-placeholder-val="{{ true }}">
+    <div style="position: absolute; inset: 0; background: rgba(24,24,27,0.28); display: flex; justify-content: flex-end">
+      <button type="button" onClick="{{close}}" aria-label="Tutup detail" style="flex: 1; border: none; background: transparent; cursor: default"></button>
+      <aside role="dialog" aria-label="Detail task" style="width: 600px; max-width: 100%; height: 100%; box-sizing: border-box; background: #FFFFFF; border-left: 1px solid #E4E4E7; box-shadow: -12px 0 32px rgba(24,24,27,0.12); display: flex; flex-direction: column; overflow-y: auto">
+
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 20px 24px">
+          <div style="display: flex; align-items: center; gap: 14px; min-width: 0">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FF5B1F" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg>
+            <h2 style="margin: 0; font-size: 18px; font-weight: 600">{{dr.name}} — SC_Elements</h2>
+          </div>
+          <span style="display: flex; gap: 10px; flex: none">
+            <button type="button" aria-label="Bagikan" style="width: 42px; height: 42px; border: 1px solid #E4E4E7; background: #FFFFFF; display: grid; place-items: center; cursor: pointer">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3F3F46" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>
+            </button>
+            <button type="button" onClick="{{close}}" aria-label="Tutup" style="width: 42px; height: 42px; border: 1px solid #E4E4E7; background: #FFFFFF; display: grid; place-items: center; cursor: pointer">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3F3F46" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+            </button>
+          </span>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 24px; border-top: 1px solid #ECECEF; border-bottom: 1px solid #ECECEF; font-size: 14px">
+          <span style="display: flex; align-items: center; gap: 10px; color: #52525B">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#A1A1AA" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M5 3L2 6M19 3l3 3"/></svg>Last Edited: <b style="color: #18181B">October 29, 2026 at 1:40 PM</b></span>
+          <span style="font-size: 12.5px; color: #A1A1AA; font-weight: 500">Auto-save aktif</span>
+        </div>
+
+        <!-- properti 2 kolom -->
+        <div>
+          <sc-for list="{{dr.props}}" as="r" hint-placeholder-count="10">
+            <div style="display: grid; grid-template-columns: 200px minmax(0, 1fr); border-bottom: 1px solid #ECECEF; min-height: 54px">
+              <span style="display: flex; align-items: center; gap: 12px; padding: 0 24px; border-right: 1px solid #ECECEF; color: #52525B; font-size: 15px; font-weight: 500">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A1A1AA" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{r.d}}"/></svg>{{r.label}}</span>
+              <div style="display: flex; flex-direction: column; justify-content: center; gap: 4px; padding: 8px 20px; min-width: 0">
+                <sc-if value="{{r.isSelect}}" hint-placeholder-val="{{ false }}">
+                  <span style="display: flex; align-items: center; justify-content: space-between; font-weight: 600; font-size: 15px">{{r.v}}
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A1A1AA" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span>
+                </sc-if>
+                <sc-if value="{{r.isText}}" hint-placeholder-val="{{ false }}"><span style="font-weight: 600; font-size: 15px">{{r.v}}</span></sc-if>
+                <sc-if value="{{r.isDesigner}}" hint-placeholder-val="{{ false }}"><span style="align-self: flex-start; font-size: 14px; font-weight: 500; padding: 3px 10px; border-radius: 5px; background: #FFF1DE; color: #D97706">{{r.v}}</span></sc-if>
+                <sc-if value="{{r.isSeg}}" hint-placeholder-val="{{ false }}">
+                  <span style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: -8px -20px; height: 54px">
+                    <span style="display: grid; place-items: center; font-weight: 600; color: #3F3F46">IND</span>
+                    <span style="display: grid; place-items: center; font-weight: 600; background: #7C3AED; color: #FFFFFF">ENG</span>
+                  </span>
+                </sc-if>
+                <sc-if value="{{r.isChips}}" hint-placeholder-val="{{ false }}">
+                  <span style="display: flex; flex-wrap: wrap; gap: 6px"><sc-for list="{{r.chips}}" as="ch" hint-placeholder-count="2"><span style="font-size: 14px; font-weight: 500; padding: 4px 10px; border: 1px solid #E4E4E7">{{ch}}</span></sc-for></span>
+                </sc-if>
+                <sc-if value="{{r.hasSub}}" hint-placeholder-val="{{ false }}"><span style="font-size: 12.5px; color: {{r.subColor}}">{{r.sub}}</span></sc-if>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+
+        <!-- dropbox -->
+        <div style="border-bottom: 1px solid #ECECEF">
+          <div style="display: flex; align-items: center; gap: 10px; padding: 14px 24px; font-size: 14px; font-weight: 600; letter-spacing: 0.06em; color: #52525B; border-bottom: 1px solid #ECECEF">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#A1A1AA" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>DROPBOX</div>
+          <div style="display: grid; grid-template-columns: 130px minmax(0, 1fr); align-items: center; padding: 12px 24px; border-bottom: 1px solid #ECECEF; font-size: 14px">
+            <span style="color: #52525B">Upload Link</span>
+            <span style="color: #FF5B1F; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">https://www.dropbox.com/request/[ID]</span>
+          </div>
+          <div style="display: grid; grid-template-columns: 130px minmax(0, 1fr); align-items: center; padding: 12px 24px; font-size: 14px">
+            <span style="color: #52525B">Dropbox Link</span>
+            <span style="box-sizing: border-box; {{dr.dbxStyle}}">{{dr.dbx}}</span>
+          </div>
+        </div>
+
+        <!-- tab -->
+        <div role="tablist" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-bottom: 1px solid #ECECEF">
+          <sc-for list="{{dr.tabs}}" as="tb" hint-placeholder-count="3">
+            <button type="button" role="tab" aria-selected="{{tb.on}}" onClick="{{tb.pick}}" style="box-sizing: border-box; {{tb.s}}">{{tb.label}}
+              <sc-if value="{{tb.hasCount}}" hint-placeholder-val="{{ false }}"><span style="box-sizing: border-box; {{tb.countS}}">{{tb.count}}</span></sc-if>
+            </button>
+          </sc-for>
+        </div>
+
+        <div style="background: #F7F7F8; padding: 22px 24px 28px; flex: 1; display: flex; flex-direction: column; gap: 16px">
+
+          <!-- DESIGN BRIEF -->
+          <sc-if value="{{dr.isBrief}}" hint-placeholder-val="{{ false }}">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px">
+              <div><div style="font-size: 14px; font-weight: 600; letter-spacing: 0.05em; color: #3F3F46">DESIGN BRIEF</div><div style="font-size: 14px; color: #71717A">Wireframe, referensi &amp; palet untuk designer</div></div>
+              <span style="display: flex; gap: 8px">
+                <button type="button" style="font: inherit; font-size: 14px; font-weight: 500; padding: 8px 14px; border: 1px solid #E4E4E7; background: #FFFFFF; color: #18181B; cursor: pointer">Copy</button>
+                <button type="button" style="font: inherit; font-size: 14px; font-weight: 600; letter-spacing: 0.04em; padding: 8px 14px; border: 1px solid #E4E4E7; background: #FFFFFF; color: #18181B; cursor: pointer">EDIT</button>
+              </span>
+            </div>
+            <div style="background: #FFFFFF; border: 1px solid #E4E4E7">
+              <div style="padding: 14px 18px; border-bottom: 1px solid #ECECEF; font-weight: 600; font-size: 15px"><span style="color: #FF5B1F; font-family: 'JetBrains Mono', monospace; margin-right: 10px">01</span>Catatan</div>
+              <div style="padding: 14px 18px; color: #3F3F46">[Catatan brief dari Notion]</div>
+            </div>
+            <div style="background: #FFFFFF; border: 1px solid #E4E4E7">
+              <div style="padding: 14px 18px; border-bottom: 1px solid #ECECEF; font-weight: 600; font-size: 15px"><span style="color: #FF5B1F; font-family: 'JetBrains Mono', monospace; margin-right: 10px">02</span>Deliverable</div>
+              <div style="padding: 14px 18px; color: #3F3F46; display: flex; flex-direction: column; gap: 8px">
+                <span>Unggah file satuan lewat Upload Link, tanpa .zip:</span>
+                <span style="display: flex; flex-wrap: wrap; gap: 5px"><sc-for list="{{dr.deliv}}" as="dv" hint-placeholder-count="5"><span style="box-sizing: border-box; {{dv.s}}">{{dv.t}}</span></sc-for></span>
+                <span style="font-size: 12.5px; color: #71717A">Progres pengiriman bisa dilihat di tab Checklist QA.</span>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- CHECKLIST QA -->
+          <sc-if value="{{dr.isQa}}" hint-placeholder-val="{{ true }}">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px">
+              <div><div style="font-size: 14px; font-weight: 600; letter-spacing: 0.05em; color: #3F3F46">CHECKLIST QA</div><div style="font-size: 14px; color: #71717A">Syarat pindah ke In Review</div>
+                <div style="margin-top: 6px; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #52525B; border: 1px solid #E4E4E7; background: #FFFFFF; padding: 2px 8px">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>Tersimpan di body kartu Notion · bagian ✅ Checklist QA</div></div>
+              <span style="box-sizing: border-box; {{dr.sumPill}}">{{dr.done}}/5</span>
+            </div>
+            <p style="margin: 0; font-size: 13px; color: #52525B">{{dr.modeNote}}</p>
+            <div style="background: #FFFFFF; border: 1px solid #E4E4E7">
+              <sc-for list="{{dr.items}}" as="ck" hint-placeholder-count="5">
+                <label style="display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 12px 18px; border-bottom: 1px solid #ECECEF; font-size: 14.5px; cursor: {{ck.cursor}}">
+                  <input type="checkbox" checked="{{ck.on}}" disabled="{{ck.locked}}" onChange="{{ck.toggle}}" style="width: 17px; height: 17px; accent-color: #FF5B1F; margin: 0">
+                  <span>{{ck.label}}</span>
+                  <span style="box-sizing: border-box; {{ck.srcS}}">{{ck.src}}</span>
+                </label>
+              </sc-for>
+            </div>
+            <div style="background: #FFFFFF; border: 1px solid #E4E4E7; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; gap: 12px">
+              <span style="display: flex; flex-direction: column; gap: 4px">
+                <span style="font-weight: 600">Slide Master</span>
+                <span style="box-sizing: border-box; {{dr.masterPill}}">{{dr.master}}</span>
+              </span>
+              <a href="Review.dc.html" style="font-size: 13.5px; font-weight: 500; text-decoration: none; white-space: nowrap">Buka di Slide Master Builder →</a>
+            </div>
+            <div style="background: #FFFFFF; border: 1px solid #E4E4E7">
+              <div style="display: flex; justify-content: space-between; padding: 12px 18px; border-bottom: 1px solid #ECECEF"><span style="font-weight: 600">File di Dropbox</span><span style="font-size: 12.5px; color: #71717A">{{dr.fileCount}} file</span></div>
+              <sc-if value="{{dr.noFiles}}" hint-placeholder-val="{{ false }}"><p style="margin: 0; padding: 12px 18px; font-size: 13px; color: #71717A">Belum ada file di folder task.</p></sc-if>
+              <sc-for list="{{dr.files}}" as="f" hint-placeholder-count="4">
+                <div style="display: flex; align-items: center; gap: 10px; padding: 9px 18px; border-bottom: 1px solid #F4F4F5">
+                  <span style="box-sizing: border-box; {{f.extS}}">{{f.ext}}</span>
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #3F3F46; overflow-wrap: anywhere">{{f.name}}</span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px">
+              <button type="button" onClick="{{dr.move}}" disabled="{{dr.blocked}}" style="font: inherit; font-size: 14px; font-weight: 600; letter-spacing: 0.04em; padding: 12px 16px; border: none; min-height: 46px; cursor: {{dr.btnCursor}}; background: {{dr.btnBg}}; color: {{dr.btnFg}}">{{dr.btnLabel}}</button>
+              <span style="font-size: 12.5px; color: #71717A">{{dr.hint}}</span>
+            </div>
+          </sc-if>
+
+          <!-- COMMENTS -->
+          <sc-if value="{{dr.isComments}}" hint-placeholder-val="{{ false }}">
+            <div style="background: #FFFFFF; border: 1px solid #E4E4E7; padding: 28px 18px; text-align: center; color: #71717A">Belum ada komentar.</div>
+            <label for="cmt" style="font-size: 13px; color: #52525B">Tulis komentar</label>
+            <textarea id="cmt" rows="3" style="font: inherit; padding: 10px 12px; border: 1px solid #E4E4E7; background: #FFFFFF; resize: vertical"></textarea>
+          </sc-if>
+        </div>
+      </aside>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"masterDone":{"editor":"boolean","default":false,"section":"Simulasi"},"$preview":{"width":1440,"height":1240}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { sel: 't5', tab: null, checks: {}, moved: {} };
+  }
+  renderVals() {
+    const I = {
+      grid: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z',
+      prod: 'M8 3h11a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM4 7v12a2 2 0 0 0 2 2h10',
+      smb: 'M3 5h18v12H3zM3 9h18M8 9v8M8 21h8M12 17v4',
+      team: 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21a7 7 0 0 1 14 0M16 3.5a4 4 0 0 1 0 7.5M18 14a6 6 0 0 1 4 7',
+      rate: 'M3 6h18v12H3zM3 10h18M7 15h3',
+      bill: 'M6 3h9l5 5v13H6zM14 3v6h6M9 13h6M9 17h6',
+      role: 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21a7 7 0 0 1 12-5M16 15l1.5 1.5L21 13',
+      gear: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 13a7.5 7.5 0 0 0 0-2l2-1.5-2-3.5-2.4 1a7.5 7.5 0 0 0-1.7-1L15 3.5h-4l-.4 2.5a7.5 7.5 0 0 0-1.7 1l-2.4-1-2 3.5 2 1.5a7.5 7.5 0 0 0 0 2l-2 1.5 2 3.5 2.4-1a7.5 7.5 0 0 0 1.7 1l.4 2.5h4l.4-2.5a7.5 7.5 0 0 0 1.7-1l2.4 1 2-3.5z',
+      status: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 12h.01',
+      user: 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21a7 7 0 0 1 14 0M16 3.5a4 4 0 0 1 0 7.5M18 14a6 6 0 0 1 4 7',
+      book: 'M2 5h7a3 3 0 0 1 3 3v12a2 2 0 0 0-2-2H2zM22 5h-7a3 3 0 0 0-3 3v12a2 2 0 0 1 2-2h8z',
+      doc: 'M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5M9 13h6M9 17h6',
+      lang: 'M4 5h8M8 3v2M6 5c0 4 3 7 6 8M11 5c-1 4-4 7-7 8M13 21l4-9 4 9M14.5 18h5',
+      gauge: 'M4 18a8 8 0 1 1 16 0M12 18l3-5',
+      key: 'M15 3a6 6 0 1 1-5.6 8.1L3 17.5V21h3.5v-2.5H9V16l1.9-1.9A6 6 0 0 1 15 3zM16.5 7.5h.01',
+      cal: 'M3 5h18v16H3zM3 10h18M8 3v4M16 3v4',
+      building: 'M4 21V5l8-3v19M12 9h8v12M7 8h2M7 12h2M7 16h2M15 13h2M15 17h2'
+    };
+    const NAV = (act) => {
+      const row = (on) => 'display:flex;align-items:center;gap:10px;padding:9px 8px;border-radius:8px;text-decoration:none;font-size:15px;white-space:nowrap;' + (on ? 'background:#FFF4EE;color:#D9440E;font-weight:600' : 'color:#27272A');
+      const kid = (on) => 'display:block;padding:7px 12px;border-radius:8px;text-decoration:none;font-size:14.5px;' + (on ? 'border:1px solid #E4E4E7;background:#FFFFFF;color:#FF5B1F;font-weight:500;box-shadow:0 1px 2px rgba(24,24,27,.05)' : 'border:1px solid transparent;color:#3F3F46');
+      const it = (t, d, o) => Object.assign({ t, d, href: '#', ic: '#FF5B1F', row: row(false), hasBadge: false, badge: '', hasChev: false, chev: '', chevC: '#A1A1AA', hasKids: false, kids: [] }, o || {});
+      const open = act === 'sc_elements';
+      return [
+        { label: 'GET STARTED', pad: '0 10px 10px', items: [
+          it('Overview', I.grid, { ic: '#71717A', hasChev: true, chev: 'M9 6l6 6-6 6', chevC: '#FF5B1F' }),
+          it('Production', I.prod, { href: 'Kanban.dc.html', hasChev: true, chev: open ? 'M6 9l6 6 6-6' : 'M9 6l6 6-6 6', hasKids: open, kids: [
+            { t: 'Freelance Lamongan', href: '#', s: kid(false) }, { t: 'SC_Elements', href: 'Kanban.dc.html', s: kid(true) },
+            { t: 'SC_Canva', href: '#', s: kid(false) }, { t: '+  Tambah Production', href: '#', s: kid(false) }] }),
+          it('Slide Master Builder', I.smb, { href: 'Main.dc.html', row: row(act === 'smb'), hasBadge: true, badge: '6' })
+        ] },
+        { label: 'BUILD', pad: '22px 10px 10px', items: [it('Account & Team', I.team), it('Rate Card', I.rate), it('Billing Statement', I.bill)] },
+        { label: 'MANAGE & OBSERVE', pad: '22px 10px 10px', items: [it('User & Role', I.role), it('Notion Config', I.gear)] }
+      ];
+    };
+
+    const base = 'font-size:12px;padding:1px 7px;border-radius:5px;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;';
+    const P = {
+      blue: base + 'border:1px solid #C7D2FE;background:#EEF2FF;color:#4F46E5',
+      orange: base + 'border:1px solid #FED7AA;background:#FFF7ED;color:#C2410C',
+      pink: base + 'border:1px solid #FBCFE8;background:#FDF2F8;color:#DB2777',
+      red: base + 'border:1px solid #FECACA;background:#FEF2F2;color:#DC2626',
+      green: base + 'border:1px solid #BBF7D0;background:#F0FDF4;color:#15803D',
+      neutral: base + 'border:1px solid #E4E4E7;background:#FAFAFA;color:#3F3F46;font-weight:500',
+      amber: base + 'border:1px solid #FDE68A;background:#FFFBEB;color:#A16207',
+      sky: base + 'border:1px solid #BFDBFE;background:#EFF6FF;color:#1D4ED8'
+    };
+    const p = (t, k) => ({ t, s: P[k] });
+    const S = this.state;
+    const masterDone = !!this.props.masterDone;
+
+    const C = (preview, master, keynote, ppt, pptx, pdf) => ({ preview, master, keynote, ppt, pptx, pdf });
+    const tasks = [
+      { id: 't1', name: 'Venture Capital Pitch', status: 'Draft', designer: 'Najih', dk: 'orange', brand: 'Zahra Art', c: C(0, 0, 0, 0, 0, 0) },
+      { id: 't2', name: 'Sales Strategy Playbook', status: 'Not Started', designer: 'Putery', dk: 'blue', brand: 'Zahra Art', c: C(0, 0, 0, 0, 0, 0) },
+      { id: 't3', name: 'Marketing Strategy Plan', status: 'In Progress', designer: 'Putery', dk: 'blue', brand: 'Chital Graphic', c: C(1, 0, 0, 0, 1, 0) },
+      { id: 't4', name: 'Couture Brand Book', status: 'In Progress', designer: 'Najih', dk: 'orange', brand: 'Chital Graphic', c: C(0, 0, 0, 0, 0, 0) },
+      { id: 't5', name: 'Business Proposal Deck', status: 'QA', designer: 'Putery', dk: 'blue', brand: 'Chital Graphic', c: C(1, masterDone ? 1 : 0, 1, 0, 1, 1), job: masterDone ? 'done' : 'review' },
+      { id: 't6', name: 'Series A Pitch', status: 'QA', designer: 'Putery', dk: 'blue', brand: 'Zahra Art', c: C(1, 1, 1, 1, 1, 1), job: 'done' },
+      { id: 't7', name: 'Sales Pitch Deck', status: 'QA', designer: 'Najih', dk: 'orange', brand: 'Chital Graphic', c: C(1, 0, 0, 0, 1, 0), job: 'waiting', warn: true },
+      { id: 't8', name: 'Startup Pitch Deck', status: 'In Review', designer: 'Putery', dk: 'blue', brand: 'Chital Graphic', c: C(1, 1, 1, 1, 1, 1), job: 'done' },
+      { id: 't9', name: 'Business Plan Deck', status: 'In Review', designer: 'Najih', dk: 'orange', brand: 'Zahra Art', c: C(1, 1, 1, 1, 1, 1), job: 'done' },
+      { id: 't10', name: 'Sales Growth Roadmap', status: 'Approved', designer: 'Najih', dk: 'orange', brand: 'Zahra Art', c: C(1, 1, 1, 1, 1, 1), job: 'done' },
+      { id: 't11', name: 'Corporate Business Plan', status: 'Approved', designer: 'Najih', dk: 'orange', brand: 'Chital Graphic', c: C(1, 1, 1, 1, 1, 1), job: 'done' }
+    ].map((t) => {
+      const c = Object.assign({}, t.c, S.checks[t.id] || {});
+      const status = S.moved[t.id] || t.status;
+      const done = ['preview', 'master', 'keynote', 'ppt', 'pptx'].filter((k) => c[k]).length;
+      return Object.assign({}, t, { c, status, done });
+    });
+    const indStyle = (n) => (n === 5 ? P.green : n === 0 ? P.neutral : P.amber) + ';cursor:pointer;font:inherit;font-size:12px';
+    const tags = (t) => [p('1', 'neutral'), p(t.designer, t.dk), p('@12p', 'neutral'), p(t.brand, 'orange'), p('ENG', 'blue'), p('Regular-Presentation', 'pink'), p('High', 'red'), p('Pro', 'green')];
+    const openT = (id, tab) => () => this.setState({ sel: id, tab: tab || null });
+
+    const order = ['Draft', 'Not Started', 'In Progress', 'QA', 'In Review', 'Approved'];
+    const dotC = { 'Draft': '#D4D4D8', 'Not Started': '#A5B4FC', 'In Progress': '#6366F1', 'QA': '#EAB308', 'In Review': '#3B82F6', 'Approved': '#22C55E' };
+    const cols = order.map((st) => {
+      const cards = tasks.filter((t) => t.status === st).map((t) => ({
+        name: t.name, pills: tags(t), done: t.done, ind: indStyle(t.done), hasWarn: !!t.warn,
+        open: openT(t.id), openQa: openT(t.id, 'qa'),
+        bg: S.sel === t.id ? '#FFF7F3' : '#FFFFFF'
+      }));
+      return { title: st, count: cards.length, empty: cards.length === 0, cards, dot: 'display:inline-block;width:8px;height:8px;border-radius:50%;background:' + dotC[st] };
+    });
+
+    // ===== drawer =====
+    const t = tasks.find((x) => x.id === S.sel);
+    let dr = { open: false, props: [], tabs: [], items: [], files: [], deliv: [] };
+    if (t) {
+      const isQA = t.status === 'QA';
+      const early = t.status === 'Draft' || t.status === 'Not Started';
+      const ok = t.done === 5;
+      const canMove = isQA && ok;
+      const tab = S.tab || (isQA ? 'qa' : 'brief');
+
+      const prop = (label, d, o) => Object.assign({ label, d, isSelect: false, isText: false, isDesigner: false, isSeg: false, isChips: false, v: '', chips: [], hasSub: false, sub: '', subColor: '#A1A1AA' }, o);
+      const props = [
+        prop('Design Status', I.status, { isSelect: true, v: t.status, hasSub: isQA && !ok, sub: 'In Review terkunci sampai Checklist QA 5/5', subColor: '#C2410C' }),
+        prop('Designer', I.user, { isDesigner: true, v: t.designer, hasSub: true, sub: 'Mengikuti order bundle · ubah di Billing Statement' }),
+        prop('Doctype', I.book, { isSelect: true, v: 'PPTX, Slides, Keynote' }),
+        prop('QTY Submit', I.doc, { isText: true, v: '1' }),
+        prop('Pages', I.doc, { isText: true, v: '20' }),
+        prop('IND/ENG', I.lang, { isSeg: true }),
+        prop('Priority', I.gauge, { isSelect: true, v: 'Medium' }),
+        prop('License', I.key, { isSelect: true, v: 'Pro' }),
+        prop('Task Month', I.cal, { isSelect: true, v: 'Oktober-2026' }),
+        prop('Brand', I.building, { isChips: true, chips: [t.brand] })
+      ];
+
+      const tabS = (on) => 'display:flex;align-items:center;justify-content:center;gap:8px;padding:16px 8px;border:none;border-bottom:2px solid ' + (on ? '#FF5B1F' : 'transparent') + ';margin-bottom:-1px;background:#FFFFFF;font:inherit;font-size:14px;font-weight:600;letter-spacing:0.06em;cursor:pointer;color:' + (on ? '#FF5B1F' : '#52525B');
+      const countS = (t.done === 5 ? P.green : t.done === 0 ? P.neutral : P.amber) + ';letter-spacing:0';
+      const tabs = [
+        { key: 'brief', label: 'DESIGN BRIEF', hasCount: false },
+        { key: 'qa', label: 'CHECKLIST QA', hasCount: true, count: t.done + '/5', countS },
+        { key: 'comments', label: 'COMMENTS (0)', hasCount: false }
+      ].map((x) => Object.assign(x, { on: tab === x.key, s: tabS(tab === x.key), pick: () => this.setState({ tab: x.key }), count: x.count || '', countS: x.countS || '' }));
+
+      const flip = (k) => () => { const cur = Object.assign({}, S.checks[t.id] || {}); cur[k] = !t.c[k]; const all = Object.assign({}, S.checks); all[t.id] = cur; this.setState({ checks: all }); };
+      const src = (k) => {
+        if (k === 'master') return t.c.master ? ['Master Deck ✓', P.green] : (t.job === 'review' ? ['Siap review', P.amber] : t.job === 'waiting' ? ['Menunggu file', P.orange] : ['Setelah QA', P.neutral]);
+        return t.c[k] ? ['Dropbox', P.sky] : (early ? ['Wajib', P.neutral] : ['Belum ada', P.red]);
+      };
+      const labels = { preview: 'Preview', master: 'Master Slides', keynote: 'Keynote', ppt: 'PPT', pptx: 'PPTX' };
+      const items = ['preview', 'master', 'keynote', 'ppt', 'pptx'].map((k) => {
+        const locked = !isQA || k === 'master';
+        const r = src(k);
+        return { label: labels[k], on: !!t.c[k], locked, toggle: locked ? null : flip(k), cursor: locked ? 'default' : 'pointer', src: r[0], srcS: r[1] };
+      });
+      const slug = t.name.replace(/\s+/g, '_');
+      const files = [];
+      if (t.c.pptx) files.push({ ext: 'PPTX', name: slug + '.pptx' });
+      if (t.c.ppt) files.push({ ext: 'PPT', name: slug + '.ppt' });
+      if (t.c.keynote) files.push({ ext: 'KEY', name: slug + '.key' });
+      if (t.c.pdf) files.push({ ext: 'PDF', name: slug + '.pdf' });
+      if (t.c.preview) files.push({ ext: 'PNG', name: slug + '_preview.png' });
+      files.forEach((f) => { f.extS = P.neutral + ';min-width:44px;justify-content:center'; });
+
+      dr = {
+        open: true, name: t.name, props, tabs,
+        isBrief: tab === 'brief', isQa: tab === 'qa', isComments: tab === 'comments',
+        dbx: files.length ? 'https://www.dropbox.com/scl/fo/[ID]' : 'Muncul setelah file pertama masuk',
+        dbxStyle: files.length ? 'color:#FF5B1F;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap' : 'color:#A1A1AA',
+        deliv: ['PPTX', 'PPT', 'Keynote', 'PDF', 'Preview'].map((x) => p(x, 'neutral')),
+        done: t.done, sumPill: t.done === 5 ? P.green : t.done === 0 ? P.neutral : P.amber,
+        modeNote: early ? 'Belum ada yang dicentang. Daftar ini adalah deliverable yang wajib diunggah designer.'
+          : isQA ? 'Format file tercentang otomatis dari folder Dropbox, lalu QA mengonfirmasi. Master Slides tercentang saat deck master selesai.'
+          : t.status === 'In Progress' ? 'Tercentang otomatis saat designer mengunggah file. Konfirmasi dilakukan di tahap QA.'
+          : 'Checklist sudah lengkap.',
+        items, files, fileCount: files.length, noFiles: files.length === 0,
+        master: t.c.master ? 'Selesai · tersimpan di /_master/' : t.job === 'review' ? 'Siap review' : t.job === 'waiting' ? 'Menunggu file (PDF belum ada)' : 'Mulai otomatis saat status QA',
+        masterPill: t.c.master ? P.green : t.job === 'review' ? P.amber : t.job === 'waiting' ? P.orange : P.neutral,
+        blocked: !canMove,
+        btnLabel: isQA ? 'PINDAH KE IN REVIEW' : (t.status === 'In Review' || t.status === 'Approved') ? 'SUDAH LEWAT QA' : 'TERSEDIA DI TAHAP QA',
+        btnBg: canMove ? '#FF5B1F' : '#EDEDEF', btnFg: canMove ? '#FFFFFF' : '#A1A1AA', btnCursor: canMove ? 'pointer' : 'not-allowed',
+        move: canMove ? () => { const m = Object.assign({}, S.moved); m[t.id] = 'In Review'; this.setState({ moved: m }); } : null,
+        hint: !isQA ? 'Pindah ke In Review hanya dari status QA dengan checklist 5/5.' : ok ? 'Checklist lengkap. Task siap disubmit ke platform.' : 'Lengkapi checklist 5/5 untuk pindah ke In Review.'
+      };
+    }
+    return { nav: NAV('sc_elements'), cols, dr, close: () => this.setState({ sel: null, tab: null }) };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,355 @@
+<title>Alur Analisis Slide Master</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: satu kolom bacaan; swimlane 4 jalur (Kanban · Dropbox · Worker · Reviewer) mengikuti dashboard impro.std */
+:root{
+  --bg:#FAFAFA; --surface:#FFFFFF; --fg:#18181B; --muted:#5F5F69; --line:#E4E4E7; --line-strong:#C4C4CC; --lane:#F4F4F5;
+  --brand:#FF5B1F; --brand-soft:#FFF1EA;
+  --new:#C2410C; --new-soft:#FFF7ED; --new-line:#FDBA74;
+  --ok:#15803D; --ok-soft:#F0FDF4; --ok-line:#86EFAC;
+  --llm:#9333EA; --llm-soft:#FAF5FF;
+  --dbx:#2563EB; --dbx-soft:#EFF6FF;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E0E10; --surface:#18181B; --fg:#F4F4F5; --muted:#A1A1AA; --line:#2E2E33; --line-strong:#4A4A52; --lane:#141417;
+  --brand:#FF7A45; --brand-soft:#2A1810;
+  --new:#FB923C; --new-soft:#2A1A0E; --new-line:#7C3A12;
+  --ok:#4ADE80; --ok-soft:#0F2417; --ok-line:#1F5132;
+  --llm:#C084FC; --llm-soft:#22152F;
+  --dbx:#60A5FA; --dbx-soft:#111C30; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E0E10; --surface:#18181B; --fg:#F4F4F5; --muted:#A1A1AA; --line:#2E2E33; --line-strong:#4A4A52; --lane:#141417;
+  --brand:#FF7A45; --brand-soft:#2A1810;
+  --new:#FB923C; --new-soft:#2A1A0E; --new-line:#7C3A12;
+  --ok:#4ADE80; --ok-soft:#0F2417; --ok-line:#1F5132;
+  --llm:#C084FC; --llm-soft:#22152F;
+  --dbx:#60A5FA; --dbx-soft:#111C30; color-scheme:dark}
+
+body{background:var(--bg);color:var(--fg);font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15px;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1180px;margin:0 auto;padding-block:40px 72px;display:grid;gap:28px}
+header{display:grid;gap:10px;max-width:72ch}
+.crumb{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.crumb b{color:var(--fg);font-weight:600}
+.crumb i{width:22px;height:22px;border-radius:6px;background:var(--brand);color:#fff;font:700 10px/22px Inter,sans-serif;text-align:center;font-style:normal}
+h1{font-size:clamp(26px,4vw,34px);line-height:1.15;margin:0;font-weight:600;letter-spacing:-.01em;text-wrap:balance}
+h2{font-size:17px;margin:0;font-weight:600}
+p{margin:0}
+.lede{color:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:13px;color:var(--muted);align-items:center}
+.pill{display:inline-block;font-size:12px;padding:1px 7px;border-radius:5px;border:1px solid var(--line);background:var(--lane);color:var(--fg);font-weight:500;white-space:nowrap}
+.pill.new{border-color:var(--new-line);background:var(--new-soft);color:var(--new)}
+.pill.ok{border-color:var(--ok-line);background:var(--ok-soft);color:var(--ok)}
+.pill.llm{border-color:color-mix(in srgb,var(--llm) 40%,transparent);background:var(--llm-soft);color:var(--llm)}
+.pill.dbx{border-color:color-mix(in srgb,var(--dbx) 40%,transparent);background:var(--dbx-soft);color:var(--dbx)}
+
+.panel{background:var(--surface);border:1px solid var(--line)}
+figure{margin:0}
+.scroll{overflow-x:auto}
+figure svg{display:block;width:100%;min-width:900px;height:auto;font-family:Inter,sans-serif}
+figcaption{padding:12px 16px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
+
+.lane{fill:var(--lane)}
+.lh{font:600 11px Inter,sans-serif;letter-spacing:.07em;fill:var(--muted)}
+.n{fill:var(--surface);stroke:var(--line-strong);stroke-width:1.2}
+.n-new{stroke:var(--new);stroke-width:1.5}
+.n-llm{fill:var(--llm-soft);stroke:var(--llm);stroke-dasharray:5 4}
+.n-user{fill:var(--brand-soft);stroke:var(--brand);stroke-width:1.5}
+.n-dbx{fill:var(--dbx-soft);stroke:var(--dbx)}
+.n-end{fill:var(--lane);stroke:var(--line-strong);stroke-dasharray:3 3}
+.tt{font-size:13px;font-weight:600;fill:var(--fg)}
+.ts{font-size:11.5px;fill:var(--muted)}
+.tag-ok{fill:var(--ok-soft);stroke:var(--ok-line)}
+.tag-new{fill:var(--new-soft);stroke:var(--new-line)}
+.tag-t-ok{font-size:9.5px;font-weight:700;letter-spacing:.04em;fill:var(--ok)}
+.tag-t-new{font-size:9.5px;font-weight:700;letter-spacing:.04em;fill:var(--new)}
+.el{font-size:11px;fill:var(--muted);paint-order:stroke;stroke:var(--lane);stroke-width:4px;stroke-linejoin:round}
+.e{fill:none;stroke:var(--fg);stroke-width:1.4;opacity:.7}
+.e-dbx{fill:none;stroke:var(--dbx);stroke-width:1.4;stroke-dasharray:5 4}
+.e-loop{fill:none;stroke:var(--brand);stroke-width:1.4}
+.ah{fill:var(--fg);opacity:.7}.ah-dbx{fill:var(--dbx)}.ah-loop{fill:var(--brand)}
+
+.states{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:12.5px}
+.states .arrow{color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));border-top:1px solid var(--line)}
+.card{padding:18px 20px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);display:grid;gap:8px;align-content:start;min-width:0}
+.card p{font-size:14px;color:var(--muted)}
+.card .pills{display:flex;flex-wrap:wrap;gap:5px}
+.head{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-bottom:1px solid var(--line)}
+.head .count{min-width:22px;height:22px;box-sizing:border-box;padding:0 6px;border:1px solid var(--line);border-radius:5px;display:grid;place-items:center;font-size:12px;font-weight:600}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;vertical-align:1px}
+code{font-family:var(--mono);font-size:12.5px;background:var(--lane);border:1px solid var(--line);border-radius:4px;padding:0 4px}
+ol.q{margin:0;padding:16px 20px 18px 40px;display:grid;gap:10px;font-size:14px}
+ol.q li{padding-left:4px}
+ol.q b{font-weight:600}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="crumb"><i>IS</i>impro.std <span>/</span> Production <span>/</span> <b>Master Deck</b></div>
+    <h1>Alur analisis slide master</h1>
+    <p class="lede">Master Deck Builder masuk ke dashboard sebagai bagian dari production yang output-nya Dropbox. Task yang sampai di status QA otomatis diantrekan. File .pptx dan .pdf diambil dari folder Dropbox task, dianalisis, direview, lalu deck dengan master baru disimpan kembali ke folder yang sama.</p>
+  </header>
+
+  <div class="legend" aria-label="Keterangan">
+    <span><span class="pill ok">ADA</span> sudah ada di kode</span>
+    <span><span class="pill new">BARU</span> perlu dibangun</span>
+    <span><span class="pill dbx">Dropbox</span> data file</span>
+    <span><span class="pill llm">LLM</span> opsional</span>
+    <span><span class="pill" style="border-color:var(--brand);background:var(--brand-soft);color:var(--brand)">Orang</span> designer atau reviewer</span>
+  </div>
+
+  <figure class="panel">
+    <div class="scroll">
+    <svg viewBox="0 0 1120 1470" role="img" aria-label="Swimlane empat jalur. Kanban: task dibuat di production Dropbox, designer mengunggah pptx dan pdf, status pindah ke QA. Jika output production adalah Dropbox, worker mengantrekan job, mengambil file dari folder task, menganalisis, lalu reviewer meninjau di tab Master Deck. Worker membangun ulang dan memverifikasi; jika tampilan berbeda, kembali ke review. Hasil disimpan ke folder _master di Dropbox, kartu kanban dan Notion diperbarui, lalu QA memeriksa checklist kartu (Preview, Master Slides, Keynote, PPT, PPTX); task hanya boleh pindah ke In Review bila kelimanya tercentang. Jika QA menolak desain, designer merevisi dan mengunggah ulang sehingga job baru dibuat.">
+      <defs>
+        <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0 0L10 5L0 10z"/></marker>
+        <marker id="ad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah-dbx" d="M0 0L10 5L0 10z"/></marker>
+        <marker id="ao" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah-loop" d="M0 0L10 5L0 10z"/></marker>
+      </defs>
+
+      <!-- jalur -->
+      <rect class="lane" x="10" y="44" width="260" height="1416"/>
+      <rect class="lane" x="290" y="44" width="260" height="1416"/>
+      <rect class="lane" x="570" y="44" width="260" height="1416"/>
+      <rect class="lane" x="850" y="44" width="260" height="1416"/>
+      <text class="lh" x="140" y="30" text-anchor="middle">KANBAN · IMPRO.STD</text>
+      <text class="lh" x="420" y="30" text-anchor="middle">DROPBOX</text>
+      <text class="lh" x="700" y="30" text-anchor="middle">MASTER DECK WORKER</text>
+      <text class="lh" x="980" y="30" text-anchor="middle">REVIEWER · AD / PM</text>
+
+      <!-- r1 -->
+      <rect class="n" x="25" y="70" width="230" height="56"/>
+      <text class="tt" x="40" y="93">Task dibuat</text>
+      <text class="ts" x="40" y="112">production output Dropbox</text>
+      <rect class="tag-ok" x="217" y="78" width="30" height="15" rx="3"/><text class="tag-t-ok" x="232" y="89" text-anchor="middle">ADA</text>
+      <path class="e-dbx" d="M255 98H303" marker-end="url(#ad)"/>
+      <rect class="n n-dbx" x="305" y="70" width="230" height="56"/>
+      <text class="tt" x="320" y="93">File Request dibuat</text>
+      <text class="ts" x="320" y="112">Upload Link ke folder task</text>
+      <rect class="tag-ok" x="497" y="78" width="30" height="15" rx="3"/><text class="tag-t-ok" x="512" y="89" text-anchor="middle">ADA</text>
+
+      <!-- r2 -->
+      <rect class="n n-user" x="25" y="170" width="230" height="56"/>
+      <text class="tt" x="40" y="193">Designer mengerjakan</text>
+      <text class="ts" x="40" y="212">file satuan via Upload Link, tanpa .zip</text>
+      <path class="e-dbx" d="M255 198H303" marker-end="url(#ad)"/>
+      <rect class="n n-dbx" x="305" y="170" width="230" height="56"/>
+      <text class="tt" x="320" y="193">File masuk folder task</text>
+      <text class="ts" x="320" y="212">{root}/{bulan}/{task} → Dropbox Link</text>
+      <rect class="tag-ok" x="497" y="178" width="30" height="15" rx="3"/><text class="tag-t-ok" x="512" y="189" text-anchor="middle">ADA</text>
+      <path class="e" d="M140 126V168" marker-end="url(#a)"/>
+
+      <!-- r3 -->
+      <path class="e" d="M140 226V268" marker-end="url(#a)"/>
+      <rect class="n" x="25" y="270" width="230" height="56"/>
+      <text class="tt" x="40" y="293">Status → QA</text>
+      <text class="ts" x="40" y="312">drag di kanban atau ubah di Notion</text>
+      <rect class="tag-ok" x="217" y="278" width="30" height="15" rx="3"/><text class="tag-t-ok" x="232" y="289" text-anchor="middle">ADA</text>
+
+      <!-- QA manual tetap jalan -->
+      <path class="e" d="M255 316H980V368" marker-end="url(#a)"/>
+      <text class="el" x="840" y="308" text-anchor="middle">pemeriksaan QA tetap berjalan</text>
+      <rect class="n n-user" x="865" y="370" width="230" height="56"/>
+      <text class="tt" x="880" y="393">QA menolak desain</text>
+      <text class="ts" x="880" y="412">status kembali ke In Progress</text>
+      <path class="e-loop" d="M1060 370V148H200V168" marker-end="url(#ao)"/>
+      <text class="el" x="700" y="141" text-anchor="middle">revisi → upload ulang → job baru, job lama SUPERSEDED</text>
+
+      <!-- r4: gerbang -->
+      <path class="e" d="M140 326V358" marker-end="url(#a)"/>
+      <polygon class="n n-new" points="140,360 220,398 140,436 60,398"/>
+      <text class="tt" x="140" y="395" text-anchor="middle">Output</text>
+      <text class="tt" x="140" y="411" text-anchor="middle">Dropbox?</text>
+      <path class="e" d="M140 436V468" marker-end="url(#a)"/>
+      <text class="el" x="150" y="456">tidak</text>
+      <rect class="n n-end" x="25" y="470" width="230" height="44"/>
+      <text class="ts" x="140" y="497" text-anchor="middle">Production Canva: tidak diantrekan</text>
+
+      <path class="e" d="M220 398H583" marker-end="url(#a)"/>
+      <text class="el" x="400" y="390" text-anchor="middle">ya</text>
+      <rect class="n n-new" x="585" y="370" width="230" height="56"/>
+      <text class="tt" x="600" y="393">Antrekan job</text>
+      <text class="ts" x="600" y="412">idempotent: task + content_hash</text>
+      <rect class="tag-new" x="771" y="378" width="36" height="15" rx="3"/><text class="tag-t-new" x="789" y="389" text-anchor="middle">BARU</text>
+
+      <!-- r5: ambil file -->
+      <path class="e" d="M700 426V468" marker-end="url(#a)"/>
+      <rect class="n n-new" x="585" y="470" width="230" height="56"/>
+      <text class="tt" x="600" y="493">Ambil file</text>
+      <text class="ts" x="600" y="512">cek format · unduh .pptx &amp; .pdf</text>
+      <rect class="tag-new" x="771" y="478" width="36" height="15" rx="3"/><text class="tag-t-new" x="789" y="489" text-anchor="middle">BARU</text>
+      <path class="e-dbx" d="M420 226V498H583" marker-end="url(#ad)"/>
+      <text class="el" x="500" y="490" text-anchor="middle">files/download</text>
+
+      <!-- r6: ada pptx? -->
+      <path class="e" d="M700 526V558" marker-end="url(#a)"/>
+      <polygon class="n n-new" points="700,560 780,598 700,636 620,598"/>
+      <text class="tt" x="700" y="603" text-anchor="middle">PPTX + PDF?</text>
+      <path class="e" d="M620 598H257" marker-end="url(#a)"/>
+      <text class="el" x="440" y="590" text-anchor="middle">tidak</text>
+      <rect class="n n-new" x="25" y="570" width="230" height="56"/>
+      <text class="tt" x="40" y="593">Badge "Menunggu file"</text>
+      <text class="ts" x="40" y="612">pptx/pdf kurang atau masih .zip</text>
+
+      <!-- r7: analisis -->
+      <path class="e" d="M700 636V668" marker-end="url(#a)"/>
+      <text class="el" x="710" y="656">ya</text>
+      <rect class="n n-new" x="585" y="670" width="230" height="56"/>
+      <text class="tt" x="600" y="693">Analisis</text>
+      <text class="ts" x="600" y="712">parse XML · heuristik · LLM opsional</text>
+      <rect class="tag-new" x="771" y="678" width="36" height="15" rx="3"/><text class="tag-t-new" x="789" y="689" text-anchor="middle">BARU</text>
+
+      <!-- r8: review -->
+      <path class="e" d="M700 726V798H863" marker-end="url(#a)"/>
+      <text class="el" x="780" y="790" text-anchor="middle">READY_REVIEW</text>
+      <rect class="n n-user" x="865" y="770" width="230" height="56"/>
+      <text class="tt" x="880" y="793">Review di tab Master Deck</text>
+      <text class="ts" x="880" y="812">overlay · layout &amp; theme · spec</text>
+
+      <!-- r9: rebuild -->
+      <path class="e" d="M980 826V898H817" marker-end="url(#a)"/>
+      <text class="el" x="900" y="890" text-anchor="middle">keputusan final</text>
+      <rect class="n n-new" x="585" y="870" width="230" height="56"/>
+      <text class="tt" x="600" y="893">Rebuild + verifikasi</text>
+      <text class="ts" x="600" y="912">validasi XML · diff visual</text>
+      <rect class="tag-new" x="771" y="878" width="36" height="15" rx="3"/><text class="tag-t-new" x="789" y="889" text-anchor="middle">BARU</text>
+
+      <!-- r10: identik? -->
+      <path class="e" d="M700 926V958" marker-end="url(#a)"/>
+      <polygon class="n n-new" points="700,960 780,998 700,1036 620,998"/>
+      <text class="tt" x="700" y="1003" text-anchor="middle">Identik?</text>
+      <path class="e-loop" d="M780 998H1100V798H1097" marker-end="url(#ao)"/>
+      <text class="el" x="940" y="990" text-anchor="middle">tidak · selisih ditandai</text>
+
+      <!-- r11: publish -->
+      <path class="e" d="M700 1036V1068" marker-end="url(#a)"/>
+      <text class="el" x="710" y="1056">ya</text>
+      <rect class="n n-new" x="585" y="1070" width="230" height="56"/>
+      <text class="tt" x="600" y="1093">Publikasikan hasil</text>
+      <text class="ts" x="600" y="1112">upload + tulis Notion</text>
+      <rect class="tag-new" x="771" y="1078" width="36" height="15" rx="3"/><text class="tag-t-new" x="789" y="1089" text-anchor="middle">BARU</text>
+      <path class="e-dbx" d="M585 1098H537" marker-end="url(#ad)"/>
+      <rect class="n n-dbx" x="305" y="1070" width="230" height="56"/>
+      <text class="tt" x="320" y="1093">Simpan ke /_master/</text>
+      <text class="ts" x="320" y="1112">butuh scope files.content.write</text>
+
+      <!-- r12: checklist -->
+      <path class="e" d="M650 1126V1198H257" marker-end="url(#a)"/>
+      <rect class="n n-new" x="25" y="1170" width="230" height="72"/>
+      <text class="tt" x="40" y="1193">Checklist di kartu</text>
+      <text class="ts" x="40" y="1212">Master Slides ✓ saat job DONE</text>
+      <text class="ts" x="40" y="1229">format ✓ dari isi folder Dropbox</text>
+      <rect class="tag-new" x="211" y="1178" width="36" height="15" rx="3"/><text class="tag-t-new" x="229" y="1189" text-anchor="middle">BARU</text>
+      <path class="e" d="M750 1126V1198H863" marker-end="url(#a)"/>
+      <rect class="n n-user" x="865" y="1170" width="230" height="72"/>
+      <text class="tt" x="880" y="1193">QA cek checklist</text>
+      <text class="ts" x="880" y="1212">Preview · Master Slides · Keynote</text>
+      <text class="ts" x="880" y="1229">PPT · PPTX (body Notion)</text>
+
+      <!-- r13: gerbang In Review -->
+      <path class="e" d="M980 1242V1268" marker-end="url(#a)"/>
+      <polygon class="n n-new" points="980,1270 1065,1310 980,1350 895,1310"/>
+      <text class="tt" x="980" y="1306" text-anchor="middle">Checklist</text>
+      <text class="tt" x="980" y="1322" text-anchor="middle">5/5?</text>
+      <path class="e" d="M895 1310H257" marker-end="url(#a)"/>
+      <text class="el" x="575" y="1302" text-anchor="middle">belum lengkap</text>
+      <rect class="n n-new" x="25" y="1282" width="230" height="56"/>
+      <text class="tt" x="40" y="1305">Tetap di QA</text>
+      <text class="ts" x="40" y="1324">pindah ke In Review ditolak</text>
+
+      <!-- r14 -->
+      <path class="e" d="M980 1350V1388" marker-end="url(#a)"/>
+      <text class="el" x="990" y="1372">ya</text>
+      <rect class="n n-user" x="865" y="1390" width="230" height="56"/>
+      <text class="tt" x="880" y="1413">In Review</text>
+      <text class="ts" x="880" y="1432">siap disubmit ke platform</text>
+    </svg>
+    </div>
+    <figcaption>Gerbang satu-satunya adalah tipe output production. Production Canva seperti Freelance Lamongan tidak ikut. Pemeriksaan QA oleh reviewer berjalan seperti biasa. Master Deck hanya menambah job di sampingnya, dan setiap upload ulang setelah revisi membuat job baru. Pindah ke In Review hanya boleh bila kelima checklist di kartu tercentang.</figcaption>
+  </figure>
+
+  <section class="panel">
+    <div class="head"><h2><span class="dot" style="background:var(--brand)"></span>Status job di Master Deck</h2><span class="count">9</span></div>
+    <div style="padding:16px 20px;display:grid;gap:10px">
+      <div class="states">
+        <span class="pill">QUEUED</span><span class="arrow">→</span>
+        <span class="pill dbx">FETCHING</span><span class="arrow">→</span>
+        <span class="pill">ANALYZING</span><span class="arrow">→</span>
+        <span class="pill new">READY_REVIEW</span><span class="arrow">→</span>
+        <span class="pill">REBUILDING</span><span class="arrow">→</span>
+        <span class="pill ok">DONE</span>
+      </div>
+      <div class="states">
+        <span style="color:var(--muted)">Cabang:</span>
+        <span class="pill">WAITING_FILE</span>
+        <span class="pill" style="border-color:#FECACA;background:#FEF2F2;color:#B91C1C">DIFF_FAILED</span>
+        <span class="pill">SUPERSEDED</span>
+        <span class="pill" style="border-color:#FECACA;background:#FEF2F2;color:#B91C1C">ERROR</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="head"><h2><span class="dot" style="background:#22C55E"></span>Keputusan teknis</h2><span class="count">7</span></div>
+    <div class="grid">
+      <div class="card">
+        <h2>Checklist kartu sebagai gerbang In Review</h2>
+        <p>Checklist disimpan di <b>body kartu Notion</b>, bukan sebagai field database: bagian <code>## ✅ Checklist QA</code> berisi blok to-do Preview, Master Slides, Keynote, PPT, dan PPTX. App membacanya dari <code>bodyText</code> (to-do sudah diubah jadi <code>- [x]</code> saat sync) dan menulisnya balik lewat antrean push body. Di kanban hanya tampil indikator n/5; detailnya ada di tab Checklist QA pada drawer task. Master Slides dicentang otomatis saat job DONE. Keynote, PPT, PPTX, dan Preview dicentang otomatis bila filenya ada di folder Dropbox, lalu QA mengonfirmasi. Pindah ke In Review ditolak di <code>updateTaskStatusAction</code> sampai kelimanya tercentang.</p>
+        <p>Status yang diubah langsung di Notion tidak bisa diblokir. Sync akan menandai kartu dengan badge "Checklist belum lengkap", bukan mengembalikan statusnya diam-diam.</p>
+        <div class="pills"><span class="pill new">## ✅ Checklist QA</span><span class="pill ok">bodyText</span><span class="pill new">to_do di markdownToNotionBlocks</span></div>
+      </div>
+      <div class="card">
+        <h2>Satu pintu untuk trigger</h2>
+        <p>Status bisa berubah dari kanban maupun dari Notion. Jangan mendeteksi transisinya di dua tempat. Cukup satu fungsi <code>enqueueMasterDeckJobs()</code> yang mencari task production Dropbox berstatus QA tanpa job untuk file terbarunya. Fungsi ini dipanggil dari <code>updateTaskStatusAction</code>, dari akhir <code>syncNotionData</code> di sebelah <code>syncDropboxOutputs</code>, dan dari tombol Sync Now.</p>
+        <div class="pills"><span class="pill new">qa.ts</span><span class="pill new">sync-notion.ts</span><span class="pill">idempotent</span></div>
+      </div>
+      <div class="card">
+        <h2>Ambil file dari folder, bukan dari link</h2>
+        <p>App sudah tahu folder task dan sudah punya scope <code>files.content.read</code>. Worker memanggil <code>files/list_folder</code>, memilih .pptx dan .pdf terbaru, lalu <code>files/download</code>. <code>content_hash</code> dipakai sebagai kunci versi.</p>
+        <div class="pills"><span class="pill ok">dropbox.ts</span><span class="pill dbx">files.content.read</span></div>
+      </div>
+      <div class="card">
+        <h2>Simpan path folder di task</h2>
+        <p>Path saat ini dihitung ulang dari nama dan bulan task. Kalau task diganti nama setelah File Request dibuat, path-nya meleset dan file tidak ditemukan. Simpan path folder saat <code>attachUploadRequest</code> berjalan.</p>
+        <div class="pills"><span class="pill new">Task.dropboxFolderPath</span><span class="pill" style="border-color:#FECACA;background:#FEF2F2;color:#B91C1C">High</span></div>
+      </div>
+      <div class="card">
+        <h2>Worker terpisah di VPS</h2>
+        <p>Parsing, rebuild, dan render untuk diff butuh python-pptx dan LibreOffice. Jalankan sebagai proses PM2 kedua yang membaca antrean dari Postgres, bukan di dalam request Next.js.</p>
+        <div class="pills"><span class="pill new">PM2 worker</span><span class="pill">LibreOffice</span><span class="pill llm">9Router</span></div>
+      </div>
+      <div class="card">
+        <h2>Hasil kembali ke Dropbox dan Notion</h2>
+        <p>Deck baru disimpan ke <code>/_master/</code> di folder task dan link-nya ditulis ke properti Notion "Master Deck" lewat <code>ensureUrlProperty</code>. Upload butuh scope baru <code>files.content.write</code>, jadi akun Dropbox perlu dihubungkan ulang.</p>
+        <div class="pills"><span class="pill new">files.content.write</span><span class="pill ok">notion-provision.ts</span></div>
+      </div>
+      <div class="card">
+        <h2>Posisi di dashboard</h2>
+        <p>Tab "Master Deck" di halaman production, sejajar Kanban Board, Parameter Issue, dan Email Notifications. Tab ini hanya muncul untuk production Dropbox. Kartu kanban mendapat badge status job, dan permission baru <code>masterdeck.review</code> diberikan ke Art Director dan Project Manager.</p>
+        <div class="pills"><span class="pill new">MasterDeckJob</span><span class="pill new">masterdeck.review</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="head"><h2><span class="dot" style="background:#22C55E"></span>Keputusan 29 Okt 2026</h2><span class="count">3</span></div>
+    <ol class="q">
+      <li><b>Gerbang In Review lewat checklist kartu.</b> Preview, Master Slides, Keynote, PPT, dan PPTX harus tercentang semua sebelum task pindah ke In Review untuk disubmit ke platform. Checklist disimpan di body kartu Notion, tidak menambah field database.</li>
+      <li><b>PDF wajib.</b> Job menunggu (WAITING_FILE) bila .pptx atau .pdf belum ada di folder task.</li>
+      <li><b>File diunggah satuan, tanpa .zip.</b> Deskripsi File Request menyebutkannya. Bila yang masuk masih .zip, kartu mendapat badge "Menunggu file" dengan alasan tersebut.</li>
+    </ol>
+  </section>
+
+  <section class="panel">
+    <div class="head"><h2><span class="dot" style="background:#EF4444"></span>Catatan perbaikan sebelum dibangun</h2><span class="count">2</span></div>
+    <ol class="q">
+      <li><b>Dropbox VPS masih <code>invalid_client</code>.</b> Periksa app key dan secret di <code>.next/standalone/.env</code> VPS, lalu hubungkan ulang akun Dropbox.</li>
+      <li><b>Tambah scope <code>files.content.write</code></b> di Dropbox App Console, lalu hubungkan ulang akun (lokal dan VPS) supaya hasil bisa disimpan ke <code>/_master/</code>.</li>
+    </ol>
+  </section>
+</div>
