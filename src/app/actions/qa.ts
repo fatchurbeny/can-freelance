@@ -20,6 +20,8 @@ import {
   isPreWorkStatus, isQaStatus, mergeChecklistSection, setChecklistItem,
 } from '@/lib/checklist-qa';
 import { parseNotionBlocksToMarkdown } from '@/lib/sync-notion';
+import { DROPBOX_LINK_PROPERTY, UPLOAD_LINK_PROPERTY } from '@/lib/notion-field-types';
+import { APP_CREATED_PREFIX, isMissingNotionPage, isNotionLinked } from '@/lib/notion-link';
 
 async function getNotionClientAndDatabase(databaseIdOverride?: string | null) {
   const activeConfig = await prisma.notionConfig.findFirst({
@@ -459,8 +461,7 @@ export async function updateTaskStatusAction(taskId: string, statusNotionKey: st
     });
 
     // 2. Offload international Notion API network call to background
-    const isMockTask = task.notionPageId.startsWith('sync_mock_page_');
-    if (!isMockTask) {
+    if (isNotionLinked(task.notionPageId)) {
       runInBackground(`Update Notion Status for Task ${task.name || taskId}`, async () => {
         const notionClient = await getNotionClient();
         if (!notionClient) return;
@@ -524,7 +525,7 @@ export async function addCommentAction(taskId: string, content: string) {
     // Sync to Notion
     try {
       const notionClient = await getNotionClient();
-      if (notionClient && task.notionPageId && !task.notionPageId.startsWith('sync_mock_page_')) {
+      if (notionClient && isNotionLinked(task.notionPageId)) {
         await notionClient.comments.create({
           parent: { page_id: task.notionPageId },
           rich_text: [
@@ -578,6 +579,146 @@ export interface CreateTaskPayload {
   canvaLinks?: string[];
   /** Nilai field tambahan production (key = nama properti Notion). */
   customFields?: Record<string, unknown> | null;
+}
+
+/** Data task untuk membuat halamannya di database Notion production. */
+interface NotionPageInput {
+  name: string;
+  qtySubmit: number;
+  pages: number | null;
+  poolScore: number | null;
+  taskMonth?: string | null;
+  priority?: string | null;
+  license?: string | null;
+  doctypeNotionKey?: string | null;
+  status?: { notionKey: string; displayName: string } | null;
+  designer?: { displayName: string; status: string | null } | null;
+  languages?: string[];
+  accountNames: string[];
+  templateLinkUrl?: string | null;
+  customFields?: Record<string, unknown> | null;
+  bodyText?: string | null;
+  uploadRequestUrl?: string | null;
+  outputUrl?: string | null;
+}
+
+/** Buat halaman task di Notion (properti + body). Melempar error bila Notion tidak siap atau API menolak. */
+async function createNotionTaskPage(
+  unit: { id: string; notionTaskDbId: string | null; fieldMapping: unknown },
+  input: NotionPageInput,
+): Promise<{ id: string; url: string | null }> {
+  const notionConfig = await getNotionClientAndDatabase(unit.notionTaskDbId);
+  if (!notionConfig?.databaseId) throw new Error('Notion belum dikonfigurasi untuk production ini.');
+
+  const schemaProps = await getNotionDatabaseSchemaProperties(notionConfig.client, notionConfig.databaseId);
+  const mapping = unit.fieldMapping as FieldMapping;
+  const w = (key: FieldKey) => resolveWriteName(schemaProps, key, mapping);
+  const notionProperties: any = {
+    [titlePropertyName(schemaProps, mapping)]: { title: [{ text: { content: input.name } }] },
+  };
+
+  const qtyKey = w('qtySubmit');
+  if (qtyKey) notionProperties[qtyKey] = { number: input.qtySubmit };
+
+  const pagesKey = w('pages');
+  if (input.pages !== null && pagesKey) notionProperties[pagesKey] = { number: Number(input.pages) };
+
+  const poolKey = w('poolScore');
+  if (input.poolScore !== null && poolKey) notionProperties[poolKey] = { number: Number(input.poolScore) };
+
+  const taskMonthKey = w('taskMonth');
+  if (input.taskMonth && taskMonthKey) {
+    if (schemaProps[taskMonthKey].type === 'date') {
+      const dateStr = formatTaskMonthToDateString(input.taskMonth);
+      if (dateStr) notionProperties[taskMonthKey] = { date: { start: dateStr } };
+    } else {
+      notionProperties[taskMonthKey] = { select: { name: input.taskMonth } };
+    }
+  }
+
+  const priorityKey = w('priority');
+  if (input.priority && priorityKey) notionProperties[priorityKey] = { select: { name: input.priority } };
+
+  const licenseKey = w('license');
+  if (input.license && licenseKey) notionProperties[licenseKey] = { select: { name: input.license } };
+
+  const doctypeKey = w('doctype');
+  // Opsi select Notion = notionKey (lihat syncDoctypeOptionToNotion); displayName boleh berisi koma yang ditolak Notion.
+  if (input.doctypeNotionKey && doctypeKey) notionProperties[doctypeKey] = { select: { name: input.doctypeNotionKey } };
+
+  const statusKey = w('designStatus');
+  if (input.status && statusKey) {
+    const statusOption = schemaProps[statusKey]?.status?.options
+      ? findNotionStatusOption(schemaProps[statusKey].status.options, input.status.notionKey || input.status.displayName)
+      : null;
+    notionProperties[statusKey] = statusOption
+      ? { status: { id: statusOption.id } }
+      : { status: { name: input.status.notionKey } };
+  }
+
+  const designerKey = w('designer');
+  if (input.designer?.displayName && designerKey) {
+    notionProperties[designerKey] = { select: { name: input.designer.displayName } };
+    const designerStatusKey = w('designerStatus');
+    if (input.designer.status && designerStatusKey) {
+      notionProperties[designerStatusKey] = { select: { name: input.designer.status } };
+    }
+  }
+
+  const langKey = w('languages');
+  if (input.languages?.length && langKey) {
+    notionProperties[langKey] = { multi_select: input.languages.map((l) => ({ name: l })) };
+  }
+
+  const brandKey = w('brand');
+  if (input.accountNames.length && brandKey) {
+    notionProperties[brandKey] = { multi_select: input.accountNames.map((name) => ({ name })) };
+  }
+
+  const templateKey = w('canvaLink');
+  if (input.templateLinkUrl && templateKey) {
+    notionProperties[templateKey] = schemaProps[templateKey].type === 'files'
+      ? { files: [{ name: 'Template Link', external: { url: input.templateLinkUrl } }] }
+      : { url: input.templateLinkUrl };
+  }
+
+  // Link Dropbox yang sudah ada di app (mis. halaman dibuat ulang setelah File Request terbentuk)
+  if (input.uploadRequestUrl && schemaProps[UPLOAD_LINK_PROPERTY]) notionProperties[UPLOAD_LINK_PROPERTY] = { url: input.uploadRequestUrl };
+  if (input.outputUrl && schemaProps[DROPBOX_LINK_PROPERTY]) notionProperties[DROPBOX_LINK_PROPERTY] = { url: input.outputUrl };
+
+  Object.assign(notionProperties, await customFieldProperties(unit.id, input.customFields, schemaProps));
+
+  // Relation "Assets" dari section Assets di brief
+  const briefAssets = await resolveBriefAssets(input.bodyText);
+  const assetsRelation = assetsRelationProperty(
+    schemaProps,
+    briefAssets.map((a) => a.notionPageId).filter((id): id is string => !!id),
+  );
+  if (assetsRelation && briefAssets.length > 0) Object.assign(notionProperties, assetsRelation);
+
+  const newNotionPage: any = await notionConfig.client.pages.create({
+    parent: { database_id: notionConfig.databaseId },
+    properties: notionProperties,
+  });
+
+  if (input.bodyText) {
+    try {
+      const blocks = markdownToNotionBlocks(input.bodyText);
+      for (let i = 0; i < blocks.length; i += 100) {
+        await notionConfig.client.blocks.children.append({ block_id: newNotionPage.id, children: blocks.slice(i, i + 100) });
+      }
+    } catch (bErr) {
+      console.error('Failed to append body blocks to Notion:', bErr);
+    }
+  }
+
+  return { id: newNotionPage.id, url: newNotionPage.url ?? null };
+}
+
+/** Pesan untuk pengguna saat halaman Notion gagal dibuat (task tetap tersimpan di app). */
+function notionPageWarning(err: unknown): string {
+  const reason = err instanceof Error ? err.message : String(err);
+  return `Task tersimpan di app, tetapi halaman Notion gagal dibuat (${reason}). Buka task lalu klik "Buat di Notion" untuk mencoba lagi.`;
 }
 
 export async function createTaskAction(payload: CreateTaskPayload) {
@@ -649,132 +790,33 @@ export async function createTaskAction(payload: CreateTaskPayload) {
       selectedAccounts = await prisma.account.findMany({ where: { id: { in: payload.accountIds } } });
     }
 
-    // Attempt to create page in Notion API
-    let createdNotionPageId = `app_created_${Date.now()}`;
+    // Halaman Notion; bila gagal task tetap disimpan dengan ID sementara + peringatan (bisa "Buat di Notion" nanti)
+    let createdNotionPageId = `${APP_CREATED_PREFIX}${Date.now()}`;
     let createdNotionUrl: string | null = payload.notionUrl?.trim() || null;
-
-    const notionConfig = await getNotionClientAndDatabase(targetUnit.notionTaskDbId);
-    if (notionConfig && notionConfig.databaseId) {
-      try {
-        const schemaProps = await getNotionDatabaseSchemaProperties(notionConfig.client, notionConfig.databaseId);
-        const mapping = targetUnit.fieldMapping as FieldMapping;
-        const w = (key: FieldKey) => resolveWriteName(schemaProps, key, mapping);
-        const notionProperties: any = {
-          [titlePropertyName(schemaProps, mapping)]: { title: [{ text: { content: name } }] },
-        };
-
-        const qtyKey = w('qtySubmit');
-        if (qtyKey) notionProperties[qtyKey] = { number: effectiveQtySubmit };
-
-        const pagesKey = w('pages');
-        if (effectivePages !== null && pagesKey) notionProperties[pagesKey] = { number: Number(effectivePages) };
-
-        const poolKey = w('poolScore');
-        if (poolScore !== null && poolKey) notionProperties[poolKey] = { number: Number(poolScore) };
-
-        const taskMonthKey = w('taskMonth');
-        if (payload.taskMonth && taskMonthKey) {
-          if (schemaProps[taskMonthKey].type === 'date') {
-            const dateStr = formatTaskMonthToDateString(payload.taskMonth);
-            if (dateStr) notionProperties[taskMonthKey] = { date: { start: dateStr } };
-          } else {
-            notionProperties[taskMonthKey] = { select: { name: payload.taskMonth } };
-          }
-        }
-
-        const priorityKey = w('priority');
-        if (payload.priority && priorityKey) notionProperties[priorityKey] = { select: { name: payload.priority } };
-
-        const licenseKey = w('license');
-        if (payload.license && licenseKey) notionProperties[licenseKey] = { select: { name: payload.license } };
-
-        const doctypeKey = w('doctype');
-        // Opsi select Notion = notionKey (lihat syncDoctypeOptionToNotion); displayName boleh berisi koma yang ditolak Notion.
-        if (selectedDoctype?.notionKey && doctypeKey) notionProperties[doctypeKey] = { select: { name: selectedDoctype.notionKey } };
-
-        const statusKey = w('designStatus');
-        if (selectedStatus && statusKey) {
-          const statusOption = schemaProps[statusKey]?.status?.options
-            ? findNotionStatusOption(schemaProps[statusKey].status.options, selectedStatus.notionKey || selectedStatus.displayName)
-            : null;
-          notionProperties[statusKey] = statusOption
-            ? { status: { id: statusOption.id } }
-            : { status: { name: selectedStatus.notionKey } };
-        }
-
-        const designerKey = w('designer');
-        if (selectedDesigner?.displayName && designerKey) {
-          notionProperties[designerKey] = { select: { name: selectedDesigner.displayName } };
-          const designerStatusKey = w('designerStatus');
-          if (selectedDesigner.status && designerStatusKey) {
-            notionProperties[designerStatusKey] = { select: { name: selectedDesigner.status } };
-          }
-        }
-
-        const langKey = w('languages');
-        if (payload.languages && payload.languages.length > 0 && langKey) {
-          notionProperties[langKey] = { multi_select: payload.languages.map((l) => ({ name: l })) };
-        }
-
-        const brandKey = w('brand');
-        if (selectedAccounts && selectedAccounts.length > 0 && brandKey) {
-          notionProperties[brandKey] = { multi_select: selectedAccounts.map((a) => ({ name: a.displayName })) };
-        }
-
-        const templateLinkUrl = validatedCanvaLinks[0]?.normalizedUrl || payload.notionUrl?.trim() || null;
-        const templateKey = w('canvaLink');
-        if (templateLinkUrl && templateKey) {
-          if (schemaProps[templateKey].type === 'files') {
-            notionProperties[templateKey] = {
-              files: [{ name: 'Template Link', external: { url: templateLinkUrl } }],
-            };
-          } else {
-            notionProperties[templateKey] = { url: templateLinkUrl };
-          }
-        }
-
-        Object.assign(notionProperties, await customFieldProperties(targetUnit.id, payload.customFields, schemaProps));
-
-        // Relation "Assets" dari section Assets di brief
-        const briefAssets = await resolveBriefAssets(payload.bodyText);
-        const assetsRelation = assetsRelationProperty(
-          schemaProps,
-          briefAssets.map((a) => a.notionPageId).filter((id): id is string => !!id),
-        );
-        if (assetsRelation && briefAssets.length > 0) Object.assign(notionProperties, assetsRelation);
-
-        const newNotionPage: any = await notionConfig.client.pages.create({
-          parent: { database_id: notionConfig.databaseId },
-          properties: notionProperties,
-        });
-
-        if (newNotionPage && newNotionPage.id) {
-          createdNotionPageId = newNotionPage.id;
-          if (newNotionPage.url) {
-            createdNotionUrl = newNotionPage.url;
-          }
-
-          if (payload.bodyText) {
-            try {
-              const blocks = markdownToNotionBlocks(payload.bodyText);
-              if (blocks.length > 0) {
-                const chunkSize = 100;
-                for (let i = 0; i < blocks.length; i += chunkSize) {
-                  const chunk = blocks.slice(i, i + chunkSize);
-                  await notionConfig.client.blocks.children.append({
-                    block_id: newNotionPage.id,
-                    children: chunk,
-                  });
-                }
-              }
-            } catch (bErr) {
-              console.error('Failed to append body blocks to Notion:', bErr);
-            }
-          }
-        }
-      } catch (notionErr) {
-        console.error('Failed to create page in Notion API:', notionErr);
-      }
+    let notionWarning: string | undefined;
+    try {
+      const page = await createNotionTaskPage(targetUnit, {
+        name,
+        qtySubmit: effectiveQtySubmit,
+        pages: effectivePages,
+        poolScore,
+        taskMonth: payload.taskMonth,
+        priority: payload.priority,
+        license: payload.license,
+        doctypeNotionKey: selectedDoctype?.notionKey,
+        status: selectedStatus,
+        designer: selectedDesigner,
+        languages: payload.languages,
+        accountNames: selectedAccounts.map((a) => a.displayName),
+        templateLinkUrl: validatedCanvaLinks[0]?.normalizedUrl || payload.notionUrl?.trim() || null,
+        customFields: payload.customFields,
+        bodyText: payload.bodyText,
+      });
+      createdNotionPageId = page.id;
+      createdNotionUrl = page.url || createdNotionUrl;
+    } catch (notionErr) {
+      console.error('Failed to create page in Notion API:', notionErr);
+      notionWarning = notionPageWarning(notionErr);
     }
 
     const task = await prisma.task.create({
@@ -818,10 +860,75 @@ export async function createTaskAction(payload: CreateTaskPayload) {
     runInBackground('dropbox-upload-request', () => attachUploadRequest(task.id));
 
     revalidatePath('/production', 'layout');
-    return { success: true, taskId: task.id };
+    return { success: true, taskId: task.id, notionWarning };
   } catch (error: unknown) {
     console.error('Failed to create task:', error);
     return { success: false, error: error instanceof Error ? error.message : 'Failed to create task' };
+  }
+}
+
+/**
+ * "Buat di Notion": buat halaman untuk task yang tersimpan tanpa halaman Notion
+ * (ID `app_created_…`, mis. pembuatan halaman gagal saat task dibuat).
+ */
+export async function createMissingNotionPageAction(taskId: string) {
+  try {
+    const task = await prisma.task.findUnique({
+      where: { id: taskId },
+      include: {
+        doctype: true,
+        designStatus: true,
+        designer: true,
+        canvaLinks: { orderBy: { createdAt: 'asc' } },
+        taskAccounts: { include: { account: true } },
+        productionUnit: true,
+      },
+    });
+    if (!task) return { success: false, error: 'Task not found' };
+    await assertPermission('task.create', task.productionUnitId);
+    if (!isMissingNotionPage(task.notionPageId)) return { success: false, error: 'Task ini sudah punya halaman Notion.' };
+
+    const page = await createNotionTaskPage(task.productionUnit, {
+      name: task.name || 'Untitled',
+      qtySubmit: task.qtySubmit != null ? Number(task.qtySubmit) : 1,
+      pages: task.pages != null ? Number(task.pages) : null,
+      poolScore: task.poolScore != null ? Number(task.poolScore) : null,
+      taskMonth: task.taskMonth,
+      priority: task.priority,
+      license: task.license,
+      doctypeNotionKey: task.doctype?.notionKey,
+      status: task.designStatus,
+      designer: task.designer,
+      languages: task.languages,
+      accountNames: task.taskAccounts.map((ta) => ta.account.displayName),
+      templateLinkUrl: task.canvaLinks[0]?.url ?? null,
+      customFields: task.customFields as Record<string, unknown> | null,
+      bodyText: task.bodyText,
+      uploadRequestUrl: task.uploadRequestUrl,
+      outputUrl: task.outputUrl,
+    });
+
+    // Klik ganda / dua tab: hanya satu halaman yang ditautkan, sisanya diarsipkan
+    const linked = await prisma.task.updateMany({
+      where: { id: task.id, notionPageId: task.notionPageId },
+      // lastEditedTime ikut berubah agar kanban mengganti data task di drawer yang terbuka
+      data: { notionPageId: page.id, notionUrl: page.url ?? task.notionUrl, lastEditedTime: new Date() },
+    });
+    if (linked.count === 0) {
+      const notionClient = await getNotionClient();
+      await notionClient?.pages.update({ page_id: page.id, archived: true }).catch(() => {});
+      return { success: false, error: 'Halaman Notion sudah dibuat dari tempat lain. Muat ulang halaman.' };
+    }
+
+    try {
+      revalidatePath('/production', 'layout');
+    } catch {
+      // Ignore if called outside request context
+    }
+    return { success: true, notionPageId: page.id, notionUrl: page.url };
+  } catch (error: unknown) {
+    console.error('Failed to create missing Notion page:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Gagal membuat halaman Notion' };
   }
 }
 
@@ -1023,8 +1130,7 @@ export async function updateTaskFieldsAction(taskId: string, payload: TaskUpdate
       : null;
 
     // Best-effort Notion sync offloaded to background
-    const isMockTask = existingTask.notionPageId.startsWith('sync_mock_page_');
-    if (!isMockTask) {
+    if (isNotionLinked(existingTask.notionPageId)) {
       runInBackground(`Update Notion Fields for Task ${existingTask.name || taskId}`, async () => {
         const notionClient = await getNotionClient();
         if (!notionClient) return;
@@ -1208,7 +1314,7 @@ export async function toggleChecklistItemAction(taskId: string, label: string, c
     if (!isQaStatus(task.designStatus)) return { success: false, error: 'Checklist QA hanya bisa diubah saat status QA.' };
 
     let body = task.bodyText;
-    const fromNotion = !task.notionPageId.startsWith('app_created_') && !task.notionPageId.startsWith('sync_mock_page_');
+    const fromNotion = isNotionLinked(task.notionPageId);
     const notionClient = fromNotion ? await getNotionClient() : null;
     if (notionClient && !isBodyPushBusy(task.notionPageId)) {
       try {
@@ -1371,7 +1477,7 @@ export async function deleteTaskAction(taskId: string) {
 
     if (!task) return { success: false, error: 'Task not found' };
 
-    if (task.notionPageId && !task.notionPageId.startsWith('app_created_') && !task.notionPageId.startsWith('sync_mock_page_')) {
+    if (isNotionLinked(task.notionPageId)) {
       const notionConfig = await getNotionClientAndDatabase();
       if (notionConfig) {
         try {

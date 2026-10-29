@@ -165,6 +165,7 @@ export default function CreateTaskSlideModal({ productionUnitId, open, onClose, 
 
     if (res.success) {
       toast.success('Task created successfully');
+      if ('notionWarning' in res && res.notionWarning) toast(res.notionWarning, { icon: '⚠️', duration: 8000 });
       if (taskMonth) {
         const monthKey = parseTaskMonthToKey(taskMonth);
         if (monthKey && searchParams) {

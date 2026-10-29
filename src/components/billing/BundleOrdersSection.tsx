@@ -112,6 +112,7 @@ export default function BundleOrdersSection({ rows, periodLabel, bundles, design
       return;
     }
     toast.success(formContract ? `Order periode ${period} dibuat, task dikirim ke tiap board.` : 'Order bundle dibuat, task dikirim ke tiap board.');
+    if (res.warning) toast(res.warning, { icon: '⚠️', duration: 8000 });
     setOpen(false);
     router.refresh();
   };

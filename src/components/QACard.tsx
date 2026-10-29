@@ -90,6 +90,7 @@ export default function QACard({ task, onOpen, dimmed = false, onDragStateChange
       const res = await duplicateTaskAction(task.id);
       if (res.success) {
         toast.success('Task berhasil diduplikasi');
+        if ('notionWarning' in res && res.notionWarning) toast(res.notionWarning, { icon: '⚠️', duration: 8000 });
         router.refresh();
       } else {
         toast.error(res.error || 'Gagal menduplikasi task');

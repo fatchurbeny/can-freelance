@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "generatedAt": "2026-10-29T08:06:19.576Z",
+  "generatedAt": "2026-10-29T08:06:33.932Z",
   "nodes": [
     {
       "id": "page:/account-team",
@@ -1995,6 +1995,14 @@
       "details": "Server/shared library in src/lib/notion-field-types.ts"
     },
     {
+      "id": "lib:notion-link",
+      "label": "notion-link.ts",
+      "type": "action",
+      "group": "Server Actions & Lib",
+      "filepath": "src/lib/notion-link.ts",
+      "details": "Server/shared library in src/lib/notion-link.ts"
+    },
+    {
       "id": "lib:notion-provision",
       "label": "notion-provision.ts",
       "type": "action",
@@ -3569,6 +3577,18 @@
     {
       "source": "action:qa",
       "target": "action:sync-notion",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:qa",
+      "target": "lib:notion-field-types",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:qa",
+      "target": "lib:notion-link",
       "relation": "invokes",
       "confidence": "EXTRACTED"
     },
@@ -6760,6 +6780,12 @@
     },
     {
       "source": "component:TaskDetailSheet",
+      "target": "lib:notion-link",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:TaskDetailSheet",
       "target": "lib:validate-template-link",
       "relation": "invokes",
       "confidence": "EXTRACTED"
@@ -7241,6 +7267,12 @@
     {
       "source": "lib:dropbox-output",
       "target": "lib:notion-provision",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:dropbox-output",
+      "target": "lib:notion-link",
       "relation": "invokes",
       "confidence": "EXTRACTED"
     },

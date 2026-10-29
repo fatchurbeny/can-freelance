@@ -80,6 +80,7 @@ export async function createBundleOrderAction(input: CreateBundleOrderInput) {
     });
 
     const failures: string[] = [];
+    const notionMissing: string[] = [];
     for (const item of bundle.items) {
       const res = await createTaskAction({
         productionUnitId: item.productionUnitId,
@@ -95,6 +96,7 @@ export async function createBundleOrderAction(input: CreateBundleOrderInput) {
         failures.push(`${item.productionUnit.name}: ${('error' in res && res.error) || 'gagal'}`);
         continue;
       }
+      if ('notionWarning' in res && res.notionWarning) notionMissing.push(item.productionUnit.name);
       await prisma.task.update({
         where: { id: res.taskId },
         data: { bundleId: bundle.id, bundleItemId: item.id, bundleOrderId: order.id },
@@ -106,7 +108,10 @@ export async function createBundleOrderAction(input: CreateBundleOrderInput) {
     if (failures.length) {
       return { success: false, error: `Order dibuat, tetapi sebagian task gagal: ${failures.join('; ')}`, orderId: order.id };
     }
-    return { success: true, orderId: order.id };
+    const warning = notionMissing.length
+      ? `Halaman Notion gagal dibuat untuk task di ${notionMissing.join(', ')}. Buka task-nya lalu klik "Buat di Notion".`
+      : undefined;
+    return { success: true, orderId: order.id, warning };
   } catch (error: any) {
     return { success: false, error: error.message || 'Gagal membuat order bundle.' };
   }

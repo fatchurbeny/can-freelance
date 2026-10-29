@@ -10,8 +10,9 @@ import {
 import {
   updateTaskStatusAction, addCommentAction, getTaskCommentsAction,
   deleteCommentAction, updateTaskFieldsAction, fetchTaskMetadataOptionsAction,
-  toggleChecklistItemAction, TaskUpdatePayload
+  toggleChecklistItemAction, createMissingNotionPageAction, TaskUpdatePayload
 } from '@/app/actions/qa';
+import { isMissingNotionPage } from '@/lib/notion-link';
 import { validateTemplateLink } from '@/lib/validate-template-link';
 import type { CardAction } from './QACard';
 import toast from 'react-hot-toast';
@@ -33,6 +34,8 @@ interface QATask {
   id: string;
   name: string | null;
   notionUrl: string | null;
+  /** `app_created_…` = belum punya halaman Notion (lib/notion-link.ts). */
+  notionPageId?: string;
   designer: { id: string; displayName: string; avatarColor: string | null } | null;
   doctype: { id: string; displayName: string; qaChecklist?: string[] } | null;
   designStatus: { id: string; notionKey: string; displayName: string } | null;
@@ -87,6 +90,10 @@ interface OptionItem {
 export default function TaskDetailSheet({ task, actions = [], onClose, onMoved, initialTab }: Props) {
   const access = useAccess();
   const canEditChecklist = !access.enabled || access.permissions.includes('task.edit');
+  const canCreateTask = !access.enabled || access.permissions.includes('task.create');
+  // Halaman Notion yang baru dibuat lewat "Buat di Notion" (task prop belum ter-refresh)
+  const [createdNotionUrl, setCreatedNotionUrl] = useState<string | null>(null);
+  const [creatingNotionPage, setCreatingNotionPage] = useState(false);
   const [openTab, setOpenTab] = useState<BriefTab>('brief');
   // Privasi per role: freelance tidak melihat brand/akun; Dropbox Link hanya untuk yang berhak.
   const canSeeBrand = !access.enabled || access.permissions.includes('account.view');
@@ -159,6 +166,7 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved, 
     setLicense(task.license || '');
     setTaskMonth(task.taskMonth || '');
     setBodyText(task.bodyText || '');
+    setCreatedNotionUrl(null);
     // Status QA → buka tab Checklist QA (hanya bila task punya checklist; dicek di DesignBriefSection)
     setOpenTab(initialTab ?? (isQaStatus(task.designStatus) ? 'checklist' : 'brief'));
     setSelectedAccountIds(task?.taskAccounts?.map(ta => ta.account.id) || []);
@@ -286,6 +294,21 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved, 
       : isPreWorkStatus(activeStatus) ? 'pre' : 'progress';
   const inReviewLocked = hasChecklist && isQaStatus(activeStatus) && checklistState.done < checklistState.total;
 
+  const notionUrl = createdNotionUrl ?? task.notionUrl;
+  const missingNotionPage = !createdNotionUrl && isMissingNotionPage(task.notionPageId);
+
+  const handleCreateNotionPage = async () => {
+    setCreatingNotionPage(true);
+    const res = await createMissingNotionPageAction(task.id);
+    setCreatingNotionPage(false);
+    if (res.success && 'notionUrl' in res) {
+      setCreatedNotionUrl(res.notionUrl ?? '');
+      toast.success('Halaman Notion dibuat');
+    } else {
+      toast.error(res.error || 'Gagal membuat halaman Notion');
+    }
+  };
+
   const handleToggleChecklist = async (label: string, checked: boolean) => {
     const res = await toggleChecklistItemAction(task.id, label, checked);
     if (res.success && res.bodyText !== undefined) setBodyText(res.bodyText);
@@ -338,9 +361,9 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved, 
           </div>
           <div className="flex items-center gap-2 shrink-0">
             {canShare && <TaskShareButton taskId={task.id} onActiveChange={setIsPublic} />}
-            {task.notionUrl && (
+            {notionUrl && (
               <a
-                href={task.notionUrl}
+                href={notionUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Open in Notion"
@@ -403,6 +426,26 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved, 
             )}
           </div>
         </div>
+
+        {/* Task tersimpan tanpa halaman Notion (pembuatan halaman gagal saat task dibuat) */}
+        {missingNotionPage && (
+          <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[#FED7AA] bg-[#FFF7ED] dark:border-orange-900/60 dark:bg-orange-950/30 px-5 py-2.5 font-sans text-xs">
+            <span className="text-[#C2410C] dark:text-orange-400">
+              Task ini belum ada di Notion; perubahan hanya tersimpan di app.
+            </span>
+            {canCreateTask && (
+              <button
+                type="button"
+                onClick={handleCreateNotionPage}
+                disabled={creatingNotionPage}
+                className="flex shrink-0 items-center gap-1.5 h-7 px-3 bg-[#ff5e1f] text-[11px] font-bold uppercase tracking-wider text-white hover:bg-[#ff7038] disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+              >
+                {creatingNotionPage ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ExternalLink className="w-3.5 h-3.5" />}
+                Buat di Notion
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Main Content Area — Full Edge-to-Edge Continuous Container with Smooth Vertical Scrolling */}
         <div className="min-h-0 flex-1 overflow-y-auto flex flex-col divide-y divide-[#f0f0f0] dark:divide-[#272a34] p-0 scroll-smooth [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-gray-300 dark:[&::-webkit-scrollbar-thumb]:bg-[#272a34]">
