@@ -148,7 +148,8 @@ function explainError(e) {
   if (e instanceof PaginationError) {
     return { status: 'ERROR', message: `Paginasi Canva berubah: ${e.message}`, hint: 'Kabari admin: format data Canva mungkin berubah.' };
   }
-  if (e instanceof TypeError && /fetch/i.test(e.message)) {
+  // Pesan error jaringan beda per browser: Chrome "Failed to fetch", Yab/WebKit "Load failed", Firefox "NetworkError…".
+  if (e instanceof TypeError && /fetch|load failed|networkerror/i.test(e.message)) {
     return { status: 'ERROR', message: 'Dashboard can-freelance tidak bisa dihubungi.', hint: 'Pastikan server dashboard menyala dan URL di Pengaturan benar.' };
   }
   return { status: 'ERROR', message: e.message, hint: e.hint ?? null };
