@@ -1,13 +1,16 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, type ReactNode } from 'react';
 import { Edit3, Copy, Check, Clock, Trash2, Send, Loader2, MessageSquare } from 'lucide-react';
 import toast from 'react-hot-toast';
 import DesignBriefPreview from './DesignBriefPreview';
 import { useAccess } from '@/context/AccessContext';
 import DesignBriefEditorDrawer, { mergePaletteMarkdown } from './DesignBriefEditorDrawer';
 import { mergeAssetsMarkdown } from '@/lib/asset-brief';
+import { stripChecklistSection } from '@/lib/checklist-qa';
 import { NOTES_HEADING, shufflePaletteMarkdown } from './brief-parser';
+
+export type BriefTab = 'brief' | 'checklist' | 'comments';
 
 interface Comment {
   id: string;
@@ -27,6 +30,10 @@ interface Props {
   onEditorOpenChange?: (open: boolean) => void;
   /** Production task; picker Asset Library hanya menampilkan aset untuk production ini. */
   productionUnitId?: string;
+  /** Tab Checklist QA (production Dropbox dengan Doctype ber-checklist). Section-nya tidak tampil di brief. */
+  checklist?: { content: ReactNode; count: string; toneClass: string };
+  /** Tab yang terbuka saat drawer dibuka. */
+  initialTab?: BriefTab;
 }
 
 const BODY_DEBOUNCE_MS = 1500;
@@ -41,15 +48,18 @@ export default function DesignBriefSection({
   sendingComment,
   onEditorOpenChange,
   productionUnitId,
+  checklist,
+  initialTab = 'brief',
 }: Props) {
   const access = useAccess();
   // Brief hanya diubah oleh role manajemen (task.edit); designer hanya membaca & berkomentar.
   const canEditBrief = !access.enabled || access.permissions.includes('task.edit');
-  const [activeTab, setActiveTab] = useState<'brief' | 'comments'>('brief');
+  const [activeTab, setActiveTab] = useState<BriefTab>(initialTab === 'checklist' && !checklist ? 'brief' : initialTab);
   const [viewMode, setViewMode] = useState<'preview' | 'edit'>('preview');
   const [copiedBrief, setCopiedBrief] = useState(false);
   const [commentInput, setCommentInput] = useState('');
-  const [draftBody, setDraftBody] = useState(bodyText);
+  // Brief tanpa section Checklist QA (punya tab sendiri; server menyambungnya kembali saat simpan)
+  const [draftBody, setDraftBody] = useState(() => stripChecklistSection(bodyText));
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingRef = useRef<string | null>(null);
@@ -57,7 +67,7 @@ export default function DesignBriefSection({
   saveRef.current = onBodyTextChange;
 
   useEffect(() => {
-    if (pendingRef.current === null) setDraftBody(bodyText);
+    if (pendingRef.current === null) setDraftBody(stripChecklistSection(bodyText));
   }, [bodyText]);
 
   const flush = () => {
@@ -80,7 +90,7 @@ export default function DesignBriefSection({
     timerRef.current = setTimeout(flush, BODY_DEBOUNCE_MS);
   };
 
-  const switchTab = (tab: 'brief' | 'comments') => {
+  const switchTab = (tab: BriefTab) => {
     flush();
     setActiveTab(tab);
   };
@@ -155,10 +165,16 @@ export default function DesignBriefSection({
   return (
     <div className="flex flex-1 flex-col bg-white dark:bg-[#0d0e12] border-t border-[#f0f0f0] dark:border-[#272a34]">
       {/* Tabs */}
-      <div role="tablist" className="grid grid-cols-2 border-b border-[#f0f0f0] dark:border-[#272a34] shrink-0">
+      <div role="tablist" className={`grid ${checklist ? 'grid-cols-3' : 'grid-cols-2'} border-b border-[#f0f0f0] dark:border-[#272a34] shrink-0`}>
         <button type="button" role="tab" aria-selected={activeTab === 'brief'} onClick={() => switchTab('brief')} className={tabClass(activeTab === 'brief')}>
           Design Brief
         </button>
+        {checklist && (
+          <button type="button" role="tab" aria-selected={activeTab === 'checklist'} onClick={() => switchTab('checklist')} className={`${tabClass(activeTab === 'checklist')} border-l border-l-[#f0f0f0] dark:border-l-[#272a34]`}>
+            Checklist QA
+            <span className={`rounded-[5px] border px-[5px] py-px text-[10px] font-semibold normal-case tracking-normal ${checklist.toneClass}`}>{checklist.count}</span>
+          </button>
+        )}
         <button type="button" role="tab" aria-selected={activeTab === 'comments'} onClick={() => switchTab('comments')} className={`${tabClass(activeTab === 'comments')} border-l border-l-[#f0f0f0] dark:border-l-[#272a34]`}>
           Comments ({comments.length})
         </button>
@@ -203,6 +219,8 @@ export default function DesignBriefSection({
           />
         </div>
       )}
+
+      {activeTab === 'checklist' && checklist?.content}
 
       {activeTab === 'comments' && (
         <div className="flex flex-1 flex-col">

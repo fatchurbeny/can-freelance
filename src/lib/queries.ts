@@ -767,7 +767,7 @@ function formatDistribusi(distribusi: any[], topDoctypes: any[]) {
 
 export async function getDoctypes() {
   return await prisma.doctype.findMany({
-    include: { platform: { select: { slug: true, name: true } } },
+    include: { platform: { select: { slug: true, name: true, outputType: true } } },
     orderBy: [
       { updatedAt: 'desc' },
       { pages: 'desc' },

@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "generatedAt": "2026-10-28T14:07:43.534Z",
+  "generatedAt": "2026-10-29T08:06:19.576Z",
   "nodes": [
     {
       "id": "page:/account-team",
@@ -1563,6 +1563,14 @@
       "details": "React UI Component in src/components/task-detail/brief-parser.ts"
     },
     {
+      "id": "component:ChecklistQASection",
+      "label": "ChecklistQASection",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/task-detail/ChecklistQASection.tsx",
+      "details": "React UI Component in src/components/task-detail/ChecklistQASection.tsx"
+    },
+    {
       "id": "component:CustomFieldsSection",
       "label": "CustomFieldsSection",
       "type": "component",
@@ -1873,6 +1881,14 @@
       "group": "Server Actions & Lib",
       "filepath": "src/lib/canva-url.ts",
       "details": "Server/shared library in src/lib/canva-url.ts"
+    },
+    {
+      "id": "lib:checklist-qa",
+      "label": "checklist-qa.ts",
+      "type": "action",
+      "group": "Server Actions & Lib",
+      "filepath": "src/lib/checklist-qa.ts",
+      "details": "Server/shared library in src/lib/checklist-qa.ts"
     },
     {
       "id": "lib:color-extractor",
@@ -3541,6 +3557,18 @@
     {
       "source": "action:qa",
       "target": "lib:notion-assets",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:qa",
+      "target": "lib:checklist-qa",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:qa",
+      "target": "action:sync-notion",
       "relation": "invokes",
       "confidence": "EXTRACTED"
     },
@@ -6467,6 +6495,18 @@
       "confidence": "EXTRACTED"
     },
     {
+      "source": "component:QACard",
+      "target": "lib:checklist-qa",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:QACard",
+      "target": "component:ChecklistQASection",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
       "source": "component:QAKanbanBoard",
       "target": "component:QACard",
       "relation": "renders",
@@ -6599,6 +6639,12 @@
       "confidence": "EXTRACTED"
     },
     {
+      "source": "component:ChecklistQASection",
+      "target": "lib:checklist-qa",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
       "source": "component:CustomFieldsSection",
       "target": "component:FieldValueInput",
       "relation": "renders",
@@ -6672,6 +6718,12 @@
     },
     {
       "source": "component:DesignBriefSection",
+      "target": "lib:checklist-qa",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:DesignBriefSection",
       "target": "component:brief-parser",
       "relation": "renders",
       "confidence": "EXTRACTED"
@@ -6734,6 +6786,18 @@
       "source": "component:TaskDetailSheet",
       "target": "component:DesignBriefSection",
       "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:TaskDetailSheet",
+      "target": "component:ChecklistQASection",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:TaskDetailSheet",
+      "target": "lib:checklist-qa",
+      "relation": "invokes",
       "confidence": "EXTRACTED"
     },
     {
@@ -7573,6 +7637,12 @@
     {
       "source": "action:sync-notion",
       "target": "lib:notion-field-types",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:sync-notion",
+      "target": "lib:checklist-qa",
       "relation": "invokes",
       "confidence": "EXTRACTED"
     },

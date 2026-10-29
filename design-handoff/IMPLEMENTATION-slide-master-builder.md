@@ -235,16 +235,21 @@ Perubahan status langsung di Notion tidak bisa diblokir → saat sync, tandai ka
 
 ## 7. Acceptance criteria (F1)
 
-- [ ] `Doctype.qaChecklist` ada (SQL aditif), Doctype presentasi berisi 5 item, dan bisa diedit di `DoctypeSlideModal`.
-- [ ] Production Dropbox: kartu kanban menampilkan indikator `n/total` sesuai Doctype dengan warna sesuai; production Canva dan Doctype tanpa checklist tidak.
-- [ ] Drawer punya 3 tab berurutan Design Brief · Checklist QA · Comments; default Checklist QA saat status QA.
-- [ ] Centang di app tersimpan sebagai blok to-do di body Notion dan terbaca kembali setelah sync.
-- [ ] Centang di Notion muncul di app setelah sync.
-- [ ] Pindah QA → In Review ditolak sampai 5/5 di **ketiga** cara (drag kanban, tombol aksi drawer, dropdown Design Status), dengan pesan jelas; ditolak di server, bukan hanya UI.
-- [ ] Mengedit dan menyimpan Design Brief tidak menghapus atau memindahkan section Checklist QA (cek di app dan di body Notion).
-- [ ] Section Checklist QA tetap di akhir body Notion setelah push.
-- [ ] Tidak ada properti baru di database Notion.
-- [ ] `npx tsc --noEmit` lulus; Inter di semua UI baru.
+**Status 2026-10-29: F1 diimplementasikan.** Diverifikasi di dev `AUTH_MODE=off` (port 3013): alur app dengan task `app_created_`, lalu push/pull Notion dengan task Notion asli "Test Fase 6 Task" (SC-Element; dikembalikan ke kondisi awal setelah uji).
+
+- [x] `Doctype.qaChecklist` ada (SQL aditif `prisma/sql/2026-10-29-doctype-qa-checklist.sql`), Doctype presentasi berisi 5 item, dan bisa diedit di `DoctypeSlideModal` (satu item per baris).
+- [x] Production Dropbox: kartu kanban menampilkan indikator `n/total` sesuai Doctype dengan warna sesuai; production Canva dan Doctype tanpa checklist tidak.
+- [x] Drawer punya 3 tab berurutan Design Brief · Checklist QA · Comments; default Checklist QA saat status QA.
+- [x] Centang di app tersimpan sebagai blok to-do di body Notion (heading_2 + `to_do` checked), dan section dibuat saat Doctype dipilih.
+- [x] Centang di Notion muncul di app setelah sync (incremental Sync Now).
+- [x] Centang di Notion yang belum ter-sync tidak tertimpa saat QA mencentang item lain dari app (`toggleChecklistItemAction` membaca checklist Notion dulu). **Batas**: dalam 2 menit setelah push body dari app (`isBodyPushBusy`), pembacaan ini dilewati, sama seperti pull sync.
+- [x] Pindah QA → In Review ditolak sampai 5/5, ditolak di server: dropdown Design Status dan tombol "Pindah ke In Review" diuji; drag kanban memakai `updateTaskStatusAction` yang sama (gerbang diuji lewat unit check, tidak lewat drag manual).
+- [x] Mengedit dan menyimpan Design Brief tidak menghapus section Checklist QA (app, DB, dan body Notion).
+- [x] Section Checklist QA tetap di akhir body Notion setelah push brief (template struktur → Template Wireframe, Keywords, lalu Checklist QA).
+- [x] Tidak ada properti baru di database Notion.
+- [x] `npx tsc --noEmit` lulus; Inter di semua UI baru.
+
+Belum termasuk F1 (menunggu F2/F3): kartu "Slide Master" + tautan "Buka di Slide Master Builder", daftar "File di Dropbox", badge "Menunggu file", dan blok Deliverable di tab Design Brief.
 
 Acceptance criteria (F3): Antrean global punya filter Production dan hanya memuat job dari production tempat user menjadi anggota (diverifikasi via "Lihat sebagai").
 

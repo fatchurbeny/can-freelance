@@ -15,6 +15,7 @@ import { Prisma } from '../../generated/prisma';
 import { syncDropboxOutputs } from '@/lib/dropbox-output';
 import { pushPendingAssets, syncAssetsFromNotion, syncTaskAssetLinks } from '@/lib/notion-assets';
 import { ASSETS_RELATION_PROPERTY } from '@/lib/notion-field-types';
+import { isQaStatusName } from '@/lib/checklist-qa';
 
 export type NotionSyncMode = 'incremental' | 'full';
 
@@ -591,7 +592,7 @@ export async function syncNotionData(mode: NotionSyncMode = 'incremental') {
           let designStatusId = null;
           if (statusName) {
             const lowerName = statusName.toLowerCase();
-            const isQaVariant = lowerName === 'qa' || lowerName.includes('q&a') || lowerName.includes('in qa') || lowerName.includes('quality assurance');
+            const isQaVariant = isQaStatusName(lowerName);
 
             let foundStatus = statuses.find(
               (s) => s.notionKey.toLowerCase() === lowerName ||

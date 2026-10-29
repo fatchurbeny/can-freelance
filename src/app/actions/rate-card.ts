@@ -48,6 +48,7 @@ export async function updateDoctypeRateCardAction(
     dimensions?: string;
     aspectRatio?: string;
     notes?: string;
+    qaChecklist?: string[];
     isActive?: boolean;
   }
 ) {
@@ -67,6 +68,7 @@ export async function updateDoctypeRateCardAction(
     if (values.dimensions !== undefined) dataToUpdate.dimensions = values.dimensions;
     if (values.aspectRatio !== undefined) dataToUpdate.aspectRatio = values.aspectRatio;
     if (values.notes !== undefined) dataToUpdate.notes = values.notes;
+    if (values.qaChecklist !== undefined) dataToUpdate.qaChecklist = values.qaChecklist;
     if (typeof values.isActive === 'boolean') dataToUpdate.isActive = values.isActive;
 
     const updated = await prisma.doctype.update({
@@ -98,6 +100,7 @@ export async function createDoctypeAction(values: {
   usage?: 'Kontrak' | 'Bundle' | 'Keduanya';
   pages: number;
   notes?: string;
+  qaChecklist?: string[];
   isActive?: boolean;
 }) {
   const denied = await denyWrite('rateCard.edit');
@@ -129,6 +132,7 @@ export async function createDoctypeAction(values: {
         usage: values.usage ?? 'Kontrak',
         pages: values.pages,
         notes: values.notes || null,
+        qaChecklist: values.qaChecklist ?? [],
         isActive: values.isActive ?? true,
       },
     });

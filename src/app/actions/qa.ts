@@ -9,12 +9,17 @@ import { decrypt } from '@/lib/encryption';
 import { validateTemplateLink } from '@/lib/validate-template-link';
 import { formatTaskMonthToDateString } from '@/lib/period-utils';
 import { orderBriefMarkdown } from '@/components/task-detail/brief-parser';
-import { pushBodyToNotion } from '@/lib/notion-body-push';
+import { isBodyPushBusy, pushBodyToNotion } from '@/lib/notion-body-push';
 import { runInBackground } from '@/lib/background-sync';
 import { attachUploadRequest } from '@/lib/dropbox-output';
 import { resolveWriteName, type FieldKey, type FieldMapping } from '@/lib/production-field-mapping';
 import { customFieldProperties, titlePropertyName } from '@/lib/notion-task-properties';
 import { assetsRelationProperty, resolveBriefAssets, syncTaskAssetLinks } from '@/lib/notion-assets';
+import {
+  buildChecklistSection, checklistGateError, ensureChecklistSection, extractChecklistSection,
+  isPreWorkStatus, isQaStatus, mergeChecklistSection, setChecklistItem,
+} from '@/lib/checklist-qa';
+import { parseNotionBlocksToMarkdown } from '@/lib/sync-notion';
 
 async function getNotionClientAndDatabase(databaseIdOverride?: string | null) {
   const activeConfig = await prisma.notionConfig.findFirst({
@@ -302,6 +307,16 @@ function markdownToNotionBlocks(bodyText: string): any[] {
           rich_text: [{ type: 'text', text: { content: line.replace(/^#\s+/, '') } }],
         },
       });
+    } else if (/^[-*]\s+\[[ xX]\]\s+/.test(line)) {
+      // Checklist (mis. section Checklist QA) → blok to-do, dibaca balik oleh sync sebagai `- [x] …`
+      blocks.push({
+        object: 'block',
+        type: 'to_do',
+        to_do: {
+          rich_text: toRichText(line.replace(/^[-*]\s+\[[ xX]\]\s+/, '')),
+          checked: /^[-*]\s+\[[xX]\]/.test(line),
+        },
+      });
     } else if (line.startsWith('- ') || line.startsWith('* ')) {
       const content = line.replace(/^[-*]\s+/, '');
       blocks.push({
@@ -410,11 +425,28 @@ export async function updateTaskStatusAction(taskId: string, statusNotionKey: st
     await assertCanEditTask(taskId);
     const [status, task] = await Promise.all([
       findPrismaDesignStatus(statusNotionKey),
-      prisma.task.findUnique({ where: { id: taskId }, include: { productionUnit: { select: { fieldMapping: true } } } }),
+      prisma.task.findUnique({
+        where: { id: taskId },
+        include: {
+          designStatus: true,
+          doctype: { select: { qaChecklist: true } },
+          productionUnit: { select: { fieldMapping: true, platform: { select: { outputType: true } } } },
+        },
+      }),
     ]);
 
     if (!status) return { success: false, error: `Status "${statusNotionKey}" not found` };
     if (!task) return { success: false, error: 'Task not found' };
+
+    // Checklist QA (production Dropbox): QA → In Review hanya bila semua item tercentang
+    const isDropbox = task.productionUnit.platform.outputType === 'dropbox_link';
+    const required = task.doctype?.qaChecklist ?? [];
+    const gateError = checklistGateError({ isDropbox, current: task.designStatus, target: status, bodyText: task.bodyText, required });
+    if (gateError) return { success: false, error: gateError };
+
+    // Task lama tanpa section: buat saat masuk QA
+    const checklistBody = isDropbox && isQaStatus(status) ? ensureChecklistSection(task.bodyText, required) : task.bodyText;
+    const bodyChanged = (checklistBody ?? null) !== (task.bodyText ?? null);
 
     // 1. Immediately update local database for instant response
     await prisma.task.update({
@@ -422,6 +454,7 @@ export async function updateTaskStatusAction(taskId: string, statusNotionKey: st
       data: {
         designStatusId: status.id,
         lastEditedTime: new Date(),
+        ...(bodyChanged ? { bodyText: checklistBody } : {}),
       },
     });
 
@@ -454,6 +487,8 @@ export async function updateTaskStatusAction(taskId: string, statusNotionKey: st
             },
           },
         });
+
+        if (bodyChanged) await syncNotionPageBodyBlocks(notionClient, task.notionPageId, checklistBody);
       });
     }
 
@@ -597,6 +632,11 @@ export async function createTaskAction(payload: CreateTaskPayload) {
     let selectedDoctype: any = null;
     if (payload.doctypeId) {
       selectedDoctype = await prisma.doctype.findUnique({ where: { id: payload.doctypeId } });
+    }
+
+    // Production Dropbox: body kartu mendapat section Checklist QA dari Doctype
+    if (targetUnit.platform.outputType === 'dropbox_link') {
+      payload.bodyText = ensureChecklistSection(payload.bodyText, selectedDoctype?.qaChecklist ?? []);
     }
 
     let selectedDesigner: any = null;
@@ -834,6 +874,10 @@ export async function updateTaskFieldsAction(taskId: string, payload: TaskUpdate
 
     if (!existingTask) return { success: false, error: 'Task not found' };
 
+    const targetStatus = payload.designStatusId
+      ? await prisma.designStatus.findUnique({ where: { id: payload.designStatusId } })
+      : null;
+
     // Designer task bundle mengikuti order bundle (sumber utama); ubah lewat drawer order di Billing Statement.
     if (payload.designerId !== undefined && existingTask.bundleOrderId) {
       const order = await prisma.bundleOrder.findUnique({ where: { id: existingTask.bundleOrderId }, select: { designerId: true } });
@@ -848,6 +892,41 @@ export async function updateTaskFieldsAction(taskId: string, payload: TaskUpdate
       include: { platform: true },
     });
     const isDropboxTask = taskUnit?.platform.outputType === 'dropbox_link';
+
+    // Checklist QA mengikuti Doctype task (lama atau baru)
+    const targetDoctype = payload.doctypeId !== undefined
+      ? (payload.doctypeId ? await prisma.doctype.findUnique({ where: { id: payload.doctypeId } }) : null)
+      : existingTask.doctype;
+    const required = targetDoctype?.qaChecklist ?? [];
+
+    // Gerbang QA → In Review (dropdown Design Status); jalur kanban ada di updateTaskStatusAction
+    if (targetStatus) {
+      const gateError = checklistGateError({
+        isDropbox: isDropboxTask,
+        current: existingTask.designStatus,
+        target: targetStatus,
+        bodyText: existingTask.bodyText,
+        required,
+      });
+      if (gateError) return { success: false, error: gateError };
+    }
+
+    // Body baru menurut aturan Checklist QA; undefined = body tidak berubah
+    let nextBody: string | null | undefined = payload.bodyText;
+    if (isDropboxTask) {
+      let body = payload.bodyText !== undefined ? payload.bodyText : existingTask.bodyText;
+      // Editor brief tidak memuat section checklist → sambung kembali dari body tersimpan
+      if (payload.bodyText !== undefined && !extractChecklistSection(payload.bodyText)) {
+        body = mergeChecklistSection(payload.bodyText, extractChecklistSection(existingTask.bodyText));
+      }
+      // Doctype diganti sebelum designer bekerja → section dibuat ulang dari Doctype baru
+      if (payload.doctypeId !== undefined && payload.doctypeId !== existingTask.doctypeId && isPreWorkStatus(targetStatus ?? existingTask.designStatus)) {
+        body = mergeChecklistSection(body, required.length ? buildChecklistSection(required.map((label) => ({ label, checked: false }))) : '');
+      }
+      // Masuk QA → pastikan section ada (task lama)
+      if (isQaStatus(targetStatus ?? existingTask.designStatus)) body = ensureChecklistSection(body, required);
+      if (payload.bodyText !== undefined || (body ?? null) !== (existingTask.bodyText ?? null)) nextBody = body;
+    }
 
     const updateData: any = {
       lastEditedTime: new Date(),
@@ -868,7 +947,7 @@ export async function updateTaskFieldsAction(taskId: string, payload: TaskUpdate
     if (payload.priority !== undefined) updateData.priority = payload.priority;
     if (payload.license !== undefined) updateData.license = payload.license;
     if (payload.taskMonth !== undefined) updateData.taskMonth = payload.taskMonth;
-    if (payload.bodyText !== undefined) updateData.bodyText = payload.bodyText ? orderBriefMarkdown(payload.bodyText) : payload.bodyText;
+    if (nextBody !== undefined) updateData.bodyText = nextBody ? orderBriefMarkdown(nextBody) : nextBody;
     if (payload.customFields) {
       const merged: Record<string, unknown> = { ...((existingTask.customFields as Record<string, unknown> | null) ?? {}) };
       for (const [key, value] of Object.entries(payload.customFields)) {
@@ -939,7 +1018,7 @@ export async function updateTaskFieldsAction(taskId: string, payload: TaskUpdate
     });
 
     // Aset Library yang dirujuk brief → TaskAsset (hitungan "Dipakai di") + relation Notion
-    const assetPageIds = payload.bodyText !== undefined
+    const assetPageIds = nextBody !== undefined
       ? await syncTaskAssetLinks(taskId, updateData.bodyText as string | null | undefined)
       : null;
 
@@ -1085,8 +1164,8 @@ export async function updateTaskFieldsAction(taskId: string, payload: TaskUpdate
           });
         }
 
-        if (payload.bodyText !== undefined) {
-          await syncNotionPageBodyBlocks(notionClient, existingTask.notionPageId, payload.bodyText);
+        if (nextBody !== undefined) {
+          await syncNotionPageBodyBlocks(notionClient, existingTask.notionPageId, updateData.bodyText);
         }
       });
     }
@@ -1100,6 +1179,71 @@ export async function updateTaskFieldsAction(taskId: string, payload: TaskUpdate
   } catch (error: any) {
     console.error('Failed to update task fields:', error);
     return { success: false, error: error.message || 'Failed to update task fields' };
+  }
+}
+
+/**
+ * Centang/batal satu item Checklist QA (hanya saat status QA, oleh role task.edit).
+ * Push body mengganti seluruh body Notion, jadi centang yang dibuat langsung di Notion
+ * diambil dulu agar tidak tertimpa body lokal yang belum ter-sync.
+ */
+export async function toggleChecklistItemAction(taskId: string, label: string, checked: boolean) {
+  try {
+    const access = await assertCanEditTask(taskId);
+    if (!access.allows('task.edit')) return { success: false, error: 'Hanya QA yang bisa mengubah Checklist QA.' };
+
+    const task = await prisma.task.findUnique({
+      where: { id: taskId },
+      include: {
+        designStatus: true,
+        doctype: { select: { qaChecklist: true } },
+        productionUnit: { select: { platform: { select: { outputType: true } } } },
+      },
+    });
+    if (!task) return { success: false, error: 'Task not found' };
+    const required = task.doctype?.qaChecklist ?? [];
+    if (task.productionUnit.platform.outputType !== 'dropbox_link' || !required.some((r) => r.toLowerCase() === label.toLowerCase())) {
+      return { success: false, error: `Item "${label}" tidak ada di Checklist QA Doctype task ini.` };
+    }
+    if (!isQaStatus(task.designStatus)) return { success: false, error: 'Checklist QA hanya bisa diubah saat status QA.' };
+
+    let body = task.bodyText;
+    const fromNotion = !task.notionPageId.startsWith('app_created_') && !task.notionPageId.startsWith('sync_mock_page_');
+    const notionClient = fromNotion ? await getNotionClient() : null;
+    if (notionClient && !isBodyPushBusy(task.notionPageId)) {
+      try {
+        const blocks: any[] = [];
+        let cursor: string | undefined;
+        do {
+          const res: any = await notionClient.blocks.children.list({ block_id: task.notionPageId, page_size: 100, start_cursor: cursor });
+          blocks.push(...(res.results ?? []));
+          cursor = res.has_more ? res.next_cursor ?? undefined : undefined;
+        } while (cursor);
+        const notionSection = extractChecklistSection(parseNotionBlocksToMarkdown(blocks));
+        if (notionSection) body = mergeChecklistSection(body, notionSection);
+      } catch (err) {
+        console.warn('Gagal membaca Checklist QA terbaru dari Notion; memakai body lokal:', err);
+      }
+    }
+
+    const nextBody = orderBriefMarkdown(setChecklistItem(body, required, label, checked));
+    await prisma.task.update({ where: { id: taskId }, data: { bodyText: nextBody, lastEditedTime: new Date() } });
+
+    if (notionClient) {
+      runInBackground(`Update Checklist QA for Task ${task.name || taskId}`, () =>
+        syncNotionPageBodyBlocks(notionClient, task.notionPageId, nextBody),
+      );
+    }
+
+    try {
+      revalidatePath('/production', 'layout');
+    } catch {
+      // Ignore if called outside request context
+    }
+    return { success: true, bodyText: nextBody };
+  } catch (error: unknown) {
+    console.error('Failed to toggle checklist item:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Gagal mengubah Checklist QA' };
   }
 }
 
@@ -1121,7 +1265,7 @@ export async function fetchTaskMetadataOptionsAction(productionUnitId?: string) 
       }),
       prisma.doctype.findMany({
         where: platformScope,
-        select: { id: true, displayName: true, pages: true, poolRate: true, _count: { select: { tasks: true } } },
+        select: { id: true, displayName: true, pages: true, poolRate: true, qaChecklist: true, _count: { select: { tasks: true } } },
         orderBy: [
           { tasks: { _count: 'desc' } },
           { displayName: 'asc' },

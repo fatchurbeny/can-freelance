@@ -10,7 +10,7 @@ import {
 import {
   updateTaskStatusAction, addCommentAction, getTaskCommentsAction,
   deleteCommentAction, updateTaskFieldsAction, fetchTaskMetadataOptionsAction,
-  TaskUpdatePayload
+  toggleChecklistItemAction, TaskUpdatePayload
 } from '@/app/actions/qa';
 import { validateTemplateLink } from '@/lib/validate-template-link';
 import type { CardAction } from './QACard';
@@ -18,7 +18,12 @@ import toast from 'react-hot-toast';
 
 import CustomSelectCell from './CustomSelectCell';
 import MonthCalendarPicker from './MonthCalendarPicker';
-import DesignBriefSection from './task-detail/DesignBriefSection';
+import DesignBriefSection, { type BriefTab } from './task-detail/DesignBriefSection';
+import ChecklistQASection, { CHECKLIST_TONE_CLASS, type ChecklistStage } from './task-detail/ChecklistQASection';
+import {
+  checklistGateError, checklistTone, extractChecklistSection, isApprovedStatus, isInReviewStatus,
+  isPreWorkStatus, isQaStatus, mergeChecklistSection, parseChecklistSection,
+} from '@/lib/checklist-qa';
 import CustomFieldsSection from './task-detail/CustomFieldsSection';
 import TaskShareButton from './task-detail/TaskShareButton';
 import type { CustomFieldDef } from './custom-fields/FieldValueDisplay';
@@ -29,7 +34,7 @@ interface QATask {
   name: string | null;
   notionUrl: string | null;
   designer: { id: string; displayName: string; avatarColor: string | null } | null;
-  doctype: { id: string; displayName: string } | null;
+  doctype: { id: string; displayName: string; qaChecklist?: string[] } | null;
   designStatus: { id: string; notionKey: string; displayName: string } | null;
   taskAccounts: { account: { id: string; displayName: string; color: string | null } }[];
   canvaLinks: { id: string; url: string }[];
@@ -56,6 +61,8 @@ interface Props {
   actions?: CardAction[];
   onClose: () => void;
   onMoved?: (taskId: string) => void;
+  /** Tab yang dibuka (mis. dari indikator checklist di kartu); default mengikuti status task. */
+  initialTab?: BriefTab;
 }
 
 interface Comment {
@@ -72,12 +79,15 @@ interface OptionItem {
   notionKey?: string;
   pages?: number | null;
   poolRate?: number | null;
+  qaChecklist?: string[];
 }
 
 
 
-export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }: Props) {
+export default function TaskDetailSheet({ task, actions = [], onClose, onMoved, initialTab }: Props) {
   const access = useAccess();
+  const canEditChecklist = !access.enabled || access.permissions.includes('task.edit');
+  const [openTab, setOpenTab] = useState<BriefTab>('brief');
   // Privasi per role: freelance tidak melihat brand/akun; Dropbox Link hanya untuk yang berhak.
   const canSeeBrand = !access.enabled || access.permissions.includes('account.view');
   const canSeeDropbox = !access.enabled || access.permissions.includes('dropboxLink.view');
@@ -149,6 +159,8 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
     setLicense(task.license || '');
     setTaskMonth(task.taskMonth || '');
     setBodyText(task.bodyText || '');
+    // Status QA → buka tab Checklist QA (hanya bila task punya checklist; dicek di DesignBriefSection)
+    setOpenTab(initialTab ?? (isQaStatus(task.designStatus) ? 'checklist' : 'brief'));
     setSelectedAccountIds(task?.taskAccounts?.map(ta => ta.account.id) || []);
     setCanvaUrls(task?.canvaLinks?.map(cl => cl.url) || []);
     setNewCanvaUrl('');
@@ -177,7 +189,7 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [task, onClose]);
+  }, [task, onClose, initialTab]);
 
   if (!task) return null;
 
@@ -260,6 +272,37 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
   const activeDesigner = designers.find(d => d.id === designerId) || task.designer;
   const activeDoctype = doctypes.find(d => d.id === doctypeId) || task.doctype;
   const activeStatus = designStatuses.find(s => s.id === designStatusId) || task.designStatus;
+
+  // Checklist QA: production Dropbox + Doctype yang punya daftar item
+  const isDropbox = task.productionUnit?.platform.outputType === 'dropbox_link';
+  const requiredChecklist =
+    (doctypes.find((d) => d.id === doctypeId) ?? (task.doctype?.id === doctypeId ? task.doctype : null))?.qaChecklist ?? [];
+  const hasChecklist = isDropbox && requiredChecklist.length > 0;
+  const checklistState = parseChecklistSection(bodyText, requiredChecklist);
+  const checklistStage: ChecklistStage = isQaStatus(activeStatus)
+    ? 'qa'
+    : isInReviewStatus(activeStatus) || isApprovedStatus(activeStatus)
+      ? 'done'
+      : isPreWorkStatus(activeStatus) ? 'pre' : 'progress';
+  const inReviewLocked = hasChecklist && isQaStatus(activeStatus) && checklistState.done < checklistState.total;
+
+  const handleToggleChecklist = async (label: string, checked: boolean) => {
+    const res = await toggleChecklistItemAction(task.id, label, checked);
+    if (res.success && res.bodyText !== undefined) setBodyText(res.bodyText);
+    else toast.error(res.error || 'Gagal mengubah Checklist QA');
+  };
+
+  const handleMoveToInReview = async () => {
+    const target = designStatuses.find((s) => isInReviewStatus(s));
+    const res = await updateTaskStatusAction(task.id, target?.notionKey || 'In Review');
+    if (res.success) {
+      if (target) setDesignStatusId(target.id);
+      toast.success('Task dipindah ke In Review');
+      onMoved?.(task.id);
+    } else {
+      toast.error(res.error || 'Gagal memindah task ke In Review');
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50">
@@ -378,17 +421,35 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
                 <CircleDot className="w-3.5 h-3.5 text-gray-400" />
                 <span>Design Status</span>
               </div>
-              <div className="flex-1 p-0 flex items-stretch min-h-[44px] bg-white dark:bg-[#0d0e12]">
+              <div className="flex-1 p-0 flex flex-col justify-center min-h-[44px] bg-white dark:bg-[#0d0e12]">
                 {true ? (
+                  <>
                   <CustomSelectCell
                     value={designStatusId}
                     placeholder="Select Status"
                     options={designStatuses.map((s) => ({ id: s.id, label: s.displayName }))}
                     onChange={(nextId) => {
+                      const gateError = checklistGateError({
+                        isDropbox,
+                        current: activeStatus,
+                        target: designStatuses.find((s) => s.id === nextId),
+                        bodyText,
+                        required: requiredChecklist,
+                      });
+                      if (gateError) {
+                        toast.error(gateError);
+                        return;
+                      }
                       setDesignStatusId(nextId);
                       triggerAutoSave({ designStatusId: nextId || null });
                     }}
                   />
+                  {inReviewLocked && (
+                    <p className="px-5 pb-2 text-[11px] font-semibold text-[#C2410C] dark:text-orange-400">
+                      In Review terkunci sampai Checklist QA {checklistState.total}/{checklistState.total}
+                    </p>
+                  )}
+                  </>
                 ) : (
                   <div
                     onClick={() => setActiveEditingField('designStatus')}
@@ -905,10 +966,26 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
 
           {/* DESIGN BRIEF & COMMENTS TABBED INTERFACE */}
           <DesignBriefSection
+            key={`${task.id}:${openTab}`}
+            initialTab={openTab}
+            checklist={hasChecklist ? {
+              count: `${checklistState.done}/${checklistState.total}`,
+              toneClass: CHECKLIST_TONE_CLASS[checklistTone(checklistState.done, checklistState.total)],
+              content: (
+                <ChecklistQASection
+                  state={checklistState}
+                  stage={checklistStage}
+                  canEdit={canEditChecklist}
+                  onToggle={handleToggleChecklist}
+                  onMoveToInReview={handleMoveToInReview}
+                />
+              ),
+            } : undefined}
             productionUnitId={task.productionUnitId}
             bodyText={bodyText}
             onBodyTextChange={(nextText) => {
-              setBodyText(nextText);
+              // Editor brief tidak memuat section Checklist QA → pertahankan di state lokal (server melakukan hal yang sama)
+              setBodyText((prev) => mergeChecklistSection(nextText, extractChecklistSection(prev)));
               triggerAutoSave({ bodyText: nextText });
             }}
             comments={comments}

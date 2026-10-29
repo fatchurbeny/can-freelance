@@ -118,6 +118,8 @@ model Doctype {
   isActive        Boolean      @default(true) @map("is_active")
   /// Kegunaan: "Kontrak" (pool score + tarif platform), "Bundle" (harga paket, pool score 0), atau "Keduanya".
   usage           String       @default("Kontrak")
+  /// Item Checklist QA (production Dropbox), urutan = urutan tampil. Kosong = tanpa checklist & tanpa gerbang In Review.
+  qaChecklist     String[]     @default([]) @map("qa_checklist")
   updatedAt       DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   tasks           Task[]
   platform        Platform     @relation(fields: [platformId], references: [id])

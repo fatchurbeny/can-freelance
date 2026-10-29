@@ -31,6 +31,7 @@ Entitas desainer / freelancer.
 ### 3. `Doctype` (Tabel `doctypes`)
 Entitas tipe dokumen (misal: `Regular-Presentation`, `Infographic`, `Social Media`).
 * **Kolom Utama**: `id`, `name`, `pages` (base template pages), `rate`, `notionId`.
+* **`qaChecklist`** (String[], 2026-10-29): item Checklist QA untuk production output Dropbox (Doctype presentasi: Preview, Master Slides, Keynote, PPT, PPTX). Kosong = tanpa checklist & tanpa gerbang In Review. Status centang disimpan di body kartu Notion (`## ✅ Checklist QA`), logika di `src/lib/checklist-qa.ts`.
 
 ### 4. `Brand` (Tabel `brands`)
 Entitas brand / klien.
