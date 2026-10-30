@@ -73,13 +73,20 @@
     .catch(() => setOpen(true));
 
   // Status hidup ada di service worker (bukan storage); minta tiap 3 detik untuk titik di tab panel.
-  const poll = () =>
+  // Setelah extension di-reload, skrip lama di tab ini terputus (chrome.runtime.id hilang): berhenti & lepas panel.
+  const poll = () => {
+    if (!chrome.runtime?.id) {
+      clearInterval(timer);
+      host.remove();
+      return;
+    }
     chrome.runtime
       .sendMessage({ type: 'getStatus' })
       .then(paint)
       .catch(() => {});
+  };
+  const timer = setInterval(poll, 3000);
   poll();
-  setInterval(poll, 3000);
 
   document.documentElement.appendChild(host);
 })();

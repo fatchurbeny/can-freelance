@@ -140,6 +140,8 @@ function render({ settings = {}, status = {}, lastRuns = {} }) {
 }
 
 async function refresh() {
+  // Panel lama di tab Canva setelah extension di-reload: konteksnya putus, jangan memanggil API lagi.
+  if (!chrome.runtime?.id) return;
   const [stored, status] = await Promise.all([
     chrome.storage.local.get(['settings', 'lastRuns']).catch(() => ({})),
     // Status langsung dari service worker (tidak disimpan di storage; lihat background.js).
