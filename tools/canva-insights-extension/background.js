@@ -17,8 +17,13 @@ const MAX_LINE_CHARS = 140;
 
 // ── Header sesi dari request dashboard Creator ─────────────────────────────────
 const lastHeaders = new Map();
+// Diagnosis bila header tak tertangkap: berapa request creatorinsight terlihat, dari tab mana, dan apakah membawa authz.
+const seen = { requests: 0, withAuthz: 0, tabIds: new Set() };
 chrome.webRequest.onBeforeSendHeaders.addListener(
   (details) => {
+    seen.requests += 1;
+    seen.tabIds.add(details.tabId);
+    if ((details.requestHeaders ?? []).some((h) => h.name.toLowerCase() === 'x-canva-authz')) seen.withAuthz += 1;
     if (details.tabId < 0) return;
     const headers = {};
     for (const h of details.requestHeaders ?? []) {
@@ -196,6 +201,7 @@ async function runSync(tabId, { backfill }) {
   log('INFO', 'Menunggu header sesi dashboard Creator…');
   const headers = await waitForHeaders(tabId);
   if (!headers) {
+    log('WARN', `Diagnosis: tab ${tabId}; request creatorinsight terlihat ${seen.requests} (authz ${seen.withAuthz}), dari tab [${[...seen.tabIds].join(', ')}]`);
     throw Object.assign(new Error('Dashboard Creator tidak memuat data dalam 30 detik.'), {
       hint: 'Pastikan sudah login Canva dan grafik di dashboard Creator tampil, lalu sinkronkan lagi.',
     });
