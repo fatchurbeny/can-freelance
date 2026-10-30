@@ -44,7 +44,7 @@ Status per brand juga muncul di dashboard can-freelance (`/insights`, status syn
 
 ## Keamanan
 
-- Token sesi Canva (`x-canva-authz`) hanya disimpan di `chrome.storage.session` (memori, hilang saat Chrome ditutup) dan hanya dikirim ke `canva.com`. Cookie tidak pernah dibaca atau dikirim ke dashboard.
+- Token sesi Canva (`x-canva-authz`, bila sesi memakainya; sebagian sesi cukup cookie) hanya disimpan di `chrome.storage.session` (memori, hilang saat Chrome ditutup) dan hanya dikirim ke `canva.com`. Cookie tidak pernah dibaca atau dikirim ke dashboard.
 - Token ingest disimpan di `chrome.storage.local` profil Chrome ini.
 - Log status tidak memuat header, cookie, atau token.
 

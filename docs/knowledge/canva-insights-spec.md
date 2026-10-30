@@ -88,7 +88,7 @@ Semua timestamp dalam ms UTC. **Rollup harian = hari UTC** (dikonfirmasi user).
 * Nama parameter untuk mengirim token = **`continuation`** (terdeteksi extension pada sinkron zahra.art 2026-10-28, lalu disimpan di `chrome.storage.local`).
 
 ### 1.4 Header
-Cookie sesi + `x-canva-authz`, `x-canva-user`, `x-canva-brand`, `x-canva-app: home`, `x-canva-request`, `x-canva-accept-prefix: no-prefix`. `x-canva-authz` = token sesi, **tidak pernah disimpan**.
+Cookie sesi + `x-canva-authz`, `x-canva-user`, `x-canva-brand`, `x-canva-app: home`, `x-canva-request`, `x-canva-accept-prefix: no-prefix`. `x-canva-authz` = token sesi, **tidak pernah disimpan**. Sebagian sesi (terlihat 2026-10-30 di browser kedua) **tanpa** `x-canva-authz`: cukup cookie + `x-canva-user`/`x-canva-brand`/`x-canva-active-user`; extension menerima keduanya.
 
 ## 2. Brand yang dipantau
 

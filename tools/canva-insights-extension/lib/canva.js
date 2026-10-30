@@ -20,7 +20,7 @@ export const ENDPOINTS = {
 export const PAGINATION_CANDIDATES = ['continuation', 'continuationToken', 'cursor', 'pageToken'];
 
 /** Header sesi yang disalin dari request dashboard; `x-canva-request` diisi per endpoint. */
-export const SESSION_HEADERS = ['x-canva-authz', 'x-canva-user', 'x-canva-brand', 'x-canva-app', 'x-canva-accept-prefix'];
+export const SESSION_HEADERS = ['x-canva-authz', 'x-canva-user', 'x-canva-brand', 'x-canva-app', 'x-canva-accept-prefix', 'x-canva-active-user'];
 
 export class CanvaHttpError extends Error {
   constructor(status, endpoint) {

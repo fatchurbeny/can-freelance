@@ -32,7 +32,9 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
       const name = h.name.toLowerCase();
       if (SESSION_HEADERS.includes(name)) headers[name] = h.value;
     }
-    if (!headers['x-canva-authz']) return;
+    // Sebagian sesi Canva tidak memakai x-canva-authz (cukup cookie, ikut terkirim karena request jalan di tab Canva).
+    if (!headers['x-canva-brand'] || !headers['x-canva-user']) return;
+    if (!headers['x-canva-authz'] && lastHeaders.get(details.tabId)?.headers['x-canva-authz']) return;
     // Header disimpan di memori (utama) dan storage.session (cadangan bila service worker dimulai ulang).
     // Request extension sendiri juga lewat sini (ribuan per sinkron): tulis storage hanya bila berubah.
     const json = JSON.stringify(headers);

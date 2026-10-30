@@ -19,6 +19,7 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 
 * Ganti PIN admin `FT-001` (menunggu user).
 * **Kode VPS**: `feat/canva-insights` `4fe3b1a` (Asset Library + Bundle + Canva Insights + Slide Master F1 + fallback Notion) dirilis 2026-10-29 15:2x WIB; SQL aditif diterapkan (tabel Canva, `accounts.canva_brand_id`, `doctypes.qa_checklist` + isi checklist Doctype presentasi); `migrate diff` VPS ↔ skema = kosong. `INSIGHTS_INGEST_TOKEN` baru ditambahkan ke `.next/standalone/.env` VPS (ambil nilainya lewat SSH untuk extension). Brand Canva belum di-seed di VPS (`scripts/seed-canva-brands.ts`) → tab Canva Insights belum tampil di sana. Branch belum di-push.
+* **Sinkron 365 hari (DB lokal)**: Chital, Antler, Improstd selesai & cocok dengan Canva (total persis; % "30 hari terakhir" Antler ▼17,9/▼2,9 vs Canva 18/3, Improstd ▼18,8/▼5,8 vs 19/6). Tinggal UICreative.net. Cek % ulang: `scratch/canva-insights-test/pct-check.ts <brandId> <from> <to>`.
 * Backup DB VPS terakhir: `~/db-backups/can-freelance-20261029-151332-pre-slide-master-f1.dump`. **SSH VPS juga di port 2222**: deploy `VPS_SSH_PORT=2222 npm run deploy:vps`. Env app VPS ada di `.next/standalone/.env` (tidak ada `.env` di root app).
 * Tombol "Download all Statement" di `/billing-statement` mengarah ke `/api/billing/download-all` yang tidak ada (dan `<a>` tanpa basePath) → selalu 404.
 * Print statement (`/billing-statement/print`) memanggil `window.print()` otomatis.
