@@ -4,7 +4,7 @@ Extension Manifest V3 untuk Chrome harian. Saat kamu membuka dashboard Creator C
 
 Spesifikasi: [`docs/knowledge/canva-insights-spec.md`](../../docs/knowledge/canva-insights-spec.md) §1 (endpoint & field) dan §5 (API & urutan kerja).
 
-Kenapa extension, bukan script terjadwal: Chrome yang dikendalikan Playwright mendapat pemeriksaan anti-bot Cloudflare dari Canva (2026-10-28). Extension berjalan di browser dan sesi aslimu, jadi tidak perlu melewati apa pun, tapi sinkronisasi butuh satu klik per brand.
+Kenapa extension, bukan script terjadwal: Chrome yang dikendalikan Playwright mendapat pemeriksaan anti-bot Cloudflare dari Canva (2026-10-28). Extension berjalan di browser dan sesi aslimu, jadi tidak perlu melewati apa pun. Sinkron berjalan otomatis sekali sehari per profil (lihat *Sinkron otomatis harian*), dan bisa juga dipicu manual.
 
 ## Pasang (sekali per profil Chrome)
 
@@ -14,6 +14,7 @@ Kenapa extension, bukan script terjadwal: Chrome yang dikendalikan Playwright me
    - URL dashboard: `https://portal.fatchurbeny.com/can-freelance` (lokal: `http://127.0.0.1:3002/can-freelance`).
    - Token: nilai `INSIGHTS_INGEST_TOKEN` server (VPS: `.next/standalone/.env`).
    - Nama perangkat: mis. `macbook-beni` (muncul di status sync).
+   - Sinkron otomatis harian: aktif, jam `12:00` (profil berikutnya 12:15, 12:30, … agar tidak bersamaan).
    - Klik **Simpan**, lalu **Uji koneksi**.
 4. Pin ikon extension di toolbar.
 
@@ -33,14 +34,21 @@ URL dashboard lain harus ditambahkan dulu ke `host_permissions` di `manifest.jso
 - **Panel slide-over** di kanan halaman Canva Creator (`canva.com/creators/…`): isinya sama dengan popup dan selalu tampil. Klik tab "Canva Insights" di tepi kanan untuk menciutkan/membuka; titik di tab menunjukkan status (biru berdenyut = berjalan, hijau = berhasil, merah = gagal, oranye = terhenti/perlu login). Pilihan buka/ciut diingat.
 - **Popup**: kartu status berwarna — *Siap*, *Sedang sinkron* (persen, halaman & baris yang sudah masuk, lama berjalan, langkah aktif dari 6 langkah, mis. "Angka harian per template · grup 19/25"), *Berhasil* (ringkasan + durasi), *Gagal* / *Perlu login* (alasan + "Yang perlu dilakukan"), *Terhenti* (tidak ada kabar > 2 menit: tab Canva ditutup, Chrome dimuat ulang, atau Mac tidur).
 - **Badge ikon**: `…` berjalan, `OK` berhasil, `!` gagal; arahkan kursor ke ikon untuk keterangan.
-- **Notifikasi Chrome** muncul saat sinkron selesai (berhasil atau gagal).
+- **Notifikasi Chrome** muncul saat sinkron manual selesai (berhasil atau gagal); untuk sinkron otomatis hanya saat gagal atau pulih dari gagal.
 - **Log teknis** ada di bagian bawah popup (dilipat).
 
 Diuji juga untuk **Yab** (Chromium), yang menolak `storage.local.set` ("Exceeded storage quota"). Status sinkron hanya ada di memori service worker dan dibaca popup/panel lewat pesan `getStatus`; `storage.local` hanya untuk pengaturan, riwayat & hasil terakhir, dan kegagalannya tidak menghentikan sinkron. `test/background-e2e.mjs` dengan `FAIL_STORAGE=1` menguji kondisi ini.
 
 Jangan memuat ulang (reload) extension saat sinkron berjalan: prosesnya terputus. Data yang sudah masuk tetap tersimpan; sinkronkan lagi untuk melanjutkan.
 
-Status per brand juga muncul di dashboard can-freelance (`/insights`, status sync). Sinkronkan tiap brand minimal sekali sehari; data hari terakhir Canva memang terlambat ±1 hari.
+Status per brand juga muncul di dashboard can-freelance (`/insights`, status sync). Sinkronkan tiap brand minimal sekali sehari; data hari terakhir Canva memang terlambat ±1 hari dan Applies bisa terisi hingga ±7 hari kemudian.
+
+## Sinkron otomatis harian
+
+- Diatur di Pengaturan tiap profil: centang **Aktif** dan pilih jam (jam lokal Mac, bawaan 12.00). Popup menampilkan "Sinkron otomatis: tiap hari 12.00 · berikutnya …".
+- Pada jamnya (`chrome.alarms`), extension memakai tab dashboard Creator yang terbuka, atau membuka tab latar baru lalu menutupnya setelah selesai, dan menjalankan sinkron 14 hari.
+- Syarat: Mac menyala, browser terbuka, masih login Canva di profil itu. Alarm yang terlewat saat Mac tidur berjalan saat Mac bangun; bila browser tertutup saat jamnya, sinkron susulan berjalan saat browser dibuka.
+- Sesi Canva habis → status *Perlu login* + notifikasi; login ulang lalu sinkronkan manual sekali.
 
 ## Keamanan
 

@@ -37,10 +37,11 @@ globalThis.chrome = {
       ] }), 300);
     },
   },
-  storage: { local: area(store.local), session: area(store.session) },
+  storage: { local: area(store.local), session: area(store.session), onChanged: { addListener() {} } },
   action: { setBadgeText() {}, setBadgeBackgroundColor() {}, setTitle() {}, async setPopup() {}, onClicked: { addListener() {} } },
+  alarms: { async clear() {}, async create() {}, async get() {}, onAlarm: { addListener() {} } },
   notifications: { create: (o) => console.log('notification:', o.title, '|', o.message) },
-  runtime: { onMessage: { addListener: (cb) => messageListeners.push(cb) } },
+  runtime: { onMessage: { addListener: (cb) => messageListeners.push(cb) }, onInstalled: { addListener() {} }, onStartup: { addListener() {} } },
   scripting: {
     async executeScript({ world, func, args }) {
       if (world !== 'MAIN') throw new Error('harus MAIN world');

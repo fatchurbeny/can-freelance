@@ -22,6 +22,14 @@
     <label>Nama perangkat (muncul di status sync)
       <input type="text" id="host" placeholder="macbook-beni">
     </label>
+    <fieldset style="border: 0; padding: 0; margin: 0 0 12px">
+      <legend>Sinkron otomatis harian</legend>
+      <label style="display: inline"><input type="checkbox" id="scheduleEnabled"> Aktif</label>
+      <label>Jam (jam lokal Mac)
+        <input type="time" id="scheduleTime" step="900">
+      </label>
+      <p class="muted">Sinkron 14 hari terakhir tiap hari pada jam ini. Mac harus menyala dan browser terbuka; bila terlewat, sinkron berjalan saat Mac bangun atau browser dibuka. Beri jam berbeda per profil (12.00, 12.15, 12.30, …) agar brand tidak berjalan bersamaan.</p>
+    </fieldset>
     <button type="submit">Simpan</button>
     <button type="button" id="test" class="secondary">Uji koneksi</button>
   </form>

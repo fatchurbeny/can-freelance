@@ -7,6 +7,7 @@
 import { CanvaHttpError, ENDPOINTS, PaginationError, SESSION_HEADERS, buildUrl, parseCanvaJson } from './lib/canva.js';
 import { collectBrand, STAGES } from './lib/collect-brand.js';
 import { createServerClient, ServerAuthError } from './lib/server.js';
+import { DEFAULT_SCHEDULE_TIME, missedToday, nextSlot } from './lib/schedule.js';
 import { log, politeDelay, setLogSink, sleep } from './lib/util.js';
 
 const DASHBOARD_URL = 'https://www.canva.com/creators/template/dashboard/dashboard';
@@ -276,30 +277,26 @@ async function runSync(tabId, { backfill }) {
   return { brandId, status, message, hint, progress: { ...progress } };
 }
 
-chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-  if (msg?.type !== 'sync') return false;
-  // Dari panel slide-over, `sender.tab` = tab Canva; dipakai bila popup tidak bisa membaca tab aktif.
-  const tabId = msg.tabId ?? sender.tab?.id;
-  if (!tabId) {
-    sendResponse({ started: false, error: 'Tab Canva tidak dikenali. Buka dashboard Creator lalu klik Sinkronkan dari sana.' });
-    return false;
-  }
+/**
+ * Mulai sinkron di tab Canva (tombol popup/panel atau jadwal harian). Hasil langsung: dimulai atau alasan menolak;
+ * `done` selesai setelah sinkron berakhir (dipakai jadwal untuk menutup tab yang ia buka).
+ */
+function startSync(tabId, { backfill = false, trigger = 'manual' } = {}) {
   if (running && Date.now() - lastBeat < STUCK_MS) {
-    sendResponse({ started: false, error: `Sinkronisasi sedang berjalan (kabar terakhir ${Math.round((Date.now() - lastBeat) / 1000)} detik lalu). Tunggu sampai selesai.` });
-    return false;
+    return { started: false, error: `Sinkronisasi sedang berjalan (kabar terakhir ${Math.round((Date.now() - lastBeat) / 1000)} detik lalu). Tunggu sampai selesai.` };
   }
   // Run sebelumnya macet (> 2 menit tanpa kabar) tidak lagi mengunci tombol.
   running = true;
   lastBeat = Date.now();
   lines = [];
-  sendResponse({ started: true });
   badge('…', '#6b7280', 'sinkron berjalan');
   setStatus({ state: 'running', startedAt: Date.now(), heartbeatAt: Date.now(), progress: null, stage: null, brandId: null, result: null });
-  (async () => {
+  if (trigger === 'schedule') log('INFO', 'Sinkron otomatis harian dimulai');
+  const done = (async () => {
     let result;
     const startedAt = Date.now();
     try {
-      result = await runSync(tabId, { backfill: !!msg.backfill });
+      result = await runSync(tabId, { backfill });
     } catch (e) {
       result = { brandId: null, ...explainError(e) };
     }
@@ -308,14 +305,75 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     log(ok ? 'INFO' : 'WARN', `${ok ? 'Berhasil' : 'Gagal'}: ${result.message}`);
     const finishedAt = Date.now();
     setStatus({ state: 'done', finishedAt, result });
-    const { lastRuns = {} } = await chrome.storage.local.get('lastRuns').catch(() => ({}));
+    const { lastRuns = {}, lastResult } = await chrome.storage.local.get(['lastRuns', 'lastResult']).catch(() => ({}));
     if (result.brandId) lastRuns[result.brandId] = { status: result.status, message: result.message, at: finishedAt };
     await persist({ lastRuns, lastResult: { finishedAt, result, stage: current.stage ?? null } });
     badge(ok ? 'OK' : '!', ok ? '#16a34a' : '#dc2626', ok ? 'sinkron terakhir berhasil' : 'sinkron terakhir gagal');
-    notify(ok ? 'Sinkron Canva Insights berhasil' : 'Sinkron Canva Insights gagal', `${result.message}${result.hint ? ` ${result.hint}` : ''}`);
+    // Jadwal harian: kabari hanya saat gagal atau pulih dari gagal, agar tidak muncul notifikasi tiap hari.
+    const recovered = lastResult && lastResult.result?.status !== 'OK';
+    if (trigger !== 'schedule' || !ok || recovered) {
+      notify(ok ? 'Sinkron Canva Insights berhasil' : 'Sinkron Canva Insights gagal', `${result.message}${result.hint ? ` ${result.hint}` : ''}`);
+    }
     running = false;
   })();
+  return { started: true, done };
+}
+
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (msg?.type !== 'sync') return false;
+  // Dari panel slide-over, `sender.tab` = tab Canva; dipakai bila popup tidak bisa membaca tab aktif.
+  const tabId = msg.tabId ?? sender.tab?.id;
+  if (!tabId) {
+    sendResponse({ started: false, error: 'Tab Canva tidak dikenali. Buka dashboard Creator lalu klik Sinkronkan dari sana.' });
+    return false;
+  }
+  const { started, error } = startSync(tabId, { backfill: !!msg.backfill });
+  sendResponse({ started, error });
   return false;
+});
+
+// ── Sinkron otomatis harian (chrome.alarms, jam lokal) ─────────────────────────
+// Alarm yang terlewat saat Mac tidur ditembakkan Chrome saat bangun; bila browser tertutup saat jamnya,
+// susulan dijalankan saat browser dibuka (onStartup).
+const ALARM = 'daily-sync';
+
+async function scheduleSettings() {
+  const { settings = {} } = await chrome.storage.local.get('settings').catch(() => ({}));
+  return { enabled: settings.scheduleEnabled !== false, time: settings.scheduleTime || DEFAULT_SCHEDULE_TIME, ready: !!(settings.baseUrl && settings.token) };
+}
+
+async function scheduleAlarm() {
+  const { enabled, time, ready } = await scheduleSettings();
+  await chrome.alarms.clear(ALARM);
+  if (enabled && ready) await chrome.alarms.create(ALARM, { when: nextSlot(time), periodInMinutes: 24 * 60 });
+}
+
+async function runScheduled() {
+  if (running && Date.now() - lastBeat < STUCK_MS) return;
+  await persist({ lastScheduledAt: Date.now() });
+  // Pakai tab dashboard Creator yang terbuka; bila tidak ada, buka tab latar dan tutup lagi setelah selesai.
+  // waitForHeaders memuat dashboard di tab itu sampai header sesi tertangkap.
+  const [existing] = await chrome.tabs.query({ url: `${CREATOR_PREFIX}*` });
+  const tab = existing ?? (await chrome.tabs.create({ url: 'about:blank', active: false }));
+  const res = startSync(tab.id, { trigger: 'schedule' });
+  if (!existing) {
+    await res.done;
+    chrome.tabs.remove(tab.id).catch(() => {});
+  }
+}
+
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === ALARM) runScheduled();
+});
+chrome.runtime.onInstalled.addListener(() => scheduleAlarm());
+chrome.runtime.onStartup.addListener(async () => {
+  await scheduleAlarm();
+  const { enabled, time, ready } = await scheduleSettings();
+  const { lastScheduledAt } = await chrome.storage.local.get('lastScheduledAt').catch(() => ({}));
+  if (enabled && ready && missedToday(time, lastScheduledAt)) runScheduled();
+});
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local' && changes.settings) scheduleAlarm();
 });
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {

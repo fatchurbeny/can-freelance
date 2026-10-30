@@ -77,6 +77,18 @@ function setCard(kind, title, text, meta, hint) {
 
 let tab;
 
+/** "Sinkron otomatis: tiap hari 12.00 · berikutnya Sab 31 Okt 12.00" dari alarm `daily-sync` (background.js). */
+async function renderSchedule(settings) {
+  const el = $('schedule');
+  if (!settings.baseUrl || !settings.token) return void (el.textContent = '');
+  if (settings.scheduleEnabled === false) return void (el.textContent = 'Sinkron otomatis: nonaktif (atur di Pengaturan).');
+  const alarm = await chrome.alarms.get('daily-sync').catch(() => null);
+  const time = (settings.scheduleTime || '12:00').replace(':', '.');
+  const next = alarm ? new Date(alarm.scheduledTime).toLocaleString('id-ID', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'belum terjadwal';
+  el.textContent = `Sinkron otomatis: tiap hari ${time} · berikutnya ${next}`;
+}
+
+
 function render({ settings = {}, status = {}, lastRuns = {} }) {
   const configured = !!(settings.baseUrl && settings.token);
   const onCanva = !!tab?.url?.startsWith('https://www.canva.com/');
@@ -89,6 +101,7 @@ function render({ settings = {}, status = {}, lastRuns = {} }) {
   $('not-dashboard').hidden = !configured || onCanva || running;
   $('ready').hidden = !configured || !onCanva || running;
   $('bar').hidden = !running;
+  renderSchedule(settings);
 
   const who = status.brandId ? brandName(status.brandId) : 'brand';
   const p = status.progress;

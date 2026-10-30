@@ -1,3 +1,5 @@
+import { DEFAULT_SCHEDULE_TIME } from './lib/schedule.js';
+
 const DEFAULT_URL = 'https://portal.fatchurbeny.com/can-freelance';
 const $ = (id) => document.getElementById(id);
 
@@ -11,6 +13,8 @@ function readForm() {
     baseUrl: $('baseUrl').value.trim().replace(/\/+$/, ''),
     token: $('token').value.trim(),
     host: $('host').value.trim(),
+    scheduleEnabled: $('scheduleEnabled').checked,
+    scheduleTime: $('scheduleTime').value || DEFAULT_SCHEDULE_TIME,
   };
 }
 
@@ -34,6 +38,8 @@ const { settings = {} } = await chrome.storage.local.get('settings').catch(() =>
 $('baseUrl').value = settings.baseUrl ?? DEFAULT_URL;
 $('token').value = settings.token ?? '';
 $('host').value = settings.host ?? '';
+$('scheduleEnabled').checked = settings.scheduleEnabled !== false;
+$('scheduleTime').value = settings.scheduleTime || DEFAULT_SCHEDULE_TIME;
 updateTokenInfo();
 if (settings.paginationParam) $('pagination').textContent = `Parameter paginasi terdeteksi: ${settings.paginationParam}`;
 
