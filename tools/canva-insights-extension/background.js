@@ -18,11 +18,13 @@ const MAX_LINE_CHARS = 140;
 // ── Header sesi dari request dashboard Creator ─────────────────────────────────
 const lastHeaders = new Map();
 // Diagnosis bila header tak tertangkap: berapa request creatorinsight terlihat, dari tab mana, dan apakah membawa authz.
-const seen = { requests: 0, withAuthz: 0, tabIds: new Set() };
+const seen = { requests: 0, withAuthz: 0, tabIds: new Set(), names: new Set() };
 chrome.webRequest.onBeforeSendHeaders.addListener(
   (details) => {
     seen.requests += 1;
     seen.tabIds.add(details.tabId);
+    // Hanya nama header (tanpa nilai) untuk diagnosis.
+    for (const h of details.requestHeaders ?? []) seen.names.add(h.name.toLowerCase());
     if ((details.requestHeaders ?? []).some((h) => h.name.toLowerCase() === 'x-canva-authz')) seen.withAuthz += 1;
     if (details.tabId < 0) return;
     const headers = {};
@@ -202,6 +204,9 @@ async function runSync(tabId, { backfill }) {
   const headers = await waitForHeaders(tabId);
   if (!headers) {
     log('WARN', `Diagnosis: tab ${tabId}; request creatorinsight terlihat ${seen.requests} (authz ${seen.withAuthz}), dari tab [${[...seen.tabIds].join(', ')}]`);
+    // Baris log dipotong 140 karakter: nama header dibagi per 6.
+    const names = [...seen.names].sort();
+    for (let i = 0; i < names.length; i += 6) log('WARN', `Header: ${names.slice(i, i + 6).join(', ')}`);
     throw Object.assign(new Error('Dashboard Creator tidak memuat data dalam 30 detik.'), {
       hint: 'Pastikan sudah login Canva dan grafik di dashboard Creator tampil, lalu sinkronkan lagi.',
     });
