@@ -168,5 +168,13 @@ chrome.storage.onChanged.addListener((_changes, area) => {
 // Status diminta ulang tiap detik selama popup/panel terbuka.
 setInterval(refresh, 1000);
 
-[tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+// Sebagian browser menampilkan popup sebagai jendela sendiri, sehingga "tab aktif jendela ini" bukan tab Canva:
+// cari tab dashboard Creator. Di panel slide-over, tab = tab Canva yang memuat panel.
+async function findCanvaTab() {
+  const [active] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+  if (active?.url?.startsWith('https://www.canva.com/creators/')) return active;
+  const creators = await chrome.tabs.query({ url: 'https://www.canva.com/creators/*' });
+  return creators.find((t) => t.active) ?? creators[0] ?? active;
+}
+tab = document.body.classList.contains('embed') ? await chrome.tabs.getCurrent() : await findCanvaTab();
 await refresh();

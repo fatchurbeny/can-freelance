@@ -27,6 +27,8 @@ globalThis.chrome = {
   webRequest: { onBeforeSendHeaders: { addListener: (cb) => { onHeaders = cb; } } },
   tabs: {
     onRemoved: { addListener() {} },
+    onUpdated: { addListener() {} },
+    async query() { return []; },
     async update(tabId) {
       // Dashboard dimuat → request creatorinsight pertama membawa header sesi.
       setTimeout(() => onHeaders({ tabId, requestHeaders: [
@@ -36,7 +38,7 @@ globalThis.chrome = {
     },
   },
   storage: { local: area(store.local), session: area(store.session) },
-  action: { setBadgeText() {}, setBadgeBackgroundColor() {}, setTitle() {} },
+  action: { setBadgeText() {}, setBadgeBackgroundColor() {}, setTitle() {}, async setPopup() {}, onClicked: { addListener() {} } },
   notifications: { create: (o) => console.log('notification:', o.title, '|', o.message) },
   runtime: { onMessage: { addListener: (cb) => messageListeners.push(cb) } },
   scripting: {

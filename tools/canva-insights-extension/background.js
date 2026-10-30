@@ -37,6 +37,25 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
   ['requestHeaders', 'extraHeaders'],
 );
 
+// ── Ikon toolbar ───────────────────────────────────────────────────────────────
+// Di halaman Creator sudah ada panel slide-over: ikon membuka/menutup panel itu, bukan popup kedua.
+const CREATOR_PREFIX = 'https://www.canva.com/creators/';
+function syncActionPopup(tabId, url = '') {
+  chrome.action.setPopup({ tabId, popup: url.startsWith(CREATOR_PREFIX) ? '' : 'popup.html' }).catch(() => {});
+}
+chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
+  if (info.url || info.status === 'loading') syncActionPopup(tabId, info.url ?? tab.url);
+});
+chrome.tabs.query({ url: `${CREATOR_PREFIX}*` }).then((tabs) => tabs.forEach((t) => syncActionPopup(t.id, t.url)));
+chrome.action.onClicked.addListener(async (tab) => {
+  try {
+    await chrome.tabs.sendMessage(tab.id, { type: 'togglePanel' });
+  } catch {
+    // Tab dibuka sebelum extension dimuat: pasang panel dulu (terbuka sesuai pilihan terakhir).
+    await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['slideover.js'] }).catch(() => {});
+  }
+});
+
 chrome.tabs.onRemoved.addListener((tabId) => {
   lastHeaders.delete(tabId);
   chrome.storage.session.remove(`headers:${tabId}`);

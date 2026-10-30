@@ -56,10 +56,15 @@
     label.textContent = text;
   }
 
-  handle.addEventListener('click', () => {
+  function toggle() {
     const open = !wrap.classList.contains('open');
     setOpen(open);
     chrome.storage.local.set({ panelOpen: open }).catch(() => {});
+  }
+  handle.addEventListener('click', toggle);
+  // Ikon toolbar di halaman Creator (background.js) membuka/menutup panel ini.
+  chrome.runtime.onMessage.addListener((msg) => {
+    if (msg?.type === 'togglePanel') toggle();
   });
 
   chrome.storage.local
