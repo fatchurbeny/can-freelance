@@ -357,3 +357,8 @@ Dokumen ini mencatat histori bug, edge cases, serta aturan layout CSS/React untu
 ### 36. Database di dalam sub-page tidak terbaca saat "Pindai"
 * **Masalah**: "Canva Assets (1)" di page Impro-Freelance adalah **sub-page** (`child_page`) yang berisi database, bukan blok `child_database` langsung. `listChildDatabases` hanya membaca anak langsung, jadi database itu tidak terdaftar dan tidak muncul di pilihan impor Asset Library (harus tempel link).
 * **Solusi**: `listChildDatabases(pageId, pageDepth = 1)` ikut membaca isi kolom/toggle/callout/synced block dan sub-page satu tingkat; database tunggal di sub-page diberi nama sub-page-nya. Sub-tab Impor punya tautan **Pindai ulang page** (menjalankan pindai semua page terdaftar).
+
+### 37. Escape di drawer bersusun menutup semua drawer
+* **Masalah**: drawer induk (`TaskDetailSheet`) memasang `keydown` Escape di `window` (fase bubble) → saat drawer editor terbuka, Escape menutup drawer task sekaligus.
+* **Solusi**: drawer anak memasang listener Escape di `window` dengan `capture: true` lalu `e.stopImmediatePropagation()` sebelum menutup dirinya, sehingga listener bubble milik induk tidak terpanggil (`DesignBriefEditorDrawer.tsx`). Pola sama berlaku untuk dropdown/drawer lain yang ditumpuk di atas drawer.
+* **Catatan**: palet di brief dibaca berurutan dari baris `Swatches` lalu role ditempelkan dari baris role (`parseColors` di `DesignBriefPreview.tsx`). Mengubah urutan role (tombol **Acak**, `shufflePaletteMarkdown` di `brief-parser.ts`) wajib menulis ulang keduanya secara konsisten.

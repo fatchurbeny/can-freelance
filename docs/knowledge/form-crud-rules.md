@@ -138,3 +138,15 @@ Penjelasan field **tidak** ditulis sebagai paragraf/baris catatan di bawah input
 - **Satuan & fakta pendek inline** di sel nilai, teks kecil abu-abu: `/ halaman`, `/ periode`, `Sen–Jum`, slug URL di kanan input nama production.
 - **Tetap tampil inline** (bukan tooltip): pesan error/validasi, peringatan (amber), status sementara (mis. "Link canva.link diubah otomatis"), dan info sekali-lihat yang penting (PIN awal).
 - Periode kontrak: `ContractPeriodField` (preset 3 Bulan / 6 Bulan / 1 Tahun / Custom → `DateRangePicker`).
+
+---
+
+## 🗂️ 10. Drawer Bersusun (Editor di Kanan, Preview di Drawer Induk)
+
+Untuk konten panjang yang punya tampilan preview (mis. Design Brief), drawer induk **hanya menampilkan preview + tombol Edit**; editornya dibuka sebagai drawer kedua di kanan. Implementasi acuan: `src/components/task-detail/DesignBriefEditorDrawer.tsx` (dipakai `DesignBriefSection` di `TaskDetailSheet` dan `CreateTaskSlideModal`).
+
+- **Drawer editor**: `createPortal` ke `document.body`, `fixed inset-y-0 right-0 w-full max-w-[540px]`, z-index **di atas drawer induk** (prop `zClassName`: `z-[60]` untuk task drawer `z-50`, `z-80` untuk create modal `z-70`). Slide-in via `translate-x-full → translate-x-0` di frame berikutnya.
+- **Drawer induk bergeser ke kiri** selama editor terbuka: tambahkan `BRIEF_EDITOR_SHIFT_CLASS` (`min-[1100px]:right-[540px]`) + `transition-[right] duration-200`. Di bawah 1100px editor menimpa drawer induk.
+- **Tombol Edit** berubah jadi `Editing` (oranye solid) selama editor terbuka; klik lagi / `X` / Escape menutup editor saja.
+- **Preview ikut live** karena keduanya membaca state yang sama (`draftBody` / `bodyText`).
+- **Escape**: lihat `issues-and-fixes.md` #37.
