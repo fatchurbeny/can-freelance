@@ -10,7 +10,7 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 
 ## 📌 Status Aktif
 
-* **Branch**: `feat/canva-insights` = `feat/bundle-order-designer` + `feat/asset-library` (PR #9) + Canva Insights Fase 1–3 + Slide Master F1–F2. Sudah ada di `origin`, lokal 8 commit di depan (per 2026-10-31); belum di-merge ke `main` · **Peran terakhir**: `🏛️ [Architecture & Knowledge Ops]`
+* **Branch**: `feat/canva-insights` = `feat/bundle-order-designer` + `feat/asset-library` (PR #9) + Canva Insights Fase 1–3 + Slide Master F1–F2. Sudah di-push ke `origin` (sinkron per 2026-10-31, `9e91b2e`); belum di-merge ke `main` · **Peran terakhir**: `🏛️ [Architecture & Knowledge Ops]`
 * **Multi-Production**: Fase 1–8 sebagian besar selesai (Production Hub, platform per production, Dropbox File Request untuk Envato Elements, Bundle & Order Bundle, tarif per platform). Detail rencana: [`multi-production-plan.md`](multi-production-plan.md).
 * **User Role Fase 1**: login ID + PIN 6 digit, role berbasis permission, Membership per ProductionUnit, "Lihat sebagai", halaman `/user-role`, `/profile`. Spec: [`user-role-spec.md`](user-role-spec.md). `AUTH_MODE=session` aktif di `.env` lokal dan VPS Biznet GIO.
 * **Sidebar**: pindah ke `layout.tsx` (`AppSidebar`), grup dropdown gaya pohon. Pola baku: [`sidebar-dropdown-pattern.md`](sidebar-dropdown-pattern.md).
