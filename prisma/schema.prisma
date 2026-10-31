@@ -82,6 +82,7 @@ model Designer {
   tasks             Task[]
   careerLogs        DesignerCareerLog[]
   bundleOrders      BundleOrder[]
+  bundleContracts   BundleContract[]
   user              User?
 
   @@map("designers")
@@ -117,6 +118,8 @@ model Doctype {
   isActive        Boolean      @default(true) @map("is_active")
   /// Kegunaan: "Kontrak" (pool score + tarif platform), "Bundle" (harga paket, pool score 0), atau "Keduanya".
   usage           String       @default("Kontrak")
+  /// Item Checklist QA (production Dropbox), urutan = urutan tampil. Kosong = tanpa checklist & tanpa gerbang In Review.
+  qaChecklist     String[]     @default([]) @map("qa_checklist")
   updatedAt       DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   tasks           Task[]
   platform        Platform     @relation(fields: [platformId], references: [id])
@@ -132,8 +135,11 @@ model Account {
   platformId         String                   @map("platform_id") @db.Uuid
   displayName        String                   @map("display_name")
   color              String?
+  /// Brand ID Canva Creator ("BAE…"), dipakai Canva Insights (docs/knowledge/canva-insights-spec.md).
+  canvaBrandId       String?                  @unique @map("canva_brand_id")
   taskAccounts       TaskAccount[]
   emailNotifications CanvaEmailNotification[]
+  canvaTemplates     CanvaTemplate[]
   platform           Platform                 @relation(fields: [platformId], references: [id])
 
   @@unique([platformId, notionKey])
@@ -184,6 +190,11 @@ model Task {
   customFields     Json?           @map("custom_fields")
   outputUrl        String?         @map("output_url")
   uploadRequestUrl String?         @map("upload_request_url")
+  /// Folder Dropbox tujuan File Request (disimpan saat dibuat; task lama: dihitung lalu disimpan saat folder ditemukan).
+  dropboxFolderPath String?        @map("dropbox_folder_path")
+  /// Snapshot isi folder Dropbox terakhir (lib/dropbox-checklist.ts): { files: [{ name, size, modified }] }.
+  dropboxFiles     Json?           @map("dropbox_files")
+  dropboxScannedAt DateTime?       @map("dropbox_scanned_at") @db.Timestamptz(6)
   bundleId         String?         @map("bundle_id") @db.Uuid
   bundleItemId     String?         @map("bundle_item_id") @db.Uuid
   bundleOrderId    String?         @map("bundle_order_id") @db.Uuid
@@ -193,7 +204,10 @@ model Task {
   productionUnit   ProductionUnit  @relation(fields: [productionUnitId], references: [id])
   taskAccounts     TaskAccount[]
   canvaLinks       TaskCanvaLink[]
+  canvaTemplates   CanvaTemplate[]
+  assetLinks       TaskAsset[]
   comments         TaskComment[]
+  shareLinks       TaskShareLink[]
   designStatus     DesignStatus?   @relation(fields: [designStatusId], references: [id])
   designer         Designer?       @relation(fields: [designerId], references: [id])
   doctype          Doctype?        @relation(fields: [doctypeId], references: [id])
@@ -201,6 +215,20 @@ model Task {
   @@index([productionUnitId])
   @@index([bundleOrderId])
   @@map("tasks")
+}
+
+/// Link publik view-only untuk satu task (/share/t/<token>). Tanpa kedaluwarsa; dicabut via revokedAt.
+model TaskShareLink {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  taskId      String    @map("task_id") @db.Uuid
+  token       String    @unique
+  createdById String?   @map("created_by_id") @db.Uuid
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  revokedAt   DateTime? @map("revoked_at") @db.Timestamptz(6)
+  task        Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@map("task_share_links")
 }
 
 model TaskCanvaLink {
@@ -264,9 +292,28 @@ model NotionDatabase {
   encryptedDatabaseId String       @map("encrypted_database_id")
   iv                  String
   configId            String       @map("config_id") @db.Uuid
+  /// Disembunyikan dari daftar & tidak dipakai sebagai database default; tetap terdaftar, data Notion tidak disentuh.
+  archived            Boolean      @default(false)
+  /// Page induk di Notion (ID 32 hex) bila diketahui.
+  parentPageId        String?      @map("parent_page_id")
+  /// Kegunaan khusus; "asset_library" = database mirror Asset Library (maks. satu yang aktif).
+  purpose             String?
   config              NotionConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
 
   @@map("notion_databases")
+}
+
+/// Page Notion tempat database Task baru dibuat (wizard production). Satu page ditandai default.
+model NotionPage {
+  id        String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  configId  String       @map("config_id") @db.Uuid
+  name      String
+  pageId    String       @unique @map("page_id") // ID 32 hex tanpa tanda hubung
+  isDefault Boolean      @default(false) @map("is_default")
+  createdAt DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  config    NotionConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@map("notion_pages")
 }
 
 model NotionConfig {
@@ -279,6 +326,7 @@ model NotionConfig {
   workspaceName   String           @map("workspace_name")
   contractRate    Int              @default(15000) @map("contract_rate")
   databases       NotionDatabase[]
+  pages           NotionPage[]
 
   @@map("notion_configs")
 }
@@ -342,6 +390,8 @@ model Platform {
   outputType        String           @default("canva_link") @map("output_type") // "canva_link" | "dropbox_link"
   baseRate          Int?             @map("base_rate") // tarif dasar per halaman; null = fallback NotionConfig.contractRate
   contractStartDate DateTime?        @map("contract_start_date") @db.Date
+  /// Akhir periode kontrak (inklusif); null = tanpa tanggal akhir.
+  contractEndDate   DateTime?        @map("contract_end_date") @db.Date
   createdAt         DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
   productionUnits   ProductionUnit[]
   doctypes          Doctype[]
@@ -351,22 +401,46 @@ model Platform {
 }
 
 model ProductionUnit {
-  id                 String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id                 String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name               String
-  slug               String       @unique
-  platformId         String       @map("platform_id") @db.Uuid
-  notionTaskDbId     String       @map("notion_task_db_id")
-  notionParentPageId String?      @map("notion_parent_page_id")
-  fieldMapping       Json         @default("{}") @map("field_mapping")
-  dropboxRoot        String?      @map("dropbox_root")
-  isActive           Boolean      @default(true) @map("is_active")
-  createdAt          DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
-  platform           Platform     @relation(fields: [platformId], references: [id])
+  slug               String            @unique
+  platformId         String            @map("platform_id") @db.Uuid
+  notionTaskDbId     String            @map("notion_task_db_id")
+  notionParentPageId String?           @map("notion_parent_page_id")
+  fieldMapping       Json              @default("{}") @map("field_mapping")
+  disabledFields     String[]          @default([]) @map("disabled_fields") // FieldKey inti yang dimatikan (bukan field wajib)
+  dropboxRoot        String?           @map("dropbox_root")
+  isActive           Boolean           @default(true) @map("is_active")
+  createdAt          DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  platform           Platform          @relation(fields: [platformId], references: [id])
   tasks              Task[]
   bundleItems        BundleItem[]
   memberships        Membership[]
+  fields             ProductionField[]
+  assets             AssetProduction[]
 
   @@map("production_units")
+}
+
+// Field tambahan per production (di luar field inti). Nilai task disimpan di Task.customFields dengan key = name.
+model ProductionField {
+  id               String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  productionUnitId String         @map("production_unit_id") @db.Uuid
+  name             String // nama properti di Notion
+  notionPropertyId String?        @map("notion_property_id")
+  type             String // tipe properti Notion (rich_text, select, date, ...)
+  options          Json? // [{ name, color }] untuk select / multi_select / status
+  source           String         @default("app") // "app" | "notion"
+  visible          Boolean        @default(true)
+  editable         Boolean        @default(true)
+  filterable       Boolean        @default(false)
+  missingInNotion  Boolean        @default(false) @map("missing_in_notion")
+  sortOrder        Int            @default(0) @map("sort_order")
+  createdAt        DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  productionUnit   ProductionUnit @relation(fields: [productionUnitId], references: [id], onDelete: Cascade)
+
+  @@unique([productionUnitId, name])
+  @@map("production_fields")
 }
 
 // ── Dropbox (multi-production Fase 6) ──
@@ -385,16 +459,17 @@ model DropboxConnection {
 
 /// Kontrak multi-platform: satu harga paket (bayaran designer) untuk beberapa komponen.
 model Bundle {
-  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id            String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name          String
-  price         Decimal       @db.Decimal(14, 2)
-  effectiveFrom DateTime?     @map("effective_from") @db.Date
+  price         Decimal          @db.Decimal(14, 2)
+  effectiveFrom DateTime?        @map("effective_from") @db.Date
   notes         String?
-  isActive      Boolean       @default(true) @map("is_active")
-  createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt     DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  isActive      Boolean          @default(true) @map("is_active")
+  createdAt     DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   items         BundleItem[]
   orders        BundleOrder[]
+  contracts     BundleContract[]
   tasks         Task[]
 
   @@map("bundles")
@@ -419,26 +494,242 @@ model BundleItem {
 
 /// Satu pemesanan bundle; harga di-snapshot saat order dibuat. Tampil di Billing Statement seksi Bundle.
 model BundleOrder {
-  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  bundleId    String    @map("bundle_id") @db.Uuid
-  designerId  String?   @map("designer_id") @db.Uuid
-  period      String?
-  price       Decimal   @db.Decimal(14, 2)
-  status      String    @default("Open")
-  /// "Full" = lunas sekali bayar; "DP" = bayar uang muka dulu, sisanya saat pelunasan.
-  /// "Trial" atau "Kontrak" (kontrak = order manual per periode setelah trial oke).
-  orderType   String    @default("Trial") @map("order_type")
+  id                String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  bundleId          String          @map("bundle_id") @db.Uuid
+  designerId        String?         @map("designer_id") @db.Uuid
+  period            String?
+  price             Decimal         @db.Decimal(14, 2)
+  status            String          @default("Open")
+  /// "Trial" atau "Kontrak". Order kontrak = satu periode dari `BundleContract` (`contractId`).
+  orderType         String          @default("Trial") @map("order_type")
   /// Bulan payout ke designer; null = belum diset, masuk antrian Closing. Bisa sama/beda dengan `period`.
-  payoutMonth String?   @map("payout_month")
-  paymentType String    @default("Full") @map("payment_type")
-  dpAmount    Decimal   @default(0) @map("dp_amount") @db.Decimal(14, 2)
-  dpPaidAt    DateTime? @map("dp_paid_at") @db.Timestamptz(6)
-  paidAt      DateTime? @map("paid_at") @db.Timestamptz(6)
-  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  bundle      Bundle    @relation(fields: [bundleId], references: [id])
-  designer    Designer? @relation(fields: [designerId], references: [id])
-  tasks       Task[]
+  payoutMonth       String?         @map("payout_month")
+  /// "Full" = lunas sekali bayar; "DP" = bayar uang muka dulu, sisanya saat pelunasan.
+  paymentType       String          @default("Full") @map("payment_type")
+  dpAmount          Decimal         @default(0) @map("dp_amount") @db.Decimal(14, 2)
+  dpPaidAt          DateTime?       @map("dp_paid_at") @db.Timestamptz(6)
+  paidAt            DateTime?       @map("paid_at") @db.Timestamptz(6)
+  createdAt         DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  /// Order periode dari kontrak bundle (null = trial / order kontrak lama).
+  contractId        String?         @map("contract_id") @db.Uuid
+  bundle            Bundle          @relation(fields: [bundleId], references: [id])
+  designer          Designer?       @relation(fields: [designerId], references: [id])
+  contract          BundleContract? @relation("ContractOrders", fields: [contractId], references: [id])
+  /// Kontrak yang lahir dari order trial ini.
+  contractFromTrial BundleContract? @relation("ContractTrial")
+  tasks             Task[]
 
   @@index([bundleId])
+  @@index([contractId])
   @@map("bundle_orders")
+}
+
+// ── Canva Insights (docs/knowledge/canva-insights-spec.md) ──────────────────────
+// Data dikirim collector lewat POST /api/insights/ingest; dashboard tidak pernah memanggil Canva.
+
+/// Template Canva Creator ("EAH…"). Metadata dari endpoint templates, publish/aktivitas dari content/usages.
+model CanvaTemplate {
+  id             String               @id // "EAH…"
+  canvaBrandId   String               @map("canva_brand_id")
+  accountId      String?              @map("account_id") @db.Uuid
+  /// Field `I` endpoint templates ("DAH…"): desain sumber, kunci utama tautan ke task.
+  sourceDesignId String?              @map("source_design_id")
+  title          String?
+  keywords       String[]
+  /// Field `0`: "canva_pro" | "none" (Free).
+  license        String?
+  /// Field `d` (dugaan jumlah halaman).
+  pageCount      Int?                 @map("page_count")
+  thumbnailUrl   String?              @map("thumbnail_url")
+  publishedAt    DateTime?            @map("published_at") @db.Timestamptz(6)
+  lastActivityAt DateTime?            @map("last_activity_at") @db.Timestamptz(6)
+  taskId         String?              @map("task_id") @db.Uuid
+  /// "design_id" | "title" | "manual"; "manual" tidak pernah ditimpa otomatis.
+  matchMethod    String?              @map("match_method")
+  firstSeenAt    DateTime             @default(now()) @map("first_seen_at") @db.Timestamptz(6)
+  updatedAt      DateTime             @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  account        Account?             @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  task           Task?                @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  daily          CanvaTemplateDaily[]
+
+  @@index([canvaBrandId])
+  @@index([taskId])
+  @@index([sourceDesignId])
+  @@map("canva_templates")
+}
+
+/// Applies/Usages harian per template. `date` = hari UTC (field `k`), audience = `F` mentah ("B" | "C") atau "ALL".
+model CanvaTemplateDaily {
+  templateId String        @map("template_id")
+  date       DateTime      @db.Date
+  audience   String        @default("ALL")
+  applies    Int
+  usages     Int
+  batchId    String        @map("batch_id") @db.Uuid
+  updatedAt  DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  template   CanvaTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@id([templateId, date, audience])
+  @@index([date])
+  @@map("canva_template_daily")
+}
+
+/// Total harian akun dari endpoint breakdowns (`e` = awal hari UTC).
+model CanvaBrandDaily {
+  canvaBrandId String   @map("canva_brand_id")
+  date         DateTime @db.Date
+  audience     String
+  applies      Int
+  usages       Int
+  batchId      String   @map("batch_id") @db.Uuid
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@id([canvaBrandId, date, audience])
+  @@map("canva_brand_daily")
+}
+
+/// Tier harian creator. Hanya `B` (tanggal), `C` (tier), `F` (kandidat skor) dipetakan; baris utuh di `raw`.
+model CanvaTierScore {
+  canvaBrandId String   @map("canva_brand_id")
+  date         DateTime @db.Date
+  tier         String?
+  score        Decimal? @db.Decimal
+  raw          Json
+  batchId      String   @map("batch_id") @db.Uuid
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@id([canvaBrandId, date])
+  @@map("canva_tier_scores")
+}
+
+/// Respons mentah satu request collector; diparse oleh parser bervers (bisa diparse ulang).
+model CanvaIngestBatch {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  receivedAt    DateTime @default(now()) @map("received_at") @db.Timestamptz(6)
+  canvaBrandId  String   @map("canva_brand_id")
+  /// "content.by_brand" | "content.by_content" | "brand.breakdowns" | "tier_scores" | "templates"
+  endpoint      String
+  /// Parameter request (tanpa header).
+  query         Json
+  payload       Json
+  /// "collector" | "manual"
+  source        String   @default("collector")
+  runId         String?  @map("run_id") @db.Uuid
+  parserVersion Int      @default(1) @map("parser_version")
+  /// PENDING | PARSED | REJECTED
+  status        String   @default("PENDING")
+  error         String?
+  rowCount      Int      @default(0) @map("row_count")
+
+  @@index([canvaBrandId, receivedAt])
+  @@map("canva_ingest_batches")
+}
+
+/// Satu run collector per brand (status sync di /insights).
+model CanvaCollectorRun {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  canvaBrandId String    @map("canva_brand_id")
+  startedAt    DateTime  @map("started_at") @db.Timestamptz(6)
+  finishedAt   DateTime? @map("finished_at") @db.Timestamptz(6)
+  /// RUNNING | OK | NEEDS_LOGIN | ERROR
+  status       String
+  message      String?
+  batchCount   Int       @default(0) @map("batch_count")
+  host         String?
+
+  @@index([canvaBrandId, startedAt])
+  @@map("canva_collector_runs")
+}
+
+/// Kontrak bundle setelah trial lolos (semua task approved). Order per periode dibuat manual di dalam periode ini.
+model BundleContract {
+  id                String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  bundleId          String        @map("bundle_id") @db.Uuid
+  designerId        String?       @map("designer_id") @db.Uuid
+  trialOrderId      String?       @unique @map("trial_order_id") @db.Uuid
+  /// Harga per periode (default harga paket bundle saat kontrak dibuat).
+  price             Decimal       @db.Decimal(14, 2)
+  contractStartDate DateTime      @map("contract_start_date") @db.Date
+  contractEndDate   DateTime      @map("contract_end_date") @db.Date
+  notes             String?
+  createdAt         DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  bundle            Bundle        @relation(fields: [bundleId], references: [id])
+  designer          Designer?     @relation(fields: [designerId], references: [id])
+  trialOrder        BundleOrder?  @relation("ContractTrial", fields: [trialOrderId], references: [id])
+  orders            BundleOrder[] @relation("ContractOrders")
+
+  @@index([bundleId])
+  @@map("bundle_contracts")
+}
+
+// ── Asset Library (docs/backlog/resources-library.md) ──
+/// Tab kategori di /assets (Icon, Ilustrasi, Template, Mockup, …).
+model AssetCategory {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String   @unique
+  sortOrder Int      @default(0) @map("sort_order")
+  archived  Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  assets    Asset[]
+
+  @@map("asset_categories")
+}
+
+/// Aset Canva. App = sumber input utama; dimirror dua arah ke database Notion "Asset Library".
+model Asset {
+  id             String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title          String
+  categoryId     String            @map("category_id") @db.Uuid
+  tags           String[]          @default([])
+  /// Link edit Canva (…/edit), butuh login akun tim.
+  editUrl        String?           @map("edit_url")
+  /// Public view link (…/view); preview iframe `?embed` tanpa login.
+  previewUrl     String            @map("preview_url")
+  coverUrl       String?           @map("cover_url")
+  pages          Int?
+  notes          String?
+  status         String            @default("active") // "active" | "archived"
+  source         String            @default("manual") // "manual" | "api"
+  canvaDesignId  String?           @unique @map("canva_design_id")
+  notionPageId   String?           @unique @map("notion_page_id")
+  syncStatus     String            @default("PENDING_PUSH") @map("sync_status") // SYNCED | PENDING_PUSH | ERROR
+  lastSyncedAt   DateTime?         @map("last_synced_at") @db.Timestamptz(6)
+  lastEditedTime DateTime          @default(now()) @map("last_edited_time") @db.Timestamptz(6)
+  createdAt      DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  category       AssetCategory     @relation(fields: [categoryId], references: [id])
+  /// Production (platform Canva) yang boleh memakai aset; kosong = semua production Canva.
+  productions    AssetProduction[]
+  taskLinks      TaskAsset[]
+
+  @@index([categoryId])
+  @@index([previewUrl])
+  @@map("assets")
+}
+
+/// Production yang boleh memakai aset (hanya production berplatform Canva).
+model AssetProduction {
+  assetId          String         @map("asset_id") @db.Uuid
+  productionUnitId String         @map("production_unit_id") @db.Uuid
+  asset            Asset          @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  productionUnit   ProductionUnit @relation(fields: [productionUnitId], references: [id], onDelete: Cascade)
+
+  @@id([assetId, productionUnitId])
+  @@index([productionUnitId])
+  @@map("asset_productions")
+}
+
+/// Aset yang dirujuk task (section "📦 Assets" di brief / relation "Assets" di Notion).
+model TaskAsset {
+  taskId    String   @map("task_id") @db.Uuid
+  assetId   String   @map("asset_id") @db.Uuid
+  /// Halaman yang dipakai, mis. "3, 7, 12"; null = semua.
+  pages     String?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  asset     Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, assetId])
+  @@index([assetId])
+  @@map("task_assets")
 }

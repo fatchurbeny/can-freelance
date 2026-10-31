@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Ekspor dan verifikasi</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#FF5B1F}a:hover{color:#D9440E}
+</style>
+</helmet>
+<div style="min-height: 1060px; display: flex; flex-wrap: wrap; background: #FFFFFF; color: #18181B; font-family: Inter, system-ui, sans-serif; font-size: 14px; line-height: 1.45">
+
+  <!-- ============ SIDEBAR impro.std ============ -->
+  <aside style="flex: 1 1 220px; max-width: 262px; min-width: 0; border-right: 1px solid #ECECEF; display: flex; flex-direction: column; background: #FFFFFF">
+    <div style="height: 70px; box-sizing: border-box; padding: 0 22px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #ECECEF">
+      <span style="width: 32px; height: 32px; border-radius: 9px; background: #FF5B1F; color: #FFFFFF; display: grid; place-items: center; font-size: 13px; font-weight: 700; box-shadow: 0 2px 8px rgba(255,91,31,0.35)">IS</span>
+      <span style="font-size: 17px; font-weight: 600">impro.std</span>
+    </div>
+    <nav aria-label="Navigasi utama" style="padding: 26px 14px; display: flex; flex-direction: column; gap: 2px; flex: 1">
+      <sc-for list="{{nav}}" as="g" hint-placeholder-count="3">
+        <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; color: #71717A; padding: {{g.pad}}">{{g.label}}</div>
+        <sc-for list="{{g.items}}" as="i" hint-placeholder-count="3">
+          <a href="{{i.href}}" style="box-sizing: border-box; {{i.row}}">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="{{i.ic}}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{i.d}}"/></svg>
+            <span style="flex: 1">{{i.t}}</span>
+            <sc-if value="{{i.hasBadge}}" hint-placeholder-val="{{ false }}"><span style="font-size: 12px; font-weight: 600; padding: 1px 7px; border-radius: 6px; background: #FF5B1F; color: #FFFFFF">{{i.badge}}</span></sc-if>
+            <sc-if value="{{i.hasChev}}" hint-placeholder-val="{{ false }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="{{i.chevC}}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{i.chev}}"/></svg></sc-if>
+          </a>
+          <sc-if value="{{i.hasKids}}" hint-placeholder-val="{{ false }}">
+            <div style="margin-left: 22px; padding-left: 14px; border-left: 1px solid #E4E4E7; display: flex; flex-direction: column; gap: 4px; padding-block: 4px 8px">
+              <sc-for list="{{i.kids}}" as="k" hint-placeholder-count="4"><a href="{{k.href}}" style="box-sizing: border-box; {{k.s}}">{{k.t}}</a></sc-for>
+            </div>
+          </sc-if>
+        </sc-for>
+      </sc-for>
+    </nav>
+    <div style="border-top: 1px solid #ECECEF">
+      <button type="button" style="width: 100%; font: inherit; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 15px; border: none; border-bottom: 1px solid #ECECEF; background: #F7F7F8; color: #18181B; cursor: pointer; min-height: 50px">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.9-4M4 13a8 8 0 0 0 14.9 4"/><path d="M4 4v4h4M20 20v-4h-4"/></svg>Sync Now (Daily 00:00)</button>
+      <div style="display: flex; justify-content: space-between; padding: 13px 18px; font-size: 13.5px; border-bottom: 1px solid #ECECEF">
+        <span style="color: #71717A">Status</span>
+        <span style="display: inline-flex; align-items: center; gap: 7px; color: #15803D; font-weight: 600"><span style="width: 7px; height: 7px; border-radius: 50%; background: #22C55E"></span>Postgres Active</span>
+      </div>
+      <div style="padding: 13px 18px 16px; font-size: 13.5px; display: flex; flex-direction: column; gap: 2px">
+        <span style="color: #71717A">Terakhir Sync :</span>
+        <span style="font-weight: 600">Success - 0 Data</span>
+        <span style="color: #71717A; font-size: 12.5px">Today • 13.00.03</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column">
+    <header style="min-height: 70px; box-sizing: border-box; padding: 0 28px; border-bottom: 1px solid #E9E9EC; display: flex; flex-wrap: nowrap; align-items: center; justify-content: space-between; gap: 12px">
+      <div style="display: flex; align-items: center; gap: 10px; font-size: 17px; white-space: nowrap; min-width: 0">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#FF5B1F" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h18v12H3zM3 9h18M8 9v8M8 21h8M12 17v4"/></svg>
+        <a href="Main.dc.html" style="color: #71717A; text-decoration: none">Slide Master Builder</a><span style="color: #D4D4D8">/</span><span style="font-weight: 600">Series A Pitch</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px; flex-wrap: nowrap; flex: none">
+        <label style="display: flex; align-items: center; gap: 10px; border: 1px solid #E4E4E7; border-radius: 10px; padding: 0 8px 0 12px; height: 40px; color: #A1A1AA; min-width: 160px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+          <input type="search" placeholder="Search" aria-label="Search" style="border: none; outline: none; font: inherit; width: 80px; color: #18181B; background: transparent">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #52525B; background: #F4F4F5; border: 1px solid #E4E4E7; border-radius: 5px; padding: 1px 6px">⌘ K</span>
+        </label>
+        <button type="button" aria-label="Mode gelap" style="width: 40px; height: 40px; border: 1px solid #E4E4E7; border-radius: 10px; background: #FFFFFF; display: grid; place-items: center; cursor: pointer">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#3F3F46" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>
+        </button>
+        <button type="button" style="height: 40px; display: flex; align-items: center; gap: 10px; border: 1px solid #E4E4E7; border-radius: 10px; background: #FFFFFF; padding: 0 14px; font: inherit; font-weight: 500; cursor: pointer; color: #18181B">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF5B1F" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Semua Bulan
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <button type="button" style="height: 40px; display: flex; align-items: center; gap: 10px; border: 1px solid #E4E4E7; border-radius: 10px; background: #FFFFFF; padding: 0 12px; font: inherit; font-weight: 500; cursor: pointer; color: #18181B">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF5B1F" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Admin
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #52525B; background: #F4F4F5; border: 1px solid #E4E4E7; border-radius: 5px; padding: 1px 6px">FT-001</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div style="flex: 1; padding: 36px 28px; background-color: #FAFAFA; background-image: radial-gradient(#E4E4E7 1px, transparent 1px); background-size: 18px 18px">
+      <section style="background: #FFFFFF; border: 1px solid #E4E4E7">
+        <!-- tabs -->
+        <div role="tablist" style="display: flex; flex-wrap: wrap; border-bottom: 1px solid #E4E4E7; background: #FAFAFA">
+          <a href="Main.dc.html" role="tab" aria-selected="false" style="display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-right: 1px solid #E4E4E7; color: #52525B; font-size: 15px; text-decoration: none">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M7 4v16M12 4v10M17 4v6"/></svg>Antrean
+            <span style="font-size: 12px; font-weight: 600; background: #F4F4F5; color: #3F3F46; border-radius: 6px; padding: 2px 7px">6</span></a>
+          <a href="Review.dc.html" role="tab" aria-selected="false" style="display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-right: 1px solid #E4E4E7; color: #52525B; font-size: 15px; text-decoration: none">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/></svg>Review Overlay
+            <span style="font-size: 12px; font-weight: 600; background: #F4F4F5; color: #3F3F46; border-radius: 6px; padding: 2px 7px">10</span></a>
+          <a href="Layouts.dc.html" role="tab" aria-selected="false" style="display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-right: 1px solid #E4E4E7; color: #52525B; font-size: 15px; text-decoration: none">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M3 9h18M9 9v11"/></svg>Layout &amp; Theme
+            <span style="font-size: 12px; font-weight: 600; background: #F4F4F5; color: #3F3F46; border-radius: 6px; padding: 2px 7px">19</span></a>
+          <a href="Export.dc.html" role="tab" aria-selected="true" style="display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-right: 1px solid #E4E4E7; border-bottom: 2px solid #FF5B1F; margin-bottom: -1px; background: #FFFFFF; color: #18181B; font-weight: 600; font-size: 15px; text-decoration: none">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#FF5B1F" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Ekspor &amp; Verifikasi
+            <span style="font-size: 12px; font-weight: 600; background: #FEF2F2; color: #DC2626; border-radius: 6px; padding: 2px 7px">2</span></a>
+        </div>
+        <!-- toolbar -->
+        <div style="display: flex; flex-wrap: wrap; align-items: stretch; border-bottom: 1px solid #E4E4E7; min-height: 50px">
+          <button type="button" aria-label="Cari slide" style="width: 52px; border: none; border-right: 1px solid #E4E4E7; background: #FFFFFF; display: grid; place-items: center; cursor: pointer">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#3F3F46" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+          </button>
+          <button type="button" style="display: flex; align-items: center; gap: 10px; padding: 0 18px; border: none; border-right: 1px solid #E4E4E7; background: #FFFFFF; font: inherit; color: #27272A; cursor: pointer">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v16M6 14l6 6 6-6"/></svg>Berbeda Dulu
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <button type="button" style="display: flex; align-items: center; gap: 10px; padding: 0 18px; border: none; border-right: 1px solid #E4E4E7; background: #FFFFFF; font: inherit; color: #27272A; cursor: pointer">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M4 12h16M4 17h7"/><circle cx="17" cy="7" r="2"/><circle cx="14" cy="17" r="2"/></svg>Filter
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <button type="button" style="display: flex; align-items: center; gap: 8px; padding: 0 18px; border: none; border-right: 1px solid #E4E4E7; background: #FFFFFF; font: inherit; color: #27272A; cursor: pointer">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>spec.json</button>
+          <span style="flex: 1"></span>
+          <button type="button" style="display: flex; align-items: center; gap: 10px; padding: 0 26px; border: none; background: #FF5B1F; color: #FFFFFF; font: inherit; font-weight: 600; letter-spacing: 0.04em; cursor: pointer; min-height: 50px">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>UNDUH .PPTX</button>
+        </div>
+
+        <!-- kolom -->
+        <div style="display: grid; grid-template-columns: 290px minmax(0, 1fr) 360px">
+
+          <!-- langkah -->
+          <div style="border-right: 1px solid #E4E4E7; min-width: 0">
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid #E4E4E7">
+              <span style="display: flex; align-items: center; gap: 8px; font-weight: 600"><span style="width: 8px; height: 8px; border-radius: 50%; background: #3B82F6"></span>Langkah Rebuild</span>
+              <span style="min-width: 22px; height: 22px; box-sizing: border-box; padding: 0 6px; border: 1px solid #E4E4E7; border-radius: 5px; display: grid; place-items: center; font-size: 12px; font-weight: 600">8</span>
+            </div>
+            <sc-for list="{{steps}}" as="s" hint-placeholder-count="6">
+              <div style="padding: 13px 16px; border-bottom: 1px solid #E4E4E7; display: flex; flex-direction: column; gap: 8px">
+                <span style="display: flex; gap: 10px; align-items: flex-start">
+                  <span style="box-sizing: border-box; {{s.dot}}">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{s.icon}}"/></svg>
+                  </span>
+                  <span style="font-size: 14.5px">{{s.t}}</span>
+                </span>
+                <span style="display: flex; flex-wrap: wrap; gap: 5px; padding-left: 28px">
+                  <sc-for list="{{s.pills}}" as="p" hint-placeholder-count="2">
+                    <span style="box-sizing: border-box; {{p.s}}">{{p.t}}</span>
+                  </sc-for>
+                </span>
+              </div>
+            </sc-for>
+            <div style="padding: 14px 16px; display: flex; flex-direction: column; gap: 8px">
+              <span style="font-weight: 600; font-size: 13px">spec.json</span>
+              <pre style="margin: 0; padding: 10px 12px; background: #FAFAFA; border: 1px solid #E4E4E7; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 11px; line-height: 1.6; color: #3F3F46">{ <span style="color: #4F46E5">"master"</span>: {…},
+  <span style="color: #4F46E5">"layouts"</span>: [ 19 ],
+  <span style="color: #4F46E5">"slides"</span>: [ 20 ],
+  <span style="color: #4F46E5">"convert"</span>: 62 }</pre>
+            </div>
+          </div>
+
+          <!-- diff -->
+          <div style="border-right: 1px solid #E4E4E7; min-width: 0">
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid #E4E4E7">
+              <span style="display: flex; align-items: center; gap: 8px; font-weight: 600"><span style="width: 8px; height: 8px; border-radius: 50%; background: #22C55E"></span>Diff Visual</span>
+              <span style="display: flex; align-items: center; gap: 6px; font-size: 12px">
+                <span style="padding: 1px 7px; border-radius: 5px; border: 1px solid #BBF7D0; background: #F0FDF4; color: #15803D">18 identik</span>
+                <span style="padding: 1px 7px; border-radius: 5px; border: 1px solid #FECACA; background: #FEF2F2; color: #DC2626">2 berbeda</span>
+                <span style="min-width: 22px; height: 22px; box-sizing: border-box; padding: 0 6px; border: 1px solid #E4E4E7; border-radius: 5px; display: grid; place-items: center; font-size: 12px; font-weight: 600">20</span>
+              </span>
+            </div>
+            <div style="padding: 16px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px">
+              <sc-for list="{{thumbs}}" as="t" hint-placeholder-count="20">
+                <div style="display: flex; flex-direction: column; gap: 5px; min-width: 0">
+                  <span style="position: relative; display: block; width: 100%; aspect-ratio: 16 / 9; overflow: hidden; background: {{t.bg}}; box-shadow: {{t.ring}}">
+                    <span style="box-sizing: border-box; {{t.panel}}"></span>
+                    <sc-if value="{{t.lines}}" hint-placeholder-val="{{ true }}">
+                      <span style="position: absolute; left: 6%; top: 7%; width: 10%; height: 9%; background: #FF5504"></span>
+                      <span style="position: absolute; left: 6%; top: 30%; width: 38%; height: 8%; background: #18181B"></span>
+                    </sc-if>
+                  </span>
+                  <span style="display: flex; justify-content: space-between; align-items: center">
+                    <span style="font-size: 12px; color: #71717A">Slide {{t.n}}</span>
+                    <span style="box-sizing: border-box; {{t.pill}}">{{t.st}}</span>
+                  </span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <!-- detail selisih -->
+          <div style="min-width: 0">
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid #E4E4E7">
+              <span style="display: flex; align-items: center; gap: 8px; font-weight: 600"><span style="width: 8px; height: 8px; border-radius: 50%; background: #EF4444"></span>Slide 10 · Target Audience</span>
+              <span style="font-size: 12px; padding: 1px 7px; border-radius: 5px; border: 1px solid #FECACA; background: #FEF2F2; color: #DC2626">High</span>
+            </div>
+            <div style="padding: 16px; display: flex; flex-direction: column; gap: 14px">
+              <figure style="margin: 0; display: flex; flex-direction: column; gap: 6px">
+                <div style="position: relative; aspect-ratio: 16 / 9; background: #E3DED4; overflow: hidden; box-shadow: 0 0 0 1px #E4E4E7">
+                  <span style="position: absolute; left: 4%; top: 3%; font-size: 26px; color: #FF5504; line-height: 1">09</span>
+                  <span style="position: absolute; left: 4%; top: 19%; font-size: 9px; color: #18181B">#businessproposal</span>
+                  <span style="position: absolute; left: 4%; top: 23%; font-size: 20px; color: #18181B; white-space: nowrap">Target <span style="color: #FF5504">Audience</span></span>
+                  <span style="position: absolute; left: 4%; bottom: 16%; width: 92%; height: 30%; background: repeating-linear-gradient(90deg, #FF5504 0 3.2%, transparent 3.2% 4.2%)"></span>
+                </div>
+                <figcaption style="font-size: 12px; color: #71717A">Asli</figcaption>
+              </figure>
+              <figure style="margin: 0; display: flex; flex-direction: column; gap: 6px">
+                <div style="position: relative; aspect-ratio: 16 / 9; background: #E3DED4; overflow: hidden; box-shadow: 0 0 0 1px #E4E4E7">
+                  <span style="position: absolute; left: 4%; top: 3%; font-size: 26px; color: #FF5504; line-height: 1">09</span>
+                  <span style="position: absolute; left: 3%; top: 17.5%; width: 27%; height: 6%; border: 2px solid #DC2626; background: rgba(220,38,38,0.12)"></span>
+                  <span style="position: absolute; left: 4%; top: 23%; font-size: 20px; color: #18181B; white-space: nowrap">Target <span style="color: #FF5504">Audience</span></span>
+                  <span style="position: absolute; left: 4%; bottom: 16%; width: 92%; height: 30%; background: repeating-linear-gradient(90deg, #FF5504 0 3.2%, transparent 3.2% 4.2%)"></span>
+                </div>
+                <figcaption style="font-size: 12px; color: #71717A">Hasil rebuild · tag tidak tampil</figcaption>
+              </figure>
+              <div style="display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: #3F3F46">
+                <div><b style="color: #18181B; font-weight: 600">Penyebab</b><br>Tag dipetakan sebagai placeholder footer. Slide ini menyembunyikan elemen master, dan beberapa aplikasi ikut menyembunyikan footer.</div>
+                <div><b style="color: #18181B; font-weight: 600">Perbaikan</b><br>Petakan tag sebagai placeholder teks biasa (idx 21). Berlaku juga untuk slide 12.</div>
+              </div>
+              <span style="display: flex; flex-wrap: wrap; gap: 5px">
+                <span style="font-size: 12px; padding: 1px 7px; border-radius: 5px; border: 1px solid #E4E4E7; background: #FAFAFA; color: #3F3F46; font-weight: 500">S10</span>
+                <span style="font-size: 12px; padding: 1px 7px; border-radius: 5px; border: 1px solid #E4E4E7; background: #FAFAFA; color: #3F3F46; font-weight: 500">S12</span>
+                <span style="font-size: 12px; padding: 1px 7px; border-radius: 5px; border: 1px solid #C7D2FE; background: #EEF2FF; color: #4F46E5">showMasterSp=0</span>
+                <span style="font-size: 12px; padding: 1px 7px; border-radius: 5px; border: 1px solid #FBCFE8; background: #FDF2F8; color: #DB2777">ftr → body</span>
+              </span>
+              <div style="display: flex; flex-wrap: wrap; gap: 8px">
+                <button type="button" style="font: inherit; font-size: 13px; font-weight: 600; padding: 9px 16px; border-radius: 8px; border: none; background: #FF5B1F; color: #FFFFFF; cursor: pointer; min-height: 40px">Terapkan &amp; rebuild</button>
+                <a href="Review.dc.html" style="display: inline-flex; align-items: center; font-size: 13px; padding: 9px 14px; border-radius: 8px; border: 1px solid #E4E4E7; background: #FFFFFF; color: #18181B; text-decoration: none; min-height: 40px; box-sizing: border-box">Buka di review</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1060}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const I = {
+      grid: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z',
+      prod: 'M8 3h11a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM4 7v12a2 2 0 0 0 2 2h10',
+      smb: 'M3 5h18v12H3zM3 9h18M8 9v8M8 21h8M12 17v4',
+      team: 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21a7 7 0 0 1 14 0M16 3.5a4 4 0 0 1 0 7.5M18 14a6 6 0 0 1 4 7',
+      rate: 'M3 6h18v12H3zM3 10h18M7 15h3',
+      bill: 'M6 3h9l5 5v13H6zM14 3v6h6M9 13h6M9 17h6',
+      role: 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21a7 7 0 0 1 12-5M16 15l1.5 1.5L21 13',
+      gear: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 13a7.5 7.5 0 0 0 0-2l2-1.5-2-3.5-2.4 1a7.5 7.5 0 0 0-1.7-1L15 3.5h-4l-.4 2.5a7.5 7.5 0 0 0-1.7 1l-2.4-1-2 3.5 2 1.5a7.5 7.5 0 0 0 0 2l-2 1.5 2 3.5 2.4-1a7.5 7.5 0 0 0 1.7 1l.4 2.5h4l.4-2.5a7.5 7.5 0 0 0 1.7-1l2.4 1 2-3.5z'
+    };
+    const NAV = (act) => {
+      const row = (on) => 'display:flex;align-items:center;gap:10px;padding:9px 8px;border-radius:8px;text-decoration:none;font-size:15px;white-space:nowrap;' + (on ? 'background:#FFF4EE;color:#D9440E;font-weight:600' : 'color:#27272A');
+      const kid = (on) => 'display:block;padding:7px 12px;border-radius:8px;text-decoration:none;font-size:14.5px;' + (on ? 'border:1px solid #E4E4E7;background:#FFFFFF;color:#FF5B1F;font-weight:500;box-shadow:0 1px 2px rgba(24,24,27,.05)' : 'border:1px solid transparent;color:#3F3F46');
+      const it = (t, d, o) => Object.assign({ t, d, href: '#', ic: '#FF5B1F', row: row(false), hasBadge: false, badge: '', hasChev: false, chev: '', chevC: '#A1A1AA', hasKids: false, kids: [] }, o || {});
+      const open = act === 'sc_elements';
+      return [
+        { label: 'GET STARTED', pad: '0 10px 10px', items: [
+          it('Overview', I.grid, { ic: '#71717A', hasChev: true, chev: 'M9 6l6 6-6 6', chevC: '#FF5B1F' }),
+          it('Production', I.prod, { href: 'Kanban.dc.html', hasChev: true, chev: open ? 'M6 9l6 6 6-6' : 'M9 6l6 6-6 6', hasKids: open, kids: [
+            { t: 'Freelance Lamongan', href: '#', s: kid(false) }, { t: 'SC_Elements', href: 'Kanban.dc.html', s: kid(true) },
+            { t: 'SC_Canva', href: '#', s: kid(false) }, { t: '+  Tambah Production', href: '#', s: kid(false) }] }),
+          it('Slide Master Builder', I.smb, { href: 'Main.dc.html', row: row(act === 'smb'), hasBadge: true, badge: '6' })
+        ] },
+        { label: 'BUILD', pad: '22px 10px 10px', items: [it('Account & Team', I.team), it('Rate Card', I.rate), it('Billing Statement', I.bill)] },
+        { label: 'MANAGE & OBSERVE', pad: '22px 10px 10px', items: [it('User & Role', I.role), it('Notion Config', I.gear)] }
+      ];
+    };
+    const base = 'font-size:12px;padding:1px 7px;border-radius:5px;white-space:nowrap;display:inline-block;';
+    const P = {
+      indigo: base + 'border:1px solid #C7D2FE;background:#EEF2FF;color:#4F46E5',
+      green: base + 'border:1px solid #BBF7D0;background:#F0FDF4;color:#15803D',
+      neutral: base + 'border:1px solid #E4E4E7;background:#FAFAFA;color:#3F3F46;font-weight:500',
+      red: base + 'border:1px solid #FECACA;background:#FEF2F2;color:#DC2626',
+      orange: base + 'border:1px solid #FED7AA;background:#FFF7ED;color:#C2410C'
+    };
+    const p = (t, k) => ({ t, s: P[k] });
+    const ok = 'M5 12l5 5L20 7', bad = 'M7 7l10 10M17 7L7 17', wait = 'M6 12h.5M12 12h.5M18 12h.5';
+    const dot = (c) => 'flex:none;width:18px;height:18px;border-radius:50%;display:grid;place-items:center;margin-top:1px;background:' + c;
+    const steps = [
+      { t: 'Theme dipertahankan', icon: ok, dot: dot('#22C55E'), pills: [p('12 warna', 'neutral'), p('2 font', 'neutral')] },
+      { t: 'Master diperbarui', icon: ok, dot: dot('#22C55E'), pills: [p('title', 'indigo'), p('body', 'indigo'), p('48 / 12pt', 'neutral')] },
+      { t: 'Layout ditulis', icon: ok, dot: dot('#22C55E'), pills: [p('19 layout', 'green'), p('diberi nama', 'neutral')] },
+      { t: 'Shape dikonversi', icon: ok, dot: dot('#22C55E'), pills: [p('62 placeholder', 'green')] },
+      { t: 'Validasi XML', icon: ok, dot: dot('#22C55E'), pills: [p('Lolos', 'green')] },
+      { t: 'Diff visual', icon: bad, dot: dot('#EF4444'), pills: [p('18/20', 'neutral'), p('2 berbeda', 'red')] },
+      { t: 'Simpan ke /_master/', icon: wait, dot: dot('#D4D4D8'), pills: [p('Dropbox', 'neutral'), p('menunggu diff', 'neutral')] },
+      { t: 'Centang Master Slides', icon: wait, dot: dot('#D4D4D8'), pills: [p('Notion', 'neutral'), p('Checklist 4/5 → 5/5', 'orange')] }
+    ];
+    const kinds = { 1: 'cover', 9: 'splitO', 12: 'splitD', 20: 'close' };
+    const thumbs = Array.from({ length: 20 }, (_, i) => {
+      const n = i + 1; const k = kinds[n] || 'light'; const diff = n === 10 || n === 12;
+      return {
+        n, lines: k !== 'cover' && k !== 'close',
+        bg: k === 'cover' || k === 'close' ? '#FF5504' : '#E3DED4',
+        panel: k === 'cover' ? 'position:absolute;left:71%;top:0;width:29%;height:100%;background:#18181B'
+          : k === 'close' ? 'position:absolute;left:0;top:0;width:69%;height:100%;background:#18181B'
+          : k === 'splitO' ? 'position:absolute;left:53%;top:0;width:47%;height:100%;background:#FF5504'
+          : k === 'splitD' ? 'position:absolute;left:53%;top:0;width:47%;height:100%;background:#18181B' : 'display:none',
+        ring: diff ? '0 0 0 2px #EF4444' : '0 0 0 1px #E4E4E7',
+        st: diff ? 'Berbeda' : 'Identik',
+        pill: diff ? P.red : P.green
+      };
+    });
+    return { nav: NAV('smb'), steps, thumbs };
+  }
+}
+</script>
+</body>
+</html>

@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import Sidebar from './Sidebar';
 import type { AccessInfo } from '@/lib/permissions';
 
-const NO_SIDEBAR_PREFIXES = ['/embed', '/content-access', '/login', '/change-pin'];
+const NO_SIDEBAR_PREFIXES = ['/embed', '/content-access', '/login', '/change-pin', '/share/'];
 
 /** Sidebar tunggal di root layout agar state & daftar production tidak dibuat ulang tiap navigasi. */
 export default function AppSidebar({ access }: { access: AccessInfo }) {

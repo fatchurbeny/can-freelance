@@ -27,7 +27,13 @@ async function sessionGate(req: NextRequest) {
   return NextResponse.redirect(url);
 }
 
+/** Halaman publik tanpa login: link share view-only task (/share/t/<token>). */
+function isPublicPath(pathname: string) {
+  return pathname.startsWith('/share/');
+}
+
 export async function proxy(req: NextRequest) {
+  if (isPublicPath(req.nextUrl.pathname)) return NextResponse.next();
   if (process.env.AUTH_MODE === 'session') return sessionGate(req);
 
   const expectedUser = process.env.BASIC_AUTH_USER;

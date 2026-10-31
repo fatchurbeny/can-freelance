@@ -6,6 +6,7 @@ import ProductionOverview from './ProductionOverview';
 import SortableTaskLists from './SortableTaskLists';
 import ParameterIssueTable from './ParameterIssueTable';
 import EmailNotificationView from './EmailNotificationView';
+import CanvaInsightsTab from './canva-insights/CanvaInsightsTab';
 import { useRouter } from 'next/navigation';
 import CreateTaskSlideModal from './CreateTaskSlideModal';
 
@@ -20,6 +21,8 @@ interface Props {
   canCreateTask?: boolean;
   /** false = sembunyikan tab Parameter Issue & Email Notifications. */
   canSeeIssueTabs?: boolean;
+  /** Tab Canva Insights: `insights.view` dan platform punya akun dengan Canva brand ID. */
+  canSeeInsights?: boolean;
 }
 
 export default function ProductionView({
@@ -31,6 +34,7 @@ export default function ProductionView({
   unresolvedEmailCount = 0,
   canCreateTask = true,
   canSeeIssueTabs = true,
+  canSeeInsights = false,
 }: Props) {
   const [activeTab, setActiveTab] = useState<ProductionTab>(canSeeIssueTabs ? 'overview' : 'kanban');
   const [createOpen, setCreateOpen] = useState(false);
@@ -52,7 +56,10 @@ export default function ProductionView({
         onTabChange={setActiveTab}
         issueCount={issueTasks.length}
         emailIssueCount={unresolvedEmailCount}
-        hiddenTabs={canSeeIssueTabs ? [] : ['parameterIssue', 'emailNotification']}
+        hiddenTabs={[
+          ...(canSeeIssueTabs ? [] : (['parameterIssue', 'emailNotification'] as const)),
+          ...(canSeeInsights ? [] : (['insights'] as const)),
+        ]}
       />
 
       {activeTab === 'overview' && (
@@ -70,6 +77,8 @@ export default function ProductionView({
       {canSeeIssueTabs && activeTab === 'emailNotification' && (
         <EmailNotificationView accounts={accounts} />
       )}
+
+      {canSeeInsights && activeTab === 'insights' && <CanvaInsightsTab productionUnitId={productionUnitId} />}
 
       <CreateTaskSlideModal productionUnitId={productionUnitId} open={createOpen} onClose={() => setCreateOpen(false)} onCreated={handleTaskCreated} />
     </div>

@@ -5,34 +5,50 @@ import { useEffect, useRef, useState } from 'react';
 import {
   X, ExternalLink, Clock, Trash2, FileText, CheckCircle,
   AlarmClock, CalendarDays, Gauge, Users, BookOpen, Building2, Languages, KeyRound,
-  CircleDot, Edit2, Plus, Link as LinkIcon, Loader2, Check
+  CircleDot, Edit2, Plus, Link as LinkIcon, Loader2, Check, Globe
 } from 'lucide-react';
 import {
   updateTaskStatusAction, addCommentAction, getTaskCommentsAction,
   deleteCommentAction, updateTaskFieldsAction, fetchTaskMetadataOptionsAction,
-  TaskUpdatePayload
+  toggleChecklistItemAction, createMissingNotionPageAction, scanTaskDropboxAction, TaskUpdatePayload
 } from '@/app/actions/qa';
+import { readSnapshot, type DropboxFileInfo } from '@/lib/dropbox-files';
+import { isMissingNotionPage } from '@/lib/notion-link';
 import { validateTemplateLink } from '@/lib/validate-template-link';
 import type { CardAction } from './QACard';
 import toast from 'react-hot-toast';
 
 import CustomSelectCell from './CustomSelectCell';
 import MonthCalendarPicker from './MonthCalendarPicker';
-import DesignBriefSection from './task-detail/DesignBriefSection';
+import DesignBriefSection, { type BriefTab } from './task-detail/DesignBriefSection';
+import ChecklistQASection, { CHECKLIST_TONE_CLASS, type ChecklistStage } from './task-detail/ChecklistQASection';
+import {
+  checklistGateError, checklistTone, extractChecklistSection, isApprovedStatus, isInReviewStatus,
+  isPreWorkStatus, isQaStatus, mergeChecklistSection, parseChecklistSection,
+} from '@/lib/checklist-qa';
+import CustomFieldsSection from './task-detail/CustomFieldsSection';
+import TaskShareButton from './task-detail/TaskShareButton';
+import type { CustomFieldDef } from './custom-fields/FieldValueDisplay';
 import { PRIORITY_OPTIONS, LICENSE_OPTIONS, getPagesForDoctype } from './task-form-utils';
 
 interface QATask {
   id: string;
   name: string | null;
   notionUrl: string | null;
+  /** `app_created_…` = belum punya halaman Notion (lib/notion-link.ts). */
+  notionPageId?: string;
   designer: { id: string; displayName: string; avatarColor: string | null } | null;
-  doctype: { id: string; displayName: string } | null;
+  doctype: { id: string; displayName: string; qaChecklist?: string[] } | null;
   designStatus: { id: string; notionKey: string; displayName: string } | null;
   taskAccounts: { account: { id: string; displayName: string; color: string | null } }[];
   canvaLinks: { id: string; url: string }[];
   uploadRequestUrl?: string | null;
   outputUrl?: string | null;
+  /** Snapshot folder Dropbox (lib/dropbox-files.ts) */
+  dropboxFiles?: unknown;
+  dropboxScannedAt?: string | Date | null;
   customFields?: Record<string, unknown> | null;
+  productionUnitId?: string;
   productionUnit?: { platform: { outputType: string } } | null;
   comments?: { id: string; content: string; createdAt: string }[];
   qtySubmit: string | number | null;
@@ -43,6 +59,8 @@ interface QATask {
   taskMonth?: string | null;
   bodyText?: string | null;
   lastEditedTime?: string | number | null;
+  /** Diisi bila task bagian dari order bundle; designer-nya mengikuti order. */
+  bundleOrderId?: string | null;
 }
 
 interface Props {
@@ -50,6 +68,8 @@ interface Props {
   actions?: CardAction[];
   onClose: () => void;
   onMoved?: (taskId: string) => void;
+  /** Tab yang dibuka (mis. dari indikator checklist di kartu); default mengikuti status task. */
+  initialTab?: BriefTab;
 }
 
 interface Comment {
@@ -66,17 +86,30 @@ interface OptionItem {
   notionKey?: string;
   pages?: number | null;
   poolRate?: number | null;
+  qaChecklist?: string[];
 }
 
 
 
-export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }: Props) {
+export default function TaskDetailSheet({ task, actions = [], onClose, onMoved, initialTab }: Props) {
   const access = useAccess();
+  const canEditChecklist = !access.enabled || access.permissions.includes('task.edit');
+  const canCreateTask = !access.enabled || access.permissions.includes('task.create');
+  // Halaman Notion yang baru dibuat lewat "Buat di Notion" (task prop belum ter-refresh)
+  const [createdNotionUrl, setCreatedNotionUrl] = useState<string | null>(null);
+  const [creatingNotionPage, setCreatingNotionPage] = useState(false);
+  const [dropboxFiles, setDropboxFiles] = useState<DropboxFileInfo[] | null>(null);
+  const [dropboxScannedAt, setDropboxScannedAt] = useState<string | null>(null);
+  const [openTab, setOpenTab] = useState<BriefTab>('brief');
   // Privasi per role: freelance tidak melihat brand/akun; Dropbox Link hanya untuk yang berhak.
   const canSeeBrand = !access.enabled || access.permissions.includes('account.view');
   const canSeeDropbox = !access.enabled || access.permissions.includes('dropboxLink.view');
+  const canShare = !access.enabled || access.permissions.includes('task.share');
+  // Task punya link publik aktif (dilaporkan TaskShareButton) → badge "Public view".
+  const [isPublic, setIsPublic] = useState(false);
   const [pending, setPending] = useState<string | null>(null);
   const [done, setDone] = useState<string | null>(null);
+  const [briefEditing, setBriefEditing] = useState(false);
   const closeRef = useRef<HTMLButtonElement>(null);
 
   const [content, setContent] = useState('');
@@ -102,7 +135,6 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
   const [bodyText, setBodyText] = useState<string>('');
   const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
   const [canvaUrls, setCanvaUrls] = useState<string[]>([]);
-  const [customValues, setCustomValues] = useState<Record<string, string>>({});
   const [newCanvaUrl, setNewCanvaUrl] = useState('');
   const [canvaLinkError, setCanvaLinkError] = useState('');
 
@@ -111,6 +143,11 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
   const [designStatuses, setDesignStatuses] = useState<OptionItem[]>([]);
   const [accounts, setAccounts] = useState<OptionItem[]>([]);
   const [optionsLoaded, setOptionsLoaded] = useState(false);
+  // Field tambahan production + field inti yang dimatikan
+  const [customFieldDefs, setCustomFieldDefs] = useState<CustomFieldDef[]>([]);
+  const [disabledFields, setDisabledFields] = useState<string[]>([]);
+  const [customValues, setCustomValues] = useState<Record<string, unknown>>({});
+  const isOff = (key: string) => disabledFields.includes(key);
 
   const taskId = task?.id;
 
@@ -135,26 +172,29 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
     setLicense(task.license || '');
     setTaskMonth(task.taskMonth || '');
     setBodyText(task.bodyText || '');
+    setCreatedNotionUrl(null);
+    setDropboxFiles(readSnapshot(task.dropboxFiles)?.files ?? null);
+    setDropboxScannedAt(task.dropboxScannedAt ? new Date(task.dropboxScannedAt).toISOString() : null);
+    // Status QA → buka tab Checklist QA (hanya bila task punya checklist; dicek di DesignBriefSection)
+    setOpenTab(initialTab ?? (isQaStatus(task.designStatus) ? 'checklist' : 'brief'));
     setSelectedAccountIds(task?.taskAccounts?.map(ta => ta.account.id) || []);
     setCanvaUrls(task?.canvaLinks?.map(cl => cl.url) || []);
-    setCustomValues(
-      Object.fromEntries(
-        Object.entries(task?.customFields || {})
-          .filter(([, v]) => typeof v === 'string' || typeof v === 'number')
-          .map(([k, v]) => [k, String(v)])
-      )
-    );
     setNewCanvaUrl('');
     setCanvaLinkError('');
+    setCustomValues({ ...(task.customFields ?? {}) });
+    setCustomFieldDefs([]);
+    setDisabledFields([]);
 
     getTaskCommentsAction(task.id).then(setComments).finally(() => setLoaded(true));
     
-    fetchTaskMetadataOptionsAction().then((res) => {
+    fetchTaskMetadataOptionsAction(task.productionUnitId).then((res) => {
       if (res.success && res.data) {
         setDesigners(res.data.designers || []);
         setDoctypes(res.data.doctypes || []);
         setDesignStatuses(res.data.designStatuses || []);
         setAccounts(res.data.accounts || []);
+        setCustomFieldDefs(res.data.fields || []);
+        setDisabledFields(res.data.disabledFields || []);
       }
       setOptionsLoaded(true);
     });
@@ -165,7 +205,7 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [task, onClose]);
+  }, [task, onClose, initialTab]);
 
   if (!task) return null;
 
@@ -249,6 +289,64 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
   const activeDoctype = doctypes.find(d => d.id === doctypeId) || task.doctype;
   const activeStatus = designStatuses.find(s => s.id === designStatusId) || task.designStatus;
 
+  // Checklist QA: production Dropbox + Doctype yang punya daftar item
+  const isDropbox = task.productionUnit?.platform.outputType === 'dropbox_link';
+  const requiredChecklist =
+    (doctypes.find((d) => d.id === doctypeId) ?? (task.doctype?.id === doctypeId ? task.doctype : null))?.qaChecklist ?? [];
+  const hasChecklist = isDropbox && requiredChecklist.length > 0;
+  const checklistState = parseChecklistSection(bodyText, requiredChecklist);
+  const checklistStage: ChecklistStage = isQaStatus(activeStatus)
+    ? 'qa'
+    : isInReviewStatus(activeStatus) || isApprovedStatus(activeStatus)
+      ? 'done'
+      : isPreWorkStatus(activeStatus) ? 'pre' : 'progress';
+  const inReviewLocked = hasChecklist && isQaStatus(activeStatus) && checklistState.done < checklistState.total;
+
+  const notionUrl = createdNotionUrl ?? task.notionUrl;
+  const missingNotionPage = !createdNotionUrl && isMissingNotionPage(task.notionPageId);
+
+  const handleCreateNotionPage = async () => {
+    setCreatingNotionPage(true);
+    const res = await createMissingNotionPageAction(task.id);
+    setCreatingNotionPage(false);
+    if (res.success && 'notionUrl' in res) {
+      setCreatedNotionUrl(res.notionUrl ?? '');
+      toast.success('Halaman Notion dibuat');
+    } else {
+      toast.error(res.error || 'Gagal membuat halaman Notion');
+    }
+  };
+
+  const handleRescanDropbox = async () => {
+    const res = await scanTaskDropboxAction(task.id);
+    if (res.success && 'dropboxScannedAt' in res) {
+      if (res.bodyText !== undefined) setBodyText(res.bodyText ?? '');
+      setDropboxFiles(res.dropboxFiles?.files ?? []);
+      setDropboxScannedAt(res.dropboxScannedAt ?? null);
+      toast.success('Folder Dropbox diperiksa');
+    } else {
+      toast.error(res.error || 'Gagal memeriksa folder Dropbox');
+    }
+  };
+
+  const handleToggleChecklist = async (label: string, checked: boolean) => {
+    const res = await toggleChecklistItemAction(task.id, label, checked);
+    if (res.success && res.bodyText !== undefined) setBodyText(res.bodyText);
+    else toast.error(res.error || 'Gagal mengubah Checklist QA');
+  };
+
+  const handleMoveToInReview = async () => {
+    const target = designStatuses.find((s) => isInReviewStatus(s));
+    const res = await updateTaskStatusAction(task.id, target?.notionKey || 'In Review');
+    if (res.success) {
+      if (target) setDesignStatusId(target.id);
+      toast.success('Task dipindah ke In Review');
+      onMoved?.(task.id);
+    } else {
+      toast.error(res.error || 'Gagal memindah task ke In Review');
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-xs" onClick={onClose} />
@@ -256,7 +354,7 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
         role="dialog"
         aria-modal="true"
         aria-label={`Task details: ${taskName || 'Untitled Task'}`}
-        className="absolute inset-y-0 right-0 flex w-full max-w-[540px] flex-col h-full max-h-screen border-l border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] divide-y divide-[#f0f0f0] dark:divide-[#272a34] shadow-2xl overflow-hidden font-sans"
+        className={`absolute inset-y-0 right-0 flex w-full max-w-[540px] transition-[right] duration-200 ease-out ${briefEditing ? 'min-[1100px]:right-[540px]' : ''} flex-col h-full max-h-screen border-l border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#0d0e12] divide-y divide-[#f0f0f0] dark:divide-[#272a34] shadow-2xl overflow-hidden font-sans`}
       >
         <div className="flex shrink-0 items-center justify-between border-b border-[#f0f0f0] dark:border-[#272a34] p-4 sm:p-5 bg-gray-50/50 dark:bg-[#16181d]/50 gap-4">
           <div className="flex items-center gap-2.5 min-w-0 flex-1">
@@ -282,9 +380,10 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            {task.notionUrl && (
+            {canShare && <TaskShareButton taskId={task.id} onActiveChange={setIsPublic} />}
+            {notionUrl && (
               <a
-                href={task.notionUrl}
+                href={notionUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Open in Notion"
@@ -310,6 +409,15 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
           <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 font-bold">
             <AlarmClock className="w-3.5 h-3.5 text-gray-400" />
             <span>Last Edited: <strong className="text-gray-700 dark:text-gray-300">{lastEditedLabel}</strong></span>
+            {isPublic && (
+              <span
+                title="Task ini punya link publik view-only yang aktif"
+                className="ml-1 flex items-center gap-1 border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50 dark:bg-emerald-950/30 px-1.5 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400"
+              >
+                <Globe className="w-3 h-3" />
+                Public view
+              </span>
+            )}
           </div>
 
           {/* Auto-save Status Indicator */}
@@ -339,6 +447,26 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
           </div>
         </div>
 
+        {/* Task tersimpan tanpa halaman Notion (pembuatan halaman gagal saat task dibuat) */}
+        {missingNotionPage && (
+          <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[#FED7AA] bg-[#FFF7ED] dark:border-orange-900/60 dark:bg-orange-950/30 px-5 py-2.5 font-sans text-xs">
+            <span className="text-[#C2410C] dark:text-orange-400">
+              Task ini belum ada di Notion; perubahan hanya tersimpan di app.
+            </span>
+            {canCreateTask && (
+              <button
+                type="button"
+                onClick={handleCreateNotionPage}
+                disabled={creatingNotionPage}
+                className="flex shrink-0 items-center gap-1.5 h-7 px-3 bg-[#ff5e1f] text-[11px] font-bold uppercase tracking-wider text-white hover:bg-[#ff7038] disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+              >
+                {creatingNotionPage ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ExternalLink className="w-3.5 h-3.5" />}
+                Buat di Notion
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Main Content Area — Full Edge-to-Edge Continuous Container with Smooth Vertical Scrolling */}
         <div className="min-h-0 flex-1 overflow-y-auto flex flex-col divide-y divide-[#f0f0f0] dark:divide-[#272a34] p-0 scroll-smooth [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-gray-300 dark:[&::-webkit-scrollbar-thumb]:bg-[#272a34]">
           {done && (
@@ -356,17 +484,35 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
                 <CircleDot className="w-3.5 h-3.5 text-gray-400" />
                 <span>Design Status</span>
               </div>
-              <div className="flex-1 p-0 flex items-stretch min-h-[44px] bg-white dark:bg-[#0d0e12]">
+              <div className="flex-1 p-0 flex flex-col justify-center min-h-[44px] bg-white dark:bg-[#0d0e12]">
                 {true ? (
+                  <>
                   <CustomSelectCell
                     value={designStatusId}
                     placeholder="Select Status"
                     options={designStatuses.map((s) => ({ id: s.id, label: s.displayName }))}
                     onChange={(nextId) => {
+                      const gateError = checklistGateError({
+                        isDropbox,
+                        current: activeStatus,
+                        target: designStatuses.find((s) => s.id === nextId),
+                        bodyText,
+                        required: requiredChecklist,
+                      });
+                      if (gateError) {
+                        toast.error(gateError);
+                        return;
+                      }
                       setDesignStatusId(nextId);
                       triggerAutoSave({ designStatusId: nextId || null });
                     }}
                   />
+                  {inReviewLocked && (
+                    <p className="px-5 pb-2 text-[11px] font-semibold text-[#C2410C] dark:text-orange-400">
+                      In Review terkunci sampai Checklist QA {checklistState.total}/{checklistState.total}
+                    </p>
+                  )}
+                  </>
                 ) : (
                   <div
                     onClick={() => setActiveEditingField('designStatus')}
@@ -388,7 +534,21 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
                 <span>Designer</span>
               </div>
               <div className="flex-1 p-0 flex items-stretch min-h-[44px] bg-white dark:bg-[#0d0e12]">
-                {true ? (
+                {task.bundleOrderId ? (
+                  // Task bundle: designer mengikuti order bundle (ubah lewat Billing Statement → Order Bundle).
+                  <div className="flex items-center gap-2 flex-wrap w-full px-5 py-2.5">
+                    <span
+                      className="px-2.5 py-0.5 text-[11px] font-bold rounded"
+                      style={{
+                        backgroundColor: `${activeDesigner?.avatarColor || '#ec4899'}25`,
+                        color: activeDesigner?.avatarColor || '#ec4899',
+                      }}
+                    >
+                      {activeDesigner?.displayName || 'Unassigned'}
+                    </span>
+                    <span className="text-[11px] text-gray-400">Mengikuti order bundle · ubah di Billing Statement</span>
+                  </div>
+                ) : true ? (
                   <CustomSelectCell
                     value={designerId}
                     placeholder="Select Designer"
@@ -529,6 +689,7 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
             </div>
 
             {/* IND/ENG Languages Row */}
+            {!isOff('languages') && (
             <div className="flex items-stretch text-xs font-sans min-h-[44px]">
               <div className="w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
                 <Languages className="w-3.5 h-3.5 text-gray-400" />
@@ -579,7 +740,10 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
               </div>
             </div>
 
+            )}
+
             {/* Priority Row */}
+            {!isOff('priority') && (
             <div className="flex items-stretch text-xs font-sans min-h-[44px]">
               <div className="w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
                 <Gauge className="w-3.5 h-3.5 text-gray-400" />
@@ -610,7 +774,10 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
               </div>
             </div>
 
+            )}
+
             {/* License Row */}
+            {!isOff('license') && (
             <div className="flex items-stretch text-xs font-sans min-h-[44px]">
               <div className="w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
                 <KeyRound className="w-3.5 h-3.5 text-gray-400" />
@@ -641,7 +808,10 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
               </div>
             </div>
 
+            )}
+
             {/* Task Month Row */}
+            {!isOff('taskMonth') && (
             <div className="flex items-stretch text-xs font-sans min-h-[44px]">
               <div className="w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
                 <CalendarDays className="w-3.5 h-3.5 text-gray-400" />
@@ -671,8 +841,10 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
               </div>
             </div>
 
+            )}
+
             {/* Brand (Accounts) Row */}
-            {canSeeBrand && (
+            {canSeeBrand && !isOff('brand') && (
             <div className="flex items-stretch text-xs font-sans min-h-[44px]">
               <div className="w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
                 <Building2 className="w-3.5 h-3.5 text-gray-400" />
@@ -760,7 +932,7 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
               )}
             </div>
           </div>
-          ) : (
+          ) : isOff('canvaLink') ? null : (
           <div className="flex flex-col bg-white dark:bg-[#0d0e12]">
             <div className="px-5 py-2.5 bg-gray-50/50 dark:bg-[#16181d]/50 border-b border-[#f0f0f0] dark:border-[#272a34] flex items-center justify-between">
               <h3 className="text-xs font-sans font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
@@ -845,35 +1017,41 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
           </div>
           )}
 
-          {/* Custom Fields (properti Notion di luar skema inti) */}
-          {Object.keys(customValues).length > 0 && (
-            <div className="flex flex-col bg-white dark:bg-[#0d0e12]">
-              <div className="px-5 py-2.5 bg-gray-50/50 dark:bg-[#16181d]/50 border-b border-[#f0f0f0] dark:border-[#272a34]">
-                <h3 className="text-xs font-sans font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                  CUSTOM FIELDS
-                </h3>
-              </div>
-              <div className="divide-y divide-[#f0f0f0] dark:divide-[#272a34]">
-                {Object.entries(customValues).map(([key, value]) => (
-                  <div key={key} className="flex items-center gap-3 px-5 py-2.5 text-xs font-sans">
-                    <span className="w-40 shrink-0 truncate text-gray-500 dark:text-gray-400">{key}</span>
-                    <input
-                      value={value}
-                      onChange={(e) => setCustomValues((prev) => ({ ...prev, [key]: e.target.value }))}
-                      onBlur={() => triggerAutoSave({ customFields: { ...(task?.customFields || {}), ...customValues } as Record<string, string> })}
-                      className="flex-1 min-w-0 bg-transparent border-0 px-0 font-bold text-gray-900 dark:text-white outline-none focus:ring-0"
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          {/* Field tambahan per production (Notion) */}
+          <CustomFieldsSection
+            fields={customFieldDefs}
+            values={customValues}
+            onChange={(name, value) => {
+              setCustomValues((prev) => ({ ...prev, [name]: value }));
+              triggerAutoSave({ customFields: { [name]: value } });
+            }}
+          />
 
           {/* DESIGN BRIEF & COMMENTS TABBED INTERFACE */}
           <DesignBriefSection
+            key={`${task.id}:${openTab}`}
+            initialTab={openTab}
+            checklist={hasChecklist ? {
+              count: `${checklistState.done}/${checklistState.total}`,
+              toneClass: CHECKLIST_TONE_CLASS[checklistTone(checklistState.done, checklistState.total)],
+              content: (
+                <ChecklistQASection
+                  state={checklistState}
+                  stage={checklistStage}
+                  canEdit={canEditChecklist}
+                  onToggle={handleToggleChecklist}
+                  onMoveToInReview={handleMoveToInReview}
+                  files={dropboxFiles}
+                  scannedAt={dropboxScannedAt}
+                  onRescan={handleRescanDropbox}
+                />
+              ),
+            } : undefined}
+            productionUnitId={task.productionUnitId}
             bodyText={bodyText}
             onBodyTextChange={(nextText) => {
-              setBodyText(nextText);
+              // Editor brief tidak memuat section Checklist QA → pertahankan di state lokal (server melakukan hal yang sama)
+              setBodyText((prev) => mergeChecklistSection(nextText, extractChecklistSection(prev)));
               triggerAutoSave({ bodyText: nextText });
             }}
             comments={comments}
@@ -881,6 +1059,7 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved }
             onAddComment={handleAddComment}
             onDeleteComment={handleDeleteComment}
             sendingComment={sending}
+            onEditorOpenChange={setBriefEditing}
           />
         </div>
       </aside>

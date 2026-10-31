@@ -482,6 +482,9 @@ export default async function BillingStatementPage(props: {
                       <Link key={key} href={`?paymentMonth=${selectedMonth}&tab=summary&view=${key}`} className={`flex flex-col justify-center px-6 py-3 transition-colors border-b lg:border-b-0 lg:border-r border-[#f0f0f0] dark:border-[#272a34] ${view === key ? 'bg-[#16181d] text-white' : 'bg-gray-50/50 dark:bg-[#16181d]/40 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#16181d]'}`}>
                         <span className="text-[11px] font-bold uppercase tracking-wider">{label}</span>
                         <span className={`text-sm font-bold ${view === key ? 'text-white' : 'text-gray-900 dark:text-white'}`}>{amount}</span>
+                        {key === 'bundle' && bundleCurrent.pendingTotal > 0 && (
+                          <span className="text-[11px] font-medium text-amber-500">+ {formatCurrency(bundleCurrent.pendingTotal)} menunggu task approved</span>
+                        )}
                       </Link>
                     ))}
                   </div>
@@ -865,7 +868,7 @@ export default async function BillingStatementPage(props: {
 
                     </>)}
 
-                    {view === 'bundle' && <BundlePayoutGroup rows={bundleCurrent.rows.filter((r) => r.inPayout)} tabHref={`?paymentMonth=${selectedMonth}&tab=order-bundle`} />}
+                    {view === 'bundle' && <BundlePayoutGroup rows={bundleCurrent.rows.filter((r) => r.inPayout)} pending={bundleCurrent.pendingTotal} tabHref={`?paymentMonth=${selectedMonth}&tab=order-bundle`} />}
                   </div>
                 </div>
               </>

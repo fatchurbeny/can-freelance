@@ -18,6 +18,7 @@ import {
   Calculator,
   AlignLeft,
   CheckCircle2,
+  ListChecks,
   Save
 } from 'lucide-react';
 import { listPlatformsAction } from '@/app/actions/production-unit';
@@ -27,6 +28,7 @@ import toast from 'react-hot-toast';
 
 import CategorySelectCell from './CategorySelectCell';
 import PlatformSelectCell from './PlatformSelectCell';
+import InfoTip from './InfoTip';
 
 export interface DoctypeItem {
   id: string;
@@ -40,8 +42,20 @@ export interface DoctypeItem {
   aspectRatio?: string | null;
   notes?: string | null;
   isActive?: boolean;
-  platform?: { slug: string; name: string } | null;
+  /** Item Checklist QA (hanya dipakai production output Dropbox). */
+  qaChecklist?: string[];
+  platform?: { slug: string; name: string; outputType?: string } | null;
   updatedAt: Date | string;
+}
+
+/** Satu item per baris → daftar bersih tanpa duplikat (urutan dipertahankan). */
+function parseChecklistLines(text: string): string[] {
+  const items: string[] = [];
+  for (const line of text.split('\n')) {
+    const label = line.replace(/^\s*[-*]\s*(\[[ xX]\]\s*)?/, '').trim();
+    if (label && !items.some((i) => i.toLowerCase() === label.toLowerCase())) items.push(label);
+  }
+  return items;
 }
 
 interface Props {
@@ -91,7 +105,7 @@ export default function DoctypeSlideModal({
   const isEditing = Boolean(doctypeToEdit);
   const router = useRouter();
 
-  const [platforms, setPlatforms] = useState<{ slug: string; name: string }[]>([]);
+  const [platforms, setPlatforms] = useState<{ slug: string; name: string; outputType?: string }[]>([]);
   const [platformSlug, setPlatformSlug] = useState('canva');
   const [name, setName] = useState('');
   const [notionKey, setNotionKey] = useState('');
@@ -102,6 +116,7 @@ export default function DoctypeSlideModal({
   const [pages, setPages] = useState('1');
   const [usage, setUsage] = useState<'Kontrak' | 'Bundle' | 'Keduanya'>('Kontrak');
   const [notes, setNotes] = useState('');
+  const [qaChecklistText, setQaChecklistText] = useState('');
   const [isActive, setIsActive] = useState(true);
 
   const [error, setError] = useState('');
@@ -122,6 +137,7 @@ export default function DoctypeSlideModal({
       setPages(String(doctypeToEdit.pages ?? 1));
       setUsage((doctypeToEdit.usage as 'Kontrak' | 'Bundle' | 'Keduanya') || 'Kontrak');
       setNotes(doctypeToEdit.notes || '');
+      setQaChecklistText((doctypeToEdit.qaChecklist ?? []).join('\n'));
       setIsActive(doctypeToEdit.isActive ?? true);
     } else {
       setPlatformSlug('canva');
@@ -134,6 +150,7 @@ export default function DoctypeSlideModal({
       setPages('1');
       setUsage('Kontrak');
       setNotes('');
+      setQaChecklistText('');
       setIsActive(true);
     }
     setError('');
@@ -162,6 +179,12 @@ export default function DoctypeSlideModal({
       setAspectRatio(autoRatio);
     }
   };
+
+  // Checklist QA hanya untuk Doctype platform output Dropbox
+  const isDropboxPlatform = isEditing
+    ? doctypeToEdit?.platform?.outputType === 'dropbox_link'
+    : platforms.find((p) => p.slug === platformSlug)?.outputType === 'dropbox_link';
+  const qaChecklist = isDropboxPlatform ? parseChecklistLines(qaChecklistText) : undefined;
 
   const numericPoolRate = Number(poolRate) || 0;
   const numericPages = Number(pages) || 0;
@@ -197,6 +220,7 @@ export default function DoctypeSlideModal({
         usage,
         pages: numericPages,
         notes,
+        qaChecklist,
         isActive,
       });
       setIsSaving(false);
@@ -220,6 +244,7 @@ export default function DoctypeSlideModal({
         usage,
         pages: numericPages,
         notes,
+        qaChecklist,
         isActive,
       });
       setIsSaving(false);
@@ -396,6 +421,9 @@ export default function DoctypeSlideModal({
             <div className="flex items-stretch text-xs font-sans min-h-[44px]">
               <div className="w-[110px] sm:w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-3 sm:px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
                 <span>Kegunaan</span>
+                <InfoTip label="Kegunaan">
+                  Doctype khusus Bundle tidak memakai pool score dan tarif. Harganya ikut harga paket di tab Bundle; jumlah halaman diatur per komponen bundle. Keduanya: bisa dipakai di kontrak dan bundle.
+                </InfoTip>
               </div>
               <div className="flex-1 grid grid-cols-3 divide-x divide-[#f0f0f0] dark:divide-[#272a34] bg-white dark:bg-[#0d0e12]">
                 {(['Kontrak', 'Bundle', 'Keduanya'] as const).map((v) => (
@@ -404,9 +432,6 @@ export default function DoctypeSlideModal({
                 ))}
               </div>
             </div>
-            {usage === 'Bundle' && (
-              <div className="px-5 py-3 bg-emerald-50/60 dark:bg-emerald-500/5 text-[11px] text-gray-600 dark:text-gray-400 border-y border-[#f0f0f0] dark:border-[#272a34]">Doctype khusus bundle tidak memakai pool score dan tarif. Harganya ikut harga paket di tab Bundle; jumlah halaman diatur per komponen bundle.</div>
-            )}
 
             {usage !== 'Bundle' && (<>
             {/* Row 6: Section Divider — SKEMA TARIF KONTRAK FREELANCE */}
@@ -527,6 +552,30 @@ export default function DoctypeSlideModal({
                 />
               </div>
             </div>
+
+            {/* Checklist QA (platform output Dropbox): syarat QA → In Review */}
+            {isDropboxPlatform && (
+            <div className="flex items-stretch text-xs font-sans min-h-[80px]">
+              <div className="w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-5 py-3 flex items-start gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
+                <ListChecks className="w-3.5 h-3.5 text-gray-400 mt-0.5" />
+                <span>Checklist QA</span>
+              </div>
+              <div className="flex-1 p-0 flex flex-col min-h-[80px] bg-white dark:bg-[#0d0e12]">
+                <textarea
+                  rows={5}
+                  value={qaChecklistText}
+                  onChange={(e) => setQaChecklistText(e.target.value)}
+                  placeholder={'Preview\nMaster Slides\nKeynote\nPPT\nPPTX'}
+                  aria-label="Item Checklist QA, satu per baris"
+                  className="w-full min-h-[110px] rounded-none border-0 bg-gray-50/50 dark:bg-[#16181d]/50 p-4 font-sans text-xs font-normal text-gray-900 dark:text-white outline-none focus:bg-white dark:focus:bg-[#16181d] focus:ring-1 focus:ring-[#ff5e1f] transition-colors resize-y"
+                />
+                <p className="px-4 py-2 text-[11px] text-gray-500 dark:text-gray-400 border-t border-[#f0f0f0] dark:border-[#272a34]">
+                  Satu item per baris, urutan = urutan tampil. Kosong = task tanpa checklist dan tanpa syarat In Review.
+                  Berlaku untuk task baru; task lama mendapat section saat masuk QA.
+                </p>
+              </div>
+            </div>
+            )}
 
             {/* Row 12: Status Format Selection Grid (Image 2 Color Standard: Active Green / Inactive Gray) */}
             <div className="flex items-stretch text-xs font-sans min-h-[44px]">

@@ -171,6 +171,12 @@ export default function SortableTaskLists({ tasks, selectedMonths, onCreateTask 
   const [statusOverride, setStatusOverride] = useState<Record<string, string>>({});
   const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
   const [selectedTask, setSelectedTask] = useState<QATask | null>(null);
+  // Tab drawer yang diminta kartu (indikator checklist); undefined = default menurut status
+  const [selectedTab, setSelectedTab] = useState<'checklist' | undefined>(undefined);
+  const openTask = (task: QATask, tab?: 'checklist') => {
+    setSelectedTab(tab);
+    setSelectedTask(task);
+  };
 
   useEffect(() => {
     if (selectedTask) {
@@ -295,7 +301,7 @@ export default function SortableTaskLists({ tasks, selectedMonths, onCreateTask 
                     onDropTask={handleDropTask}
                     draggingTaskId={draggingTaskId}
                     onDragStateChange={setDraggingTaskId}
-                    onOpenTask={setSelectedTask}
+                    onOpenTask={openTask}
                   />
                 </div>
               ))}
@@ -312,6 +318,7 @@ export default function SortableTaskLists({ tasks, selectedMonths, onCreateTask 
 
       <TaskDetailSheet
         task={selectedTask}
+        initialTab={selectedTab}
         actions={selectedTask ? actionsFor(selectedTask) : []}
         onClose={() => setSelectedTask(null)}
         onMoved={(taskId) => {

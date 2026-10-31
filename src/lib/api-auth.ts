@@ -15,7 +15,7 @@ function hasCronSecret(request?: Request): boolean {
  * `allowCronSecret`: izinkan juga pemanggil terjadwal dengan CRON_SECRET.
  */
 export async function authorizeApi(
-  permission: Permission,
+  permission: Permission | Permission[],
   opts: { request?: Request; allowCronSecret?: boolean; write?: boolean } = {},
 ): Promise<NextResponse | null> {
   const access = await getAccess();
@@ -27,7 +27,8 @@ export async function authorizeApi(
   if (opts.write && access.readOnly) {
     return NextResponse.json({ error: 'Mode pratinjau hanya-baca.' }, { status: 403 });
   }
-  if (!access.allows(permission)) {
+  const required = Array.isArray(permission) ? permission : [permission];
+  if (!required.some((p) => access.allows(p))) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
   return null;

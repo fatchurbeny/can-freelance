@@ -1,13 +1,16 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { Eye, Edit3, Copy, Check, Clock, Trash2, Send, Loader2, MessageSquare, Palette } from 'lucide-react';
+import { useState, useEffect, useRef, type ReactNode } from 'react';
+import { Edit3, Copy, Check, Clock, Trash2, Send, Loader2, MessageSquare } from 'lucide-react';
 import toast from 'react-hot-toast';
 import DesignBriefPreview from './DesignBriefPreview';
 import { useAccess } from '@/context/AccessContext';
-import TaskBodyEditor from '../TaskBodyEditor';
-import ImageColorPalettePicker from '../ImageColorPalettePicker';
-import { classifyHeading, NOTES_HEADING } from './brief-parser';
+import DesignBriefEditorDrawer, { mergePaletteMarkdown } from './DesignBriefEditorDrawer';
+import { mergeAssetsMarkdown } from '@/lib/asset-brief';
+import { stripChecklistSection } from '@/lib/checklist-qa';
+import { NOTES_HEADING, shufflePaletteMarkdown } from './brief-parser';
+
+export type BriefTab = 'brief' | 'checklist' | 'comments';
 
 interface Comment {
   id: string;
@@ -23,6 +26,14 @@ interface Props {
   onAddComment: (content: string) => Promise<boolean>;
   onDeleteComment: (commentId: string) => Promise<boolean>;
   sendingComment: boolean;
+  /** Dipanggil saat drawer Edit Brief (kanan) dibuka/ditutup, agar drawer task bergeser ke kiri. */
+  onEditorOpenChange?: (open: boolean) => void;
+  /** Production task; picker Asset Library hanya menampilkan aset untuk production ini. */
+  productionUnitId?: string;
+  /** Tab Checklist QA (production Dropbox dengan Doctype ber-checklist). Section-nya tidak tampil di brief. */
+  checklist?: { content: ReactNode; count: string; toneClass: string };
+  /** Tab yang terbuka saat drawer dibuka. */
+  initialTab?: BriefTab;
 }
 
 const BODY_DEBOUNCE_MS = 1500;
@@ -35,15 +46,20 @@ export default function DesignBriefSection({
   onAddComment,
   onDeleteComment,
   sendingComment,
+  onEditorOpenChange,
+  productionUnitId,
+  checklist,
+  initialTab = 'brief',
 }: Props) {
   const access = useAccess();
   // Brief hanya diubah oleh role manajemen (task.edit); designer hanya membaca & berkomentar.
   const canEditBrief = !access.enabled || access.permissions.includes('task.edit');
-  const [activeTab, setActiveTab] = useState<'brief' | 'comments'>('brief');
+  const [activeTab, setActiveTab] = useState<BriefTab>(initialTab === 'checklist' && !checklist ? 'brief' : initialTab);
   const [viewMode, setViewMode] = useState<'preview' | 'edit'>('preview');
   const [copiedBrief, setCopiedBrief] = useState(false);
   const [commentInput, setCommentInput] = useState('');
-  const [draftBody, setDraftBody] = useState(bodyText);
+  // Brief tanpa section Checklist QA (punya tab sendiri; server menyambungnya kembali saat simpan)
+  const [draftBody, setDraftBody] = useState(() => stripChecklistSection(bodyText));
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingRef = useRef<string | null>(null);
@@ -51,7 +67,7 @@ export default function DesignBriefSection({
   saveRef.current = onBodyTextChange;
 
   useEffect(() => {
-    if (pendingRef.current === null) setDraftBody(bodyText);
+    if (pendingRef.current === null) setDraftBody(stripChecklistSection(bodyText));
   }, [bodyText]);
 
   const flush = () => {
@@ -74,7 +90,7 @@ export default function DesignBriefSection({
     timerRef.current = setTimeout(flush, BODY_DEBOUNCE_MS);
   };
 
-  const switchTab = (tab: 'brief' | 'comments') => {
+  const switchTab = (tab: BriefTab) => {
     flush();
     setActiveTab(tab);
   };
@@ -83,6 +99,13 @@ export default function DesignBriefSection({
     if (viewMode === 'edit') flush();
     setViewMode(viewMode === 'edit' ? 'preview' : 'edit');
   };
+
+  const editorOpen = canEditBrief && viewMode === 'edit';
+
+  useEffect(() => {
+    onEditorOpenChange?.(editorOpen);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editorOpen]);
 
   const handleCopyBrief = () => {
     if (!draftBody.trim()) {
@@ -96,15 +119,24 @@ export default function DesignBriefSection({
   };
 
   const handleInsertPalette = (paletteMarkdown: string) => {
-    // Only replace the existing Reference Image when the new insert carries one
-    const hasNewImage = /##\s*🖼️\s*Reference Image/i.test(paletteMarkdown);
-    const base = hasNewImage
-      ? (draftBody || '').replace(/##\s*🖼️\s*Reference Image[\s\S]*?(?=##|$)/gi, '')
-      : (draftBody || '');
-    const cleaned = base
-      .replace(/##\s*🎨\s*Color Palette[\s\S]*?(?=##|$)/gi, '')
-      .trim();
-    const next = cleaned ? `${cleaned}\n\n${paletteMarkdown}` : paletteMarkdown;
+    const next = mergePaletteMarkdown(draftBody, paletteMarkdown);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    pendingRef.current = null;
+    setDraftBody(next);
+    onBodyTextChange(next);
+  };
+
+  const handleInsertAssets = (sectionMarkdown: string) => {
+    const next = mergeAssetsMarkdown(draftBody, sectionMarkdown);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    pendingRef.current = null;
+    setDraftBody(next);
+    onBodyTextChange(next);
+  };
+
+  const handleShufflePalette = () => {
+    const next = shufflePaletteMarkdown(draftBody);
+    if (!next) return;
     if (timerRef.current) clearTimeout(timerRef.current);
     pendingRef.current = null;
     setDraftBody(next);
@@ -123,8 +155,6 @@ export default function DesignBriefSection({
     if (await onAddComment(trimmed)) setCommentInput('');
   };
 
-  const hasPaletteSection = /^##\s*.*(palette|warna)/im.test(draftBody || '');
-
   const tabClass = (active: boolean) =>
     `h-[46px] flex items-center justify-center gap-2 font-sans text-xs font-bold uppercase tracking-wider border-b-2 transition-colors cursor-pointer ${
       active
@@ -135,10 +165,16 @@ export default function DesignBriefSection({
   return (
     <div className="flex flex-1 flex-col bg-white dark:bg-[#0d0e12] border-t border-[#f0f0f0] dark:border-[#272a34]">
       {/* Tabs */}
-      <div role="tablist" className="grid grid-cols-2 border-b border-[#f0f0f0] dark:border-[#272a34] shrink-0">
+      <div role="tablist" className={`grid ${checklist ? 'grid-cols-3' : 'grid-cols-2'} border-b border-[#f0f0f0] dark:border-[#272a34] shrink-0`}>
         <button type="button" role="tab" aria-selected={activeTab === 'brief'} onClick={() => switchTab('brief')} className={tabClass(activeTab === 'brief')}>
           Design Brief
         </button>
+        {checklist && (
+          <button type="button" role="tab" aria-selected={activeTab === 'checklist'} onClick={() => switchTab('checklist')} className={`${tabClass(activeTab === 'checklist')} border-l border-l-[#f0f0f0] dark:border-l-[#272a34]`}>
+            Checklist QA
+            <span className={`rounded-[5px] border px-[5px] py-px text-[10px] font-semibold normal-case tracking-normal ${checklist.toneClass}`}>{checklist.count}</span>
+          </button>
+        )}
         <button type="button" role="tab" aria-selected={activeTab === 'comments'} onClick={() => switchTab('comments')} className={`${tabClass(activeTab === 'comments')} border-l border-l-[#f0f0f0] dark:border-l-[#272a34]`}>
           Comments ({comments.length})
         </button>
@@ -170,44 +206,21 @@ export default function DesignBriefSection({
                   : 'bg-white dark:bg-[#0d0e12] border-[#f0f0f0] dark:border-[#272a34] text-gray-700 dark:text-gray-300 hover:border-[#ff5e1f]'
               }`}
             >
-              {viewMode === 'edit' ? <Eye className="w-3.5 h-3.5" /> : <Edit3 className="w-3.5 h-3.5 text-[#ff5e1f]" />}
-              <span>{viewMode === 'edit' ? 'Preview' : 'Edit'}</span>
+              <Edit3 className={`w-3.5 h-3.5 ${viewMode === 'edit' ? '' : 'text-[#ff5e1f]'}`} />
+              <span>{viewMode === 'edit' ? 'Editing' : 'Edit'}</span>
             </button>
             )}
           </div>
 
-          {viewMode === 'preview' || !canEditBrief ? (
-            <DesignBriefPreview bodyText={draftBody} onAddNotes={canEditBrief ? handleAddNotes : undefined} />
-          ) : (
-            <div className="flex flex-col gap-4">
-              {!hasPaletteSection && (
-                <div className="bg-white dark:bg-[#0d0e12] border border-[#f0f0f0] dark:border-[#272a34]">
-                  <div className="flex items-center gap-2 px-4 py-3 border-b border-[#f0f0f0] dark:border-[#272a34] text-[13px] font-bold text-gray-900 dark:text-white">
-                    <Palette className="w-3.5 h-3.5 text-[#ff5e1f]" />
-                    Reference Image &amp; Color Palette
-                  </div>
-                  <div className="p-3">
-                    <ImageColorPalettePicker onInsertPalette={handleInsertPalette} />
-                  </div>
-                </div>
-              )}
-              <TaskBodyEditor
-                value={draftBody}
-                onChange={handleDraftChange}
-                orderSections
-                hideHeader
-                renderSectionExtra={(heading) =>
-                  classifyHeading(heading) === 'palette' ? (
-                    <div className="border border-dashed border-[#f0f0f0] dark:border-[#272a34] p-3">
-                      <ImageColorPalettePicker onInsertPalette={handleInsertPalette} />
-                    </div>
-                  ) : null
-                }
-              />
-            </div>
-          )}
+          <DesignBriefPreview
+            bodyText={draftBody}
+            onAddNotes={canEditBrief ? handleAddNotes : undefined}
+            onShufflePalette={canEditBrief ? handleShufflePalette : undefined}
+          />
         </div>
       )}
+
+      {activeTab === 'checklist' && checklist?.content}
 
       {activeTab === 'comments' && (
         <div className="flex flex-1 flex-col">
@@ -265,6 +278,17 @@ export default function DesignBriefSection({
             </button>
           </div>
         </div>
+      )}
+      {editorOpen && (
+        <DesignBriefEditorDrawer
+          value={draftBody}
+          onChange={handleDraftChange}
+          onInsertPalette={handleInsertPalette}
+          onInsertAssets={handleInsertAssets}
+          productionUnitId={productionUnitId}
+          onClose={toggleMode}
+          subtitle="Tersimpan otomatis · preview di drawer task"
+        />
       )}
     </div>
   );

@@ -7,11 +7,16 @@ import { getPresetPagesByName } from '@/lib/doctype-presets';
 import {
   getProperty,
   extractCustomFields,
+  resolveWriteName,
   type FieldKey,
   type FieldMapping,
 } from '@/lib/production-field-mapping';
 import { Prisma } from '../../generated/prisma';
 import { syncDropboxOutputs } from '@/lib/dropbox-output';
+import { scanDropboxChecklists } from '@/lib/dropbox-checklist';
+import { pushPendingAssets, syncAssetsFromNotion, syncTaskAssetLinks } from '@/lib/notion-assets';
+import { ASSETS_RELATION_PROPERTY } from '@/lib/notion-field-types';
+import { isQaStatusName } from '@/lib/checklist-qa';
 
 export type NotionSyncMode = 'incremental' | 'full';
 
@@ -255,106 +260,98 @@ export async function pushPendingLocalChangesToNotion() {
         schemaByDatabase.set(databaseId, schemaProps);
       }
       const properties: Record<string, any> = {};
+      const mapping = (task.productionUnit.fieldMapping ?? {}) as FieldMapping;
+      const w = (key: FieldKey) => resolveWriteName(schemaProps!, key, mapping);
 
-      if (task.name) {
-        properties.Name = { title: [{ text: { content: task.name } }] };
+      const titleKey = w('name');
+      if (task.name && titleKey) {
+        properties[titleKey] = { title: [{ text: { content: task.name } }] };
       }
 
       // Payroll Month
-      if (task.payrollMonth !== undefined) {
-        const propName = schemaProps['Payroll Month'] ? 'Payroll Month' : (schemaProps['Payroll-Month'] ? 'Payroll-Month' : 'Payroll Month');
-        properties[propName] = task.payrollMonth
+      const payrollKey = w('payrollMonth');
+      if (task.payrollMonth !== undefined && payrollKey) {
+        properties[payrollKey] = task.payrollMonth
           ? { select: { name: task.payrollMonth } }
           : { select: null };
       }
 
       // Task Month
-      if (task.taskMonth && schemaProps['Task Month']) {
-        if (schemaProps['Task Month'].type === 'date') {
+      const taskMonthKey = w('taskMonth');
+      if (task.taskMonth && taskMonthKey) {
+        if (schemaProps[taskMonthKey].type === 'date') {
           const dateStr = formatTaskMonthToDateString(task.taskMonth);
-          if (dateStr) properties['Task Month'] = { date: { start: dateStr } };
+          if (dateStr) properties[taskMonthKey] = { date: { start: dateStr } };
         } else {
-          properties['Task Month'] = { select: { name: task.taskMonth } };
+          properties[taskMonthKey] = { select: { name: task.taskMonth } };
         }
       }
 
       // Design Status
-      if (task.designStatus && schemaProps['Design Status']) {
-        const options = schemaProps['Design Status']?.status?.options || schemaProps['Design Status']?.select?.options;
+      const statusKey = w('designStatus');
+      if (task.designStatus && statusKey) {
+        const options = schemaProps[statusKey]?.status?.options || schemaProps[statusKey]?.select?.options;
         const statusOption = options
           ? findNotionStatusOption(options, task.designStatus.notionKey || task.designStatus.displayName)
           : null;
-        if (schemaProps['Design Status'].type === 'status') {
-          properties['Design Status'] = statusOption
+        if (schemaProps[statusKey].type === 'status') {
+          properties[statusKey] = statusOption
             ? { status: { id: statusOption.id } }
             : { status: { name: task.designStatus.notionKey || task.designStatus.displayName } };
         } else {
-          properties['Design Status'] = statusOption
+          properties[statusKey] = statusOption
             ? { select: { name: statusOption.name } }
             : { select: { name: task.designStatus.displayName } };
         }
       }
 
-      // QTY-Submit / QTY Submit
-      if (task.qtySubmit != null) {
-        const qtyKey = schemaProps['QTY-Submit'] ? 'QTY-Submit' : (schemaProps['QTY Submit'] ? 'QTY Submit' : 'QTY-Submit');
-        properties[qtyKey] = { number: Number(task.qtySubmit) };
-      }
+      const qtyKey = w('qtySubmit');
+      if (task.qtySubmit != null && qtyKey) properties[qtyKey] = { number: Number(task.qtySubmit) };
 
-      // Pages
-      if (task.pages != null && schemaProps['Pages']) {
-        properties['Pages'] = { number: Number(task.pages) };
-      }
+      const pagesKey = w('pages');
+      if (task.pages != null && pagesKey) properties[pagesKey] = { number: Number(task.pages) };
 
-      // Pool Score
-      if (task.poolScore != null && schemaProps['Pool Score']) {
-        properties['Pool Score'] = { number: Number(task.poolScore) };
-      }
+      const poolKey = w('poolScore');
+      if (task.poolScore != null && poolKey) properties[poolKey] = { number: Number(task.poolScore) };
 
-      // Priority
-      if (task.priority && schemaProps['Priority']) {
-        properties['Priority'] = { select: { name: task.priority } };
-      }
+      const priorityKey = w('priority');
+      if (task.priority && priorityKey) properties[priorityKey] = { select: { name: task.priority } };
 
-      // License
-      if (task.license && schemaProps['License']) {
-        properties['License'] = { select: { name: task.license } };
-      }
+      const licenseKey = w('license');
+      if (task.license && licenseKey) properties[licenseKey] = { select: { name: task.license } };
 
-      // Doctype
-      if (task.doctype?.displayName && schemaProps['Doctype']) {
-        properties['Doctype'] = { select: { name: task.doctype.displayName } };
-      }
+      const doctypeKey = w('doctype');
+      if (task.doctype?.notionKey && doctypeKey) properties[doctypeKey] = { select: { name: task.doctype.notionKey } };
 
-      // Designer
-      if (task.designer?.displayName && schemaProps['Designer']) {
-        properties['Designer'] = { select: { name: task.designer.displayName } };
-        if (task.designer.status && schemaProps['Designer Status']) {
-          properties['Designer Status'] = { select: { name: task.designer.status } };
+      const designerKey = w('designer');
+      if (task.designer?.displayName && designerKey) {
+        properties[designerKey] = { select: { name: task.designer.displayName } };
+        const designerStatusKey = w('designerStatus');
+        if (task.designer.status && designerStatusKey) {
+          properties[designerStatusKey] = { select: { name: task.designer.status } };
         }
       }
 
-      // IND/ENG
-      if (task.languages && task.languages.length > 0) {
-        const langKey = schemaProps['IND/ENG'] ? 'IND/ENG' : (schemaProps['IND\\ENG'] ? 'IND\\ENG' : 'IND/ENG');
+      const langKey = w('languages');
+      if (task.languages && task.languages.length > 0 && langKey) {
         properties[langKey] = { multi_select: task.languages.map((l) => ({ name: l })) };
       }
 
-      // Brand / Account
-      if (task.taskAccounts && task.taskAccounts.length > 0) {
-        const brandKey = schemaProps['Brand'] ? 'Brand' : (schemaProps['Account'] ? 'Account' : 'Brand');
+      const brandKey = w('brand');
+      if (task.taskAccounts && task.taskAccounts.length > 0 && brandKey) {
         properties[brandKey] = { multi_select: task.taskAccounts.map((ta) => ({ name: ta.account.displayName })) };
       }
 
       // Template Link
       const templateLinkUrl = task.canvaLinks?.[0]?.url || task.notionUrl || null;
-      if (templateLinkUrl && schemaProps['Template Link']) {
-        if (schemaProps['Template Link'].type === 'files') {
-          properties['Template Link'] = {
+      const templateKey = w('canvaLink');
+      if (templateLinkUrl && templateKey) {
+        if (schemaProps[templateKey].type === 'files') {
+          properties[templateKey] = {
             files: [{ name: 'Template Link', external: { url: templateLinkUrl } }],
           };
         } else {
-          properties['Template Link'] = { url: templateLinkUrl };
+          properties[templateKey] = { url: templateLinkUrl };
         }
       }
 
@@ -418,6 +415,12 @@ export async function syncNotionData(mode: NotionSyncMode = 'incremental') {
       }
     } catch (pushErr) {
       console.error('Outbound sync error during pushPendingLocalChangesToNotion:', pushErr);
+    }
+    try {
+      const pushedAssets = await pushPendingAssets();
+      if (pushedAssets > 0) console.log(`Pushed ${pushedAssets} pending assets to Notion.`);
+    } catch (assetErr) {
+      console.error('Outbound sync error during pushPendingAssets:', assetErr);
     }
 
     let activeApiKey = process.env.NOTION_API_KEY || null;
@@ -590,7 +593,7 @@ export async function syncNotionData(mode: NotionSyncMode = 'incremental') {
           let designStatusId = null;
           if (statusName) {
             const lowerName = statusName.toLowerCase();
-            const isQaVariant = lowerName === 'qa' || lowerName.includes('q&a') || lowerName.includes('in qa') || lowerName.includes('quality assurance');
+            const isQaVariant = isQaStatusName(lowerName);
 
             let foundStatus = statuses.find(
               (s) => s.notionKey.toLowerCase() === lowerName ||
@@ -698,7 +701,7 @@ export async function syncNotionData(mode: NotionSyncMode = 'incremental') {
           // Upsert Task
           const existingTask = await prisma.task.findUnique({
             where: { notionPageId },
-            select: { id: true, lastEditedTime: true, syncStatus: true },
+            select: { id: true, lastEditedTime: true, syncStatus: true, bundleOrder: { select: { designerId: true } } },
           });
           // Page body changed in Notion since our last sync → re-read its blocks
           const pageEditedSinceLastSync =
@@ -712,15 +715,19 @@ export async function syncNotionData(mode: NotionSyncMode = 'incremental') {
             newRecords++;
           }
 
+          // Task bundle: designer selalu mengikuti order bundle, bukan nilai Designer di Notion.
+          const updateData = existingTask?.bundleOrder ? { ...taskData, designerId: existingTask.bundleOrder.designerId } : taskData;
           const task = await prisma.task.upsert({
             where: { notionPageId },
-            update: taskData,
+            update: updateData,
             create: {
               notionPageId,
               notionUrl,
               ...taskData
             },
           });
+
+          let latestBodyText = task.bodyText;
 
           // Extract Canva links from properties and page body blocks
           try {
@@ -826,6 +833,7 @@ export async function syncNotionData(mode: NotionSyncMode = 'incremental') {
                   where: { id: task.id },
                   data: { bodyText: parsedBody },
                 });
+                latestBodyText = parsedBody;
               }
             }
 
@@ -838,6 +846,14 @@ export async function syncNotionData(mode: NotionSyncMode = 'incremental') {
             }
           } catch (blockErr: any) {
             console.warn(`Could not fetch blocks for page ${notionPageId}: ${blockErr.message}`);
+          }
+
+          // Aset Library yang dirujuk task: section "📦 Assets" di brief + relation "Assets"
+          try {
+            const relationIds = (properties[ASSETS_RELATION_PROPERTY]?.relation ?? []).map((r: any) => r.id);
+            await syncTaskAssetLinks(task.id, latestBodyText, relationIds);
+          } catch (assetErr: any) {
+            console.warn(`Could not link assets for page ${notionPageId}: ${assetErr.message}`);
           }
 
           // Parse and link Accounts
@@ -941,6 +957,20 @@ export async function syncNotionData(mode: NotionSyncMode = 'incremental') {
         await syncDropboxOutputs();
       } catch (dbxErr: any) {
         console.warn('Dropbox output sync skipped:', dbxErr.message);
+      }
+
+      // Checklist QA: snapshot isi folder + centang format yang baru diunggah
+      try {
+        await scanDropboxChecklists();
+      } catch (dbxErr: any) {
+        console.warn('Dropbox checklist scan skipped:', dbxErr.message);
+      }
+
+      // Asset Library: tarik perubahan dari database Notion aset
+      try {
+        await syncAssetsFromNotion(notionClient, mode, lastSyncTime);
+      } catch (assetErr: any) {
+        console.warn('Asset Library sync skipped:', assetErr.message);
       }
 
       // Incremental results are incomplete by design. Only a full result set can

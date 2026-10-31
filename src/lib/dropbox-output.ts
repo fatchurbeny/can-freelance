@@ -13,9 +13,11 @@ import {
   getDropboxStatus,
 } from '@/lib/dropbox';
 import { ensureUrlProperty, setNotionPageUrl } from '@/lib/notion-provision';
+import { isNotionLinked } from '@/lib/notion-link';
 
-export const UPLOAD_LINK_PROPERTY = 'Upload Link';
-export const DROPBOX_LINK_PROPERTY = 'Dropbox Link';
+import { UPLOAD_LINK_PROPERTY, DROPBOX_LINK_PROPERTY } from '@/lib/notion-field-types';
+
+export { UPLOAD_LINK_PROPERTY, DROPBOX_LINK_PROPERTY };
 
 export async function attachUploadRequest(taskId: string): Promise<void> {
   const task = await prisma.task.findUnique({
@@ -32,10 +34,11 @@ export async function attachUploadRequest(taskId: string): Promise<void> {
 
   const folder = taskFolderPath(unit.dropboxRoot, task.taskMonth, task.name ?? 'Untitled');
   const url = await createFileRequest(task.name ?? 'Upload', folder);
-  await prisma.task.update({ where: { id: task.id }, data: { uploadRequestUrl: url } });
+  // Path disimpan: dipakai pemindai checklist meski task di-rename sesudahnya
+  await prisma.task.update({ where: { id: task.id }, data: { uploadRequestUrl: url, dropboxFolderPath: folder } });
 
   // Tulis ke Notion hanya untuk task yang berasal dari Notion (bukan dibuat lokal/mock)
-  const fromNotion = !task.notionPageId.startsWith('app_created_') && !task.notionPageId.startsWith('sync_mock_page_');
+  const fromNotion = isNotionLinked(task.notionPageId);
   if (fromNotion) {
     await ensureUrlProperty(unit.notionTaskDbId, UPLOAD_LINK_PROPERTY);
     await setNotionPageUrl(task.notionPageId, UPLOAD_LINK_PROPERTY, url);
@@ -80,7 +83,7 @@ export async function syncDropboxOutputs(): Promise<{ linked: number }> {
       await prisma.task.update({ where: { id: task.id }, data: { outputUrl: link } });
 
       // Tulis ke Notion (properti "Dropbox Link") untuk task yang berasal dari Notion
-      const fromNotion = !task.notionPageId.startsWith('app_created_') && !task.notionPageId.startsWith('sync_mock_page_');
+      const fromNotion = isNotionLinked(task.notionPageId);
       if (fromNotion) {
         await ensureUrlProperty(task.productionUnit.notionTaskDbId, DROPBOX_LINK_PROPERTY);
         await setNotionPageUrl(task.notionPageId, DROPBOX_LINK_PROPERTY, link);

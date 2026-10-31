@@ -8,7 +8,7 @@ interface QATask {
   name: string | null;
   notionUrl: string | null;
   designer: { id: string; displayName: string; avatarColor: string | null } | null;
-  doctype: { id: string; displayName: string } | null;
+  doctype: { id: string; displayName: string; qaChecklist?: string[] } | null;
   designStatus: { id: string; notionKey: string; displayName: string } | null;
   taskAccounts: { account: { id: string; displayName: string; color: string | null } }[];
   canvaLinks: { id: string; url: string }[];
@@ -17,6 +17,9 @@ interface QATask {
   pages: string | number | null;
   languages?: string[];
   license?: string | null;
+  bodyText?: string | null;
+  dropboxFiles?: unknown;
+  productionUnit?: { platform: { outputType: string } } | null;
 }
 
 interface Props {
@@ -27,7 +30,7 @@ interface Props {
   onDropTask: (taskId: string, targetNotionKey: string) => Promise<boolean>;
   draggingTaskId: string | null;
   onDragStateChange: (taskId: string | null) => void;
-  onOpenTask: (task: QATask) => void;
+  onOpenTask: (task: QATask, tab?: 'checklist') => void;
 }
 
 /** Columns can hold hundreds of tasks, so only render a slice until asked otherwise. */

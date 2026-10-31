@@ -19,6 +19,24 @@ interface UnitRow {
   dropboxRoot: string | null;
   platform: { id: string; name: string; outputType: string };
   _count: { tasks: number };
+  /** Designer yang punya task di production ini, urut jumlah task. */
+  designers: string[];
+  /** Doctype aktif platform production ini. */
+  doctypes: string[];
+}
+
+/** Maks. 2 nama, sisanya "+N"; daftar lengkap di tooltip native. */
+function NameList({ names, empty }: { names: string[]; empty: string }) {
+  if (names.length === 0) return <span className="text-gray-400">{empty}</span>;
+  const shown = names.slice(0, 2);
+  return (
+    <span className="flex flex-wrap items-center gap-1" title={names.join(', ')}>
+      {shown.map((n) => (
+        <span key={n} className="max-w-[140px] truncate border border-[#ebebeb] bg-gray-50 px-1.5 py-0.5 text-[11px] font-semibold text-gray-600 dark:border-[#272a34] dark:bg-[#16181d] dark:text-gray-300">{n}</span>
+      ))}
+      {names.length > shown.length && <span className="text-[11px] font-semibold text-gray-500 dark:text-gray-400">+{names.length - shown.length}</span>}
+    </span>
+  );
 }
 
 interface Props {
@@ -129,6 +147,8 @@ export default function ProductionHubClient({ units, latestSyncLog }: Props) {
                   <th className="px-4 py-3 font-bold">Production</th>
                   <th className="px-4 py-3 font-bold">Platform</th>
                   <th className="px-4 py-3 font-bold">Output</th>
+                  <th className="px-4 py-3 font-bold">Designer</th>
+                  <th className="px-4 py-3 font-bold">Doctype</th>
                   <th className="px-4 py-3 font-bold text-right">Task</th>
                   <th className="px-4 py-3 w-8" />
                 </tr>
@@ -136,7 +156,7 @@ export default function ProductionHubClient({ units, latestSyncLog }: Props) {
               <tbody>
                 {visibleUnits.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-gray-400">
+                    <td colSpan={7} className="px-4 py-8 text-center text-gray-400">
                       Belum ada production.
                     </td>
                   </tr>
@@ -157,6 +177,8 @@ export default function ProductionHubClient({ units, latestSyncLog }: Props) {
                     <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
                       {OUTPUT_LABEL[unit.platform.outputType] ?? unit.platform.outputType}
                     </td>
+                    <td className="px-4 py-3"><NameList names={unit.designers} empty="Belum ada" /></td>
+                    <td className="px-4 py-3"><NameList names={unit.doctypes} empty="Belum ada" /></td>
                     <td className="px-4 py-3 text-right tabular-nums text-[#262626] dark:text-white">{unit._count.tasks}</td>
                     <td className="px-4 py-3 text-gray-400">
                       <div className="flex items-center gap-1 justify-end">

@@ -39,6 +39,41 @@ export const DEFAULT_FIELD_ALIASES: Record<FieldKey, string[]> = {
   canvaLink: ['Template Link', 'Canva Link', 'Canva', 'URL'],
 };
 
+/** Dipakai rumus billing & payroll: tidak bisa dimatikan per production. */
+export const REQUIRED_FIELD_KEYS: FieldKey[] = ['name', 'designer', 'doctype', 'designStatus', 'pages', 'qtySubmit', 'payrollMonth'];
+
+/** Boleh dimatikan, tapi fitur lain jadi kurang lengkap (filter bulan, akun di billing). */
+export const RECOMMENDED_FIELD_KEYS: FieldKey[] = ['taskMonth', 'brand'];
+
+/** Label & tipe Notion yang diterima per field inti (sama dengan CORE_PROPERTIES di notion-provision, aman untuk client). */
+export const CORE_FIELD_META: Record<FieldKey, { label: string; types: string[] }> = {
+  name: { label: 'Judul task', types: ['title'] },
+  designer: { label: 'Designer', types: ['select'] },
+  designerStatus: { label: 'Designer Status', types: ['select'] },
+  doctype: { label: 'Doctype', types: ['select'] },
+  designStatus: { label: 'Design Status', types: ['status'] },
+  pages: { label: 'Pages', types: ['number'] },
+  qtySubmit: { label: 'QTY-Submit', types: ['number'] },
+  license: { label: 'License', types: ['select'] },
+  languages: { label: 'Bahasa (IND/ENG)', types: ['multi_select'] },
+  dateApproved: { label: 'Date Approved', types: ['date'] },
+  taskMonth: { label: 'Task Month', types: ['select'] },
+  payrollMonth: { label: 'Payroll Month', types: ['select'] },
+  priority: { label: 'Priority', types: ['select'] },
+  createdTime: { label: 'Created Time', types: ['created_time'] },
+  dateStarted: { label: 'Date Started', types: ['date'] },
+  dateCompleted: { label: 'Date Completed', types: ['date'] },
+  datePO: { label: 'Date PO', types: ['date'] },
+  dateReject: { label: 'Date Reject', types: ['date'] },
+  poolScore: { label: 'Pool Score', types: ['number'] },
+  brand: { label: 'Brand / Account', types: ['multi_select'] },
+  canvaLink: { label: 'Template Link', types: ['url', 'files', 'rich_text'] },
+};
+
+export function isFieldEnabled(key: FieldKey, disabled?: string[] | null): boolean {
+  return REQUIRED_FIELD_KEYS.includes(key) || !(disabled ?? []).includes(key);
+}
+
 function candidatesFor(key: FieldKey, mapping?: FieldMapping | null): string[] {
   const configured = mapping?.[key];
   const custom = Array.isArray(configured) ? configured : configured ? [configured] : [];
@@ -54,6 +89,18 @@ export function resolvePropertyName(
   return candidatesFor(key, mapping).find((name) => properties[name] !== undefined);
 }
 
+/**
+ * Nama properti tujuan saat menulis ke Notion: kandidat pertama (mapping, lalu alias default) yang ada di skema
+ * database. Undefined = properti tidak ada di database ini, jadi dilewati.
+ */
+export function resolveWriteName(
+  schemaProps: Record<string, any>,
+  key: FieldKey,
+  mapping?: FieldMapping | null,
+): string | undefined {
+  return candidatesFor(key, mapping).find((name) => schemaProps[name] !== undefined);
+}
+
 /** Ambil objek properti Notion untuk kunci logis; undefined bila tidak ada. */
 export function getProperty(
   properties: Record<string, any>,
@@ -65,7 +112,7 @@ export function getProperty(
 }
 
 /** Semua nama properti yang sudah "dikenal" (mapped), dipakai untuk memisahkan custom field. */
-function knownPropertyNames(mapping?: FieldMapping | null): Set<string> {
+export function knownPropertyNames(mapping?: FieldMapping | null): Set<string> {
   const known = new Set<string>();
   (Object.keys(DEFAULT_FIELD_ALIASES) as FieldKey[]).forEach((key) => {
     candidatesFor(key, mapping).forEach((name) => known.add(name));

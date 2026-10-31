@@ -5,13 +5,16 @@ const money = (n: number) => `IDR ${n.toLocaleString('id-ID')}`;
 const initials = (name: string) => name.split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
 
 /** Kelompok "Order Bundle" di Payout Breakdown: order yang Payout Month-nya = bulan terpilih. */
-export default function BundlePayoutGroup({ rows, tabHref }: { rows: BundleOrderRow[]; tabHref: string }) {
+export default function BundlePayoutGroup({ rows, pending, tabHref }: { rows: BundleOrderRow[]; pending: number; tabHref: string }) {
   const subtotal = rows.filter((r) => r.completed).reduce((n, r) => n + r.price, 0);
   return (
     <>
       <div className="flex items-center justify-between gap-2 px-4 py-2.5 bg-emerald-50/70 dark:bg-emerald-500/5 border-y border-[#f0f0f0] dark:border-[#272a34] font-sans text-xs font-bold text-gray-900 dark:text-white">
         <span>Order Bundle <span className="font-medium text-gray-500">· {rows.length} order · dihitung payout bila semua task approved</span></span>
-        <span className="text-emerald-600 dark:text-emerald-400">{money(subtotal)}</span>
+        <span className="flex items-center gap-3">
+          {pending > 0 && <span className="font-medium text-amber-600 dark:text-amber-400">{money(pending)} menunggu task approved</span>}
+          <span className="text-emerald-600 dark:text-emerald-400">{money(subtotal)}</span>
+        </span>
       </div>
       {rows.length === 0 && <div className="p-6 text-center text-xs font-sans text-gray-400 dark:text-gray-500">Belum ada order bundle dengan Payout Month bulan ini.</div>}
       {rows.map((r) => {
@@ -36,6 +39,7 @@ export default function BundlePayoutGroup({ rows, tabHref }: { rows: BundleOrder
               ))}
             </div>
             <div className="flex items-center gap-3 w-full lg:w-auto justify-end">
+              {!r.completed && <span className="px-3 py-1 text-[11px] font-bold border border-amber-200 bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:border-amber-500/20 dark:text-amber-400">Menunggu task approved</span>}
               <span className={`px-3 py-1 text-[11px] font-bold border ${r.paid ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:border-emerald-500/20 dark:text-emerald-400' : r.dpPaid ? 'border-sky-200 bg-sky-50 text-sky-700 dark:bg-sky-500/10 dark:border-sky-500/20 dark:text-sky-400' : 'border-gray-200 bg-gray-50 text-gray-500 dark:bg-[#16181d] dark:border-[#272a34]'}`}>{r.paid ? 'Lunas' : r.dpPaid ? 'DP' : 'Unpaid'}</span>
               <Link href={tabHref} className="border border-[#f0f0f0] dark:border-[#272a34] bg-white dark:bg-[#16181d] px-3 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#20232b]">Kelola →</Link>
             </div>

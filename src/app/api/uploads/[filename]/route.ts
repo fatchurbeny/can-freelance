@@ -4,6 +4,18 @@ import path from 'path';
 
 export const dynamic = 'force-dynamic';
 
+/**
+ * Sengaja publik (tanpa authorizeApi): URL gambar referensi ditanam di body Notion dan diambil
+ * Notion tanpa cookie sesi. Nama file acak (`ref-<ts>-<hex>.webp`, lihat api/upload) dan
+ * hanya tipe gambar raster yang dilayani.
+ */
+const CONTENT_TYPES: Record<string, string> = {
+  '.webp': 'image/webp',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+};
+
 export async function GET(
   request: Request,
   context: { params: Promise<{ filename: string }> }
@@ -13,6 +25,10 @@ export async function GET(
 
     // Sanitize filename to prevent directory traversal
     const safeFilename = path.basename(filename);
+    const contentType = CONTENT_TYPES[path.extname(safeFilename).toLowerCase()];
+    if (!contentType) {
+      return new NextResponse('File not found', { status: 404 });
+    }
     
     // Check in storage/uploads or public/uploads
     const pathsToTry = [
@@ -33,17 +49,12 @@ export async function GET(
     }
 
     const fileBuffer = fs.readFileSync(targetPath);
-    const ext = path.extname(safeFilename).toLowerCase();
-    
-    let contentType = 'image/webp';
-    if (ext === '.png') contentType = 'image/png';
-    else if (ext === '.jpg' || ext === '.jpeg') contentType = 'image/jpeg';
-    else if (ext === '.svg') contentType = 'image/svg+xml';
 
     return new NextResponse(new Uint8Array(fileBuffer), {
       headers: {
         'Content-Type': contentType,
         'Cache-Control': 'public, max-age=31536000, immutable',
+        'X-Content-Type-Options': 'nosniff',
       },
     });
   } catch (error: any) {

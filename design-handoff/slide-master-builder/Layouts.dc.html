@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Layout dan theme</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#FF5B1F}a:hover{color:#D9440E}
+</style>
+</helmet>
+<div style="min-height: 1180px; display: flex; flex-wrap: wrap; background: #FFFFFF; color: #18181B; font-family: Inter, system-ui, sans-serif; font-size: 14px; line-height: 1.45">
+
+  <!-- ============ SIDEBAR impro.std ============ -->
+  <aside style="flex: 1 1 220px; max-width: 262px; min-width: 0; border-right: 1px solid #ECECEF; display: flex; flex-direction: column; background: #FFFFFF">
+    <div style="height: 70px; box-sizing: border-box; padding: 0 22px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #ECECEF">
+      <span style="width: 32px; height: 32px; border-radius: 9px; background: #FF5B1F; color: #FFFFFF; display: grid; place-items: center; font-size: 13px; font-weight: 700; box-shadow: 0 2px 8px rgba(255,91,31,0.35)">IS</span>
+      <span style="font-size: 17px; font-weight: 600">impro.std</span>
+    </div>
+    <nav aria-label="Navigasi utama" style="padding: 26px 14px; display: flex; flex-direction: column; gap: 2px; flex: 1">
+      <sc-for list="{{nav}}" as="g" hint-placeholder-count="3">
+        <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; color: #71717A; padding: {{g.pad}}">{{g.label}}</div>
+        <sc-for list="{{g.items}}" as="i" hint-placeholder-count="3">
+          <a href="{{i.href}}" style="box-sizing: border-box; {{i.row}}">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="{{i.ic}}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{i.d}}"/></svg>
+            <span style="flex: 1">{{i.t}}</span>
+            <sc-if value="{{i.hasBadge}}" hint-placeholder-val="{{ false }}"><span style="font-size: 12px; font-weight: 600; padding: 1px 7px; border-radius: 6px; background: #FF5B1F; color: #FFFFFF">{{i.badge}}</span></sc-if>
+            <sc-if value="{{i.hasChev}}" hint-placeholder-val="{{ false }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="{{i.chevC}}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{i.chev}}"/></svg></sc-if>
+          </a>
+          <sc-if value="{{i.hasKids}}" hint-placeholder-val="{{ false }}">
+            <div style="margin-left: 22px; padding-left: 14px; border-left: 1px solid #E4E4E7; display: flex; flex-direction: column; gap: 4px; padding-block: 4px 8px">
+              <sc-for list="{{i.kids}}" as="k" hint-placeholder-count="4"><a href="{{k.href}}" style="box-sizing: border-box; {{k.s}}">{{k.t}}</a></sc-for>
+            </div>
+          </sc-if>
+        </sc-for>
+      </sc-for>
+    </nav>
+    <div style="border-top: 1px solid #ECECEF">
+      <button type="button" style="width: 100%; font: inherit; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 15px; border: none; border-bottom: 1px solid #ECECEF; background: #F7F7F8; color: #18181B; cursor: pointer; min-height: 50px">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.9-4M4 13a8 8 0 0 0 14.9 4"/><path d="M4 4v4h4M20 20v-4h-4"/></svg>Sync Now (Daily 00:00)</button>
+      <div style="display: flex; justify-content: space-between; padding: 13px 18px; font-size: 13.5px; border-bottom: 1px solid #ECECEF">
+        <span style="color: #71717A">Status</span>
+        <span style="display: inline-flex; align-items: center; gap: 7px; color: #15803D; font-weight: 600"><span style="width: 7px; height: 7px; border-radius: 50%; background: #22C55E"></span>Postgres Active</span>
+      </div>
+      <div style="padding: 13px 18px 16px; font-size: 13.5px; display: flex; flex-direction: column; gap: 2px">
+        <span style="color: #71717A">Terakhir Sync :</span>
+        <span style="font-weight: 600">Success - 0 Data</span>
+        <span style="color: #71717A; font-size: 12.5px">Today • 13.00.03</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column">
+    <header style="min-height: 70px; box-sizing: border-box; padding: 0 28px; border-bottom: 1px solid #E9E9EC; display: flex; flex-wrap: nowrap; align-items: center; justify-content: space-between; gap: 12px">
+      <div style="display: flex; align-items: center; gap: 10px; font-size: 17px; white-space: nowrap; min-width: 0">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#FF5B1F" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h18v12H3zM3 9h18M8 9v8M8 21h8M12 17v4"/></svg>
+        <a href="Main.dc.html" style="color: #71717A; text-decoration: none">Slide Master Builder</a><span style="color: #D4D4D8">/</span><span style="font-weight: 600">Business Proposal Deck</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px; flex-wrap: nowrap; flex: none">
+        <label style="display: flex; align-items: center; gap: 10px; border: 1px solid #E4E4E7; border-radius: 10px; padding: 0 8px 0 12px; height: 40px; color: #A1A1AA; min-width: 160px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+          <input type="search" placeholder="Search" aria-label="Search" style="border: none; outline: none; font: inherit; width: 80px; color: #18181B; background: transparent">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #52525B; background: #F4F4F5; border: 1px solid #E4E4E7; border-radius: 5px; padding: 1px 6px">⌘ K</span>
+        </label>
+        <button type="button" aria-label="Mode gelap" style="width: 40px; height: 40px; border: 1px solid #E4E4E7; border-radius: 10px; background: #FFFFFF; display: grid; place-items: center; cursor: pointer">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#3F3F46" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>
+        </button>
+        <button type="button" style="height: 40px; display: flex; align-items: center; gap: 10px; border: 1px solid #E4E4E7; border-radius: 10px; background: #FFFFFF; padding: 0 14px; font: inherit; font-weight: 500; cursor: pointer; color: #18181B">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF5B1F" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Semua Bulan
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <button type="button" style="height: 40px; display: flex; align-items: center; gap: 10px; border: 1px solid #E4E4E7; border-radius: 10px; background: #FFFFFF; padding: 0 12px; font: inherit; font-weight: 500; cursor: pointer; color: #18181B">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF5B1F" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Admin
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #52525B; background: #F4F4F5; border: 1px solid #E4E4E7; border-radius: 5px; padding: 1px 6px">FT-001</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div style="flex: 1; padding: 36px 28px; background-color: #FAFAFA; background-image: radial-gradient(#E4E4E7 1px, transparent 1px); background-size: 18px 18px">
+      <section style="background: #FFFFFF; border: 1px solid #E4E4E7">
+        <!-- tabs -->
+        <div role="tablist" style="display: flex; flex-wrap: wrap; border-bottom: 1px solid #E4E4E7; background: #FAFAFA">
+          <a href="Main.dc.html" role="tab" aria-selected="false" style="display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-right: 1px solid #E4E4E7; color: #52525B; font-size: 15px; text-decoration: none">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M7 4v16M12 4v10M17 4v6"/></svg>Antrean
+            <span style="font-size: 12px; font-weight: 600; background: #F4F4F5; color: #3F3F46; border-radius: 6px; padding: 2px 7px">6</span></a>
+          <a href="Review.dc.html" role="tab" aria-selected="false" style="display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-right: 1px solid #E4E4E7; color: #52525B; font-size: 15px; text-decoration: none">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/></svg>Review Overlay
+            <span style="font-size: 12px; font-weight: 600; background: #F4F4F5; color: #3F3F46; border-radius: 6px; padding: 2px 7px">10</span></a>
+          <a href="Layouts.dc.html" role="tab" aria-selected="true" style="display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-right: 1px solid #E4E4E7; border-bottom: 2px solid #FF5B1F; margin-bottom: -1px; background: #FFFFFF; color: #18181B; font-weight: 600; font-size: 15px; text-decoration: none">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#FF5B1F" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M3 9h18M9 9v11"/></svg>Layout &amp; Theme
+            <span style="font-size: 12px; font-weight: 600; background: #F4F4F5; color: #3F3F46; border-radius: 6px; padding: 2px 7px">19</span></a>
+          <a href="Export.dc.html" role="tab" aria-selected="false" style="display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-right: 1px solid #E4E4E7; color: #52525B; font-size: 15px; text-decoration: none">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Ekspor &amp; Verifikasi</a>
+        </div>
+        <!-- toolbar -->
+        <div style="display: flex; flex-wrap: wrap; align-items: stretch; border-bottom: 1px solid #E4E4E7; min-height: 50px">
+          <button type="button" aria-label="Cari layout" style="width: 52px; border: none; border-right: 1px solid #E4E4E7; background: #FFFFFF; display: grid; place-items: center; cursor: pointer">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#3F3F46" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+          </button>
+          <button type="button" style="display: flex; align-items: center; gap: 10px; padding: 0 18px; border: none; border-right: 1px solid #E4E4E7; background: #FFFFFF; font: inherit; color: #27272A; cursor: pointer">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v16M6 14l6 6 6-6"/></svg>Urutan Slide
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <button type="button" style="display: flex; align-items: center; gap: 10px; padding: 0 18px; border: none; border-right: 1px solid #E4E4E7; background: #FFFFFF; font: inherit; color: #27272A; cursor: pointer">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M4 12h16M4 17h7"/><circle cx="17" cy="7" r="2"/><circle cx="14" cy="17" r="2"/></svg>Filter
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <span style="flex: 1"></span>
+          <a href="Export.dc.html" style="display: flex; align-items: center; gap: 10px; padding: 0 26px; background: #FF5B1F; color: #FFFFFF; font-weight: 600; letter-spacing: 0.04em; text-decoration: none; min-height: 50px">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 11v6M9 14h6"/></svg>BUAT SPESIFIKASI</a>
+        </div>
+
+        <!-- kolom kanban -->
+        <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr))">
+          <sc-for list="{{cols}}" as="col" hint-placeholder-count="4">
+            <div style="border-right: 1px solid #E4E4E7; min-width: 0">
+              <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid #E4E4E7">
+                <span style="display: flex; align-items: center; gap: 8px; font-weight: 600"><span style="box-sizing: border-box; {{col.dot}}"></span>{{col.title}}</span>
+                <span style="min-width: 22px; height: 22px; box-sizing: border-box; padding: 0 6px; border: 1px solid #E4E4E7; border-radius: 5px; display: grid; place-items: center; font-size: 12px; font-weight: 600">{{col.count}}</span>
+              </div>
+              <sc-for list="{{col.cards}}" as="c" hint-placeholder-count="4">
+                <div style="padding: 14px 16px; border-bottom: 1px solid #E4E4E7; display: flex; flex-direction: column; gap: 9px">
+                  <div style="display: flex; gap: 10px; align-items: flex-start; justify-content: space-between">
+                    <span style="display: flex; gap: 9px; align-items: flex-start; min-width: 0">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg>
+                      <span style="font-size: 14.5px; overflow-wrap: anywhere">{{c.name}}</span>
+                    </span>
+                    <sc-if value="{{c.hasThumb}}" hint-placeholder-val="{{ true }}">
+                      <span style="position: relative; flex: none; display: block; width: 64px; height: 36px; border-radius: 2px; overflow: hidden; background: {{c.bg}}; box-shadow: 0 0 0 1px rgba(24,24,27,0.1)">
+                        <sc-for list="{{c.blocks}}" as="b" hint-placeholder-count="3">
+                          <span style="position: absolute; box-sizing: border-box; {{b.s}}"></span>
+                        </sc-for>
+                      </span>
+                    </sc-if>
+                  </div>
+                  <sc-if value="{{c.hasNote}}" hint-placeholder-val="{{ false }}">
+                    <p style="margin: 0; font-size: 12.5px; color: #52525B">{{c.note}}</p>
+                  </sc-if>
+                  <sc-if value="{{c.hasSwatch}}" hint-placeholder-val="{{ false }}">
+                    <div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px">
+                      <sc-for list="{{c.swatches}}" as="w" hint-placeholder-count="12">
+                        <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0">
+                          <span style="box-sizing: border-box; {{w.s}}"></span>
+                          <span style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #71717A; overflow: hidden; white-space: nowrap; text-overflow: ellipsis">{{w.k}}</span>
+                        </span>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+                  <span style="display: flex; flex-wrap: wrap; gap: 5px">
+                    <sc-for list="{{c.pills}}" as="p" hint-placeholder-count="4">
+                      <span style="box-sizing: border-box; {{p.s}}">{{p.t}}</span>
+                    </sc-for>
+                  </span>
+                  <sc-if value="{{c.hasActions}}" hint-placeholder-val="{{ false }}">
+                    <span style="display: flex; gap: 6px">
+                      <button type="button" style="font: inherit; font-size: 12.5px; font-weight: 600; padding: 6px 12px; border-radius: 7px; border: none; background: #FF5B1F; color: #FFFFFF; cursor: pointer; min-height: 32px">Terima</button>
+                      <button type="button" style="font: inherit; font-size: 12.5px; padding: 6px 10px; border-radius: 7px; border: 1px solid #E4E4E7; background: #FFFFFF; color: #18181B; cursor: pointer; min-height: 32px">Gabung ke Title Only</button>
+                    </span>
+                  </sc-if>
+                </div>
+              </sc-for>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1180}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const I = {
+      grid: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z',
+      prod: 'M8 3h11a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM4 7v12a2 2 0 0 0 2 2h10',
+      smb: 'M3 5h18v12H3zM3 9h18M8 9v8M8 21h8M12 17v4',
+      team: 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21a7 7 0 0 1 14 0M16 3.5a4 4 0 0 1 0 7.5M18 14a6 6 0 0 1 4 7',
+      rate: 'M3 6h18v12H3zM3 10h18M7 15h3',
+      bill: 'M6 3h9l5 5v13H6zM14 3v6h6M9 13h6M9 17h6',
+      role: 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21a7 7 0 0 1 12-5M16 15l1.5 1.5L21 13',
+      gear: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 13a7.5 7.5 0 0 0 0-2l2-1.5-2-3.5-2.4 1a7.5 7.5 0 0 0-1.7-1L15 3.5h-4l-.4 2.5a7.5 7.5 0 0 0-1.7 1l-2.4-1-2 3.5 2 1.5a7.5 7.5 0 0 0 0 2l-2 1.5 2 3.5 2.4-1a7.5 7.5 0 0 0 1.7 1l.4 2.5h4l.4-2.5a7.5 7.5 0 0 0 1.7-1l2.4 1 2-3.5z'
+    };
+    const NAV = (act) => {
+      const row = (on) => 'display:flex;align-items:center;gap:10px;padding:9px 8px;border-radius:8px;text-decoration:none;font-size:15px;white-space:nowrap;' + (on ? 'background:#FFF4EE;color:#D9440E;font-weight:600' : 'color:#27272A');
+      const kid = (on) => 'display:block;padding:7px 12px;border-radius:8px;text-decoration:none;font-size:14.5px;' + (on ? 'border:1px solid #E4E4E7;background:#FFFFFF;color:#FF5B1F;font-weight:500;box-shadow:0 1px 2px rgba(24,24,27,.05)' : 'border:1px solid transparent;color:#3F3F46');
+      const it = (t, d, o) => Object.assign({ t, d, href: '#', ic: '#FF5B1F', row: row(false), hasBadge: false, badge: '', hasChev: false, chev: '', chevC: '#A1A1AA', hasKids: false, kids: [] }, o || {});
+      const open = act === 'sc_elements';
+      return [
+        { label: 'GET STARTED', pad: '0 10px 10px', items: [
+          it('Overview', I.grid, { ic: '#71717A', hasChev: true, chev: 'M9 6l6 6-6 6', chevC: '#FF5B1F' }),
+          it('Production', I.prod, { href: 'Kanban.dc.html', hasChev: true, chev: open ? 'M6 9l6 6 6-6' : 'M9 6l6 6-6 6', hasKids: open, kids: [
+            { t: 'Freelance Lamongan', href: '#', s: kid(false) }, { t: 'SC_Elements', href: 'Kanban.dc.html', s: kid(true) },
+            { t: 'SC_Canva', href: '#', s: kid(false) }, { t: '+  Tambah Production', href: '#', s: kid(false) }] }),
+          it('Slide Master Builder', I.smb, { href: 'Main.dc.html', row: row(act === 'smb'), hasBadge: true, badge: '6' })
+        ] },
+        { label: 'BUILD', pad: '22px 10px 10px', items: [it('Account & Team', I.team), it('Rate Card', I.rate), it('Billing Statement', I.bill)] },
+        { label: 'MANAGE & OBSERVE', pad: '22px 10px 10px', items: [it('User & Role', I.role), it('Notion Config', I.gear)] }
+      ];
+    };
+    const base = 'font-size:12px;padding:1px 7px;border-radius:5px;white-space:nowrap;display:inline-block;';
+    const P = {
+      indigo: base + 'border:1px solid #C7D2FE;background:#EEF2FF;color:#4F46E5',
+      green: base + 'border:1px solid #BBF7D0;background:#F0FDF4;color:#15803D',
+      neutral: base + 'border:1px solid #E4E4E7;background:#FAFAFA;color:#3F3F46;font-weight:500',
+      purple: base + 'border:1px solid #E9D5FF;background:#FAF5FF;color:#9333EA',
+      red: base + 'border:1px solid #FECACA;background:#FEF2F2;color:#DC2626',
+      orange: base + 'border:1px solid #FED7AA;background:#FFF7ED;color:#C2410C',
+      pink: base + 'border:1px solid #FBCFE8;background:#FDF2F8;color:#DB2777'
+    };
+    const p = (t, k) => ({ t, s: P[k] });
+    const r = (l, t, w, h, bg, extra) => ({ s: 'left:' + l + '%;top:' + t + '%;width:' + w + '%;height:' + h + '%;background:' + bg + ';' + (extra || '') });
+    const head = [r(4, 5, 10, 10, '#FF5504'), r(4, 26, 36, 9, '#18181B')];
+    const pic = (l, t, w, h) => r(l, t, w, h, '#BDB5A6');
+    const card = (o) => Object.assign({ hasThumb: false, hasNote: false, hasSwatch: false, hasActions: false, blocks: [], swatches: [], bg: '#E3DED4', note: '', pills: [] }, o);
+    const lay = (name, slides, ph, blocks, conf, bg) => card({ name, hasThumb: true, blocks, bg: bg || '#E3DED4',
+      pills: [p(slides, 'neutral'), p(conf + '%', 'neutral')].concat(ph.map((x) => p(x, 'green'))) });
+
+    const master = [
+      card({ name: 'Logo', pills: [p('Statis', 'indigo'), p('20/20', 'neutral'), p('fill accent1', 'orange')] }),
+      card({ name: 'Label header', pills: [p('Statis', 'indigo'), p('18/20', 'neutral'), p('12pt', 'neutral')] }),
+      card({ name: 'Gaya teks Title', note: 'Dipakai semua title placeholder. Kata kedua tetap diberi accent1 di slide.', hasNote: true,
+        pills: [p('48pt', 'neutral'), p('line 100%', 'neutral'), p('+mj-lt', 'indigo')] }),
+      card({ name: 'Gaya teks Body', note: 'Level 1 tanpa bullet, level 2 ke bawah memakai bullet.', hasNote: true,
+        pills: [p('12pt', 'neutral'), p('tanpa bullet', 'neutral'), p('+mn-lt', 'indigo')] })
+    ];
+    const layouts = [
+      lay('Cover', 'S1', ['Judul', 'Tahun', 'Tag', 'Tagline', 'Foto'], [r(71, 0, 29, 100, '#18181B'), pic(71, 0, 29, 50), r(4, 55, 50, 28, '#E3DED4')], 96, '#FF5504'),
+      lay('Title Only', 'S9 · S10 · S12 · S15', ['Judul', 'Nomor', 'Tag'], head, 92),
+      lay('Title + 2 Photos', 'S2', ['Judul', 'Nomor', 'Tag', 'Foto ×2'], head.concat([pic(28, 40, 16, 30), pic(61, 40, 16, 30)]), 100),
+      lay('Team - 6 Photos', 'S6', ['Judul', 'Nomor', 'Tag', 'Foto ×6'], head.concat([pic(40, 18, 13, 32), pic(58, 18, 13, 32), pic(76, 18, 13, 32), pic(40, 56, 13, 32), pic(58, 56, 13, 32), pic(76, 56, 13, 32)]), 100),
+      lay('Title + Photo Right', 'S4', ['Judul', 'Nomor', 'Tag', 'Foto'], head.concat([pic(72, 22, 22, 52)]), 100),
+      lay('Title + 3 Photos', 'S11', ['Judul', 'Nomor', 'Tag', 'Foto ×3'], head.concat([pic(4, 42, 28, 42), pic(37, 42, 28, 42), pic(70, 42, 26, 42)]), 100),
+      lay('Title + 4 Photos Mosaic', 'S16', ['Judul', 'Nomor', 'Tag', 'Foto ×4'], head.concat([pic(44, 20, 16, 32), pic(63, 20, 16, 32), pic(30, 56, 13, 32), pic(44, 56, 16, 32)]), 100),
+      lay('Closing', 'S20', ['Judul', 'Tahun', 'Tag', 'Tagline', 'Foto'], [r(0, 0, 69, 100, '#18181B'), pic(0, 0, 69, 43), r(4, 64, 55, 22, '#E3DED4')], 96, '#FF5504'),
+      card({ name: '+ 9 layout foto lainnya', hasNote: true, note: '2 Photos Staggered, Photo Center, 2 Photos Offset, Photo Right Bleed, Photo Left, 3 Photos Cascade, Mockup Frame, 2 Rounded Frames, 2 Shaped Frames',
+        pills: [p('100%', 'neutral'), p('Sudah ada', 'neutral')] })
+    ];
+    const llm = [
+      card({ name: 'Split Orange', hasThumb: true, blocks: [r(53, 0, 47, 100, '#FF5504')].concat(head), hasNote: true, hasActions: true,
+        note: 'Slide 9 memakai layout kosong, tapi panel oranye kanannya konsisten. Diusulkan jadi layout agar panel terkunci.',
+        pills: [p('S9', 'neutral'), p('64%', 'neutral'), p('Usulan LLM', 'purple'), p('Panel', 'green')] }),
+      card({ name: 'Split Dark', hasThumb: true, blocks: [r(53, 0, 47, 100, '#18181B')].concat(head), hasNote: true, hasActions: true,
+        note: 'Pola sama dengan Split Orange, panel hitam untuk slide chart.',
+        pills: [p('S12', 'neutral'), p('64%', 'neutral'), p('Usulan LLM', 'purple'), p('Panel', 'green')] }),
+      card({ name: 'Nama "Team - 6 Photos"', hasNote: true, note: 'Nama asli "6_Title Slide". Nama baru diusulkan dari isi slide 6.',
+        pills: [p('S6', 'neutral'), p('Nama', 'purple'), p('Diterima', 'green')] })
+    ];
+    const sw = (k, hex, flag) => ({ k, s: 'display:block;height:22px;border-radius:4px;background:#' + hex + ';box-shadow:inset 0 0 0 1px rgba(24,24,27,.12)' + (flag ? ';outline:2px solid #EA580C;outline-offset:1px' : '') });
+    const audit = [
+      card({ name: 'Palet theme', hasSwatch: true,
+        swatches: [sw('dk1', '000000'), sw('lt1', 'E3DED4'), sw('dk2', '000000'), sw('lt2', 'E3DED4', true), sw('acc1', 'FF5504'), sw('acc2', 'E97132', true),
+          sw('acc3', 'FFFFFF'), sw('acc4', '0F9ED5', true), sw('acc5', 'A02B93', true), sw('acc6', '4EA72E', true), sw('hlink', '467886'), sw('fol', '96607D')],
+        pills: [p('Stack Sans Notch', 'neutral'), p('Plus Jakarta Sans', 'neutral')] }),
+      card({ name: 'lt2 identik dengan lt1', hasNote: true, note: 'Saran: beri lt2 warna terang yang berbeda.', pills: [p('Theme', 'orange'), p('Sedang', 'pink')] }),
+      card({ name: 'Accent 2, 4, 5, 6 tidak dipakai', hasNote: true, note: 'Isinya sisa palet bawaan Office. Saran: ganti dengan turunan oranye dan netral.', pills: [p('Theme', 'orange'), p('Rendah', 'neutral')] }),
+      card({ name: 'Warna chart ditulis langsung', hasNote: true, note: '595959 dan D9D9D9. Saran: tx1 dengan lumMod agar ikut theme.', pills: [p('S10', 'neutral'), p('srgbClr ×3', 'neutral'), p('High', 'red')] }),
+      card({ name: 'Font ditulis langsung', hasNote: true, note: '"Plus Jakarta Sans" pada teks chart. Saran: ganti ke +mn-lt.', pills: [p('S10', 'neutral'), p('latin', 'neutral'), p('Sedang', 'pink')] })
+    ];
+    const dot = (c) => 'width:8px;height:8px;border-radius:50%;display:inline-block;background:' + c;
+    const cols = [
+      { title: 'Master', count: 4, dot: dot('#6366F1'), cards: master },
+      { title: 'Layout', count: 17, dot: dot('#22C55E'), cards: layouts },
+      { title: 'Usulan LLM', count: 3, dot: dot('#A855F7'), cards: llm },
+      { title: 'Audit Theme', count: 4, dot: dot('#F97316'), cards: audit }
+    ];
+    return { nav: NAV('smb'), cols };
+  }
+}
+</script>
+</body>
+</html>

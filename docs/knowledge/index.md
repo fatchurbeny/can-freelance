@@ -28,7 +28,7 @@ Untuk menghemat konsumsi token, **baca hanya modul yang relevan** dengan tugas y
    - Buka modul spesifik di atas sesuai fokus pengerjaan (contoh: jika mengerjakan UI/Komponen, baca `modules.md` & `issues-and-fixes.md`).
 2. **Penelusuran Kode Teknis (AST Call Graph)**:
    - Jika membutuhkan penelusuran panggilan fungsi atau dependensi import level rendah, periksa `graph.json` jika tersedia.
-   - Struktur: `nodes[]` (`id`, `label`, `type` = page|component|action|model|doc, `filepath`) dan `links[]` (`source`, `target`, `relation` = renders|invokes|queries|enforces|imports). Jangan dibaca utuh (±80 KB); filter dengan `jq`.
+   - Struktur: `nodes[]` (`id`, `label`, `type` = page|component|action|model|doc, `filepath`) dan `links[]` (`source`, `target`, `relation` = renders|invokes|queries|enforces|imports). Prefix id: `page:/route`, `layout:/route`, `component:Nama`, `action:<file actions>`, `lib:<file src/lib>` (kecuali `action:sync-notion`/`action:queries`), `api:/route`, `model:NamaPrisma`. Ditemukan otomatis oleh `scripts/graphify-parser.ts`. Jangan dibaca utuh (±150 KB); filter dengan `jq`.
    - Contoh: `jq '.links[] | select(.target=="component:TopBar") | .source' graph.json`
    - Jika terlihat usang, jalankan `npm run graphify`.
 3. **Akhir Sesi**:
@@ -36,8 +36,10 @@ Untuk menghemat konsumsi token, **baca hanya modul yang relevan** dengan tugas y
 
 - [Multi-Production Plan](multi-production-plan.md) — rencana bertahap production per platform (Fase 1–7)
 - [Spec Tab Parameter Issue & Email Notification](production-tabs-spec.md) — konsep + akses Art Director / Project Manager
-- [Backlog: Resources Library](../backlog/resources-library.md) — katalog aset Canva per folder (tab Icon/Illustrasi); DITUNDA menunggu meeting soal MFA akun Canva
+- [Backlog: Resources Library / Asset Library](../backlog/resources-library.md) — Asset Library jalur manual + mirror Notion (`/assets`, picker di Design Brief) sudah diimplementasikan; jalur Canva API ditunda (MFA)
 - [Spec User Role & Login ID+PIN](user-role-spec.md) — 7 role berbasis permission, Membership per production, login ID+PIN, Lihat sebagai, Profil; wireframe: https://claude.ai/artifact/Fvq1og4yp9W5YTAz298HQL
 - [Backlog: Role kustom & matriks bisa diedit](../backlog/custom-roles-matrix.md) — rencana role kustom (tabel Role, editor matriks); BELUM dikerjakan
 - [Pola Dropdown Sidebar](sidebar-dropdown-pattern.md) — aturan grup/dropdown sidebar gaya tab Dia (hanya anak aktif, expand per grup)
+- [Spec Canva Insights Tracker](canva-insights-spec.md) — Applies/Usages harian per template dari 5 akun Creator (extension Chrome → API ingest; sinkron harian otomatis per profil sejak extension 1.1.0, tombol manual tetap ada), tautan template ↔ task via ID desain; brief kerja: [`../backlog/canva-insights-implementation.md`](../backlog/canva-insights-implementation.md); mapping field per endpoint: [`../canva-insights-endpoints.md`](../canva-insights-endpoints.md); Fase 1–3 (skema, parser, API, tab Production › Canva Insights) di branch `feat/canva-insights`, dirilis ke VPS 2026-10-30
+- [Backlog: Master Deck Builder](../backlog/master-deck-builder.md) — slide master otomatis untuk task QA di production Dropbox; checklist kartu jadi gerbang In Review; F1 (Checklist QA) + F2 (centang dari folder Dropbox) selesai, ⏸️ HOLD sejak 2026-10-29 (arah lanjut: app macOS terpisah)
 - [Arsip Session Handover](archive/session-handover-through-2026-10-16.md) — riwayat lengkap sampai 2026-10-16; JANGAN dibaca utuh, cukup `grep`

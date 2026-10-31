@@ -4,7 +4,8 @@ import { redirect } from 'next/navigation';
 import prisma from '@/lib/prisma';
 import { 
   getAvailablePeriods, 
-  getDashboardData 
+  getDashboardData,
+  NO_BRAND_LABEL,
 } from '@/lib/queries';
 import { getLatestSyncStatus } from './actions/sync';
 import Header from '@/components/Header';
@@ -47,6 +48,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   // 1. Fetch metadata & filter options from DB with defensive fallbacks
   let periods: string[] = [];
   let brandsList: string[] = [];
+  let unbrandedCount = 0;
   let productionUnit: { id: string; name: string; platformId: string } | null = null;
   try {
     periods = await getAvailablePeriods();
@@ -61,6 +63,9 @@ export default async function DashboardPage({ searchParams }: PageProps) {
       orderBy: { displayName: 'asc' }
     });
     brandsList = accounts.map((acc) => acc.displayName);
+    unbrandedCount = await prisma.task.count({
+      where: { taskAccounts: { none: {} }, ...(productionUnit ? { productionUnitId: productionUnit.id } : {}) },
+    });
   } catch (error) {
     console.error('Error loading DB metadata:', error);
   }
@@ -106,6 +111,8 @@ export default async function DashboardPage({ searchParams }: PageProps) {
               <BrandTabs 
                 brands={brandsList} 
                 currentBrand={activeBrand} 
+                noBrandLabel={unbrandedCount > 0 || activeBrand === NO_BRAND_LABEL ? NO_BRAND_LABEL : null}
+                noBrandCount={unbrandedCount}
               />
             </Suspense>
 

@@ -2,16 +2,23 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { MessageSquare, FileText, MoreHorizontal, Copy, Trash2, Loader2, AlertTriangle } from 'lucide-react';
+import { MessageSquare, FileText, MoreHorizontal, Copy, Trash2, Loader2, AlertTriangle, ListChecks } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { duplicateTaskAction, deleteTaskAction } from '@/app/actions/qa';
+import { checklistTone, isApprovedStatus, isInReviewStatus, isQaStatus, parseChecklistSection } from '@/lib/checklist-qa';
+import { readSnapshot, waitingFileReasons } from '@/lib/dropbox-files';
+import { CHECKLIST_TONE_CLASS } from './task-detail/ChecklistQASection';
 
 export interface QATask {
   id: string;
   name: string | null;
   notionUrl: string | null;
   designer: { id: string; displayName: string; avatarColor: string | null } | null;
-  doctype: { id: string; displayName: string } | null;
+  doctype: { id: string; displayName: string; qaChecklist?: string[] } | null;
+  bodyText?: string | null;
+  /** Snapshot folder Dropbox (lib/dropbox-files.ts) */
+  dropboxFiles?: unknown;
+  productionUnit?: { platform: { outputType: string } } | null;
   designStatus: { id: string; notionKey: string; displayName: string } | null;
   taskAccounts: { account: { id: string; displayName: string; color: string | null } }[];
   canvaLinks: { id: string; url: string }[];
@@ -33,7 +40,8 @@ export interface CardAction {
 
 interface Props {
   task: QATask;
-  onOpen: (task: QATask) => void;
+  /** `tab` = tab drawer yang dibuka (indikator checklist → 'checklist'). */
+  onOpen: (task: QATask, tab?: 'checklist') => void;
   /** True when another card is being dragged (dim non-dragged cards). */
   dimmed?: boolean;
   /** Reports drag start/end upward for board-level dimming. */
@@ -85,6 +93,7 @@ export default function QACard({ task, onOpen, dimmed = false, onDragStateChange
       const res = await duplicateTaskAction(task.id);
       if (res.success) {
         toast.success('Task berhasil diduplikasi');
+        if ('notionWarning' in res && res.notionWarning) toast(res.notionWarning, { icon: '⚠️', duration: 8000 });
         router.refresh();
       } else {
         toast.error(res.error || 'Gagal menduplikasi task');
@@ -115,6 +124,18 @@ export default function QACard({ task, onOpen, dimmed = false, onDragStateChange
   };
 
   const commentCount = task.comments?.length ?? 0;
+
+  // Indikator Checklist QA: production Dropbox + Doctype ber-checklist
+  const requiredChecklist = task.doctype?.qaChecklist ?? [];
+  const checklist = task.productionUnit?.platform.outputType === 'dropbox_link' && requiredChecklist.length > 0
+    ? parseChecklistSection(task.bodyText, requiredChecklist)
+    : null;
+  // Status sudah lewat QA (diubah di Notion) padahal checklist belum lengkap
+  const checklistMissed = !!checklist && checklist.done < checklist.total
+    && (isInReviewStatus(task.designStatus) || isApprovedStatus(task.designStatus));
+  // QA tapi folder Dropbox belum lengkap (PDF belum ada / ada .zip); hanya bila folder sudah pernah diperiksa
+  const snapshot = checklist && isQaStatus(task.designStatus) ? readSnapshot(task.dropboxFiles) : null;
+  const waitingReasons = snapshot ? waitingFileReasons(snapshot.files) : [];
 
   return (
     <>
@@ -243,6 +264,37 @@ export default function QACard({ task, onOpen, dimmed = false, onDragStateChange
               label={task.license}
               color={task.license.toLowerCase() === 'pro' ? '#10b981' : '#8b5cf6'}
             />
+          )}
+
+          {checklist && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (!dragging && !isMenuOpen) onOpen(task, 'checklist');
+              }}
+              title="Checklist QA"
+              aria-label={`Checklist QA ${checklist.done} dari ${checklist.total}`}
+              className={`inline-flex items-center gap-1 rounded-[4px] border px-1.5 py-0.5 font-sans text-[10px] font-semibold leading-none cursor-pointer hover:opacity-80 ${CHECKLIST_TONE_CLASS[checklistTone(checklist.done, checklist.total)]}`}
+            >
+              <ListChecks className="w-3 h-3" />
+              {checklist.done}/{checklist.total}
+            </button>
+          )}
+
+          {waitingReasons.length > 0 && (
+            <span
+              title={waitingReasons.join(' · ')}
+              className="inline-flex items-center rounded-[4px] border border-[#FED7AA] bg-[#FFF7ED] px-1.5 py-0.5 font-sans text-[10px] font-semibold leading-none text-[#C2410C] dark:border-orange-900/60 dark:bg-orange-950/30 dark:text-orange-400"
+            >
+              Menunggu file
+            </span>
+          )}
+
+          {checklistMissed && (
+            <span className="inline-flex items-center rounded-[4px] border border-[#FECACA] bg-[#FEF2F2] px-1.5 py-0.5 font-sans text-[10px] font-semibold leading-none text-[#DC2626] dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-400">
+              Checklist belum lengkap
+            </span>
           )}
 
           {commentCount > 0 && (

@@ -343,3 +343,17 @@ Dokumen ini mencatat histori bug, edge cases, serta aturan layout CSS/React untu
   4. **Notion Image Markdown Translation (`src/app/actions/qa.ts`)**:
      - Saat markdown memuat syntax `![alt](url)`, parser otomatis menghasilkan Notion block berjenis `image` (`external.url`) sehingga gambar acuan desain tampil utuh di Notion di atas strip palet warna.
 
+### 34. Asset Library: preview & cover Canva tanpa login
+* **Preview**: public view link + `?embed` bisa di-iframe tanpa login; link `/edit` selalu minta login. Token edit ≠ token view, jadi view link tidak bisa diturunkan dari edit link → form menolak `/edit` di kolom Public View.
+* **Cover**: `og:image` halaman view Canva hanya logo generik (`fb_cover-1.jpg`), dan `…/screen?type=thumbnail` ditolak (403) bila diminta dari server. Browser bisa memuatnya langsung, jadi cover default = `toCanvaThumbnailUrl(previewUrl)` dimuat client; upload opsional menimpa. Judul diambil dari oEmbed (`/_oembed`, berhasil dari server).
+* **Escape di iframe**: saat fokus di dalam iframe Canva, keydown tidak sampai ke halaman; Escape baru bekerja setelah fokus kembali ke halaman.
+* **Relation dual_property**: `ensureRelationProperty` membuat kolom balik di database aset (nama = judul database task). Membuat relation mengubah skema database task live, jadi untuk production yang sudah ada dilakukan manual per production.
+* **`db push` saat sesi lain punya tabel belum di-commit**: `prisma db push` akan DROP tabel yang tidak ada di schema worktree. Pakai `prisma migrate diff --from-config-datasource --to-schema … --script`, buang statement DROP, lalu `prisma db execute`.
+
+### 35. Overview: task tanpa brand hilang dari tab brand & chart
+* **Masalah**: task order bundle dibuat tanpa Account/Brand (`task_accounts` kosong). Di Overview production, tab brand memfilter `EXISTS task_accounts` sehingga datanya hanya muncul di KPI "Semua Brand"; Tren Volume & Distribusi Template memakai `JOIN task_accounts` (inner) sehingga task itu tidak masuk chart sama sekali. Tren Volume juga hanya menggambar brand yang ada di `BRAND_COLORS` hardcode, dan subtitle widget menulis "Semua Brand (6)" hardcode.
+* **Solusi**: tab **Tanpa Brand** (`NO_BRAND_LABEL` di `queries.ts`) muncul bila production punya task tanpa brand → filter `NOT EXISTS task_accounts`. Query chart per brand memakai `LEFT JOIN` + `COALESCE(brand, 'Tanpa Brand')` di SELECT luar (jangan pakai `COALESCE(…, $param)` di `PARTITION BY` — Postgres tidak menyamakannya dengan GROUP BY). Tren Volume mengambil daftar brand dari data.
+
+### 36. Database di dalam sub-page tidak terbaca saat "Pindai"
+* **Masalah**: "Canva Assets (1)" di page Impro-Freelance adalah **sub-page** (`child_page`) yang berisi database, bukan blok `child_database` langsung. `listChildDatabases` hanya membaca anak langsung, jadi database itu tidak terdaftar dan tidak muncul di pilihan impor Asset Library (harus tempel link).
+* **Solusi**: `listChildDatabases(pageId, pageDepth = 1)` ikut membaca isi kolom/toggle/callout/synced block dan sub-page satu tingkat; database tunggal di sub-page diberi nama sub-page-nya. Sub-tab Impor punya tautan **Pindai ulang page** (menjalankan pindai semua page terdaftar).

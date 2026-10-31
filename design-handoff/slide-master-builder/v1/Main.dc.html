@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Unggah deck</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#FF5B1F}a:hover{color:#D9440E}
+</style>
+</helmet>
+<div style="min-height: 980px; display: flex; flex-wrap: wrap; background: #FFFFFF; color: #18181B; font-family: Inter, system-ui, sans-serif; font-size: 14px; line-height: 1.45">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside style="flex: 1 1 220px; max-width: 260px; min-width: 0; border-right: 1px solid #E9E9EC; display: flex; flex-direction: column; background: #FFFFFF">
+    <div style="height: 70px; box-sizing: border-box; padding: 0 22px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #E9E9EC">
+      <span style="width: 32px; height: 32px; border-radius: 9px; background: #FF5B1F; color: #FFFFFF; display: grid; place-items: center; font-size: 13px; font-weight: 700; box-shadow: 0 2px 6px rgba(255,91,31,0.35)">MD</span>
+      <span style="font-size: 16px; font-weight: 600">master.deck</span>
+    </div>
+    <nav aria-label="Navigasi" style="padding: 22px 14px; display: flex; flex-direction: column; gap: 2px; flex: 1">
+      <div style="font-size: 11.5px; font-weight: 500; letter-spacing: 0.06em; color: #71717A; padding: 0 10px 8px">GET STARTED</div>
+      <a href="Main.dc.html" style="display: flex; align-items: center; gap: 12px; padding: 9px 10px; border-radius: 8px; color: #27272A; text-decoration: none">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"></rect><rect x="14" y="4" width="6" height="6" rx="1"></rect><rect x="4" y="14" width="6" height="6" rx="1"></rect><rect x="14" y="14" width="6" height="6" rx="1"></rect></svg>Overview</a>
+      <div style="display: flex; align-items: center; gap: 12px; padding: 9px 10px; border-radius: 8px; color: #27272A">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF5B1F" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="3" width="13" height="15" rx="2"></rect><path d="M4 7v12a2 2 0 0 0 2 2h10"></path></svg>
+        <span style="flex: 1">Deck</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+      </div>
+      <div style="margin-left: 20px; padding-left: 14px; border-left: 1px solid #E4E4E7; display: flex; flex-direction: column; gap: 4px; padding-block: 2px 6px">
+        <span style="padding: 7px 12px; border-radius: 8px; border: 1px solid #E4E4E7; background: #FFFFFF; color: #FF5B1F; font-weight: 500; box-shadow: 0 1px 2px rgba(24,24,27,0.04)">Business Proposal</span>
+        <span style="padding: 7px 12px; color: #52525B; display: flex; align-items: center; gap: 8px">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Tambah Deck</span>
+      </div>
+
+      <div style="font-size: 11.5px; font-weight: 500; letter-spacing: 0.06em; color: #71717A; padding: 18px 10px 8px">BUILD</div>
+      <div style="display: flex; align-items: center; gap: 12px; padding: 9px 10px; color: #27272A">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF5B1F" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h10M4 12h16M4 18h7"></path><circle cx="17" cy="6" r="2"></circle><circle cx="14" cy="18" r="2"></circle></svg>Aturan Heuristik</div>
+      <div style="display: flex; align-items: center; gap: 12px; padding: 9px 10px; color: #27272A">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF5B1F" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="2"></rect><path d="M9 1v4M15 1v4M9 19v4M15 19v4M1 9h4M1 15h4M19 9h4M19 15h4"></path></svg>Koneksi 9Router</div>
+      <div style="display: flex; align-items: center; gap: 12px; padding: 9px 10px; color: #27272A">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF5B1F" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 3a9 9 0 0 1 0 18"></path></svg>Theme Default</div>
+
+      <div style="font-size: 11.5px; font-weight: 500; letter-spacing: 0.06em; color: #71717A; padding: 18px 10px 8px">MANAGE &amp; OBSERVE</div>
+      <div style="display: flex; align-items: center; gap: 12px; padding: 9px 10px; color: #27272A">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF5B1F" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"></path><path d="M3 3v5h5M12 7v5l3 2"></path></svg>Riwayat Rebuild</div>
+    </nav>
+    <div style="border-top: 1px solid #E9E9EC">
+      <button type="button" style="width: 100%; font: inherit; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 14px; border: none; border-bottom: 1px solid #E9E9EC; background: #FAFAFA; color: #18181B; cursor: pointer; min-height: 48px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.9-4M4 13a8 8 0 0 0 14.9 4"></path><path d="M4 4v4h4M20 20v-4h-4"></path></svg>Analisis Ulang</button>
+      <div style="display: flex; justify-content: space-between; padding: 12px 18px; font-size: 13px; border-bottom: 1px solid #E9E9EC">
+        <span style="color: #71717A">Status</span>
+        <span style="display: inline-flex; align-items: center; gap: 6px; color: #15803D; font-weight: 600"><span style="width: 7px; height: 7px; border-radius: 50%; background: #22C55E"></span>Parser Siap</span>
+      </div>
+      <div style="padding: 12px 18px 16px; font-size: 13px; display: flex; flex-direction: column; gap: 1px">
+        <span style="color: #71717A">Terakhir Analisis :</span>
+        <span style="font-weight: 600">Belum dijalankan</span>
+        <span style="color: #71717A; font-size: 12px">Today • 13.04</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column">
+    <header style="height: 70px; box-sizing: border-box; padding: 0 28px; border-bottom: 1px solid #E9E9EC; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px">
+      <div style="display: flex; align-items: center; gap: 10px; font-size: 17px">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF5B1F" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="3" width="13" height="15" rx="2"></rect><path d="M4 7v12a2 2 0 0 0 2 2h10"></path></svg>
+        <span style="color: #71717A">Deck</span><span style="color: #D4D4D8">/</span><span style="font-weight: 600">Business Proposal</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap">
+        <label style="display: flex; align-items: center; gap: 10px; border: 1px solid #E4E4E7; border-radius: 10px; padding: 0 8px 0 12px; height: 40px; color: #A1A1AA; min-width: 160px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg>
+          <input type="search" placeholder="Search" aria-label="Search" style="border: none; outline: none; font: inherit; width: 80px; color: #18181B; background: transparent">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #52525B; background: #F4F4F5; border: 1px solid #E4E4E7; border-radius: 5px; padding: 1px 6px">⌘ K</span>
+        </label>
+        <button type="button" aria-label="Mode gelap" style="width: 40px; height: 40px; border: 1px solid #E4E4E7; border-radius: 10px; background: #FFFFFF; display: grid; place-items: center; cursor: pointer">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#3F3F46" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"></path></svg>
+        </button>
+        <button type="button" style="height: 40px; display: flex; align-items: center; gap: 10px; border: 1px solid #E4E4E7; border-radius: 10px; background: #FFFFFF; padding: 0 14px; font: inherit; font-weight: 500; cursor: pointer; color: #18181B">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF5B1F" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="12" rx="1.5"></rect><path d="M8 21h8M12 17v4"></path></svg>Semua Slide
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+        </button>
+        <button type="button" style="height: 40px; display: flex; align-items: center; gap: 10px; border: 1px solid #E4E4E7; border-radius: 10px; background: #FFFFFF; padding: 0 12px; font: inherit; font-weight: 500; cursor: pointer; color: #18181B">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF5B1F" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21a8 8 0 0 1 16 0"></path></svg>Admin
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #52525B; background: #F4F4F5; border: 1px solid #E4E4E7; border-radius: 5px; padding: 1px 6px">FT-001</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+        </button>
+      </div>
+    </header>
+
+    <div style="flex: 1; padding: 36px 28px; background-color: #FAFAFA; background-image: radial-gradient(#E4E4E7 1px, transparent 1px); background-size: 18px 18px">
+      <section style="background: #FFFFFF; border: 1px solid #E4E4E7">
+        <!-- tabs -->
+        <div role="tablist" style="display: flex; flex-wrap: wrap; border-bottom: 1px solid #E4E4E7; background: #FAFAFA">
+          <a href="Main.dc.html" role="tab" aria-selected="true" style="display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-right: 1px solid #E4E4E7; border-bottom: 2px solid #FF5B1F; margin-bottom: -1px; background: #FFFFFF; color: #18181B; font-weight: 600; font-size: 15px; text-decoration: none; width: 87px">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#FF5B1F" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"></path></svg>Unggah</a>
+          <a href="Review.dc.html" role="tab" aria-selected="false" style="display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-right: 1px solid #E4E4E7; color: #52525B; font-size: 15px; text-decoration: none; width: 144px">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l9 5-9 5-9-5 9-5z"></path><path d="M3 13l9 5 9-5"></path></svg><span>Review Overlay</span></a>
+          <a href="Layouts.dc.html" role="tab" aria-selected="false" style="display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-right: 1px solid #E4E4E7; color: #52525B; font-size: 15px; text-decoration: none">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1.5"></rect><path d="M3 9h18M9 9v11"></path></svg>Layout &amp; Theme</a>
+          <a href="Export.dc.html" role="tab" aria-selected="false" style="display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-right: 1px solid #E4E4E7; color: #52525B; font-size: 15px; text-decoration: none">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"></path></svg>Ekspor &amp; Verifikasi</a>
+        </div>
+        <!-- toolbar -->
+        <div style="display: flex; flex-wrap: wrap; align-items: stretch; border-bottom: 1px solid #E4E4E7; min-height: 50px">
+          <div style="display: flex; align-items: center; gap: 10px; padding: 0 18px; border-right: 1px solid #E4E4E7; font-weight: 500">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"></path><path d="M14 3v5h5"></path></svg>2 file siap</div>
+          <div style="display: flex; align-items: center; gap: 8px; padding: 0 18px; border-right: 1px solid #E4E4E7; color: #3F3F46">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M4 12h16M4 17h7"></path></svg>Analisis di browser</div>
+          <span style="flex: 1"></span>
+          <a href="Review.dc.html" style="display: flex; align-items: center; gap: 10px; padding: 0 26px; background: #FF5B1F; color: #FFFFFF; font-weight: 600; letter-spacing: 0.04em; text-decoration: none; min-height: 50px">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="#FFFFFF" aria-hidden="true"><path d="M7 4l13 8-13 8z"></path></svg>MULAI ANALISIS</a>
+        </div>
+
+        <!-- kolom -->
+        <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr))">
+
+          <!-- kolom 1 -->
+          <div style="border-right: 1px solid #E4E4E7; min-width: 0">
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid #E4E4E7">
+              <span style="display: flex; align-items: center; gap: 8px; font-weight: 600"><span style="width: 8px; height: 8px; border-radius: 50%; background: #FF5B1F"></span>File Deck</span>
+              <span style="min-width: 22px; height: 22px; box-sizing: border-box; padding: 0 6px; border: 1px solid #E4E4E7; border-radius: 5px; display: grid; place-items: center; font-size: 12px; font-weight: 600">1</span>
+            </div>
+            <div style="padding: 16px; border-bottom: 1px solid #E4E4E7; display: flex; flex-direction: column; gap: 10px">
+              <div style="display: flex; gap: 10px; align-items: flex-start">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"></path><path d="M14 3v5h5M9 13h6M9 17h6"></path></svg>
+                <span style="font-weight: 500; overflow-wrap: anywhere">Business_Proposal_Google_Slides.pptx</span>
+              </div>
+              <div style="display: flex; flex-wrap: wrap; gap: 6px; font-size: 12px">
+                <span style="padding: 1px 7px; border-radius: 5px; border: 1px solid #E4E4E7; background: #FAFAFA; color: #3F3F46; font-weight: 500">20 slide</span>
+                <span style="padding: 1px 7px; border-radius: 5px; border: 1px solid #E4E4E7; background: #FAFAFA; color: #3F3F46; font-weight: 500">16:9</span>
+                <span style="padding: 1px 7px; border-radius: 5px; border: 1px solid #C7D2FE; background: #EEF2FF; color: #4F46E5">1 master</span>
+                <span style="padding: 1px 7px; border-radius: 5px; border: 1px solid #BBF7D0; background: #F0FDF4; color: #15803D">17 layout</span>
+                <span style="padding: 1px 7px; border-radius: 5px; border: 1px solid #BBF7D0; background: #F0FDF4; color: #15803D">Terbaca</span>
+              </div>
+            </div>
+            <label for="pptx" style="margin: 16px; border: 1.5px dashed #D4D4D8; border-radius: 10px; padding: 22px 14px; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; color: #71717A; cursor: pointer">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FF5B1F" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"></path></svg>
+              <span style="color: #18181B; font-weight: 500">Ganti file .pptx</span>
+              <span style="font-size: 12.5px">Tarik ke sini atau klik</span>
+              <input id="pptx" type="file" accept=".pptx,.potx" style="position: absolute; width: 1px; height: 1px; opacity: 0">
+            </label>
+          </div>
+
+          <!-- kolom 2 -->
+          <div style="border-right: 1px solid #E4E4E7; min-width: 0">
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid #E4E4E7">
+              <span style="display: flex; align-items: center; gap: 8px; font-weight: 600"><span style="width: 8px; height: 8px; border-radius: 50%; background: #6366F1"></span>PDF Export</span>
+              <span style="min-width: 22px; height: 22px; box-sizing: border-box; padding: 0 6px; border: 1px solid #E4E4E7; border-radius: 5px; display: grid; place-items: center; font-size: 12px; font-weight: 600">1</span>
+            </div>
+            <div style="padding: 16px; border-bottom: 1px solid #E4E4E7; display: flex; flex-direction: column; gap: 10px">
+              <div style="display: flex; gap: 10px; align-items: flex-start">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"></path><path d="M14 3v5h5M9 13h6M9 17h6"></path></svg>
+                <span style="font-weight: 500; overflow-wrap: anywhere">Business_Proposal_Google_Slides.pdf</span>
+              </div>
+              <div style="display: flex; flex-wrap: wrap; gap: 6px; font-size: 12px">
+                <span style="padding: 1px 7px; border-radius: 5px; border: 1px solid #E4E4E7; background: #FAFAFA; color: #3F3F46; font-weight: 500">20 halaman</span>
+                <span style="padding: 1px 7px; border-radius: 5px; border: 1px solid #E4E4E7; background: #FAFAFA; color: #3F3F46; font-weight: 500">16:9</span>
+                <span style="padding: 1px 7px; border-radius: 5px; border: 1px solid #BBF7D0; background: #F0FDF4; color: #15803D">Cocok</span>
+                <span style="padding: 1px 7px; border-radius: 5px; border: 1px solid #E9D5FF; background: #FAF5FF; color: #9333EA">Opsional</span>
+              </div>
+            </div>
+            <div style="padding: 16px; display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: #3F3F46">
+              <div style="font-weight: 600; color: #18181B">Cara export dari PowerPoint</div>
+              <ol style="margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px">
+                <li>File → Export → PDF</li>
+                <li>Options: pilih <b>Slides</b></li>
+                <li>Slide tersembunyi boleh tidak ikut</li>
+              </ol>
+              <p style="margin: 4px 0 0; color: #71717A">Tanpa PDF, review memakai wireframe yang digambar dari XML.</p>
+            </div>
+          </div>
+
+          <!-- kolom 3 -->
+          <div style="border-right: 1px solid #E4E4E7; min-width: 0">
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid #E4E4E7">
+              <span style="display: flex; align-items: center; gap: 8px; font-weight: 600"><span style="width: 8px; height: 8px; border-radius: 50%; background: #EAB308"></span>Pengaturan</span>
+              <span style="min-width: 22px; height: 22px; box-sizing: border-box; padding: 0 6px; border: 1px solid #E4E4E7; border-radius: 5px; display: grid; place-items: center; font-size: 12px; font-weight: 600">3</span>
+            </div>
+            <div style="padding: 16px; border-bottom: 1px solid #E4E4E7; display: flex; flex-direction: column; gap: 6px">
+              <div style="display: flex; justify-content: space-between"><label for="master-th" style="font-weight: 500">Ambang Master</label><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px">80%</span></div>
+              <input id="master-th" type="range" min="50" max="100" value="80" style="accent-color: #FF5B1F">
+              <span style="font-size: 12.5px; color: #71717A">Muncul identik di minimal sekian persen slide.</span>
+            </div>
+            <div style="padding: 16px; border-bottom: 1px solid #E4E4E7; display: flex; flex-direction: column; gap: 6px">
+              <div style="display: flex; justify-content: space-between"><label for="tol" style="font-weight: 500">Toleransi posisi</label><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px">2 pt</span></div>
+              <input id="tol" type="range" min="0" max="10" value="2" style="accent-color: #FF5B1F">
+              <span style="font-size: 12.5px; color: #71717A">Selisih yang masih dianggap elemen sama.</span>
+            </div>
+            <div style="padding: 16px; display: flex; flex-direction: column; gap: 12px">
+              <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px">
+                <span style="display: flex; align-items: center; gap: 8px"><label for="llm" style="font-weight: 500">Pengayaan LLM</label>
+                  <span style="font-size: 12px; padding: 1px 7px; border-radius: 5px; border: 1px solid #E9D5FF; background: #FAF5FF; color: #9333EA">9Router</span></span>
+                <button id="llm" type="button" role="switch" aria-checked="{{llmOn}}" onClick="{{toggleLlm}}" style="flex: none; width: 42px; height: 24px; border-radius: 999px; border: none; padding: 3px; background: {{switchBg}}; cursor: pointer; display: flex; justify-content: {{switchAlign}}">
+                  <span style="width: 18px; height: 18px; border-radius: 50%; background: #FFFFFF; display: block"></span>
+                </button>
+              </div>
+              <sc-if value="{{llmOn}}" hint-placeholder-val="{{ true }}">
+                <div style="display: flex; flex-direction: column; gap: 10px">
+                  <div style="display: flex; flex-direction: column; gap: 4px">
+                    <label for="router" style="font-size: 12.5px; color: #52525B">Endpoint</label>
+                    <input id="router" type="text" value="[URL 9ROUTER ANDA]" style="font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 9px 10px; border: 1px solid #E4E4E7; border-radius: 8px; background: #FAFAFA; color: #18181B">
+                  </div>
+                  <div style="display: flex; flex-direction: column; gap: 4px">
+                    <label for="conf" style="font-size: 12.5px; color: #52525B">Kirim jika keyakinan di bawah</label>
+                    <select id="conf" style="font: inherit; font-size: 13px; padding: 9px 10px; border: 1px solid #E4E4E7; border-radius: 8px; background: #FAFAFA; color: #18181B">
+                      <option>60%</option><option selected="">70%</option><option>80%</option>
+                    </select>
+                  </div>
+                </div>
+              </sc-if>
+            </div>
+          </div>
+
+          <!-- kolom 4 -->
+          <div style="min-width: 0">
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid #E4E4E7">
+              <span style="display: flex; align-items: center; gap: 8px; font-weight: 600"><span style="width: 8px; height: 8px; border-radius: 50%; background: #22C55E"></span>Hasil Pemetaan</span>
+              <span style="min-width: 22px; height: 22px; box-sizing: border-box; padding: 0 6px; border: 1px solid #E4E4E7; border-radius: 5px; display: grid; place-items: center; font-size: 12px; font-weight: 600">4</span>
+            </div>
+            <div style="padding: 14px 16px; border-bottom: 1px solid #E4E4E7; display: flex; flex-direction: column; gap: 6px">
+              <span style="align-self: flex-start; font-size: 12px; padding: 1px 7px; border-radius: 5px; border: 1px solid #C7D2FE; background: #EEF2FF; color: #4F46E5">Master</span>
+              <span style="font-size: 13px; color: #52525B">Muncul di hampir semua slide: logo, label header, gaya teks.</span>
+            </div>
+            <div style="padding: 14px 16px; border-bottom: 1px solid #E4E4E7; display: flex; flex-direction: column; gap: 6px">
+              <span style="align-self: flex-start; font-size: 12px; padding: 1px 7px; border-radius: 5px; border: 1px solid #BBF7D0; background: #F0FDF4; color: #15803D">Layout</span>
+              <span style="font-size: 13px; color: #52525B">Kerangka per jenis slide: judul, nomor, bingkai foto, panel.</span>
+            </div>
+            <div style="padding: 14px 16px; border-bottom: 1px solid #E4E4E7; display: flex; flex-direction: column; gap: 6px">
+              <span style="align-self: flex-start; font-size: 12px; padding: 1px 7px; border-radius: 5px; border: 1px solid #E4E4E7; background: #FAFAFA; color: #3F3F46; font-weight: 500">Konten</span>
+              <span style="font-size: 13px; color: #52525B">Unik per slide, tetap diedit di slide.</span>
+            </div>
+            <div style="padding: 14px 16px; display: flex; flex-direction: column; gap: 6px">
+              <span style="align-self: flex-start; font-size: 12px; padding: 1px 7px; border-radius: 5px; border: 1px solid #FED7AA; background: #FFF7ED; color: #C2410C">Audit Theme</span>
+              <span style="font-size: 13px; color: #52525B">Warna dan font yang ditulis langsung, bukan dari theme.</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":980}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { llm: true }; }
+  renderVals() {
+    const on = this.state.llm;
+    return {
+      llmOn: on,
+      switchBg: on ? '#FF5B1F' : '#D4D4D8',
+      switchAlign: on ? 'flex-end' : 'flex-start',
+      toggleLlm: () => this.setState({ llm: !on })
+    };
+  }
+}
+</script>
+</body>
+</html>

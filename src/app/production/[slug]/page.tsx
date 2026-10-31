@@ -78,6 +78,9 @@ export default async function ProductionUnitPage({ params, searchParams }: PageP
   const canSeeIssueTabs = access.allows('parameterIssue.view', unit.id);
   const canCreateTask = access.allows('task.create', unit.id);
   const canSeeOutput = access.allows('dropboxLink.view', unit.id);
+  const canSeeInsights =
+    access.allows('insights.view', unit.id) &&
+    (await prisma.account.count({ where: { platformId: unit.platformId, canvaBrandId: { not: null } } })) > 0;
 
   const [tasks, issueTasks, latestSyncLog, periods, accounts, unresolvedEmailCount] = await Promise.all([
     prisma.task.findMany({
@@ -144,6 +147,7 @@ export default async function ProductionUnitPage({ params, searchParams }: PageP
       unresolvedEmailCount={canSeeIssueTabs ? unresolvedEmailCount : 0}
       canCreateTask={canCreateTask}
       canSeeIssueTabs={canSeeIssueTabs}
+      canSeeInsights={canSeeInsights}
     />
   );
 }

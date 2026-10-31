@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { Search, X, Network } from 'lucide-react';
+import { APP_BASE_PATH } from '@/lib/base-path';
 
 interface GraphNode {
   id: string;
@@ -91,8 +92,11 @@ export default function GraphifyVisualizer() {
 
   // Fetch Graphify JSON
   useEffect(() => {
-    fetch('/api/knowledge-graph')
-      .then(res => res.json())
+    fetch(`${APP_BASE_PATH}/api/knowledge-graph`)
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
       .then((graphData: GraphData) => {
         setData(graphData);
         setLoading(false);

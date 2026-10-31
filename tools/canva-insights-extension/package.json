@@ -1,0 +1,10 @@
+{
+  "name": "canva-insights-extension",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Extension Chrome Canva Insights; package.json hanya untuk menjalankan tes logika dengan Node.",
+  "type": "module",
+  "scripts": {
+    "test": "node --test \"test/*.test.mjs\""
+  }
+}
