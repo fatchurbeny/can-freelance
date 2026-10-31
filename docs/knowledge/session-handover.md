@@ -10,7 +10,7 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 
 ## 📌 Status Aktif
 
-* **Branch**: `feat/canva-insights` = `feat/bundle-order-designer` + `feat/asset-library` (PR #9) + Canva Insights Fase 1–3 + Slide Master F1–F2. Sudah di-push ke `origin` (sinkron per 2026-10-31, `9e91b2e`); belum di-merge ke `main` · **Peran terakhir**: `🏛️ [Architecture & Knowledge Ops]`
+* **Branch**: `main` (`abe521a`) = merge PR #10 `feat/canva-insights` 2026-10-31 (berisi `feat/bundle-order-designer` + `feat/asset-library` + Canva Insights Fase 1–3 + Slide Master F1–F2). PR #5 & #9 ikut tertutup sebagai merged; PR #6–#8 (base ke branch lain) masih terbuka dan isinya sudah ada di `main` · **Peran terakhir**: `🏛️ [Architecture & Knowledge Ops]`
 * **Multi-Production**: Fase 1–8 sebagian besar selesai (Production Hub, platform per production, Dropbox File Request untuk Envato Elements, Bundle & Order Bundle, tarif per platform). Detail rencana: [`multi-production-plan.md`](multi-production-plan.md).
 * **User Role Fase 1**: login ID + PIN 6 digit, role berbasis permission, Membership per ProductionUnit, "Lihat sebagai", halaman `/user-role`, `/profile`. Spec: [`user-role-spec.md`](user-role-spec.md). `AUTH_MODE=session` aktif di `.env` lokal dan VPS Biznet GIO.
 * **Sidebar**: pindah ke `layout.tsx` (`AppSidebar`), grup dropdown gaya pohon. Pola baku: [`sidebar-dropdown-pattern.md`](sidebar-dropdown-pattern.md).
@@ -40,9 +40,9 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 
 ## 📝 Sesi Terakhir
 
-### 2026-10-31 — Audit knowledge graph (Claude, `🏛️ [Architecture & Knowledge Ops]`)
-* `graph.json` dicek dengan `npm run graphify`: hasil identik dengan versi commit (333 node, 900 link), tidak perlu di-commit ulang. `tools/canva-insights-extension/` memang di luar cakupan parser (hanya `src/`).
-* `index.md` diperbarui (Canva Insights Fase 1–3 + sinkron harian; Master Deck Builder F1–F2 selesai, HOLD). Entri sesi 2026-10-29 (Slide Master) dipindah ke `archive/session-handover-from-2026-10-17.md`.
+### 2026-10-31 — Audit knowledge graph & dokumentasi drawer bersusun (Claude Code, `🏛️ [Architecture & Knowledge Ops]`)
+* `npm run graphify`: 333 node, 900 link, hanya `generatedAt` berubah. `tools/canva-insights-extension/` di luar cakupan parser (hanya `src/`). `index.md` mencatat Canva Insights Fase 1–3 + sinkron harian dan Master Deck Builder F1–F2 (HOLD).
+* Fitur 2026-10-20 (drawer Edit Brief bersusun, Custom Fields disembunyikan, tombol Acak palet) sudah di `main` via PR #10; kini dibakukan di `form-crud-rules.md` §10 dan `issues-and-fixes.md` #37.
 
 ---
 
