@@ -40,6 +40,10 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 
 ## 📝 Sesi Terakhir
 
+### 2026-10-24 → 31 — Field Notion dinamis & Pages & Databases (Claude Code, `⚙️ [Backend & Database]`)
+* `7a92d1c` (di `main` & VPS): push Notion pakai `fieldMapping`, field tambahan `ProductionField` (Edit Production + section Field Tambahan di task drawer), `NotionPage` default untuk wizard. Detail di arsip & `entities.md`.
+* **Putaran 2 belum**: wizard "Struktur Field" + filter board `filterable` (desain https://claude.ai/artifact/8vPphPxA2HkpuGhdomBXpR).
+
 ### 2026-10-31 — Audit knowledge graph & dokumentasi drawer bersusun (Claude Code, `🏛️ [Architecture & Knowledge Ops]`)
 * `npm run graphify`: 333 node, 900 link, hanya `generatedAt` berubah. `tools/canva-insights-extension/` di luar cakupan parser (hanya `src/`). `index.md` mencatat Canva Insights Fase 1–3 + sinkron harian dan Master Deck Builder F1–F2 (HOLD).
 * Fitur 2026-10-20 (drawer Edit Brief bersusun, Custom Fields disembunyikan, tombol Acak palet) sudah di `main` via PR #10; kini dibakukan di `form-crud-rules.md` §10 dan `issues-and-fixes.md` #37.
