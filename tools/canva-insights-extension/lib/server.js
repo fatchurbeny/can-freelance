@@ -8,14 +8,32 @@ export class ServerAuthError extends Error {
 }
 
 /** `baseUrl` = URL dashboard termasuk basePath, mis. https://portal.fatchurbeny.com/can-freelance */
-export function createServerClient({ baseUrl, token, host, collectorVersion }) {
+/** Server sedang restart (PM2) atau proxy putus: coba lagi dengan jeda, total ±2 menit. */
+const RETRY_STATUS = new Set([502, 503, 504, 520, 521, 522, 523, 524]);
+export const RETRY_DELAYS_MS = [5_000, 10_000, 20_000, 30_000, 45_000];
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+export function createServerClient({ baseUrl, token, host, collectorVersion, retryDelays = RETRY_DELAYS_MS, onRetry }) {
   const api = `${baseUrl.replace(/\/+$/, '')}/api/insights`;
 
   async function call(path, init = {}) {
-    const res = await fetch(`${api}${path}`, {
-      ...init,
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', ...init.headers },
-    });
+    let res;
+    for (let attempt = 0; ; attempt++) {
+      const wait = retryDelays[attempt];
+      try {
+        res = await fetch(`${api}${path}`, {
+          ...init,
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', ...init.headers },
+        });
+        if (!RETRY_STATUS.has(res.status) || wait === undefined) break;
+        onRetry?.(`Server ${res.status}`, attempt + 1, wait);
+      } catch (err) {
+        // fetch gagal total (jaringan putus): sama dengan server tidak terjangkau.
+        if (wait === undefined) throw err;
+        onRetry?.(err.message, attempt + 1, wait);
+      }
+      await sleep(wait);
+    }
     const body = await res.json().catch(() => ({}));
     if (res.status === 401) throw new ServerAuthError(res.status);
     return { status: res.status, body };

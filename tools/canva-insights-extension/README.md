@@ -39,6 +39,8 @@ URL dashboard lain harus ditambahkan dulu ke `host_permissions` di `manifest.jso
 
 Diuji juga untuk **Yab** (Chromium), yang menolak `storage.local.set` ("Exceeded storage quota"). Status sinkron hanya ada di memori service worker dan dibaca popup/panel lewat pesan `getStatus`; `storage.local` hanya untuk pengaturan, riwayat & hasil terakhir, dan kegagalannya tidak menghentikan sinkron. `test/background-e2e.mjs` dengan `FAIL_STORAGE=1` menguji kondisi ini.
 
+Bila dashboard sedang restart (502/503/504, jaringan putus), tiap request ke dashboard dicoba lagi hingga 5 kali dalam ±2 menit (log: "coba lagi ke-N"); baru setelah itu sinkron gagal.
+
 Jangan memuat ulang (reload) extension saat sinkron berjalan: prosesnya terputus. Data yang sudah masuk tetap tersimpan; sinkronkan lagi untuk melanjutkan.
 
 Status per brand juga muncul di dashboard can-freelance (`/insights`, status sync). Sinkronkan tiap brand minimal sekali sehari; data hari terakhir Canva memang terlambat ±1 hari dan Applies bisa terisi hingga ±7 hari kemudian.

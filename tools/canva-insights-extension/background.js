@@ -218,7 +218,17 @@ async function runSync(tabId, { backfill }) {
   if (!brandId) throw Object.assign(new Error('Brand tidak terbaca dari dashboard.'), { hint: 'Muat ulang dashboard Creator lalu coba lagi.' });
   await setStatus({ brandId });
 
-  const client = createServerClient({ ...settings, host: settings.host || 'chrome-extension', collectorVersion: COLLECTOR_VERSION });
+  const client = createServerClient({
+    ...settings,
+    host: settings.host || 'chrome-extension',
+    collectorVersion: COLLECTOR_VERSION,
+    // Dashboard sedang restart: tunggu, dan tetap kirim tanda hidup agar popup tidak menganggap macet.
+    onRetry(reason, attempt, waitMs) {
+      log('WARN', `${reason}; coba lagi ke-${attempt} dalam ${waitMs / 1000} dtk`);
+      lastBeat = Date.now();
+      setStatus({ heartbeatAt: lastBeat });
+    },
+  });
   const progress = { batches: 0, rows: 0 };
   const server = {
     ...client,
