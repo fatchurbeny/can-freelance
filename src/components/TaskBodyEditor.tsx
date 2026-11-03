@@ -24,6 +24,14 @@ interface Props {
   renderSectionExtra?: (heading: string) => ReactNode;
 }
 
+// Browser inline fill/writing suggestions draw unclipped ghost text over the
+// textarea and spill onto the next section, so opt the brief fields out.
+// `writingsuggestions` is not in React's types yet, hence the cast.
+const NO_SUGGESTIONS = {
+  autoComplete: 'off',
+  writingsuggestions: 'false',
+} as Record<string, string>;
+
 interface Section {
   id: string;
   heading: string;
@@ -183,6 +191,7 @@ export default function TaskBodyEditor({
                     value={section.heading}
                     onChange={(e) => updateSection(section.id, 'heading', e.target.value)}
                     placeholder="Section Heading (e.g. Keywords)"
+                    {...NO_SUGGESTIONS}
                     className="flex-1 bg-transparent border-b border-transparent focus:border-[#ff5e1f] hover:border-[#f0f0f0] dark:hover:border-[#272a34] px-1 py-1 text-sm font-bold text-gray-900 dark:text-white outline-none transition-colors"
                     readOnly={readOnly}
                   />
@@ -200,6 +209,7 @@ export default function TaskBodyEditor({
                   value={section.content}
                   onChange={(e) => updateSection(section.id, 'content', e.target.value)}
                   placeholder="Enter details, bullet points, or URLs here..."
+                  {...NO_SUGGESTIONS}
                   className="w-full min-h-[80px] p-3 rounded border border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 text-gray-900 dark:text-gray-200 outline-none focus:border-[#ff5e1f] focus:ring-1 focus:ring-[#ff5e1f]/50 transition-colors resize-y font-mono text-[11px] leading-relaxed"
                   readOnly={readOnly}
                 />

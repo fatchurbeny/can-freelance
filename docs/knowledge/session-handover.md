@@ -48,6 +48,10 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 * `npm run graphify`: 333 node, 900 link, hanya `generatedAt` berubah. `tools/canva-insights-extension/` di luar cakupan parser (hanya `src/`). `index.md` mencatat Canva Insights Fase 1–3 + sinkron harian dan Master Deck Builder F1–F2 (HOLD).
 * Fitur 2026-10-20 (drawer Edit Brief bersusun, Custom Fields disembunyikan, tombol Acak palet) sudah di `main` via PR #10; kini dibakukan di `form-crud-rules.md` §10 dan `issues-and-fixes.md` #37.
 
+### 2026-11-03 — Ghost text saran browser menimpa section brief (Claude Code, `🎨 [Frontend & UI]`)
+* Saran isi dari browser (teks biru + tombol Tab) di textarea Design Brief tidak terpotong dan menutupi heading section berikutnya. Bukan kode app. `TaskBodyEditor.tsx` kini memberi `autoComplete="off"` + `writingsuggestions="false"` pada input heading & textarea (konstanta `NO_SUGGESTIONS`). Belum dicek di browser (DB lokal mati saat sesi); belum di-commit.
+* Catatan: textarea brief masih `font-mono` (melanggar invariant Inter); belum diubah.
+
 ---
 
 ## Catatan untuk LLM / Editor Selanjutnya
