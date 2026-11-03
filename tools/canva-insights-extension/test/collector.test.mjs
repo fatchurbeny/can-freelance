@@ -124,10 +124,11 @@ test('collectBrand: urutan kerja, semua halaman, metadata hanya template baru', 
   assert.deepEqual(order, ['content.by_brand', 'content.by_content', 'brand.breakdowns', 'tier_scores', 'templates']);
   assert.ok(server.batches.every((b) => b.brandId === 'BAEtJgfxnTk' && b.runId === 'run-1'));
 
-  // 60 template dari BY_BRAND + 1 template lama yang hanya dikenal server = 61.
-  assert.equal(summary.templates, 61);
+  // Sinkron harian: hanya 60 template aktif dari BY_BRAND; template lama yang hanya dikenal server dilewati.
+  assert.equal(summary.templates, 60);
   const daily = server.batches.filter((b) => b.endpoint === 'content.by_content').flatMap((b) => b.payload.A);
-  assert.equal(daily.length, 61 * 14 * 2, '14 hari × Free/Pro untuk tiap template, lintas halaman');
+  assert.equal(daily.length, 60 * 14 * 2, '14 hari × Free/Pro untuk tiap template aktif, lintas halaman');
+  assert.ok(!daily.some((r) => r.e === 'EAHold000001'), 'template sepi tidak diambil hariannya');
   assert.equal(new Set(daily.map((r) => r.k)).size, 14);
   const lastDay = Math.max(...daily.map((r) => r.k));
   assert.equal(lastDay, startOfUtcDay(NOW), 'hari ini (UTC) ikut diminta');

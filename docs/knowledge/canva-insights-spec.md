@@ -243,19 +243,19 @@ Catatan: satu `Task` bisa punya beberapa template (`qtySubmit` > 1, varian bahas
 ### 5.1 `POST /can-freelance/api/insights/ingest`
 * Auth `Authorization: Bearer <INSIGHTS_INGEST_TOKEN>` (env baru, terpisah dari `CRON_SECRET`). Route `/api/*` berada di luar gerbang proxy; guard sendiri di handler.
 * Body: `{ brandId, endpoint, query, payload, collectorVersion, runId? }`, maks 2 MB. `brandId` wajib ada di `Account.canvaBrandId`, selain itu 403.
-* Alur: simpan batch → parse dalam transaksi → upsert → tautkan task untuk template baru → `{ batchId, status, rowCount, error? }`. Rate limit via `src/lib/rate-limit.ts`.
+* Alur: simpan batch → parse dalam transaksi → satu `INSERT … ON CONFLICT` massal per batch (baris harian & template) → tautkan task hanya untuk batch `templates` (judul/ID desain sumber datang dari situ) → `{ batchId, status, rowCount, error? }`. Rate limit via `src/lib/rate-limit.ts`.
 * Status HTTP: 200 `PARSED`, **422 `REJECTED`** (batch tetap tersimpan untuk reparse), 401 token salah, 403 brand belum terdaftar, 413 body > 2 MB, 429 rate limit. `templates` berisi baris milik brand lain (`D` ≠ `brandId`) → `REJECTED`.
 
 ### 5.2 Endpoint pendukung
 * `POST /api/insights/runs`: `{ action: "start", brandId, host? }` → `{ runId }` (status `RUNNING`); `{ action: "finish", runId, status: "OK"|"NEEDS_LOGIN"|"ERROR", message? }`. Kirim `runId` di tiap ingest agar `batchCount` bertambah.
-* `GET /api/insights/known-ids?brandId=…` → `{ ids, missingMetadata }`: template ID yang sudah dikenal (agar template sepi tetap diambil hariannya) dan yang belum punya judul (perlu `templates`).
+* `GET /api/insights/known-ids?brandId=…` → `{ ids, missingMetadata }`: template ID yang sudah dikenal (saat backfill ikut diambil hariannya; pada sinkron harian dilewati karena template tanpa aktivitas 90 hari pasti kosong 14 hari terakhir) dan yang belum punya judul (perlu `templates`).
 * Jalur manual (Server Action, permission `integration.manage`): unggah/tempel JSON respons atau file fixture → handler parse yang sama, `source = "manual"`.
 
 ### 5.3 Urutan kerja extension per brand
 1. User membuka dashboard Creator (akun brand yang login) dan menekan "Sinkronkan sekarang". Brand = `x-canva-brand`; brand yang belum terdaftar ditolak server (403).
 2. Header `x-canva-*` ditangkap `webRequest` dari request `creatorinsight` dashboard (bila belum ada, tab dimuat ulang dan ditunggu 30 detik). Disimpan hanya di `chrome.storage.session`.
 3. `BY_BRAND` 90 hari → daftar ID, ikuti token paginasi.
-4. Gabung dengan `known-ids` dari server.
+4. Gabung dengan `known-ids` dari server (hanya saat backfill).
 5. `BY_CONTENT` per kelompok 50 ID, `limit=100`, `contentRoyalties=B&C`, rentang 14 hari terakhir (run pertama: sejak publish, maks 365 hari, dipecah per 90 hari), ikuti token.
 6. `breakdowns` dan `tier_scores` 14 hari terakhir.
 7. `templates` untuk ID tanpa metadata di server.

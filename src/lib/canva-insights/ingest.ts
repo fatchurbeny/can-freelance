@@ -1,5 +1,5 @@
 import prisma from '@/lib/prisma';
-import type { Prisma } from '../../../generated/prisma';
+import { Prisma } from '../../../generated/prisma';
 import { matchTemplates } from './match';
 import { PARSER_VERSION, ParseError, parseBatch, type CanvaEndpoint, type ParsedBatch } from './parse';
 
@@ -39,23 +39,31 @@ async function accountIdFor(brandId: string): Promise<string> {
   return account.id;
 }
 
+/** Satu pernyataan untuk seluruh batch; satu baris per template, kolom aktivitas hanya ditimpa bila ada nilainya. */
 async function ensureTemplates(
   tx: Tx,
   brandId: string,
   accountId: string,
   templates: { id: string; publishedAt: Date | null; lastActivityAt: Date | null }[],
 ) {
-  for (const t of templates) {
-    const activity = {
-      ...(t.publishedAt ? { publishedAt: t.publishedAt } : {}),
-      ...(t.lastActivityAt ? { lastActivityAt: t.lastActivityAt } : {}),
-    };
-    await tx.canvaTemplate.upsert({
-      where: { id: t.id },
-      create: { id: t.id, canvaBrandId: brandId, accountId, ...activity },
-      update: activity,
-    });
-  }
+  if (templates.length === 0) return;
+  const ids = templates.map((t) => t.id);
+  // Prisma menulis timestamptz sebagai waktu tanpa zona yang ditafsirkan di zona sesi DB (Asia/Jakarta),
+  // lalu membacanya kembali dengan pergeseran yang sama. Agar sama dengan baris yang ditulis Prisma,
+  // nilai dikirim tanpa "Z" dan di-cast ::timestamp, bukan ::timestamptz (lihat gotcha di session-handover.md).
+  const naive = (d: Date | null) => d?.toISOString().slice(0, -1) ?? null;
+  const published = templates.map((t) => naive(t.publishedAt));
+  const activity = templates.map((t) => naive(t.lastActivityAt));
+  await tx.$executeRaw(Prisma.sql`
+    INSERT INTO canva_templates (id, canva_brand_id, account_id, published_at, last_activity_at)
+    SELECT t.id, ${brandId}, ${accountId}::uuid, t.published_at, t.last_activity_at
+    FROM unnest(${ids}::text[], ${published}::timestamp[], ${activity}::timestamp[]) AS t(id, published_at, last_activity_at)
+    ON CONFLICT (id) DO UPDATE SET
+      published_at = COALESCE(EXCLUDED.published_at, canva_templates.published_at),
+      last_activity_at = COALESCE(EXCLUDED.last_activity_at, canva_templates.last_activity_at),
+      updated_at = now()
+    WHERE canva_templates.published_at IS DISTINCT FROM COALESCE(EXCLUDED.published_at, canva_templates.published_at)
+       OR canva_templates.last_activity_at IS DISTINCT FROM COALESCE(EXCLUDED.last_activity_at, canva_templates.last_activity_at)`);
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -83,13 +91,20 @@ async function applyParsed(
     case 'content.by_content':
       await ensureTemplates(tx, brandId, accountId, parsed.templates);
       const daily = parsed.daily.filter((d) => isComplete(d.date, receivedAt));
-      for (const d of daily) {
-        const values = { applies: d.applies, usages: d.usages, batchId };
-        await tx.canvaTemplateDaily.upsert({
-          where: { templateId_date_audience: { templateId: d.templateId, date: d.date, audience: d.audience } },
-          create: { templateId: d.templateId, date: d.date, audience: d.audience, ...values },
-          update: values,
-        });
+      // Satu INSERT … ON CONFLICT untuk seluruh batch (±40 baris), bukan satu upsert per baris.
+      if (daily.length > 0) {
+        await tx.$executeRaw(Prisma.sql`
+          INSERT INTO canva_template_daily (template_id, date, audience, applies, usages, batch_id)
+          SELECT d.template_id, d.date, d.audience, d.applies, d.usages, ${batchId}::uuid
+          FROM unnest(
+            ${daily.map((d) => d.templateId)}::text[],
+            ${daily.map((d) => d.date.toISOString().slice(0, 10))}::date[],
+            ${daily.map((d) => d.audience)}::text[],
+            ${daily.map((d) => d.applies)}::int[],
+            ${daily.map((d) => d.usages)}::int[]
+          ) AS d(template_id, date, audience, applies, usages)
+          ON CONFLICT (template_id, date, audience) DO UPDATE SET
+            applies = EXCLUDED.applies, usages = EXCLUDED.usages, batch_id = EXCLUDED.batch_id, updated_at = now()`);
       }
       return daily.length;
 
@@ -193,6 +208,7 @@ export async function ingestBatch(input: IngestInput): Promise<IngestResult> {
   if (input.runId) {
     await prisma.canvaCollectorRun.updateMany({ where: { id: input.runId }, data: { batchCount: { increment: 1 } } });
   }
-  if (templateIds.length > 0) await matchTemplates(templateIds);
+  // Judul dan ID desain sumber hanya datang dari endpoint templates; batch lain tidak mungkin cocok.
+  if (input.endpoint === 'templates' && templateIds.length > 0) await matchTemplates(templateIds);
   return result;
 }

@@ -36,6 +36,7 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 * Dropdown di dalam container `overflow-*` terpotong; render lewat portal `fixed`.
 * Push body Notion memakai antrean in-memory per `pageId` (`src/lib/notion-body-push.ts`); efektif untuk 1 proses PM2, cluster >1 butuh lock DB.
 * Ubah UI/role → perbarui wireframe: https://claude.ai/artifact/Fvq1og4yp9W5YTAz298HQL
+* **Prisma + timestamptz**: Prisma menulis `DateTime` sebagai waktu tanpa zona yang ditafsirkan di zona sesi DB (Asia/Jakarta) dan membacanya kembali dengan pergeseran yang sama, jadi nilai tersimpan **−7 jam** dari UTC walau lewat Prisma tampak benar. SQL mentah yang menulis kolom ini harus memakai cast `::timestamp` tanpa `Z` (contoh `ensureTemplates` di `canva-insights/ingest.ts`), dan `to_char(... AT TIME ZONE 'UTC')` di SQL mentah menampilkan nilai yang bergeser.
 * Env baru di VPS harus ditambahkan ke **`.next/standalone/.env`** (berlaku untuk `INSIGHTS_INGEST_TOKEN`).
 
 ## 📝 Sesi Terakhir
@@ -49,7 +50,7 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 * Fitur 2026-10-20 (drawer Edit Brief bersusun, Custom Fields disembunyikan, tombol Acak palet) sudah di `main` via PR #10; kini dibakukan di `form-crud-rules.md` §10 dan `issues-and-fixes.md` #37.
 
 ### 2026-11-03 — Ghost text saran browser menimpa section brief (Claude Code, `🎨 [Frontend & UI]`)
-* Saran isi dari browser (teks biru + tombol Tab) di textarea Design Brief tidak terpotong dan menutupi heading section berikutnya. Bukan kode app. `TaskBodyEditor.tsx` kini memberi `autoComplete="off"` + `writingsuggestions="false"` pada input heading & textarea (konstanta `NO_SUGGESTIONS`). Belum dicek di browser (DB lokal mati saat sesi); belum di-commit.
+* Saran isi dari browser (teks biru + tombol Tab) di textarea Design Brief tidak terpotong dan menutupi heading section berikutnya. Bukan kode app. `TaskBodyEditor.tsx` kini memberi `autoComplete="off"` + `writingsuggestions="false"` pada input heading & textarea (konstanta `NO_SUGGESTIONS`). Commit `3a60716` (branch `docs/stacked-drawer-knowledge`, belum di-push), dirilis ke VPS 2026-11-03 (healthcheck OK, chunk berisi `writingsuggestions`). Belum dicek langsung di browser setelah login.
 * Catatan: textarea brief masih `font-mono` (melanggar invariant Inter); belum diubah.
 
 ---

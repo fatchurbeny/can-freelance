@@ -86,13 +86,15 @@ export async function collectBrand({ brand, fetchJson, server, pagination, runId
     (rows) => rows.forEach((r) => r.e && ids.add(r.e)),
   );
 
-  // 2. Gabung dengan template yang sudah dikenal server (template sepi tetap diambil hariannya).
+  // 2. Template yang dikenal server. Saat backfill ikut diambil hariannya (sejarah >90 hari);
+  //    pada sinkron harian tidak: template tanpa aktivitas 90 hari pasti kosong 14 hari terakhir,
+  //    dan baris yang tidak ada dihitung 0 oleh dashboard.
   onStage('known');
   const known = await server.knownIds(brandId);
   const knownSet = new Set(known.ids);
-  known.ids.forEach((id) => ids.add(id));
+  if (backfill) known.ids.forEach((id) => ids.add(id));
   summary.templates = ids.size;
-  log('INFO', `${brand.slug}: ${ids.size} template (${known.ids.length} dikenal server)`);
+  log('INFO', `${brand.slug}: ${ids.size} template diambil hariannya (${known.ids.length} dikenal server)`);
 
   // 3. BY_CONTENT per 50 template, harian + Free/Pro.
   const dailyRanges = backfill

@@ -26,7 +26,7 @@ URL dashboard lain harus ditambahkan dulu ke `host_permissions` di `manifest.jso
 2. Buka dashboard Creator (`canva.com/creators/template/dashboard/dashboard`) atau klik **Buka dashboard Creator** di popup.
 3. Klik ikon extension → **Sinkronkan sekarang**. Brand dikenali otomatis dari dashboard.
    - Sinkron **pertama** tiap brand: centang **Ambil 365 hari**.
-   - Selanjutnya cukup tanpa centang (mengambil ulang 14 hari terakhir).
+   - Selanjutnya cukup tanpa centang (mengambil ulang 14 hari terakhir, hanya untuk template yang aktif 90 hari terakhir).
 4. Biarkan tab Canva terbuka sampai selesai. Sinkron 14 hari ±5–10 menit per brand; 365 hari ±1 jam (tiap request diberi jeda 1–2 detik). Popup boleh ditutup.
 
 ### Membaca status

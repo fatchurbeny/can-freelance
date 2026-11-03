@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "generatedAt": "2026-10-31T02:14:10.188Z",
+  "generatedAt": "2026-11-03T01:56:54.297Z",
   "nodes": [
     {
       "id": "page:/account-team",
@@ -7182,18 +7182,6 @@
     },
     {
       "source": "lib:canva-insights/ingest",
-      "target": "model:CanvaTemplate",
-      "relation": "queries",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "lib:canva-insights/ingest",
-      "target": "model:CanvaTemplateDaily",
-      "relation": "queries",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "lib:canva-insights/ingest",
       "target": "model:CanvaBrandDaily",
       "relation": "queries",
       "confidence": "EXTRACTED"
@@ -7201,6 +7189,12 @@
     {
       "source": "lib:canva-insights/ingest",
       "target": "model:CanvaTierScore",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:canva-insights/ingest",
+      "target": "model:CanvaTemplate",
       "relation": "queries",
       "confidence": "EXTRACTED"
     },
