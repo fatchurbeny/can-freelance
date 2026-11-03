@@ -19,7 +19,7 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 
 * Ganti PIN admin `FT-001` (menunggu user).
 * **Kode VPS**: `feat/canva-insights` `3ec9882` dirilis 2026-10-30 12:40 WIB (termasuk kolom F2 `tasks.dropbox_*`; `migrate diff` kosong). Backup: `~/db-backups/can-freelance-20261030-123858-pre-canva-insights-vps.dump`. 5 brand Canva sudah di-seed. Deploy: `VPS_SSH_PORT=2222 npm run deploy:vps`; env app di `.next/standalone/.env`.
-* **Canva Insights sinkron 365 hari ke VPS** (extension 1.1.0, jadwal harian per profil; rencana `~/.claude/plans/spicy-scribbling-dahl.md`): Chital OK 2026-10-30 (1.335 template). Sisa: Zahra Art, Improstd, Antler, UICreative.net — tiap profil diarahkan ke `portal.fatchurbeny.com/can-freelance` + token VPS, jam 12.00/12.15/…. DB lokal tidak disalin. Cek %: `scratch/canva-insights-test/pct-check.ts <brandId> <from> <to>`.
+* **Canva Insights di VPS**: Chital, Antler, UICreative.net, Improstd OK 365 hari (run OK terakhir 2026-11-02); Zahra Art belum dicek. Ingest massal (`3a408e7`) **belum dirilis ke VPS** (deploy ditolak classifier; jalankan `VPS_SSH_PORT=2222 npm run deploy:vps` manual). Setelah rilis: reload extension tiap profil (1.1.2), cocokkan angka tiap brand dengan Canva (`scratch/canva-insights-test/pct-check.ts <brandId> <from> <to>`).
 * Tombol "Download all Statement" di `/billing-statement` mengarah ke `/api/billing/download-all` yang tidak ada (dan `<a>` tanpa basePath) → selalu 404.
 * Print statement (`/billing-statement/print`) memanggil `window.print()` otomatis.
 * Escape saat dropdown terbuka di drawer `/user-role` menutup seluruh drawer (isian hilang).
@@ -52,6 +52,10 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 ### 2026-11-03 — Ghost text saran browser menimpa section brief (Claude Code, `🎨 [Frontend & UI]`)
 * Saran isi dari browser (teks biru + tombol Tab) di textarea Design Brief tidak terpotong dan menutupi heading section berikutnya. Bukan kode app. `TaskBodyEditor.tsx` kini memberi `autoComplete="off"` + `writingsuggestions="false"` pada input heading & textarea (konstanta `NO_SUGGESTIONS`). Commit `3a60716` (branch `docs/stacked-drawer-knowledge`, belum di-push), dirilis ke VPS 2026-11-03 (healthcheck OK, chunk berisi `writingsuggestions`). Belum dicek langsung di browser setelah login.
 * Catatan: textarea brief masih `font-mono` (melanggar invariant Inter); belum diubah.
+
+### 2026-11-03 — Canva Insights: ingest massal + retry extension (Claude Code, `⚙️ [Backend & Database]`)
+* UICreative 365 hari gagal 502 saat app VPS di-SIGKILL (RAM 961 MB; 9router dipakai dev dec studio, tetap di VPS). Extension 1.1.1 mencoba ulang 5xx/jaringan ±2 menit (`lib/server.js`).
+* Beban ingest: 1,36 jt baris harian / 36 rb batch memicu ±100 query per batch. `ingest.ts` kini menulis harian & template dengan satu `INSERT … ON CONFLICT` per batch, `matchTemplates` hanya pada batch `templates`. Extension 1.1.2: sinkron harian hanya template aktif 90 hari (backfill tetap gabung `known-ids`). Diverifikasi lokal dengan `scratch/canva-insights-test/bulk-reparse-check.ts` (baris identik, nilai Prisma = parse). Commit `3a408e7`, belum dirilis.
 
 ---
 
