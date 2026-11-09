@@ -5,7 +5,7 @@
  */
 
 /** Naikkan bila pemetaan berubah, lalu jalankan reparse (src/lib/canva-insights/reparse.ts). */
-export const PARSER_VERSION = 1;
+export const PARSER_VERSION = 2;
 
 export const CANVA_ENDPOINTS = [
   'content.by_brand',
@@ -93,8 +93,13 @@ function rowsOf(payload: unknown): Row[] {
   return rows as Row[];
 }
 
+/**
+ * Canva tidak mengirim field angka yang bernilai 0 (terlihat 2026-11-09 di UICreative.net:
+ * baris tanpa apply → `C` hilang, tanpa usage → `D` hilang). Field hilang = 0; tipe salah tetap ditolak.
+ */
 function count(row: Row, key: string, i: number): number {
   const v = row[key];
+  if (v === undefined) return 0;
   if (typeof v !== 'number' || !Number.isInteger(v) || v < 0) {
     throw new ParseError(`A[${i}].${key} harus bilangan bulat ≥ 0, didapat ${JSON.stringify(v)}`);
   }
