@@ -37,12 +37,14 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 * Push body Notion memakai antrean in-memory per `pageId` (`src/lib/notion-body-push.ts`); efektif untuk 1 proses PM2, cluster >1 butuh lock DB.
 * Ubah UI/role → perbarui wireframe: https://claude.ai/artifact/Fvq1og4yp9W5YTAz298HQL
 * Env baru di VPS harus ditambahkan ke **`.next/standalone/.env`** (berlaku untuk `INSIGHTS_INGEST_TOKEN`).
+* **Canva Insights parser v2** (2026-11-09, `fix/canva-parser-zero-counts` `6e240e0`, dirilis ke VPS 2026-11-09; build di iMac tanpa `.env` → set `DATABASE_URL` dummy + `NEXT_PUBLIC_APP_URL` saat `deploy:vps`): `C`/`D` yang tidak dikirim Canva = 0. Sebelumnya UICreative.net ditolak 168/170 halaman. Setelah `npm run deploy:vps`, sinkron ulang UICreative (365 hari) — `scripts/` tidak ikut paket standalone, jadi reparse batch lama di VPS tidak tersedia.
+* **SSH VPS dari iMac Ubuntu** (2026-11-09): kunci `~/.ssh/id_ed25519` (`ubuntu-imac`, tanpa passphrase) terdaftar di VPS; extension di profil `ubuntu-imac` pakai token ingest VPS (bukan token `openssl` baru).
 
 ## 📝 Sesi Terakhir
 
-### 2026-10-31 — Audit knowledge graph (Claude, `🏛️ [Architecture & Knowledge Ops]`)
-* `graph.json` dicek dengan `npm run graphify`: hasil identik dengan versi commit (333 node, 900 link), tidak perlu di-commit ulang. `tools/canva-insights-extension/` memang di luar cakupan parser (hanya `src/`).
-* `index.md` diperbarui (Canva Insights Fase 1–3 + sinkron harian; Master Deck Builder F1–F2 selesai, HOLD). Entri sesi 2026-10-29 (Slide Master) dipindah ke `archive/session-handover-from-2026-10-17.md`.
+### 2026-11-09 — Canva Insights: token & parser v2 (Claude, `⚙️ [Backend & Data]`)
+* Extension di iMac Ubuntu: 401 karena token `openssl` baru ≠ token VPS; dipakai token VPS. Kunci SSH iMac didaftarkan ke VPS.
+* UICreative.net ditolak (field `C`/`D` = 0 tidak dikirim Canva) → `count()` di `parse.ts` membaca field hilang = 0, `PARSER_VERSION` 2. Diuji dengan payload sintetis + `tsc`; dirilis ke VPS; tinggal sinkron ulang UICreative 365 hari.
 
 ---
 
