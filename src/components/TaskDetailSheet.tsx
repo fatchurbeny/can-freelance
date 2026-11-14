@@ -28,6 +28,8 @@ import {
 } from '@/lib/checklist-qa';
 import CustomFieldsSection from './task-detail/CustomFieldsSection';
 import TaskShareButton from './task-detail/TaskShareButton';
+import SendBriefButton from './task-detail/SendBriefButton';
+import DesignOutputsList from './task-detail/DesignOutputsList';
 import type { CustomFieldDef } from './custom-fields/FieldValueDisplay';
 import { PRIORITY_OPTIONS, LICENSE_OPTIONS, getPagesForDoctype } from './task-form-utils';
 
@@ -87,6 +89,7 @@ interface OptionItem {
   pages?: number | null;
   poolRate?: number | null;
   qaChecklist?: string[];
+  studio?: string | null;
 }
 
 
@@ -105,6 +108,8 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved, 
   const canSeeBrand = !access.enabled || access.permissions.includes('account.view');
   const canSeeDropbox = !access.enabled || access.permissions.includes('dropboxLink.view');
   const canShare = !access.enabled || access.permissions.includes('task.share');
+  // Kirim brief ke improstd: butuh login sesi (tiket memakai ID user), di luar mode pratinjau. Kepemilikan task dicek server.
+  const canSendBrief = access.enabled && !access.preview && (access.permissions.includes('task.edit') || access.permissions.includes('task.edit.own'));
   // Task punya link publik aktif (dilaporkan TaskShareButton) → badge "Public view".
   const [isPublic, setIsPublic] = useState(false);
   const [pending, setPending] = useState<string | null>(null);
@@ -287,6 +292,7 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved, 
 
   const activeDesigner = designers.find(d => d.id === designerId) || task.designer;
   const activeDoctype = doctypes.find(d => d.id === doctypeId) || task.doctype;
+  const sendStudio = doctypes.find((d) => d.id === doctypeId)?.studio ?? null;
   const activeStatus = designStatuses.find(s => s.id === designStatusId) || task.designStatus;
 
   // Checklist QA: production Dropbox + Doctype yang punya daftar item
@@ -380,6 +386,7 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved, 
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
+            {canSendBrief && (sendStudio === 'deck' || sendStudio === 'doc') && <SendBriefButton taskId={task.id} studio={sendStudio} />}
             {canShare && <TaskShareButton taskId={task.id} onActiveChange={setIsPublic} />}
             {notionUrl && (
               <a
@@ -1026,6 +1033,8 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved, 
               triggerAutoSave({ customFields: { [name]: value } });
             }}
           />
+
+          <DesignOutputsList taskId={task.id} />
 
           {/* DESIGN BRIEF & COMMENTS TABBED INTERFACE */}
           <DesignBriefSection

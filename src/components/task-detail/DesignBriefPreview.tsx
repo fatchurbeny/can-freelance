@@ -3,7 +3,10 @@
 import { useState, type ReactNode } from 'react';
 import { ExternalLink, Check, Copy, FileText, Plus, Shuffle, Link as LinkIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { classifyHeading, cleanHeading, sortByBriefOrder, NOTES_HEADING, type BriefKind } from './brief-parser';
+import {
+  classifyHeading, cleanHeading, sortByBriefOrder, NOTES_HEADING, splitBriefSections, parseBriefColors, toServableImage,
+  type BriefKind, type BriefSwatch,
+} from './brief-parser';
 import BriefAssetsList from '../assets/BriefAssetsList';
 import { parseAssetSection, type BriefAssetRef } from '@/lib/asset-brief';
 
@@ -15,7 +18,7 @@ interface Props {
   onShufflePalette?: () => void;
 }
 
-interface Swatch { role?: string; hex: string }
+type Swatch = BriefSwatch;
 interface BriefLink { url: string; tag: 'WIREFRAME' | 'REFERENCE' }
 
 interface PreviewCard {
@@ -29,45 +32,8 @@ interface PreviewCard {
   assets?: BriefAssetRef[];
 }
 
-function splitSections(markdown: string) {
-  const out: { heading: string; lines: string[] }[] = [];
-  let heading = '';
-  let lines: string[] = [];
-  for (const line of markdown.split('\n')) {
-    const m = line.match(/^##\s*(.*)/);
-    if (m) {
-      if (heading || lines.some((l) => l.trim())) out.push({ heading, lines });
-      heading = m[1].trim();
-      lines = [];
-    } else lines.push(line);
-  }
-  if (heading || lines.some((l) => l.trim())) out.push({ heading, lines });
-  return out;
-}
-
-function parseColors(lines: string[]): Swatch[] {
-  const colors: Swatch[] = [];
-  const add = (hex: string, role?: string) => {
-    const h = hex.toUpperCase();
-    const existing = colors.find((c) => c.hex === h);
-    if (existing) { if (role && !existing.role) existing.role = role; }
-    else colors.push({ hex: h, role });
-  };
-  for (const line of lines) {
-    const t = line.trim();
-    const role = t.match(/^[-*]?\s*([A-Za-z ]+):\s*`?(#[A-Fa-f0-9]{6})`?\s*$/);
-    if (role && !/swatch/i.test(role[1])) { add(role[2], role[1].trim()); continue; }
-    for (const m of t.matchAll(/#[A-Fa-f0-9]{6}\b/g)) add(m[0]);
-  }
-  return colors;
-}
-
-/** Static /uploads/ is behind Nginx Basic Auth (401) — stream through the app route instead. */
-function toServableImage(url: string): string {
-  const m = url.match(/\/uploads\/([^/?#]+)$/);
-  if (m && !url.includes('/api/uploads/')) return `/can-freelance/api/uploads/${m[1]}`;
-  return url;
-}
+const splitSections = splitBriefSections;
+const parseColors = parseBriefColors;
 
 function buildCards(markdown: string): PreviewCard[] {
   const raw = sortByBriefOrder(splitSections(markdown || ''), (s) => s.heading);

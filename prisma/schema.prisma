@@ -120,6 +120,8 @@ model Doctype {
   usage           String       @default("Kontrak")
   /// Item Checklist QA (production Dropbox), urutan = urutan tampil. Kosong = tanpa checklist & tanpa gerbang In Review.
   qaChecklist     String[]     @default([]) @map("qa_checklist")
+  /// Studio improstd tujuan tombol "Kirim brief" di task: "deck" | "doc"; null = tombol disembunyikan.
+  studio          String?
   updatedAt       DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   tasks           Task[]
   platform        Platform     @relation(fields: [platformId], references: [id])
@@ -204,6 +206,7 @@ model Task {
   productionUnit   ProductionUnit  @relation(fields: [productionUnitId], references: [id])
   taskAccounts     TaskAccount[]
   canvaLinks       TaskCanvaLink[]
+  designOutputs    TaskDesignOutput[]
   canvaTemplates   CanvaTemplate[]
   assetLinks       TaskAsset[]
   comments         TaskComment[]
@@ -229,6 +232,24 @@ model TaskShareLink {
 
   @@index([taskId])
   @@map("task_share_links")
+}
+
+/// Desain hasil Deck/Doc improstd untuk task (write-back POST /api/brief/<taskId>/outputs).
+/// Terpisah dari task_canva_links karena sync Notion menimpa tabel itu.
+model TaskDesignOutput {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  taskId          String   @map("task_id") @db.Uuid
+  url             String
+  source          String   // "deck" | "doc"
+  improProjectId  String?  @map("impro_project_id")
+  title           String?
+  createdByCode   String?  @map("created_by_code")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  task            Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, url])
+  @@index([taskId])
+  @@map("task_design_outputs")
 }
 
 model TaskCanvaLink {

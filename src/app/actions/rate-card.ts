@@ -49,6 +49,8 @@ export async function updateDoctypeRateCardAction(
     aspectRatio?: string;
     notes?: string;
     qaChecklist?: string[];
+    /** Studio improstd untuk tombol "Kirim brief": 'deck' | 'doc' | null (sembunyikan). */
+    studio?: 'deck' | 'doc' | null;
     isActive?: boolean;
   }
 ) {
@@ -69,6 +71,7 @@ export async function updateDoctypeRateCardAction(
     if (values.aspectRatio !== undefined) dataToUpdate.aspectRatio = values.aspectRatio;
     if (values.notes !== undefined) dataToUpdate.notes = values.notes;
     if (values.qaChecklist !== undefined) dataToUpdate.qaChecklist = values.qaChecklist;
+    if (values.studio !== undefined) dataToUpdate.studio = values.studio === 'deck' || values.studio === 'doc' ? values.studio : null;
     if (typeof values.isActive === 'boolean') dataToUpdate.isActive = values.isActive;
 
     const updated = await prisma.doctype.update({
@@ -101,6 +104,7 @@ export async function createDoctypeAction(values: {
   pages: number;
   notes?: string;
   qaChecklist?: string[];
+  studio?: 'deck' | 'doc' | null;
   isActive?: boolean;
 }) {
   const denied = await denyWrite('rateCard.edit');
@@ -133,6 +137,7 @@ export async function createDoctypeAction(values: {
         pages: values.pages,
         notes: values.notes || null,
         qaChecklist: values.qaChecklist ?? [],
+        studio: values.studio === 'deck' || values.studio === 'doc' ? values.studio : null,
         isActive: values.isActive ?? true,
       },
     });

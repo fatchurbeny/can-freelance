@@ -44,6 +44,8 @@ export interface DoctypeItem {
   isActive?: boolean;
   /** Item Checklist QA (hanya dipakai production output Dropbox). */
   qaChecklist?: string[];
+  /** Studio improstd tujuan tombol "Kirim brief" di task. */
+  studio?: string | null;
   platform?: { slug: string; name: string; outputType?: string } | null;
   updatedAt: Date | string;
 }
@@ -117,6 +119,7 @@ export default function DoctypeSlideModal({
   const [usage, setUsage] = useState<'Kontrak' | 'Bundle' | 'Keduanya'>('Kontrak');
   const [notes, setNotes] = useState('');
   const [qaChecklistText, setQaChecklistText] = useState('');
+  const [studio, setStudio] = useState<'deck' | 'doc' | null>(null);
   const [isActive, setIsActive] = useState(true);
 
   const [error, setError] = useState('');
@@ -138,6 +141,7 @@ export default function DoctypeSlideModal({
       setUsage((doctypeToEdit.usage as 'Kontrak' | 'Bundle' | 'Keduanya') || 'Kontrak');
       setNotes(doctypeToEdit.notes || '');
       setQaChecklistText((doctypeToEdit.qaChecklist ?? []).join('\n'));
+      setStudio(doctypeToEdit.studio === 'deck' || doctypeToEdit.studio === 'doc' ? doctypeToEdit.studio : null);
       setIsActive(doctypeToEdit.isActive ?? true);
     } else {
       setPlatformSlug('canva');
@@ -151,6 +155,7 @@ export default function DoctypeSlideModal({
       setUsage('Kontrak');
       setNotes('');
       setQaChecklistText('');
+      setStudio(null);
       setIsActive(true);
     }
     setError('');
@@ -221,6 +226,7 @@ export default function DoctypeSlideModal({
         pages: numericPages,
         notes,
         qaChecklist,
+        studio,
         isActive,
       });
       setIsSaving(false);
@@ -245,6 +251,7 @@ export default function DoctypeSlideModal({
         pages: numericPages,
         notes,
         qaChecklist,
+        studio,
         isActive,
       });
       setIsSaving(false);
@@ -414,6 +421,22 @@ export default function DoctypeSlideModal({
                     );
                   })}
                 </div>
+              </div>
+            </div>
+
+            {/* Studio improstd: tombol "Kirim ke Deck/Doc" di task */}
+            <div className="flex items-stretch text-xs font-sans min-h-[44px]">
+              <div className="w-[110px] sm:w-[150px] shrink-0 border-r border-[#f0f0f0] dark:border-[#272a34] bg-gray-50/50 dark:bg-[#16181d]/50 px-3 sm:px-5 py-2.5 flex items-center gap-2 font-sans font-bold text-gray-500 dark:text-gray-400 select-none">
+                <span>Studio</span>
+                <InfoTip label="Studio">
+                  Tujuan tombol "Kirim brief" di task doctype ini: Deck atau Doc di impro.fatchurbeny.com. Tanpa studio, tombol tidak tampil.
+                </InfoTip>
+              </div>
+              <div className="flex-1 grid grid-cols-3 divide-x divide-[#f0f0f0] dark:divide-[#272a34] bg-white dark:bg-[#0d0e12]">
+                {([[null, 'Tidak ada'], ['deck', 'Deck'], ['doc', 'Doc']] as const).map(([v, text]) => (
+                  <button key={text} type="button" onClick={() => setStudio(v)}
+                    className={`min-h-[44px] text-xs font-bold uppercase tracking-wider cursor-pointer transition-colors ${studio === v ? 'bg-emerald-600 text-white' : 'bg-gray-50/50 dark:bg-[#16181d]/50 text-gray-500 hover:text-gray-900 dark:hover:text-white'}`}>{text}</button>
+                ))}
               </div>
             </div>
 

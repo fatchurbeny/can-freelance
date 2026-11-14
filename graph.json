@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "generatedAt": "2026-11-03T01:56:54.297Z",
+  "generatedAt": "2026-11-14T14:59:44.004Z",
   "nodes": [
     {
       "id": "page:/account-team",
@@ -65,6 +65,14 @@
       "group": "Server Actions & Lib",
       "filepath": "src/app/actions/canva-insights.ts",
       "details": "Server Actions in src/app/actions/canva-insights.ts"
+    },
+    {
+      "id": "action:design-outputs",
+      "label": "design-outputs.ts",
+      "type": "action",
+      "group": "Server Actions & Lib",
+      "filepath": "src/app/actions/design-outputs.ts",
+      "details": "Server Actions in src/app/actions/design-outputs.ts"
     },
     {
       "id": "action:designer",
@@ -179,6 +187,22 @@
       "details": "Server Actions in src/app/actions/user-management.ts"
     },
     {
+      "id": "api:/brief/[taskId]/outputs",
+      "label": "API /api/brief/[taskId]/outputs",
+      "type": "action",
+      "group": "Server Actions & Lib",
+      "filepath": "src/app/api/brief/[taskId]/outputs/route.ts",
+      "details": "Route Handler (/api/brief/[taskId]/outputs)"
+    },
+    {
+      "id": "api:/brief/[taskId]",
+      "label": "API /api/brief/[taskId]",
+      "type": "action",
+      "group": "Server Actions & Lib",
+      "filepath": "src/app/api/brief/[taskId]/route.ts",
+      "details": "Route Handler (/api/brief/[taskId])"
+    },
+    {
       "id": "api:/dropbox/oauth/callback",
       "label": "API /api/dropbox/oauth/callback",
       "type": "action",
@@ -217,6 +241,14 @@
       "group": "Server Actions & Lib",
       "filepath": "src/app/api/google/oauth/start/route.ts",
       "details": "Route Handler (/api/google/oauth/start)"
+    },
+    {
+      "id": "api:/impro/handoff",
+      "label": "API /api/impro/handoff",
+      "type": "action",
+      "group": "Server Actions & Lib",
+      "filepath": "src/app/api/impro/handoff/route.ts",
+      "details": "Route Handler (/api/impro/handoff)"
     },
     {
       "id": "api:/insights/ingest",
@@ -1603,6 +1635,22 @@
       "details": "React UI Component in src/components/task-detail/DesignBriefSection.tsx"
     },
     {
+      "id": "component:DesignOutputsList",
+      "label": "DesignOutputsList",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/task-detail/DesignOutputsList.tsx",
+      "details": "React UI Component in src/components/task-detail/DesignOutputsList.tsx"
+    },
+    {
+      "id": "component:SendBriefButton",
+      "label": "SendBriefButton",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/task-detail/SendBriefButton.tsx",
+      "details": "React UI Component in src/components/task-detail/SendBriefButton.tsx"
+    },
+    {
       "id": "component:TaskShareButton",
       "label": "TaskShareButton",
       "type": "component",
@@ -1777,6 +1825,14 @@
       "group": "Server Actions & Lib",
       "filepath": "src/lib/base-path.ts",
       "details": "Server/shared library in src/lib/base-path.ts"
+    },
+    {
+      "id": "lib:brief-extract",
+      "label": "brief-extract.ts",
+      "type": "action",
+      "group": "Server Actions & Lib",
+      "filepath": "src/lib/brief-extract.ts",
+      "details": "Server/shared library in src/lib/brief-extract.ts"
     },
     {
       "id": "lib:canva-email-parser",
@@ -1977,6 +2033,14 @@
       "group": "Server Actions & Lib",
       "filepath": "src/lib/imap-client.ts",
       "details": "Server/shared library in src/lib/imap-client.ts"
+    },
+    {
+      "id": "lib:impro-sso",
+      "label": "impro-sso.ts",
+      "type": "action",
+      "group": "Server Actions & Lib",
+      "filepath": "src/lib/impro-sso.ts",
+      "details": "Server/shared library in src/lib/impro-sso.ts"
     },
     {
       "id": "lib:notion-asset-import",
@@ -2265,6 +2329,14 @@
       "group": "Prisma DB Models",
       "filepath": "prisma/schema.prisma",
       "details": "Prisma model TaskShareLink (table task_share_links)"
+    },
+    {
+      "id": "model:TaskDesignOutput",
+      "label": "TaskDesignOutput Model",
+      "type": "model",
+      "group": "Prisma DB Models",
+      "filepath": "prisma/schema.prisma",
+      "details": "Prisma model TaskDesignOutput (table task_design_outputs)"
     },
     {
       "id": "model:TaskCanvaLink",
@@ -3113,6 +3185,30 @@
       "confidence": "EXTRACTED"
     },
     {
+      "source": "action:design-outputs",
+      "target": "lib:prisma",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:design-outputs",
+      "target": "lib:access",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:design-outputs",
+      "target": "model:Task",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:design-outputs",
+      "target": "model:TaskDesignOutput",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
       "source": "action:designer",
       "target": "lib:access",
       "relation": "invokes",
@@ -3845,6 +3941,42 @@
       "confidence": "EXTRACTED"
     },
     {
+      "source": "api:/brief/[taskId]/outputs",
+      "target": "lib:prisma",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "api:/brief/[taskId]/outputs",
+      "target": "lib:impro-sso",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "api:/brief/[taskId]/outputs",
+      "target": "model:TaskDesignOutput",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "api:/brief/[taskId]",
+      "target": "lib:impro-sso",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "api:/brief/[taskId]",
+      "target": "lib:brief-extract",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "api:/brief/[taskId]",
+      "target": "lib:permissions",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
       "source": "api:/dropbox/oauth/callback",
       "target": "lib:dropbox",
       "relation": "invokes",
@@ -3914,6 +4046,36 @@
       "source": "api:/google/oauth/start",
       "target": "lib:api-auth",
       "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "api:/impro/handoff",
+      "target": "lib:prisma",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "api:/impro/handoff",
+      "target": "lib:access",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "api:/impro/handoff",
+      "target": "lib:permissions",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "api:/impro/handoff",
+      "target": "lib:impro-sso",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "api:/impro/handoff",
+      "target": "model:Task",
+      "relation": "queries",
       "confidence": "EXTRACTED"
     },
     {
@@ -6803,6 +6965,18 @@
       "confidence": "EXTRACTED"
     },
     {
+      "source": "component:DesignOutputsList",
+      "target": "action:design-outputs",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:SendBriefButton",
+      "target": "lib:base-path",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
       "source": "component:TaskShareButton",
       "target": "lib:base-path",
       "relation": "invokes",
@@ -6895,6 +7069,18 @@
     {
       "source": "component:TaskDetailSheet",
       "target": "component:TaskShareButton",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:TaskDetailSheet",
+      "target": "component:SendBriefButton",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:TaskDetailSheet",
+      "target": "component:DesignOutputsList",
       "relation": "renders",
       "confidence": "EXTRACTED"
     },
@@ -7123,6 +7309,30 @@
     {
       "source": "lib:asset-report",
       "target": "model:TaskAsset",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:brief-extract",
+      "target": "lib:prisma",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:brief-extract",
+      "target": "lib:asset-brief",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:brief-extract",
+      "target": "component:brief-parser",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:brief-extract",
+      "target": "model:Task",
       "relation": "queries",
       "confidence": "EXTRACTED"
     },
@@ -7430,6 +7640,36 @@
       "source": "lib:imap-client",
       "target": "lib:canva-email-parser",
       "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:impro-sso",
+      "target": "lib:prisma",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:impro-sso",
+      "target": "lib:session",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:impro-sso",
+      "target": "lib:permissions",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:impro-sso",
+      "target": "model:User",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:impro-sso",
+      "target": "model:Task",
+      "relation": "queries",
       "confidence": "EXTRACTED"
     },
     {

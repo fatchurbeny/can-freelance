@@ -1,4 +1,4 @@
-export type BriefKind = 'image' | 'palette' | 'links' | 'assets' | 'keywords' | 'custom' | 'notes' | 'checklist';
+export type BriefKind = 'image' | 'palette' | 'links' | 'assets' | 'keywords' | 'prompt' | 'custom' | 'notes' | 'checklist';
 
 export const BRIEF_ORDER: Record<BriefKind, number> = {
   image: 1,
@@ -6,10 +6,11 @@ export const BRIEF_ORDER: Record<BriefKind, number> = {
   links: 3,
   assets: 4,
   keywords: 5,
-  custom: 6,
-  notes: 7,
+  prompt: 6,
+  custom: 7,
+  notes: 8,
   // Checklist QA (lib/checklist-qa.ts) selalu di akhir body
-  checklist: 8,
+  checklist: 9,
 };
 
 export const NOTES_HEADING = 'Catatan untuk Designer';
@@ -30,8 +31,53 @@ export function classifyHeading(heading: string): BriefKind {
   if (/\bassets?\b/.test(h)) return 'assets';
   if (h.includes('wireframe') || h.includes('template') || h.includes('refrence') || h.includes('reference')) return 'links';
   if (h.includes('keyword')) return 'keywords';
+  if (/\bprompt\b/.test(h)) return 'prompt';
   if (h.includes('catatan') || h.includes('note')) return 'notes';
   return 'custom';
+}
+
+/** Pecah markdown brief per heading `## ` (teks sebelum heading pertama = section tanpa judul). */
+export function splitBriefSections(markdown: string): { heading: string; lines: string[] }[] {
+  const out: { heading: string; lines: string[] }[] = [];
+  let heading = '';
+  let lines: string[] = [];
+  for (const line of markdown.split('\n')) {
+    const m = line.match(/^##\s*(.*)/);
+    if (m) {
+      if (heading || lines.some((l) => l.trim())) out.push({ heading, lines });
+      heading = m[1].trim();
+      lines = [];
+    } else lines.push(line);
+  }
+  if (heading || lines.some((l) => l.trim())) out.push({ heading, lines });
+  return out;
+}
+
+export interface BriefSwatch { role?: string; hex: string }
+
+/** Warna di section palet: baris `Primary: #AABBCC` memberi role, hex lain ditambahkan tanpa role. */
+export function parseBriefColors(lines: string[]): BriefSwatch[] {
+  const colors: BriefSwatch[] = [];
+  const add = (hex: string, role?: string) => {
+    const h = hex.toUpperCase();
+    const existing = colors.find((c) => c.hex === h);
+    if (existing) { if (role && !existing.role) existing.role = role; }
+    else colors.push({ hex: h, role });
+  };
+  for (const line of lines) {
+    const t = line.trim();
+    const role = t.match(/^[-*]?\s*([A-Za-z ]+):\s*`?(#[A-Fa-f0-9]{6})`?\s*$/);
+    if (role && !/swatch/i.test(role[1])) { add(role[2], role[1].trim()); continue; }
+    for (const m of t.matchAll(/#[A-Fa-f0-9]{6}\b/g)) add(m[0]);
+  }
+  return colors;
+}
+
+/** Static /uploads/ ada di belakang Basic Auth Nginx (401); arahkan ke route app /api/uploads/. */
+export function toServableImage(url: string): string {
+  const m = url.match(/\/uploads\/([^/?#]+)$/);
+  if (m && !url.includes('/api/uploads/')) return `/can-freelance/api/uploads/${m[1]}`;
+  return url;
 }
 
 /** Stable sort by canonical brief order (keeps relative order inside the same kind). */

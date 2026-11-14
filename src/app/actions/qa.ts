@@ -1204,7 +1204,7 @@ export async function fetchTaskMetadataOptionsAction(productionUnitId?: string) 
       }),
       prisma.doctype.findMany({
         where: platformScope,
-        select: { id: true, displayName: true, pages: true, poolRate: true, qaChecklist: true, _count: { select: { tasks: true } } },
+        select: { id: true, displayName: true, pages: true, poolRate: true, qaChecklist: true, studio: true, _count: { select: { tasks: true } } },
         orderBy: [
           { tasks: { _count: 'desc' } },
           { displayName: 'asc' },
