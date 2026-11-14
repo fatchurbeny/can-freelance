@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "generatedAt": "2026-11-14T15:21:44.680Z",
+  "generatedAt": "2026-11-14T15:36:17.798Z",
   "nodes": [
     {
       "id": "page:/account-team",
@@ -7652,6 +7652,12 @@
     },
     {
       "source": "lib:dropbox",
+      "target": "lib:base-path",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:dropbox",
       "target": "model:DropboxConnection",
       "relation": "queries",
       "confidence": "EXTRACTED"
@@ -7659,6 +7665,12 @@
     {
       "source": "lib:gmail-client",
       "target": "lib:canva-email-parser",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:google-oauth",
+      "target": "lib:base-path",
       "relation": "invokes",
       "confidence": "EXTRACTED"
     },

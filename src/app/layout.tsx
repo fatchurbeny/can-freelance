@@ -19,10 +19,10 @@ export const metadata = {
   description: 'Comprehensive report and payroll dashboard for CAN-Freelance.',
   icons: {
     icon: [
-      { url: '/can-freelance/icon.svg', type: 'image/svg+xml' },
-      { url: '/can-freelance/favicon.ico', sizes: 'any' },
+      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico', sizes: 'any' },
     ],
-    apple: '/can-freelance/apple-icon.png',
+    apple: '/apple-icon.png',
   },
 };
 

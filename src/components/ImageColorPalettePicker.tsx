@@ -89,7 +89,7 @@ export default function ImageColorPalettePicker({ onInsertPalette, className = '
         const uploadData = new FormData();
         uploadData.append('file', compressedBlob, 'reference.webp');
 
-        const uploadRes = await fetch('/can-freelance/api/upload', {
+        const uploadRes = await fetch('/api/upload', {
           method: 'POST',
           body: uploadData,
         });

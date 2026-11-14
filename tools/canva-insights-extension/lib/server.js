@@ -7,7 +7,7 @@ export class ServerAuthError extends Error {
   }
 }
 
-/** `baseUrl` = URL dashboard termasuk basePath, mis. https://portal.fatchurbeny.com/can-freelance */
+/** `baseUrl` = URL dashboard termasuk basePath, mis. https://portal.fatchurbeny.com */
 /** Server sedang restart (PM2) atau proxy putus: coba lagi dengan jeda, total ±2 menit. */
 const RETRY_STATUS = new Set([502, 503, 504, 520, 521, 522, 523, 524]);
 export const RETRY_DELAYS_MS = [5_000, 10_000, 20_000, 30_000, 45_000];

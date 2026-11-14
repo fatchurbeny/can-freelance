@@ -27,8 +27,7 @@ export default function StepOutput({ data, platform, onChange }: Props) {
   }, [isDropbox]);
 
   if (isDropbox) {
-    const isSubpath = typeof window !== 'undefined' && window.location.pathname.startsWith('/can-freelance');
-    const connectUrl = `${isSubpath ? '/can-freelance' : ''}/api/dropbox/oauth/start`;
+    const connectUrl = '/api/dropbox/oauth/start';
 
     return (
       <div className="border border-[#f0f0f0] dark:border-[#272a34] p-4 space-y-4 font-sans">

@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
   if (denied) return denied;
   const origin = request.nextUrl.origin;
   // basePath dipakai konsisten dengan next.config.ts (route handler tidak selalu mengisi nextUrl.basePath)
-  const doneUrl = new URL('/can-freelance/production/new', origin);
+  const doneUrl = new URL('/production/new', origin);
 
   const cookieStore = await cookies();
   const expectedState = cookieStore.get('dropbox_oauth_state')?.value;

@@ -17,9 +17,9 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 
 ## ⏳ Belum Selesai / Menunggu
 
-* Freelance boleh ber-ID PRO (Putery `FL-001` → `PRO61`): kode siap di lokal, **belum di-commit/deploy**; setelah rilis ganti ID di VPS lewat drawer Edit User. Menunggu juga: `SSO_SECRET` + `BRIEF_API_KEY` di VPS untuk Kirim brief ke Deck/Doc (detail `grep "ID login Full-time" archive/`).
+* Freelance boleh ber-ID PRO (Putery `FL-001` → `PRO61`): sudah di-commit (`69859e1`) dan ikut ter-deploy 2026-11-14; tinggal ganti ID di VPS lewat drawer Edit User. Menunggu juga: `SSO_SECRET` + `BRIEF_API_KEY` di VPS untuk Kirim brief ke Deck/Doc (detail `grep "ID login Full-time" archive/`).
 * Ganti PIN admin `FT-001` (menunggu user). DB lokal: Postgres 16 Homebrew; VPS: Postgres 16 Ubuntu (lihat arsip 2026-11-09).
-* **Kode VPS**: `feat/canva-insights` `3ec9882` dirilis 2026-10-30 12:40 WIB (termasuk kolom F2 `tasks.dropbox_*`; `migrate diff` kosong). Backup: `~/db-backups/can-freelance-20261030-123858-pre-canva-insights-vps.dump`. 5 brand Canva sudah di-seed. Deploy: `VPS_SSH_PORT=2222 npm run deploy:vps`; env app di `.next/standalone/.env`.
+* **Kode VPS**: `feat/canva-insights` `3ec9882` dirilis 2026-10-30 12:40 WIB (termasuk kolom F2 `tasks.dropbox_*`; `migrate diff` kosong). Backup: `~/db-backups/can-freelance-20261030-123858-pre-canva-insights-vps.dump`. 5 brand Canva sudah di-seed. Deploy: `VPS_SSH_PORT=2222 npm run deploy:vps`; env app di `.next/standalone/.env`. **Sejak 2026-11-14 app di root `https://portal.fatchurbeny.com` (tanpa `/can-freelance`).**
 * **Canva Insights di VPS**: Chital, Antler, UICreative.net, Improstd OK 365 hari (run OK terakhir 2026-11-02); Zahra Art belum dicek. Ingest massal (`3a408e7`) **belum dirilis ke VPS** (deploy ditolak classifier; jalankan `VPS_SSH_PORT=2222 npm run deploy:vps` manual). Setelah rilis: reload extension tiap profil (1.1.2), cocokkan angka tiap brand dengan Canva (`scratch/canva-insights-test/pct-check.ts <brandId> <from> <to>`).
 * Tombol "Download all Statement" di `/billing-statement` mengarah ke `/api/billing/download-all` yang tidak ada (dan `<a>` tanpa basePath) → selalu 404.
 * Print statement (`/billing-statement/print`) memanggil `window.print()` otomatis.
@@ -42,10 +42,11 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 
 ## 📝 Sesi Terakhir
 
-### 2026-11-14 — Reference Image multi-gambar di Design Brief (Claude Code, `🎨 [Frontend & UI/UX]`)
-* Section "🖼️ Reference Image" kini bisa berisi beberapa gambar (mis. 3 thumbnail deck sebagai referensi gaya); palet tetap dari satu sumber lewat `ImageColorPalettePicker`. Komponen baru `task-detail/ReferenceImageUploader.tsx` (pilih banyak file, drag & drop, paste saat dropzone fokus; kompres WebP 1400px) tampil di bawah section gambar dan sebagai kartu bila section belum ada. Helper `referenceImageUrls`/`addReferenceImages`/`removeReferenceImage` di `brief-parser.ts`.
-* Perilaku berubah: `mergePaletteMarkdown` tidak lagi mengganti section Reference Image; gambar dari picker palet **ditambahkan** (tanpa duplikat). Preview menampilkan semua gambar (grid, meta "N gambar"). Picker palet mengabaikan paste yang sudah `defaultPrevented`.
-* Diverifikasi di modal Buat Task (tanpa simpan): drop 3 gambar → 3 baris `![]()`, hapus → 2. Di lokal gambar tampak rusak karena `/api/upload` selalu mengembalikan URL produksi (perilaku lama). **Belum di-commit / dirilis.**
+### 2026-11-14 — can-freelance pindah ke root `portal.fatchurbeny.com` (Claude Code, `⚙️ [DevOps]`)
+* `basePath` dihapus (`next.config.ts`; `APP_BASE_PATH = ''`, `LEGACY_BASE_PATH = '/can-freelance'` di `src/lib/base-path.ts`). `/can-freelance/*` → **308** ke root (Next redirect + Nginx), jadi POST extension & tautan/gambar lama tetap jalan. Callback OAuth Google/Dropbox **sengaja** tetap memakai prefix lama (terdaftar di konsol) lalu dialihkan.
+* VPS: vhost `portal.fatchurbeny.com.conf` kini proxy penuh ke :3002 (`/_next/static/` dari filesystem, `absolute_redirect off`). **Dihapus**: landing portal, Icon Composer, Template Icon Builder, Metafora/Metavora v1, folder kosong `/www/wwwroot/can-freelance`, 3 file `.conf.bak*`. Backup: `~/backups/portal-sites-20261114-223243.tar.gz` + `~/backups/portal.fatchurbeny.com.conf.pre-root-20261114`.
+* Ikut diubah di VPS: `NEXT_PUBLIC_APP_URL`/`APP_URL` = `https://portal.fatchurbeny.com` (`.next/standalone/.env`), crontab sync → `127.0.0.1:3002/api/sync/cron`, improstd `.env` `CANFREELANCE_URL=http://127.0.0.1:3002` (backup `.env.bak-20261114-root`). Deploy & healthcheck (`deploy-vps.sh` kini cek `/production`→`/login`) sukses; working tree ikut ter-deploy (termasuk ID PRO freelance & multi Reference Image yang sudah di-commit). Perubahan ini **belum di-commit**.
+* Catatan: improstd `core/lib/brief.mjs:96` hanya mengenali URL upload ber-prefix `/can-freelance/`; URL baru `/api/uploads/` diambil lewat URL publik (Cloudflare). Extension Canva Insights: URL lama tetap jalan via 308; default baru di `options.js`.
 
 ---
 

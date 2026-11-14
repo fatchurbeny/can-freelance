@@ -1,6 +1,6 @@
 import { DEFAULT_SCHEDULE_TIME } from './lib/schedule.js';
 
-const DEFAULT_URL = 'https://portal.fatchurbeny.com/can-freelance';
+const DEFAULT_URL = 'https://portal.fatchurbeny.com';
 const $ = (id) => document.getElementById(id);
 
 function show(text, ok) {

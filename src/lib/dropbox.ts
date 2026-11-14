@@ -6,13 +6,15 @@
 
 import prisma from '@/lib/prisma';
 import { encrypt, decrypt } from '@/lib/encryption';
+import { LEGACY_BASE_PATH } from '@/lib/base-path';
 
 const API_HOST = 'https://api.dropboxapi.com/2';
 const OAUTH_TOKEN_URL = 'https://api.dropbox.com/oauth2/token';
 const AUTHORIZE_URL = 'https://www.dropbox.com/oauth2/authorize';
-/** Redirect URI mengikuti origin tempat alur dimulai (localhost / 127.0.0.1), agar sessionStorage & cookie tetap satu origin. */
+/** Redirect URI mengikuti origin tempat alur dimulai (localhost / 127.0.0.1), agar sessionStorage & cookie tetap satu origin.
+ *  Prefix lama tetap dipakai karena itulah yang terdaftar di Dropbox App Console; dialihkan 308 ke /api/dropbox/oauth/callback. */
 export function dropboxRedirectUri(origin: string): string {
-  return `${origin}/can-freelance/api/dropbox/oauth/callback`;
+  return `${origin}${LEGACY_BASE_PATH}/api/dropbox/oauth/callback`;
 }
 
 export function getDropboxConfig() {

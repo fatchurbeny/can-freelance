@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
   const denied = await authorizeApi('integration.manage');
   if (denied) return denied;
   const origin = request.nextUrl.origin;
-  const basePath = request.nextUrl.basePath || (origin.includes('portal.fatchurbeny.com') ? '/can-freelance' : '');
+  const basePath = request.nextUrl.basePath || '';
   const returnUrl = new URL(`${basePath}/notion-config`, origin);
   const email = request.nextUrl.searchParams.get('email')?.trim() || '';
   const { clientId, redirectUri } = getGoogleOAuthConfig(origin);

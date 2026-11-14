@@ -76,7 +76,7 @@ export function parseBriefColors(lines: string[]): BriefSwatch[] {
 /** Static /uploads/ ada di belakang Basic Auth Nginx (401); arahkan ke route app /api/uploads/. */
 export function toServableImage(url: string): string {
   const m = url.match(/\/uploads\/([^/?#]+)$/);
-  if (m && !url.includes('/api/uploads/')) return `/can-freelance/api/uploads/${m[1]}`;
+  if (m && !url.includes('/api/uploads/')) return `/api/uploads/${m[1]}`;
   return url;
 }
 

@@ -1,16 +1,18 @@
 import crypto from 'crypto';
+import { LEGACY_BASE_PATH } from '@/lib/base-path';
 
 const GMAIL_READONLY_SCOPE = 'https://www.googleapis.com/auth/gmail.readonly';
 
+/** Callback tetap memakai prefix lama yang terdaftar di Google Cloud Console; Nginx/Next mengalihkannya 308 ke /api/google/oauth/callback. */
 export function getGoogleOAuthRedirectUri(origin: string) {
   const cleanOrigin = origin.replace(/\/+$/, '');
   if (cleanOrigin.includes('portal.fatchurbeny.com')) {
-    return 'https://portal.fatchurbeny.com/can-freelance/api/google/oauth/callback';
+    return `https://portal.fatchurbeny.com${LEGACY_BASE_PATH}/api/google/oauth/callback`;
   }
   if (process.env.GOOGLE_OAUTH_REDIRECT_URI) {
     return process.env.GOOGLE_OAUTH_REDIRECT_URI;
   }
-  return `${cleanOrigin}/can-freelance/api/google/oauth/callback`;
+  return `${cleanOrigin}${LEGACY_BASE_PATH}/api/google/oauth/callback`;
 }
 
 export function getGoogleOAuthConfig(origin: string) {

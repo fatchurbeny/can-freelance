@@ -20,7 +20,7 @@ async function uploadOne(file: File): Promise<string | null> {
   const blob = await compressImageToWebP(file, 1400, 1400, 0.85);
   const form = new FormData();
   form.append('file', blob, 'reference.webp');
-  const res = await fetch('/can-freelance/api/upload', { method: 'POST', body: form });
+  const res = await fetch('/api/upload', { method: 'POST', body: form });
   if (!res.ok) return null;
   const data = await res.json().catch(() => null);
   return data?.url ?? null;

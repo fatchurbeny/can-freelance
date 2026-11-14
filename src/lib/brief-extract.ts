@@ -56,7 +56,7 @@ function linkTitle(url: string): string {
 
 /**
  * Bangun payload brief. `appOrigin` (mis. http://127.0.0.1:3002) dipakai agar URL gambar unggahan
- * absolut; `publicBase` (mis. https://portal.fatchurbeny.com/can-freelance) untuk shareUrl.
+ * absolut; `publicBase` (mis. https://portal.fatchurbeny.com) untuk shareUrl.
  */
 export async function buildBriefPayload(
   taskId: string,
@@ -114,7 +114,7 @@ export async function buildBriefPayload(
         for (const raw of found) {
           const servable = toServableImage(raw);
           const local = servable.includes('/api/uploads/');
-          const url = local ? `${opts.appOrigin}/can-freelance/api/uploads/${servable.split('/api/uploads/')[1]}` : servable;
+          const url = local ? `${opts.appOrigin}/api/uploads/${servable.split('/api/uploads/')[1]}` : servable;
           if (!images.some((x) => x.url === url)) images.push({ url, external: !local });
         }
         break;

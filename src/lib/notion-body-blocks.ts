@@ -27,7 +27,7 @@ export function markdownToNotionBlocks(bodyText: string): any[] {
   // Notion always receives the canonical Design Brief section order
   const lines = orderBriefMarkdown(bodyText).split('\n');
   const blocks: any[] = [];
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://portal.fatchurbeny.com/can-freelance';
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://portal.fatchurbeny.com';
 
   let inColorPalette = false;
   let paletteLines: string[] = [];
@@ -48,7 +48,7 @@ export function markdownToNotionBlocks(bodyText: string): any[] {
 
     if (hexList.length > 0) {
       const publicUrl = baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1')
-        ? 'https://portal.fatchurbeny.com/can-freelance'
+        ? 'https://portal.fatchurbeny.com'
         : baseUrl.replace(/\/$/, '');
       const cleanHexCsv = hexList.map((h) => h.replace('#', '')).join(',');
 

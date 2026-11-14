@@ -15,11 +15,11 @@ export const isImproTarget = (v: unknown): v is ImproTarget => v === 'deck' || v
 
 export const IMPRO_URL = () => (process.env.IMPRO_URL || 'https://impro.fatchurbeny.com').replace(/\/+$/, '');
 
-/** Basis URL publik can-freelance (dengan basePath), untuk tautan yang dibuka manusia. */
+/** Basis URL publik can-freelance (root domain, tanpa basePath), untuk tautan yang dibuka manusia. */
 export function publicBase(): string {
-  const base = process.env.NEXT_PUBLIC_APP_URL || 'https://portal.fatchurbeny.com/can-freelance';
+  const base = process.env.NEXT_PUBLIC_APP_URL || 'https://portal.fatchurbeny.com';
   return base.includes('localhost') || base.includes('127.0.0.1')
-    ? 'https://portal.fatchurbeny.com/can-freelance'
+    ? 'https://portal.fatchurbeny.com'
     : base.replace(/\/+$/, '');
 }
 

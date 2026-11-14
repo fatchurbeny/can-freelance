@@ -27,8 +27,7 @@ export default function GoogleOAuthModal({ open, onClose, currentEmail, onStart 
     try {
       const query = hintEmail ? `?email=${encodeURIComponent(hintEmail)}` : '';
       onStart(hintEmail || undefined);
-      const isSubpath = typeof window !== 'undefined' && window.location.pathname.startsWith('/can-freelance');
-      const startUrl = `${isSubpath ? '/can-freelance' : ''}/api/google/oauth/start${query}`;
+      const startUrl = `/api/google/oauth/start${query}`;
       window.location.href = startUrl;
     } catch (err: any) {
       setFeedback({
