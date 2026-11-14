@@ -25,7 +25,7 @@ interface PreviewCard {
   kind: BriefKind;
   title: string;
   content: string;
-  imageUrl?: string | null;
+  imageUrls?: string[];
   colors?: Swatch[];
   links?: BriefLink[];
   tags?: string[];
@@ -60,8 +60,13 @@ function buildCards(markdown: string): PreviewCard[] {
       continue;
     }
     if (kind === 'image') {
-      const img = content.match(/!\[[^\]]*\]\(([^)\s]+)\)/) || content.match(/https?:\/\/\S+\.(?:png|jpe?g|webp|gif)/i);
-      cards.push({ kind, title: title || 'Reference Image', content, imageUrl: img ? toServableImage(img[1] ?? img[0]) : null });
+      const md = Array.from(content.matchAll(/!\[[^\]]*\]\(([^)\s]+)\)/g), (m) => m[1]);
+      const bare = md.length ? [] : Array.from(content.matchAll(/https?:\/\/\S+\.(?:png|jpe?g|webp|gif)/gi), (m) => m[0]);
+      const imageUrls = Array.from(new Set([...md, ...bare])).map(toServableImage);
+      // Beberapa section gambar digabung jadi satu kartu
+      const existing = cards.find((c) => c.kind === 'image');
+      if (existing) { existing.imageUrls = Array.from(new Set([...(existing.imageUrls ?? []), ...imageUrls])); continue; }
+      cards.push({ kind, title: title || 'Reference Image', content, imageUrls });
       continue;
     }
     if (kind === 'palette') {
@@ -149,13 +154,25 @@ export default function DesignBriefPreview({ bodyText, onAddNotes, onShufflePale
         const n = i + 1;
         if (card.kind === 'image') {
           return (
-            <Card key={i} index={n} title={card.title}>
+            <Card key={i} index={n} title={card.title} meta={(card.imageUrls?.length ?? 0) > 1 ? `${card.imageUrls!.length} gambar` : undefined}>
               <div className="p-4">
-                {card.imageUrl ? (
-                  <a href={card.imageUrl} target="_blank" rel="noopener noreferrer" className="block border border-[#f0f0f0] dark:border-[#272a34] bg-gray-50 dark:bg-[#16181d]">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={card.imageUrl} alt="Reference image" loading="lazy" className="w-full max-h-[360px] object-contain" />
-                  </a>
+                {card.imageUrls?.length ? (
+                  <div className={card.imageUrls.length > 1 ? 'grid grid-cols-1 sm:grid-cols-2 gap-2' : ''}>
+                    {card.imageUrls.map((url, idx) => (
+                      <a
+                        key={url}
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`block border border-[#f0f0f0] dark:border-[#272a34] bg-gray-50 dark:bg-[#16181d] ${
+                          card.imageUrls!.length % 2 === 1 && idx === 0 && card.imageUrls!.length > 1 ? 'sm:col-span-2' : ''
+                        }`}
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={url} alt={`Reference image ${idx + 1}`} loading="lazy" className="w-full max-h-[360px] object-contain" />
+                      </a>
+                    ))}
+                  </div>
                 ) : (
                   <p className="text-xs text-gray-500">Gambar belum ditambahkan.</p>
                 )}

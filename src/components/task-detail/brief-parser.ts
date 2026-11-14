@@ -150,3 +150,63 @@ export function shufflePaletteMarkdown(markdown: string | null | undefined): str
   const trailingBlank = body.length && !body[body.length - 1].trim() ? [''] : [];
   return [...lines.slice(0, start + 1), ...colorLines, ...otherLines, ...trailingBlank, ...lines.slice(end)].join('\n');
 }
+
+const IMAGE_MD_RE = /!\[[^\]]*\]\(([^)\s]+)\)/g;
+const IMAGE_HEADING_LINE = '## 🖼️ Reference Image';
+
+/** Semua URL gambar (`![](url)`) di section Reference Image, berurutan & tanpa duplikat. */
+export function referenceImageUrls(markdown: string): string[] {
+  const urls: string[] = [];
+  for (const sec of splitBriefSections(markdown || '')) {
+    if (classifyHeading(sec.heading) !== 'image') continue;
+    for (const m of sec.lines.join('\n').matchAll(IMAGE_MD_RE)) {
+      if (!urls.includes(m[1])) urls.push(m[1]);
+    }
+  }
+  return urls;
+}
+
+/** Rentang baris [start, end) section Reference Image pertama, atau null. */
+function findImageSection(lines: string[]): [number, number] | null {
+  const start = lines.findIndex((l) => {
+    const m = l.match(/^##\s*(.*)/);
+    return !!m && classifyHeading(m[1]) === 'image';
+  });
+  if (start < 0) return null;
+  let end = lines.findIndex((l, i) => i > start && /^##\s*/.test(l));
+  if (end < 0) end = lines.length;
+  return [start, end];
+}
+
+/** Tambahkan gambar ke section Reference Image (dibuat bila belum ada); URL yang sudah ada dilewati. */
+export function addReferenceImages(markdown: string, urls: string[]): string {
+  const existing = referenceImageUrls(markdown);
+  const fresh = urls.filter((u, i) => u && !existing.includes(u) && urls.indexOf(u) === i);
+  if (fresh.length === 0) return markdown || '';
+  const imgLines = fresh.map((u) => `![](${u})`);
+  const lines = (markdown || '').split('\n');
+  const range = findImageSection(lines);
+  if (!range) {
+    const rest = (markdown || '').trim();
+    return [IMAGE_HEADING_LINE, ...imgLines].join('\n') + (rest ? `\n\n${rest}` : '\n');
+  }
+  const [start, end] = range;
+  let insertAt = end;
+  while (insertAt > start + 1 && !lines[insertAt - 1].trim()) insertAt--;
+  const next = [...lines.slice(0, insertAt), ...imgLines, ...lines.slice(insertAt)];
+  return next.join('\n');
+}
+
+/** Hapus satu gambar dari section Reference Image (baris `![](url)` yang cocok). */
+export function removeReferenceImage(markdown: string, url: string): string {
+  const lines = (markdown || '').split('\n');
+  const range = findImageSection(lines);
+  if (!range) return markdown || '';
+  const [start, end] = range;
+  const body = lines.slice(start + 1, end).flatMap((l) => {
+    const next = l.replace(/!\[[^\]]*\]\(([^)\s]+)\)/g, (all, u) => (u === url ? '' : all));
+    // Baris yang kosong karena gambarnya dihapus ikut dibuang; baris kosong asli dipertahankan
+    return next !== l && !next.trim() ? [] : [next];
+  });
+  return [...lines.slice(0, start + 1), ...body, ...lines.slice(end)].join('\n');
+}

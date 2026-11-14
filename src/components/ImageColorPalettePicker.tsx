@@ -37,6 +37,8 @@ export default function ImageColorPalettePicker({ onInsertPalette, className = '
   // Handle global paste event when user pastes image inside container or active window
   useEffect(() => {
     const handlePaste = (e: globalThis.ClipboardEvent) => {
+      // Sudah ditangani komponen lain (mis. uploader Reference Image multi-gambar)
+      if (e.defaultPrevented) return;
       const items = e.clipboardData?.items;
       if (!items) return;
 

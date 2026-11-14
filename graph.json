@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "generatedAt": "2026-11-14T14:59:44.004Z",
+  "generatedAt": "2026-11-14T15:21:44.680Z",
   "nodes": [
     {
       "id": "page:/account-team",
@@ -1641,6 +1641,14 @@
       "group": "React Components",
       "filepath": "src/components/task-detail/DesignOutputsList.tsx",
       "details": "React UI Component in src/components/task-detail/DesignOutputsList.tsx"
+    },
+    {
+      "id": "component:ReferenceImageUploader",
+      "label": "ReferenceImageUploader",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/task-detail/ReferenceImageUploader.tsx",
+      "details": "React UI Component in src/components/task-detail/ReferenceImageUploader.tsx"
     },
     {
       "id": "component:SendBriefButton",
@@ -6912,6 +6920,12 @@
     },
     {
       "source": "component:DesignBriefEditorDrawer",
+      "target": "component:ReferenceImageUploader",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:DesignBriefEditorDrawer",
       "target": "component:AssetPicker",
       "relation": "renders",
       "confidence": "EXTRACTED"
@@ -6967,6 +6981,18 @@
     {
       "source": "component:DesignOutputsList",
       "target": "action:design-outputs",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:ReferenceImageUploader",
+      "target": "component:brief-parser",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:ReferenceImageUploader",
+      "target": "lib:color-extractor",
       "relation": "invokes",
       "confidence": "EXTRACTED"
     },

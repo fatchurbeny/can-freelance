@@ -17,6 +17,7 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 
 ## ⏳ Belum Selesai / Menunggu
 
+* Freelance boleh ber-ID PRO (Putery `FL-001` → `PRO61`): kode siap di lokal, **belum di-commit/deploy**; setelah rilis ganti ID di VPS lewat drawer Edit User. Menunggu juga: `SSO_SECRET` + `BRIEF_API_KEY` di VPS untuk Kirim brief ke Deck/Doc (detail `grep "ID login Full-time" archive/`).
 * Ganti PIN admin `FT-001` (menunggu user). DB lokal: Postgres 16 Homebrew; VPS: Postgres 16 Ubuntu (lihat arsip 2026-11-09).
 * **Kode VPS**: `feat/canva-insights` `3ec9882` dirilis 2026-10-30 12:40 WIB (termasuk kolom F2 `tasks.dropbox_*`; `migrate diff` kosong). Backup: `~/db-backups/can-freelance-20261030-123858-pre-canva-insights-vps.dump`. 5 brand Canva sudah di-seed. Deploy: `VPS_SSH_PORT=2222 npm run deploy:vps`; env app di `.next/standalone/.env`.
 * **Canva Insights di VPS**: Chital, Antler, UICreative.net, Improstd OK 365 hari (run OK terakhir 2026-11-02); Zahra Art belum dicek. Ingest massal (`3a408e7`) **belum dirilis ke VPS** (deploy ditolak classifier; jalankan `VPS_SSH_PORT=2222 npm run deploy:vps` manual). Setelah rilis: reload extension tiap profil (1.1.2), cocokkan angka tiap brand dengan Canva (`scratch/canva-insights-test/pct-check.ts <brandId> <from> <to>`).
@@ -41,10 +42,10 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 
 ## 📝 Sesi Terakhir
 
-### 2026-11-14 — ID login Full-time = ID PRO + rancangan SSO improstd (Claude Code, `⚙️ [Backend & Database]`)
-* Keputusan pemilik: akun Full-time memakai **ID PRO** (roster Portal Impro, sama dengan login improstd) menggantikan `FT-xxx`; Freelance tetap `FL-xxx`. `newUserCode`/`proCodeError` di `user-admin.ts`; input ID PRO di drawer User & Role (buat + edit, ganti ID tanpa reset PIN/sesi) dan di "Buat Akun Login" drawer designer Full-time. Migrasi: `scripts/migrate-ft-to-pro.ts` (uji kering lokal OK). Commit `c97e43d`, dirilis ke VPS 2026-11-14 (di VPS hanya ada `FT-001` = pemilik → ganti ke `PRO20` lewat drawer Edit User; belum dilakukan).
-* "Kirim brief ke Deck/Doc" (kontrak I-22) **dibangun di sisi can-freelance**: `doctype.studio`, tabel `task_design_outputs`, section `prompt`, `lib/brief-extract.ts`, `lib/impro-sso.ts`, route `/api/impro/handoff`, `/api/brief/[taskId]` (+`/outputs`), tombol di task drawer. Detail: [`impro-brief-handoff.md`](impro-brief-handoff.md). Diuji lokal dengan curl (payload, 401/403/404, write-back) dan tiket diverifikasi dengan secret improstd; uji silang dengan improstd lokal belum (server 8790 mati saat itu). Commit `bc115cd`, **dirilis ke VPS 2026-11-14**: SQL aditif dijalankan manual lewat ssh+psql (`deploy:vps` tidak menjalankan `db push`), healthcheck OK, `/api/brief/<id>` tanpa key → 401. **Menunggu pemilik**: `SSO_SECRET` + `BRIEF_API_KEY` di `.next/standalone/.env` lalu `pm2 reload can-freelance --update-env`; Studio Regular-Presentation = deck (keputusan pemilik; doctype lain null, belum ada doctype doc). improstd sudah dirilis (`2eb227a`). Gotcha deploy: `scp` sering 'stalled' di 255 KB lalu jalan lagi, jangan di-Ctrl-C.
-* Catatan: share link publik menampilkan Brand; opsi sembunyikan brand per link belum dibuat.
+### 2026-11-14 — Reference Image multi-gambar di Design Brief (Claude Code, `🎨 [Frontend & UI/UX]`)
+* Section "🖼️ Reference Image" kini bisa berisi beberapa gambar (mis. 3 thumbnail deck sebagai referensi gaya); palet tetap dari satu sumber lewat `ImageColorPalettePicker`. Komponen baru `task-detail/ReferenceImageUploader.tsx` (pilih banyak file, drag & drop, paste saat dropzone fokus; kompres WebP 1400px) tampil di bawah section gambar dan sebagai kartu bila section belum ada. Helper `referenceImageUrls`/`addReferenceImages`/`removeReferenceImage` di `brief-parser.ts`.
+* Perilaku berubah: `mergePaletteMarkdown` tidak lagi mengganti section Reference Image; gambar dari picker palet **ditambahkan** (tanpa duplikat). Preview menampilkan semua gambar (grid, meta "N gambar"). Picker palet mengabaikan paste yang sudah `defaultPrevented`.
+* Diverifikasi di modal Buat Task (tanpa simpan): drop 3 gambar → 3 baris `![]()`, hapus → 2. Di lokal gambar tampak rusak karena `/api/upload` selalu mengembalikan URL produksi (perilaku lama). **Belum di-commit / dirilis.**
 
 ---
 

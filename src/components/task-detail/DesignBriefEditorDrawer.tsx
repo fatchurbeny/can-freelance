@@ -2,21 +2,24 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Edit3, LayoutGrid, Palette, X } from 'lucide-react';
+import { Edit3, Image as ImageIcon, LayoutGrid, Palette, X } from 'lucide-react';
 import TaskBodyEditor from '../TaskBodyEditor';
 import ImageColorPalettePicker from '../ImageColorPalettePicker';
-import { classifyHeading } from './brief-parser';
+import { addReferenceImages, classifyHeading, referenceImageUrls, removeReferenceImage } from './brief-parser';
+import ReferenceImageUploader from './ReferenceImageUploader';
 import AssetPicker from '../assets/AssetPicker';
 import { useAccess } from '@/context/AccessContext';
 
-/** Ganti section palet (dan gambar referensi bila palet baru membawanya) di markdown brief. */
+/**
+ * Ganti section palet di markdown brief. Gambar yang dibawa palet baru ditambahkan ke section
+ * Reference Image (tidak menggantikan gambar lain, karena section ini bisa berisi beberapa referensi gaya).
+ */
 export function mergePaletteMarkdown(body: string, paletteMarkdown: string): string {
-  const hasNewImage = /##\s*🖼️\s*Reference Image/i.test(paletteMarkdown);
-  const base = hasNewImage
-    ? (body || '').replace(/##\s*🖼️\s*Reference Image[\s\S]*?(?=##|$)/gi, '')
-    : (body || '');
-  const cleaned = base.replace(/##\s*🎨\s*Color Palette[\s\S]*?(?=##|$)/gi, '').trim();
-  return cleaned ? `${cleaned}\n\n${paletteMarkdown}` : paletteMarkdown;
+  const newImages = referenceImageUrls(paletteMarkdown);
+  const paletteOnly = paletteMarkdown.replace(/##\s*🖼️\s*Reference Image[\s\S]*?(?=##|$)/gi, '').trim();
+  const cleaned = (body || '').replace(/##\s*🎨\s*Color Palette[\s\S]*?(?=##|$)/gi, '').trim();
+  const merged = cleaned ? `${cleaned}\n\n${paletteOnly}` : paletteOnly;
+  return addReferenceImages(merged, newImages);
 }
 
 /** Lebar drawer editor; drawer induk bergeser ke kiri sebesar ini (lihat `BRIEF_EDITOR_SHIFT_CLASS`). */
@@ -54,6 +57,9 @@ export default function DesignBriefEditorDrawer({
   const [pickerOpen, setPickerOpen] = useState(false);
   const closeRef = useRef(onClose);
   const pickerOpenRef = useRef(false);
+  // Upload berjalan async; pakai body terbaru saat selesai agar ketikan selama upload tidak tertimpa
+  const valueRef = useRef(value);
+  valueRef.current = value;
   const access = useAccess();
   const canUseLibrary = !!onInsertAssets && (!access.enabled || access.permissions.includes('asset.view'));
 
@@ -84,6 +90,18 @@ export default function DesignBriefEditorDrawer({
   }, []);
 
   const hasPaletteSection = /^##\s*.*(palette|warna)/im.test(value || '');
+  const hasImageSection = (value || '').split('\n').some((l) => {
+    const m = l.match(/^##\s*(.*)/);
+    return !!m && classifyHeading(m[1]) === 'image';
+  });
+  const images = referenceImageUrls(value || '');
+  const imageUploader = (
+    <ReferenceImageUploader
+      images={images}
+      onAdd={(urls) => onChange(addReferenceImages(valueRef.current || '', urls))}
+      onRemove={(url) => onChange(removeReferenceImage(valueRef.current || '', url))}
+    />
+  );
 
   if (typeof document === 'undefined') return null;
 
@@ -155,18 +173,32 @@ export default function DesignBriefEditorDrawer({
             </div>
           </div>
         )}
+        {!hasImageSection && (
+          <div className="bg-white dark:bg-[#0d0e12] border border-[#f0f0f0] dark:border-[#272a34]">
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-[#f0f0f0] dark:border-[#272a34] text-[13px] font-bold text-gray-900 dark:text-white">
+              <ImageIcon className="w-3.5 h-3.5 text-[#ff5e1f]" />
+              Reference Image
+            </div>
+            <div className="px-3 pb-3">{imageUploader}</div>
+          </div>
+        )}
         <TaskBodyEditor
           value={value}
           onChange={onChange}
           orderSections
           hideHeader
-          renderSectionExtra={(heading) =>
-            classifyHeading(heading) === 'palette' ? (
-              <div className="border border-dashed border-[#f0f0f0] dark:border-[#272a34] p-3">
-                <ImageColorPalettePicker onInsertPalette={onInsertPalette} />
-              </div>
-            ) : null
-          }
+          renderSectionExtra={(heading) => {
+            const kind = classifyHeading(heading);
+            if (kind === 'image') return imageUploader;
+            if (kind === 'palette') {
+              return (
+                <div className="border border-dashed border-[#f0f0f0] dark:border-[#272a34] p-3">
+                  <ImageColorPalettePicker onInsertPalette={onInsertPalette} />
+                </div>
+              );
+            }
+            return null;
+          }}
         />
       </div>
     </aside>,
