@@ -1,5 +1,7 @@
 # Backlog: Resources Library (katalog aset Canva)
 
+> **Dihapus 2026-11-14** atas keputusan pemilik; katalog elemen dipindah ke improstd (Element Board). Dokumen ini arsip.
+
 Status: **Jalur manual + mirror Notion (opsi B) diimplementasikan 2026-10-24** di branch `feat/asset-library` (worktree `.claude/worktrees/asset-library`). Jalur API di bawah tetap ditunda (MFA).
 
 ## Jalur manual (dipilih) — Asset Library

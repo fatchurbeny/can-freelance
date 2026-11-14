@@ -2,24 +2,22 @@
 
 import { useCallback, useEffect, useState, type ComponentType } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { AlertCircle, Database, Eye, EyeOff, Key, Library, Mail, Plug, RefreshCw, Save, X } from 'lucide-react';
+import { AlertCircle, Database, Eye, EyeOff, Key, Mail, Plug, RefreshCw, Save, X } from 'lucide-react';
 import { getNotionConfigAction, saveNotionWorkspaceAction, deleteNotionConfigAction } from '@/app/actions/notion-config';
 import { getEmailConfigAction } from '@/app/actions/email-notification';
 import TopBar from '@/components/TopBar';
 import EmailConfigCard from '@/components/EmailConfigCard';
-import AssetLibraryNotionCard from '@/components/assets/AssetLibraryNotionCard';
 import KoneksiTab from '@/components/notion-config/KoneksiTab';
 import PagesDatabasesTab from '@/components/notion-config/PagesDatabasesTab';
 import SyncTab from '@/components/notion-config/SyncTab';
 import { DOT } from '@/components/notion-config/styles';
 
-type TabId = 'koneksi' | 'pages' | 'sync' | 'asset' | 'email';
+type TabId = 'koneksi' | 'pages' | 'sync' | 'email';
 
 const TABS: { id: TabId; label: string; icon: ComponentType<{ className?: string }>; needsConfig?: boolean }[] = [
   { id: 'koneksi', label: 'Koneksi', icon: Plug },
   { id: 'pages', label: 'Pages & Databases', icon: Database, needsConfig: true },
   { id: 'sync', label: 'Sinkronisasi', icon: RefreshCw, needsConfig: true },
-  { id: 'asset', label: 'Asset Library', icon: Library, needsConfig: true },
   { id: 'email', label: 'Email Notifikasi', icon: Mail },
 ];
 
@@ -235,9 +233,8 @@ export default function NotionConfigClient({ initialSyncLog }: { initialSyncLog:
                 {activeTab === 'koneksi' && (
                   <KoneksiTab config={config} onConnect={openConnect} onDisconnect={handleDisconnect} onOpenPages={() => selectTab('pages')} />
                 )}
-                {activeTab === 'pages' && <PagesDatabasesTab onChanged={loadConfig} onOpenAssetTab={() => selectTab('asset')} />}
+                {activeTab === 'pages' && <PagesDatabasesTab onChanged={loadConfig} />}
                 {activeTab === 'sync' && <SyncTab autoSync={config.autoSync} syncInterval={config.syncInterval} latestSyncLog={latestSyncLog} onSaved={loadConfig} />}
-                {activeTab === 'asset' && <AssetLibraryNotionCard />}
                 {activeTab === 'email' && <EmailConfigCard onStatusChange={(needs) => setEmailNeedsAttention(needs)} />}
               </div>
             )}

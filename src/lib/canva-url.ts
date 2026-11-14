@@ -1,5 +1,5 @@
 /**
- * Helper link Canva untuk Asset Library (dipakai client & server).
+ * Helper link Canva (dipakai client & server).
  * Link edit (`…/edit`) butuh login akun tim; public view link (`…/view`) bisa di-embed tanpa login.
  * Token di link edit dan link view berbeda, jadi link view tidak bisa diturunkan dari link edit.
  */

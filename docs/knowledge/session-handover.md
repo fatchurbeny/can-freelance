@@ -42,6 +42,10 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 
 ## 📝 Sesi Terakhir
 
+### 2026-11-14 — Fitur Asset Library dihapus (Claude Code, `🏛️ [Architecture & Knowledge Ops]`)
+* Keputusan pemilik ("hapus langsung", dikonfirmasi di sesi ini): `/assets`, `/asset-report`, picker brief, sinkron Notion aset, relation `Assets`, izin `asset.*`, model `Asset`/`AssetCategory`/`AssetProduction`/`TaskAsset` dihapus dari kode. Ekspor VPS dulu: `backups/asset-export-20261114.json` (142 aset, 7 kategori, 7 task_assets + `asset_report`) dan `~/db-backups/can-freelance-20261114-asset-tables.dump` di VPS (skrip `scripts/export-asset-tables.sh`).
+* Urutan rilis: deploy kode → skrip Notion (lepas relation `Assets` di database task SC-Canva, judul database "Asset Library" diberi "(arsip 2026-11-14)", tidak dibuang ke trash) → DROP 4 tabel di VPS & lokal. Section `## 📦 Assets` di brief lama tetap teks (dirender sebagai link).
+
 ### 2026-11-14 — can-freelance pindah ke root `portal.fatchurbeny.com` (Claude Code, `⚙️ [DevOps]`)
 * `basePath` dihapus (`next.config.ts`; `APP_BASE_PATH = ''`, `LEGACY_BASE_PATH = '/can-freelance'` di `src/lib/base-path.ts`). `/can-freelance/*` → **308** ke root (Next redirect + Nginx), jadi POST extension & tautan/gambar lama tetap jalan. Callback OAuth Google/Dropbox **sengaja** tetap memakai prefix lama (terdaftar di konsol) lalu dialihkan.
 * VPS: vhost `portal.fatchurbeny.com.conf` kini proxy penuh ke :3002 (`/_next/static/` dari filesystem, `absolute_redirect off`). **Dihapus**: landing portal, Icon Composer, Template Icon Builder, Metafora/Metavora v1, folder kosong `/www/wwwroot/can-freelance`, 3 file `.conf.bak*`. Backup: `~/backups/portal-sites-20261114-223243.tar.gz` + `~/backups/portal.fatchurbeny.com.conf.pre-root-20261114`.

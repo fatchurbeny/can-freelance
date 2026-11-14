@@ -416,24 +416,6 @@ export async function listChildDatabases(pageId: string, pageDepth = 1): Promise
 }
 
 /**
- * Buat database "Asset Library" di bawah page induk (mirror Asset Library app). Mengembalikan id database.
- * `properties` disusun oleh pemanggil (lihat ASSET_PROPERTY_SCHEMA di notion-assets.ts).
- */
-export async function createDatabaseWithProperties(
-  parentPageId: string,
-  title: string,
-  properties: Record<string, any>,
-): Promise<string> {
-  const client = await getNotionClient();
-  const created: any = await client.databases.create({
-    parent: { type: 'page_id', page_id: parentPageId },
-    title: [{ type: 'text', text: { content: title } }],
-    initial_data_source: { properties },
-  } as any);
-  return created.id as string;
-}
-
-/**
  * Tambahkan properti yang belum ada (nama → schema). Properti yang sudah ada tidak disentuh,
  * kecuali opsi select/multi_select yang digabung lewat ensureSelectOptions. Idempotent.
  */
@@ -456,35 +438,4 @@ export async function ensureProperties(databaseId: string, properties: Record<st
     }
   }
   return Object.keys(missing);
-}
-
-export type RelationState = 'exists' | 'created' | 'conflict';
-
-/**
- * Pastikan database `databaseId` punya properti relation `name` ke database `targetDatabaseId`
- * (dual: database target ikut mendapat kolom balik). Nama dipakai properti lain → 'conflict'.
- */
-export async function ensureRelationProperty(
-  databaseId: string,
-  name: string,
-  targetDatabaseId: string,
-  opts: { create?: boolean } = {},
-): Promise<RelationState | 'missing'> {
-  const client = await getNotionClient();
-  const actual = await retrieveSchema(client, databaseId);
-  const existing = actual[name];
-  const targetDataSourceId = await resolveDataSourceId(client, targetDatabaseId);
-  const compact = (id: string | undefined) => (id || '').replace(/-/g, '').toLowerCase();
-  if (existing) {
-    if (existing.type !== 'relation') return 'conflict';
-    const linked = existing.relation?.data_source_id || existing.relation?.database_id;
-    return compact(linked) === compact(targetDataSourceId) || compact(linked) === compact(targetDatabaseId) ? 'exists' : 'conflict';
-  }
-  if (opts.create === false) return 'missing';
-  const dataSourceId = await resolveDataSourceId(client, databaseId);
-  await (client as any).dataSources.update({
-    data_source_id: dataSourceId,
-    properties: { [name]: { relation: { data_source_id: targetDataSourceId, type: 'dual_property', dual_property: {} } } },
-  });
-  return 'created';
 }

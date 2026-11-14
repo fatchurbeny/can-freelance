@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
-import { Archive, ArchiveRestore, Database, FileText, Files, Library, Loader2, Plus, RefreshCw, ScanSearch, Search, Star, Unlink, X } from 'lucide-react';
+import { Archive, ArchiveRestore, Database, FileText, Files, Loader2, Plus, RefreshCw, ScanSearch, Search, Star, Unlink, X } from 'lucide-react';
 import {
   addNotionPageAction,
   getNotionPagesAndDatabasesAction,
@@ -35,24 +35,22 @@ interface DatabaseRow {
   purpose: string | null;
 }
 
-const ASSET_PURPOSE = 'asset_library';
 const SUBS = ['databases', 'pages'] as const;
 
-type Usage = 'all' | 'task' | 'asset' | 'none';
-const USAGE_FILTERS: [Usage, string][] = [['all', 'Semua'], ['task', 'Task'], ['asset', 'Asset Library'], ['none', 'Belum dipakai']];
+type Usage = 'all' | 'task' | 'none';
+const USAGE_FILTERS: [Usage, string][] = [['all', 'Semua'], ['task', 'Task'], ['none', 'Belum dipakai']];
 
 const usageOf = (db: DatabaseRow): Exclude<Usage, 'all'> =>
-  db.productions.length > 0 ? 'task' : db.purpose === ASSET_PURPOSE ? 'asset' : 'none';
+  db.productions.length > 0 ? 'task' : 'none';
 const BORDER_L = 'border-l border-[#f0f0f0] dark:border-[#272a34]';
 
 interface Props {
   /** Daftar berubah (tambah/lepas page, pindai, arsip) → muat ulang ringkasan di header. */
   onChanged: () => void;
-  onOpenAssetTab: () => void;
 }
 
 /** Tab Pages & Databases: page induk untuk database baru, dan database yang terdaftar di platform. */
-export default function PagesDatabasesTab({ onChanged, onOpenAssetTab }: Props) {
+export default function PagesDatabasesTab({ onChanged }: Props) {
   const [loading, setLoading] = useState(true);
   const [pages, setPages] = useState<PageRow[]>([]);
   const [databases, setDatabases] = useState<DatabaseRow[]>([]);
@@ -278,7 +276,6 @@ export default function PagesDatabasesTab({ onChanged, onOpenAssetTab }: Props) 
               </td></tr>
             )}
             {visibleDatabases.map((db) => {
-              const isAssetDb = db.purpose === ASSET_PURPOSE && !db.managedByProduction;
               return (
                 <tr key={db.id} className={`${TROW} ${busyId === db.id ? 'pointer-events-none animate-pulse' : ''}`}>
                   <td className={TD}>
@@ -289,9 +286,7 @@ export default function PagesDatabasesTab({ onChanged, onOpenAssetTab }: Props) 
                   </td>
                   <td className={`${TD} ${BORDER_L} whitespace-nowrap text-gray-600 dark:text-gray-300`}>{db.parentPageName ?? '—'}</td>
                   <td className={`${TD} ${BORDER_L}`}>
-                    {isAssetDb ? (
-                      <span className="inline-flex items-center gap-1 bg-[#ff5e1f]/10 px-2 py-0.5 text-[10px] font-bold text-[#c2410c] dark:text-[#ff7038]"><Library className="h-3 w-3" />Asset Library</span>
-                    ) : db.productions.length === 0 ? (
+                    {db.productions.length === 0 ? (
                       <span className="text-gray-400">Belum dipakai</span>
                     ) : (
                       <div className="flex flex-wrap gap-1.5">
@@ -309,10 +304,6 @@ export default function PagesDatabasesTab({ onChanged, onOpenAssetTab }: Props) 
                         <Link href="/production" className={BTN} title="Status database ini mengikuti production-nya">
                           <Files className="h-3.5 w-3.5" />Production Hub
                         </Link>
-                      ) : isAssetDb ? (
-                        <button type="button" className={BTN} onClick={onOpenAssetTab}>
-                          <Library className="h-3.5 w-3.5" />Tab Asset Library
-                        </button>
                       ) : db.archived ? (
                         <button type="button" className={BTN} onClick={() => run(db.id, () => setNotionDatabaseArchivedAction({ id: db.id, archived: false }), `"${db.name}" dipulihkan.`)}>
                           <ArchiveRestore className="h-3.5 w-3.5" />Pulihkan

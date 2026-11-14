@@ -1056,7 +1056,6 @@ export default function TaskDetailSheet({ task, actions = [], onClose, onMoved, 
                 />
               ),
             } : undefined}
-            productionUnitId={task.productionUnitId}
             bodyText={bodyText}
             onBodyTextChange={(nextText) => {
               // Editor brief tidak memuat section Checklist QA → pertahankan di state lokal (server melakukan hal yang sama)

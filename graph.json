@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "generatedAt": "2026-11-14T15:36:17.798Z",
+  "generatedAt": "2026-11-14T16:01:43.446Z",
   "nodes": [
     {
       "id": "page:/account-team",
@@ -17,22 +17,6 @@
       "group": "Server Actions & Lib",
       "filepath": "src/app/actions/approval-payroll.ts",
       "details": "Server Actions for Payroll calculations & status toggles"
-    },
-    {
-      "id": "action:asset-report",
-      "label": "asset-report.ts",
-      "type": "action",
-      "group": "Server Actions & Lib",
-      "filepath": "src/app/actions/asset-report.ts",
-      "details": "Server Actions in src/app/actions/asset-report.ts"
-    },
-    {
-      "id": "action:assets",
-      "label": "assets.ts",
-      "type": "action",
-      "group": "Server Actions & Lib",
-      "filepath": "src/app/actions/assets.ts",
-      "details": "Server Actions in src/app/actions/assets.ts"
     },
     {
       "id": "action:auth",
@@ -323,22 +307,6 @@
       "details": "Route Handler (/api/uploads/[filename])"
     },
     {
-      "id": "page:/asset-report",
-      "label": "asset-report Page",
-      "type": "page",
-      "group": "App Router Pages",
-      "filepath": "src/app/asset-report/page.tsx",
-      "details": "Next.js 16 App Router Page (/asset-report)"
-    },
-    {
-      "id": "page:/assets",
-      "label": "assets Page",
-      "type": "page",
-      "group": "App Router Pages",
-      "filepath": "src/app/assets/page.tsx",
-      "details": "Next.js 16 App Router Page (/assets)"
-    },
-    {
       "id": "page:/billing-statement",
       "label": "Billing Statement",
       "type": "page",
@@ -569,102 +537,6 @@
       "group": "React Components",
       "filepath": "src/components/AppSidebar.tsx",
       "details": "React UI Component in src/components/AppSidebar.tsx"
-    },
-    {
-      "id": "component:AssetReportClient",
-      "label": "AssetReportClient",
-      "type": "component",
-      "group": "React Components",
-      "filepath": "src/components/asset-report/AssetReportClient.tsx",
-      "details": "React UI Component in src/components/asset-report/AssetReportClient.tsx"
-    },
-    {
-      "id": "component:AssetUsageDrawer",
-      "label": "AssetUsageDrawer",
-      "type": "component",
-      "group": "React Components",
-      "filepath": "src/components/asset-report/AssetUsageDrawer.tsx",
-      "details": "React UI Component in src/components/asset-report/AssetUsageDrawer.tsx"
-    },
-    {
-      "id": "component:asset-ui",
-      "label": "asset-ui",
-      "type": "component",
-      "group": "React Components",
-      "filepath": "src/components/assets/asset-ui.ts",
-      "details": "React UI Component in src/components/assets/asset-ui.ts"
-    },
-    {
-      "id": "component:AssetDetailDrawer",
-      "label": "AssetDetailDrawer",
-      "type": "component",
-      "group": "React Components",
-      "filepath": "src/components/assets/AssetDetailDrawer.tsx",
-      "details": "React UI Component in src/components/assets/AssetDetailDrawer.tsx"
-    },
-    {
-      "id": "component:AssetFormDrawer",
-      "label": "AssetFormDrawer",
-      "type": "component",
-      "group": "React Components",
-      "filepath": "src/components/assets/AssetFormDrawer.tsx",
-      "details": "React UI Component in src/components/assets/AssetFormDrawer.tsx"
-    },
-    {
-      "id": "component:AssetLibraryClient",
-      "label": "AssetLibraryClient",
-      "type": "component",
-      "group": "React Components",
-      "filepath": "src/components/assets/AssetLibraryClient.tsx",
-      "details": "React UI Component in src/components/assets/AssetLibraryClient.tsx"
-    },
-    {
-      "id": "component:AssetLibraryNotionCard",
-      "label": "AssetLibraryNotionCard",
-      "type": "component",
-      "group": "React Components",
-      "filepath": "src/components/assets/AssetLibraryNotionCard.tsx",
-      "details": "React UI Component in src/components/assets/AssetLibraryNotionCard.tsx"
-    },
-    {
-      "id": "component:AssetPicker",
-      "label": "AssetPicker",
-      "type": "component",
-      "group": "React Components",
-      "filepath": "src/components/assets/AssetPicker.tsx",
-      "details": "React UI Component in src/components/assets/AssetPicker.tsx"
-    },
-    {
-      "id": "component:BriefAssetsList",
-      "label": "BriefAssetsList",
-      "type": "component",
-      "group": "React Components",
-      "filepath": "src/components/assets/BriefAssetsList.tsx",
-      "details": "React UI Component in src/components/assets/BriefAssetsList.tsx"
-    },
-    {
-      "id": "component:CanvaEmbed",
-      "label": "CanvaEmbed",
-      "type": "component",
-      "group": "React Components",
-      "filepath": "src/components/assets/CanvaEmbed.tsx",
-      "details": "React UI Component in src/components/assets/CanvaEmbed.tsx"
-    },
-    {
-      "id": "component:CategoryArt",
-      "label": "CategoryArt",
-      "type": "component",
-      "group": "React Components",
-      "filepath": "src/components/assets/CategoryArt.tsx",
-      "details": "React UI Component in src/components/assets/CategoryArt.tsx"
-    },
-    {
-      "id": "component:NotionAssetImport",
-      "label": "NotionAssetImport",
-      "type": "component",
-      "group": "React Components",
-      "filepath": "src/components/assets/NotionAssetImport.tsx",
-      "details": "React UI Component in src/components/assets/NotionAssetImport.tsx"
     },
     {
       "id": "component:ChangePinForm",
@@ -1787,38 +1659,6 @@
       "details": "Server/shared library in src/lib/api-auth.ts"
     },
     {
-      "id": "lib:asset-brief",
-      "label": "asset-brief.ts",
-      "type": "action",
-      "group": "Server Actions & Lib",
-      "filepath": "src/lib/asset-brief.ts",
-      "details": "Server/shared library in src/lib/asset-brief.ts"
-    },
-    {
-      "id": "lib:asset-library",
-      "label": "asset-library.ts",
-      "type": "action",
-      "group": "Server Actions & Lib",
-      "filepath": "src/lib/asset-library.ts",
-      "details": "Server/shared library in src/lib/asset-library.ts"
-    },
-    {
-      "id": "lib:asset-productions",
-      "label": "asset-productions.ts",
-      "type": "action",
-      "group": "Server Actions & Lib",
-      "filepath": "src/lib/asset-productions.ts",
-      "details": "Server/shared library in src/lib/asset-productions.ts"
-    },
-    {
-      "id": "lib:asset-report",
-      "label": "asset-report.ts",
-      "type": "action",
-      "group": "Server Actions & Lib",
-      "filepath": "src/lib/asset-report.ts",
-      "details": "Server/shared library in src/lib/asset-report.ts"
-    },
-    {
       "id": "lib:background-sync",
       "label": "background-sync.ts",
       "type": "action",
@@ -2049,22 +1889,6 @@
       "group": "Server Actions & Lib",
       "filepath": "src/lib/impro-sso.ts",
       "details": "Server/shared library in src/lib/impro-sso.ts"
-    },
-    {
-      "id": "lib:notion-asset-import",
-      "label": "notion-asset-import.ts",
-      "type": "action",
-      "group": "Server Actions & Lib",
-      "filepath": "src/lib/notion-asset-import.ts",
-      "details": "Server/shared library in src/lib/notion-asset-import.ts"
-    },
-    {
-      "id": "lib:notion-assets",
-      "label": "notion-assets.ts",
-      "type": "action",
-      "group": "Server Actions & Lib",
-      "filepath": "src/lib/notion-assets.ts",
-      "details": "Server/shared library in src/lib/notion-assets.ts"
     },
     {
       "id": "lib:notion-body-blocks",
@@ -2547,38 +2371,6 @@
       "details": "Prisma model BundleContract (table bundle_contracts)"
     },
     {
-      "id": "model:AssetCategory",
-      "label": "AssetCategory Model",
-      "type": "model",
-      "group": "Prisma DB Models",
-      "filepath": "prisma/schema.prisma",
-      "details": "Prisma model AssetCategory (table asset_categories)"
-    },
-    {
-      "id": "model:Asset",
-      "label": "Asset Model",
-      "type": "model",
-      "group": "Prisma DB Models",
-      "filepath": "prisma/schema.prisma",
-      "details": "Prisma model Asset (table assets)"
-    },
-    {
-      "id": "model:AssetProduction",
-      "label": "AssetProduction Model",
-      "type": "model",
-      "group": "Prisma DB Models",
-      "filepath": "prisma/schema.prisma",
-      "details": "Prisma model AssetProduction (table asset_productions)"
-    },
-    {
-      "id": "model:TaskAsset",
-      "label": "TaskAsset Model",
-      "type": "model",
-      "group": "Prisma DB Models",
-      "filepath": "prisma/schema.prisma",
-      "details": "Prisma model TaskAsset (table task_assets)"
-    },
-    {
       "id": "rule:qty-pages",
       "label": "QTY Pages Calculation",
       "type": "doc",
@@ -2859,120 +2651,6 @@
     {
       "source": "action:approval-payroll",
       "target": "model:Task",
-      "relation": "queries",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "action:asset-report",
-      "target": "lib:prisma",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "action:asset-report",
-      "target": "lib:access",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "action:asset-report",
-      "target": "lib:asset-report",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "action:asset-report",
-      "target": "model:AssetCategory",
-      "relation": "queries",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "action:assets",
-      "target": "lib:prisma",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "action:assets",
-      "target": "lib:access",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "action:assets",
-      "target": "lib:permissions",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "action:assets",
-      "target": "lib:background-sync",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "action:assets",
-      "target": "lib:canva-url",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "action:assets",
-      "target": "lib:canva-link-resolve",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "action:assets",
-      "target": "lib:asset-library",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "action:assets",
-      "target": "lib:notion-provision",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "action:assets",
-      "target": "lib:encryption",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "action:assets",
-      "target": "lib:notion-asset-import",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "action:assets",
-      "target": "lib:notion-assets",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "action:assets",
-      "target": "model:AssetCategory",
-      "relation": "queries",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "action:assets",
-      "target": "model:AssetProduction",
-      "relation": "queries",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "action:assets",
-      "target": "model:Asset",
-      "relation": "queries",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "action:assets",
-      "target": "model:NotionDatabase",
       "relation": "queries",
       "confidence": "EXTRACTED"
     },
@@ -3368,24 +3046,6 @@
     },
     {
       "source": "action:notion-config",
-      "target": "lib:background-sync",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "action:notion-config",
-      "target": "lib:notion-assets",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "action:notion-config",
-      "target": "lib:asset-productions",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "action:notion-config",
       "target": "model:NotionConfig",
       "relation": "queries",
       "confidence": "EXTRACTED"
@@ -3405,12 +3065,6 @@
     {
       "source": "action:notion-config",
       "target": "model:NotionDatabase",
-      "relation": "queries",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "action:notion-config",
-      "target": "model:Asset",
       "relation": "queries",
       "confidence": "EXTRACTED"
     },
@@ -3537,24 +3191,6 @@
     {
       "source": "action:production-unit",
       "target": "lib:notion-registry",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "action:production-unit",
-      "target": "lib:notion-assets",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "action:production-unit",
-      "target": "lib:background-sync",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "action:production-unit",
-      "target": "lib:asset-productions",
       "relation": "invokes",
       "confidence": "EXTRACTED"
     },
@@ -3705,12 +3341,6 @@
     {
       "source": "action:qa",
       "target": "lib:notion-task-properties",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "action:qa",
-      "target": "lib:notion-assets",
       "relation": "invokes",
       "confidence": "EXTRACTED"
     },
@@ -4227,66 +3857,6 @@
     {
       "source": "api:/upload",
       "target": "lib:upload-storage",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "page:/asset-report",
-      "target": "component:TopBar",
-      "relation": "renders",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "page:/asset-report",
-      "target": "component:AssetReportClient",
-      "relation": "renders",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "page:/asset-report",
-      "target": "lib:access",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "page:/asset-report",
-      "target": "lib:asset-library",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "page:/asset-report",
-      "target": "lib:asset-report",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "page:/assets",
-      "target": "component:TopBar",
-      "relation": "renders",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "page:/assets",
-      "target": "component:AssetLibraryClient",
-      "relation": "renders",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "page:/assets",
-      "target": "lib:access",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "page:/assets",
-      "target": "lib:permissions",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "page:/assets",
-      "target": "lib:asset-library",
       "relation": "invokes",
       "confidence": "EXTRACTED"
     },
@@ -5083,348 +4653,6 @@
       "confidence": "EXTRACTED"
     },
     {
-      "source": "component:AssetReportClient",
-      "target": "component:SelectDropdown",
-      "relation": "renders",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:AssetReportClient",
-      "target": "component:InfoTip",
-      "relation": "renders",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:AssetReportClient",
-      "target": "component:CategoryArt",
-      "relation": "renders",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:AssetReportClient",
-      "target": "component:asset-ui",
-      "relation": "renders",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:AssetReportClient",
-      "target": "lib:asset-report",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:AssetReportClient",
-      "target": "component:AssetUsageDrawer",
-      "relation": "renders",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:AssetUsageDrawer",
-      "target": "action:asset-report",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:AssetUsageDrawer",
-      "target": "component:asset-ui",
-      "relation": "renders",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:AssetUsageDrawer",
-      "target": "lib:asset-report",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:AssetUsageDrawer",
-      "target": "component:AssetReportClient",
-      "relation": "renders",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:asset-ui",
-      "target": "lib:base-path",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:asset-ui",
-      "target": "lib:canva-url",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:AssetDetailDrawer",
-      "target": "action:assets",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:AssetDetailDrawer",
-      "target": "lib:asset-library",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:AssetDetailDrawer",
-      "target": "component:CanvaEmbed",
-      "relation": "renders",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:AssetDetailDrawer",
-      "target": "component:InfoTip",
-      "relation": "renders",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:AssetFormDrawer",
-      "target": "component:PortalSelect",
-      "relation": "renders",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:AssetFormDrawer",
-      "target": "component:PortalMultiSelect",
-      "relation": "renders",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:AssetFormDrawer",
-      "target": "component:InfoTip",
-      "relation": "renders",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:AssetFormDrawer",
-      "target": "action:assets",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:AssetFormDrawer",
-      "target": "lib:canva-url",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:AssetFormDrawer",
-      "target": "lib:color-extractor",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:AssetFormDrawer",
-      "target": "lib:base-path",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:AssetFormDrawer",
-      "target": "lib:asset-library",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:AssetFormDrawer",
-      "target": "component:CanvaEmbed",
-      "relation": "renders",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:AssetFormDrawer",
-      "target": "component:asset-ui",
-      "relation": "renders",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:AssetFormDrawer",
-      "target": "component:AssetLibraryClient",
-      "relation": "renders",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:AssetLibraryClient",
-      "target": "component:SelectDropdown",
-      "relation": "renders",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:AssetLibraryClient",
-      "target": "action:assets",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:AssetLibraryClient",
-      "target": "lib:asset-library",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:AssetLibraryClient",
-      "target": "component:AssetDetailDrawer",
-      "relation": "renders",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:AssetLibraryClient",
-      "target": "component:AssetFormDrawer",
-      "relation": "renders",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:AssetLibraryClient",
-      "target": "component:asset-ui",
-      "relation": "renders",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:AssetLibraryClient",
-      "target": "component:CategoryArt",
-      "relation": "renders",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:AssetLibraryNotionCard",
-      "target": "component:SelectDropdown",
-      "relation": "renders",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:AssetLibraryNotionCard",
-      "target": "action:notion-config",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:AssetLibraryNotionCard",
-      "target": "component:asset-ui",
-      "relation": "renders",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:AssetLibraryNotionCard",
-      "target": "component:NotionAssetImport",
-      "relation": "renders",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:AssetLibraryNotionCard",
-      "target": "component:SubTabs",
-      "relation": "renders",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:AssetPicker",
-      "target": "action:assets",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:AssetPicker",
-      "target": "lib:asset-library",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:AssetPicker",
-      "target": "lib:asset-brief",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:AssetPicker",
-      "target": "lib:canva-url",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:AssetPicker",
-      "target": "component:CanvaEmbed",
-      "relation": "renders",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:AssetPicker",
-      "target": "component:asset-ui",
-      "relation": "renders",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:BriefAssetsList",
-      "target": "action:assets",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:BriefAssetsList",
-      "target": "lib:asset-brief",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:BriefAssetsList",
-      "target": "lib:canva-url",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:BriefAssetsList",
-      "target": "component:CanvaEmbed",
-      "relation": "renders",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:BriefAssetsList",
-      "target": "component:asset-ui",
-      "relation": "renders",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:CanvaEmbed",
-      "target": "lib:canva-url",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:NotionAssetImport",
-      "target": "component:SelectDropdown",
-      "relation": "renders",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:NotionAssetImport",
-      "target": "component:PortalSelect",
-      "relation": "renders",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:NotionAssetImport",
-      "target": "component:InfoTip",
-      "relation": "renders",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:NotionAssetImport",
-      "target": "action:assets",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:NotionAssetImport",
-      "target": "action:notion-config",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:NotionAssetImport",
-      "target": "lib:notion-asset-import",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
       "source": "component:ChangePinForm",
       "target": "action:auth",
       "relation": "invokes",
@@ -5852,12 +5080,6 @@
     },
     {
       "source": "component:CreateTaskSlideModal",
-      "target": "lib:asset-brief",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:CreateTaskSlideModal",
       "target": "component:brief-parser",
       "relation": "renders",
       "confidence": "EXTRACTED"
@@ -6279,12 +5501,6 @@
     {
       "source": "component:NotionConfigClient",
       "target": "component:EmailConfigCard",
-      "relation": "renders",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:NotionConfigClient",
-      "target": "component:AssetLibraryNotionCard",
       "relation": "renders",
       "confidence": "EXTRACTED"
     },
@@ -6776,18 +5992,6 @@
     },
     {
       "source": "component:Sidebar",
-      "target": "action:asset-report",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:Sidebar",
-      "target": "component:CategoryArt",
-      "relation": "renders",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:Sidebar",
       "target": "lib:permissions",
       "relation": "invokes",
       "confidence": "EXTRACTED"
@@ -6925,27 +6129,9 @@
       "confidence": "EXTRACTED"
     },
     {
-      "source": "component:DesignBriefEditorDrawer",
-      "target": "component:AssetPicker",
-      "relation": "renders",
-      "confidence": "EXTRACTED"
-    },
-    {
       "source": "component:DesignBriefPreview",
       "target": "component:brief-parser",
       "relation": "renders",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:DesignBriefPreview",
-      "target": "component:BriefAssetsList",
-      "relation": "renders",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:DesignBriefPreview",
-      "target": "lib:asset-brief",
-      "relation": "invokes",
       "confidence": "EXTRACTED"
     },
     {
@@ -6958,12 +6144,6 @@
       "source": "component:DesignBriefSection",
       "target": "component:DesignBriefEditorDrawer",
       "relation": "renders",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "component:DesignBriefSection",
-      "target": "lib:asset-brief",
-      "relation": "invokes",
       "confidence": "EXTRACTED"
     },
     {
@@ -7267,86 +6447,8 @@
       "confidence": "EXTRACTED"
     },
     {
-      "source": "lib:asset-library",
-      "target": "lib:prisma",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "lib:asset-library",
-      "target": "lib:notion-assets",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "lib:asset-library",
-      "target": "lib:asset-productions",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "lib:asset-library",
-      "target": "model:AssetCategory",
-      "relation": "queries",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "lib:asset-library",
-      "target": "model:Asset",
-      "relation": "queries",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "lib:asset-productions",
-      "target": "lib:prisma",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "lib:asset-productions",
-      "target": "model:ProductionUnit",
-      "relation": "queries",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "lib:asset-report",
-      "target": "lib:prisma",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "lib:asset-report",
-      "target": "lib:period-utils",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "lib:asset-report",
-      "target": "model:AssetCategory",
-      "relation": "queries",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "lib:asset-report",
-      "target": "model:Asset",
-      "relation": "queries",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "lib:asset-report",
-      "target": "model:TaskAsset",
-      "relation": "queries",
-      "confidence": "EXTRACTED"
-    },
-    {
       "source": "lib:brief-extract",
       "target": "lib:prisma",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "lib:brief-extract",
-      "target": "lib:asset-brief",
       "relation": "invokes",
       "confidence": "EXTRACTED"
     },
@@ -7711,108 +6813,6 @@
       "confidence": "EXTRACTED"
     },
     {
-      "source": "lib:notion-asset-import",
-      "target": "lib:prisma",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "lib:notion-asset-import",
-      "target": "lib:canva-url",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "lib:notion-asset-import",
-      "target": "lib:notion-provision",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "lib:notion-asset-import",
-      "target": "model:AssetCategory",
-      "relation": "queries",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "lib:notion-asset-import",
-      "target": "model:Asset",
-      "relation": "queries",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "lib:notion-assets",
-      "target": "lib:prisma",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "lib:notion-assets",
-      "target": "lib:encryption",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "lib:notion-assets",
-      "target": "lib:notion-provision",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "lib:notion-assets",
-      "target": "lib:notion-registry",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "lib:notion-assets",
-      "target": "lib:notion-field-types",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "lib:notion-assets",
-      "target": "lib:canva-url",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "lib:notion-assets",
-      "target": "lib:asset-brief",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "lib:notion-assets",
-      "target": "lib:asset-productions",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "lib:notion-assets",
-      "target": "model:AssetCategory",
-      "relation": "queries",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "lib:notion-assets",
-      "target": "model:NotionDatabase",
-      "relation": "queries",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "lib:notion-assets",
-      "target": "model:Asset",
-      "relation": "queries",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "lib:notion-assets",
-      "target": "model:TaskAsset",
-      "relation": "queries",
-      "confidence": "EXTRACTED"
-    },
-    {
       "source": "lib:notion-body-blocks",
       "target": "component:brief-parser",
       "relation": "renders",
@@ -8061,18 +7061,6 @@
     {
       "source": "action:sync-notion",
       "target": "lib:dropbox-checklist",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "action:sync-notion",
-      "target": "lib:notion-assets",
-      "relation": "invokes",
-      "confidence": "EXTRACTED"
-    },
-    {
-      "source": "action:sync-notion",
-      "target": "lib:notion-field-types",
       "relation": "invokes",
       "confidence": "EXTRACTED"
     },

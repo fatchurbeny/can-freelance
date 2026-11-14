@@ -4,7 +4,6 @@
  * Brand hanya diisi bila pemanggil boleh melihat brand (`account.view`).
  */
 import prisma from '@/lib/prisma';
-import { parseAssetSection } from '@/lib/asset-brief';
 import {
   classifyHeading,
   cleanHeading,
@@ -26,7 +25,7 @@ export interface BriefPayload {
   keywords: string[];
   palette: { role: string; hex: string }[];
   referenceImages: { url: string; external: boolean }[];
-  links: { title: string; url: string; kind: 'wireframe' | 'reference' | 'asset' }[];
+  links: { title: string; url: string; kind: 'wireframe' | 'reference' }[];
   brand: { name: string; canvaBrandId: string | null } | null;
   shareUrl: string | null;
 }
@@ -127,8 +126,9 @@ export async function buildBriefPayload(
         break;
       }
       case 'assets':
-        for (const a of parseAssetSection(`## Assets\n${body}`)) {
-          links.push({ title: a.pages ? `${a.title} (hlm ${a.pages})` : a.title, url: a.url, kind: 'asset' });
+        // Section "📦 Assets" di brief lama (fitur Asset Library dihapus 2026-11-14): baris `- [Judul](url) — hlm 3, 7` → link referensi.
+        for (const m of body.matchAll(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)(?:\s*[—–-]\s*(?:hlm\.?|halaman)\s*(.+))?/gi)) {
+          if (!links.some((l) => l.url === m[2])) links.push({ title: m[3] ? `${m[1].trim()} (hlm ${m[3].trim()})` : m[1].trim(), url: m[2], kind: 'reference' });
         }
         break;
       default:

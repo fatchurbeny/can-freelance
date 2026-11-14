@@ -7,8 +7,6 @@ import {
   classifyHeading, cleanHeading, sortByBriefOrder, NOTES_HEADING, splitBriefSections, parseBriefColors, toServableImage,
   type BriefKind, type BriefSwatch,
 } from './brief-parser';
-import BriefAssetsList from '../assets/BriefAssetsList';
-import { parseAssetSection, type BriefAssetRef } from '@/lib/asset-brief';
 
 interface Props {
   bodyText: string;
@@ -29,7 +27,6 @@ interface PreviewCard {
   colors?: Swatch[];
   links?: BriefLink[];
   tags?: string[];
-  assets?: BriefAssetRef[];
 }
 
 const splitSections = splitBriefSections;
@@ -56,7 +53,9 @@ function buildCards(markdown: string): PreviewCard[] {
       continue;
     }
     if (kind === 'assets') {
-      cards.push({ kind, title: title || 'Assets', content, assets: parseAssetSection(`## Assets\n${content}`) });
+      // Section "📦 Assets" di brief lama (fitur Asset Library dihapus 2026-11-14): tampil sebagai daftar link biasa.
+      const links: BriefLink[] = Array.from(content.matchAll(/https?:\/\/[^\s)]+/gi), (m) => ({ url: m[0], tag: 'REFERENCE' as const }));
+      cards.push({ kind: 'links', title: title || 'Assets', content, links });
       continue;
     }
     if (kind === 'image') {
@@ -223,14 +222,6 @@ export default function DesignBriefPreview({ bodyText, onAddNotes, onShufflePale
               ) : (
                 <p className="p-4 text-xs text-gray-500">Kode warna belum ada.</p>
               )}
-            </Card>
-          );
-        }
-        if (card.kind === 'assets') {
-          const refs = card.assets ?? [];
-          return (
-            <Card key={i} index={n} title={card.title} meta={refs.length ? `${refs.length} aset` : undefined}>
-              <BriefAssetsList refs={refs} />
             </Card>
           );
         }

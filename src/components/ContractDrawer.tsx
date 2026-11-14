@@ -30,7 +30,7 @@ interface Props {
 const toDateKey = (value?: string | Date | null) => (value ? new Date(value).toISOString().slice(0, 10) : null);
 
 const OUTPUTS = [
-  { value: 'canva_link', label: 'Canva Link', hint: 'Hasil berupa link template Canva; production bisa memakai Asset Library.' },
+  { value: 'canva_link', label: 'Canva Link', hint: 'Hasil berupa link template Canva.' },
   { value: 'dropbox_link', label: 'Dropbox Link', hint: 'Hasil diunggah lewat Dropbox File Request per task.' },
 ] as const;
 

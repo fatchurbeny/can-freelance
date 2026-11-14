@@ -343,7 +343,7 @@ Dokumen ini mencatat histori bug, edge cases, serta aturan layout CSS/React untu
   4. **Notion Image Markdown Translation (`src/app/actions/qa.ts`)**:
      - Saat markdown memuat syntax `![alt](url)`, parser otomatis menghasilkan Notion block berjenis `image` (`external.url`) sehingga gambar acuan desain tampil utuh di Notion di atas strip palet warna.
 
-### 34. Asset Library: preview & cover Canva tanpa login
+### 34. Asset Library: preview & cover Canva tanpa login (fitur dihapus 2026-11-14; catatan tetap berlaku untuk link Canva)
 * **Preview**: public view link + `?embed` bisa di-iframe tanpa login; link `/edit` selalu minta login. Token edit ≠ token view, jadi view link tidak bisa diturunkan dari edit link → form menolak `/edit` di kolom Public View.
 * **Cover**: `og:image` halaman view Canva hanya logo generik (`fb_cover-1.jpg`), dan `…/screen?type=thumbnail` ditolak (403) bila diminta dari server. Browser bisa memuatnya langsung, jadi cover default = `toCanvaThumbnailUrl(previewUrl)` dimuat client; upload opsional menimpa. Judul diambil dari oEmbed (`/_oembed`, berhasil dari server).
 * **Escape di iframe**: saat fokus di dalam iframe Canva, keydown tidak sampai ke halaman; Escape baru bekerja setelah fokus kembali ke halaman.

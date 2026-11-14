@@ -6,7 +6,6 @@ import toast from 'react-hot-toast';
 import DesignBriefPreview from './DesignBriefPreview';
 import { useAccess } from '@/context/AccessContext';
 import DesignBriefEditorDrawer, { mergePaletteMarkdown } from './DesignBriefEditorDrawer';
-import { mergeAssetsMarkdown } from '@/lib/asset-brief';
 import { stripChecklistSection } from '@/lib/checklist-qa';
 import { NOTES_HEADING, shufflePaletteMarkdown } from './brief-parser';
 
@@ -28,8 +27,6 @@ interface Props {
   sendingComment: boolean;
   /** Dipanggil saat drawer Edit Brief (kanan) dibuka/ditutup, agar drawer task bergeser ke kiri. */
   onEditorOpenChange?: (open: boolean) => void;
-  /** Production task; picker Asset Library hanya menampilkan aset untuk production ini. */
-  productionUnitId?: string;
   /** Tab Checklist QA (production Dropbox dengan Doctype ber-checklist). Section-nya tidak tampil di brief. */
   checklist?: { content: ReactNode; count: string; toneClass: string };
   /** Tab yang terbuka saat drawer dibuka. */
@@ -47,7 +44,6 @@ export default function DesignBriefSection({
   onDeleteComment,
   sendingComment,
   onEditorOpenChange,
-  productionUnitId,
   checklist,
   initialTab = 'brief',
 }: Props) {
@@ -120,14 +116,6 @@ export default function DesignBriefSection({
 
   const handleInsertPalette = (paletteMarkdown: string) => {
     const next = mergePaletteMarkdown(draftBody, paletteMarkdown);
-    if (timerRef.current) clearTimeout(timerRef.current);
-    pendingRef.current = null;
-    setDraftBody(next);
-    onBodyTextChange(next);
-  };
-
-  const handleInsertAssets = (sectionMarkdown: string) => {
-    const next = mergeAssetsMarkdown(draftBody, sectionMarkdown);
     if (timerRef.current) clearTimeout(timerRef.current);
     pendingRef.current = null;
     setDraftBody(next);
@@ -284,8 +272,6 @@ export default function DesignBriefSection({
           value={draftBody}
           onChange={handleDraftChange}
           onInsertPalette={handleInsertPalette}
-          onInsertAssets={handleInsertAssets}
-          productionUnitId={productionUnitId}
           onClose={toggleMode}
           subtitle="Tersimpan otomatis · preview di drawer task"
         />

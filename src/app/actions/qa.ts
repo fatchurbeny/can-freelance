@@ -17,7 +17,6 @@ import { scanDropboxChecklists } from '@/lib/dropbox-checklist';
 import { readSnapshot } from '@/lib/dropbox-files';
 import { resolveWriteName, type FieldKey, type FieldMapping } from '@/lib/production-field-mapping';
 import { customFieldProperties, titlePropertyName } from '@/lib/notion-task-properties';
-import { assetsRelationProperty, resolveBriefAssets, syncTaskAssetLinks } from '@/lib/notion-assets';
 import {
   buildChecklistSection, checklistGateError, ensureChecklistSection, extractChecklistSection,
   isPreWorkStatus, isQaStatus, mergeChecklistSection, setChecklistItem,
@@ -490,14 +489,6 @@ async function createNotionTaskPage(
 
   Object.assign(notionProperties, await customFieldProperties(unit.id, input.customFields, schemaProps));
 
-  // Relation "Assets" dari section Assets di brief
-  const briefAssets = await resolveBriefAssets(input.bodyText);
-  const assetsRelation = assetsRelationProperty(
-    schemaProps,
-    briefAssets.map((a) => a.notionPageId).filter((id): id is string => !!id),
-  );
-  if (assetsRelation && briefAssets.length > 0) Object.assign(notionProperties, assetsRelation);
-
   const newNotionPage: any = await notionConfig.client.pages.create({
     parent: { database_id: notionConfig.databaseId },
     properties: notionProperties,
@@ -655,8 +646,6 @@ export async function createTaskAction(payload: CreateTaskPayload) {
         productionUnit: { connect: { id: targetUnit.id } },
       },
     });
-
-    if (task.bodyText) await syncTaskAssetLinks(task.id, task.bodyText);
 
     // Platform Dropbox: buat File Request di latar belakang (tidak menahan respons simpan)
     runInBackground('dropbox-upload-request', () => attachUploadRequest(task.id));
@@ -931,11 +920,6 @@ export async function updateTaskFieldsAction(taskId: string, payload: TaskUpdate
       runInBackground('dropbox-checklist-scan', async () => { await scanDropboxChecklists([taskId]); });
     }
 
-    // Aset Library yang dirujuk brief → TaskAsset (hitungan "Dipakai di") + relation Notion
-    const assetPageIds = nextBody !== undefined
-      ? await syncTaskAssetLinks(taskId, updateData.bodyText as string | null | undefined)
-      : null;
-
     // Best-effort Notion sync offloaded to background
     if (isNotionLinked(existingTask.notionPageId)) {
       runInBackground(`Update Notion Fields for Task ${existingTask.name || taskId}`, async () => {
@@ -1067,8 +1051,6 @@ export async function updateTaskFieldsAction(taskId: string, payload: TaskUpdate
 
         // Field tambahan production
         Object.assign(notionProperties, await customFieldProperties(existingTask.productionUnitId, payload.customFields, schemaProps));
-
-        if (assetPageIds) Object.assign(notionProperties, assetsRelationProperty(schemaProps, assetPageIds) ?? {});
 
         if (Object.keys(notionProperties).length > 0) {
           await notionClient.pages.update({

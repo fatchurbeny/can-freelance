@@ -7,7 +7,7 @@ const compact = (id: string) => id.replace(/-/g, '').toLowerCase();
 /**
  * Daftarkan database ke Notion Config → Databases agar fitur yang membaca daftar itu ikut mengenalnya.
  * Lewati bila ID sudah terdaftar atau Notion Config belum ada. `purpose` menandai database khusus
- * (mis. "asset_library"). Best-effort: kegagalan hanya dicatat, tidak membatalkan aksi pemanggil.
+ * (saat ini tidak dipakai; dulu "asset_library"). Best-effort: kegagalan hanya dicatat, tidak membatalkan aksi pemanggil.
  */
 export async function registerNotionDatabase(
   name: string,

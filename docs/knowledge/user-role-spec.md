@@ -57,15 +57,10 @@ Hubungan dengan Account & Team: ya. Baris **Brand** di detail task (`TaskDetailS
 | Account & Team, Rate Card (edit) | ✓ | ✓ | ✓ | baca | – | – |
 | Billing, Payroll | ✓ | – | – | ✓ | milik sendiri | – |
 | Integrasi, manajemen user | ✓ | – | – | – | – | – |
-| Asset Library — lihat (`asset.view`) | ✓ | ✓ | ✓ | – | ✓ (FT & FL) | – |
-| Asset Library — kelola, Asset Report (`asset.manage`) | ✓ semua | production sendiri | production sendiri | – | – | – |
 | Production › Canva Insights (`insights.view`) | ✓ | production sendiri | production sendiri | – | – | – |
 
-### Akses aset (2026-10-25)
-- Cakupan aset = `Asset.productions` (`AssetProduction`); kosong = **aset bersama** semua production Canva. Designer/AD/PM melihat aset bersama + aset production mereka (`loadAssetLibrary(access.unitIds)`).
-- `asset.view`: Admin, AD, PM, designer FT & FL. **Tidak** untuk Finance & Viewer (kartu Assets di brief tetap terlihat lewat `kanban.view`).
-- `asset.manage`: AD/PM hanya aset yang **semua** production-nya ada di membership mereka (`canManageAsset`), wajib ≥1 production. Aset bersama, kategori, Sync, dan Impor Notion hanya membership global (`canManageAllAssets`, praktiknya Admin). Asset Report untuk AD/PM sudah difilter ke production sendiri.
-- Jangan memakai `can(user, 'asset.manage')` tanpa production untuk aset bersama: itu true untuk membership production mana pun. Guard server: `denyAssetScope` / `denyAssetGlobal` di `src/app/actions/assets.ts`.
+### Akses aset
+- Izin `asset.view` / `asset.manage` dihapus 2026-11-14 bersama fitur Asset Library.
 
 ## Login ID + PIN
 - **ID unik per orang**. Full-time = **ID PRO** dari roster Portal Impro (`PRO20`; sama dengan login improstd/Deck/Doc), diketik Admin saat membuat akun (drawer User & Role atau "Buat Akun Login" di drawer designer), divalidasi `/^PRO\d{2,4}$/` + unik (`src/lib/user-admin.ts`). Freelance = nomor urut otomatis `FL-001`, **kecuali** freelancer yang ada di roster Portal Impro: memakai ID PRO-nya (mis. Putery = `PRO61`, keputusan pemilik 2026-11-14) agar akun improstd sama; tipe tetap `FREELANCE` (izin tidak berubah). Isian ID PRO di drawer opsional untuk Freelance. Disimpan di `User.userCode` (unique) + `User.employmentType` (`FULL_TIME` | `FREELANCE`).

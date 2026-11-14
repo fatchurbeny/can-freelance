@@ -5,7 +5,7 @@ import { saveUploadedFile } from '@/lib/upload-storage';
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
-  const denied = await authorizeApi(['task.edit', 'asset.manage'], { write: true });
+  const denied = await authorizeApi(['task.edit'], { write: true });
   if (denied) return denied;
   try {
     const formData = await request.formData();

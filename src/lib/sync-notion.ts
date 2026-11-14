@@ -14,8 +14,6 @@ import {
 import { Prisma } from '../../generated/prisma';
 import { syncDropboxOutputs } from '@/lib/dropbox-output';
 import { scanDropboxChecklists } from '@/lib/dropbox-checklist';
-import { pushPendingAssets, syncAssetsFromNotion, syncTaskAssetLinks } from '@/lib/notion-assets';
-import { ASSETS_RELATION_PROPERTY } from '@/lib/notion-field-types';
 import { isQaStatusName } from '@/lib/checklist-qa';
 
 export type NotionSyncMode = 'incremental' | 'full';
@@ -415,12 +413,6 @@ export async function syncNotionData(mode: NotionSyncMode = 'incremental') {
       }
     } catch (pushErr) {
       console.error('Outbound sync error during pushPendingLocalChangesToNotion:', pushErr);
-    }
-    try {
-      const pushedAssets = await pushPendingAssets();
-      if (pushedAssets > 0) console.log(`Pushed ${pushedAssets} pending assets to Notion.`);
-    } catch (assetErr) {
-      console.error('Outbound sync error during pushPendingAssets:', assetErr);
     }
 
     let activeApiKey = process.env.NOTION_API_KEY || null;
@@ -848,14 +840,6 @@ export async function syncNotionData(mode: NotionSyncMode = 'incremental') {
             console.warn(`Could not fetch blocks for page ${notionPageId}: ${blockErr.message}`);
           }
 
-          // Aset Library yang dirujuk task: section "📦 Assets" di brief + relation "Assets"
-          try {
-            const relationIds = (properties[ASSETS_RELATION_PROPERTY]?.relation ?? []).map((r: any) => r.id);
-            await syncTaskAssetLinks(task.id, latestBodyText, relationIds);
-          } catch (assetErr: any) {
-            console.warn(`Could not link assets for page ${notionPageId}: ${assetErr.message}`);
-          }
-
           // Parse and link Accounts
 
           // Parse and link Accounts (Brands) - supports both multi-select and select
@@ -964,13 +948,6 @@ export async function syncNotionData(mode: NotionSyncMode = 'incremental') {
         await scanDropboxChecklists();
       } catch (dbxErr: any) {
         console.warn('Dropbox checklist scan skipped:', dbxErr.message);
-      }
-
-      // Asset Library: tarik perubahan dari database Notion aset
-      try {
-        await syncAssetsFromNotion(notionClient, mode, lastSyncTime);
-      } catch (assetErr: any) {
-        console.warn('Asset Library sync skipped:', assetErr.message);
       }
 
       // Incremental results are incomplete by design. Only a full result set can
