@@ -1,7 +1,35 @@
 import prisma from '@/lib/prisma';
 import { DESIGNER_ROLES, isRoleKey, ROLE_LABELS, ROLE_PERMISSIONS, ROLE_SCOPE, type RoleKey } from '@/lib/permissions';
 
-/** Nomor ID berikutnya, mis. FT-001 / FL-014 (tipe Full-time / Freelance). */
+/**
+ * ID login karyawan tetap = ID PRO dari roster Portal Impro (sama dengan login improstd), mis. PRO20.
+ * Freelance tetap memakai nomor urut FL-001 dst.
+ */
+export const PRO_CODE_RE = /^PRO\d{2,4}$/;
+
+export const normalizeUserCode = (code: string | null | undefined) => String(code ?? '').trim().toUpperCase().replace(/\s+/g, '');
+
+/** Pesan error bila ID PRO tidak valid atau sudah dipakai akun lain; null bila boleh dipakai. */
+export async function proCodeError(code: string, exceptUserId?: string): Promise<string | null> {
+  if (!PRO_CODE_RE.test(code)) return 'ID PRO harus "PRO" diikuti 2–4 angka, mis. PRO33.';
+  const owner = await prisma.user.findUnique({ where: { userCode: code }, select: { id: true, name: true } });
+  if (owner && owner.id !== exceptUserId) return `ID ${code} sudah dipakai ${owner.name || 'akun lain'}.`;
+  return null;
+}
+
+/** ID untuk akun baru: Full-time wajib ID PRO dari Admin, Freelance otomatis FL-xxx. */
+export async function newUserCode(
+  employmentType: 'FULL_TIME' | 'FREELANCE',
+  proCode?: string | null,
+): Promise<{ userCode: string } | { error: string }> {
+  if (employmentType === 'FREELANCE') return { userCode: await nextUserCode('FL') };
+  const code = normalizeUserCode(proCode);
+  if (!code) return { error: 'ID PRO wajib diisi untuk akun Full-time.' };
+  const err = await proCodeError(code);
+  return err ? { error: err } : { userCode: code };
+}
+
+/** Nomor ID berikutnya, mis. FL-014. (FT-xxx tidak lagi diterbitkan; Full-time memakai ID PRO.) */
 export async function nextUserCode(prefix: 'FT' | 'FL'): Promise<string> {
   const rows = await prisma.user.findMany({ where: { userCode: { startsWith: `${prefix}-` } }, select: { userCode: true } });
   const max = rows.reduce((m, r) => Math.max(m, Number((r.userCode || '').split('-')[1]) || 0), 0);

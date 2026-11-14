@@ -175,3 +175,24 @@ Entri yang dipindah dari `session-handover.md`. Cari dengan `grep`; jangan dibac
   * Notion Config: page induk `NotionPage` (default dipakai wizard); status arsip database milik production mengikuti Production Hub.
 * Detail: `entities.md` (Struktur Field per Production), `data-flows.md` (Nama Properti & Field Tambahan). Uji tulis Notion lolos di production `UJI Field Dinamis` (diarsipkan); database ujinya di Notion boleh dihapus.
 * **Putaran 2 belum**: langkah wizard "Struktur Field" + filter board untuk field `filterable`. Desain: https://claude.ai/artifact/8vPphPxA2HkpuGhdomBXpR
+
+### 2026-10-24 → 31 — Field Notion dinamis & Pages & Databases (Claude Code, `⚙️ [Backend & Database]`)
+* `7a92d1c` (di `main` & VPS): push Notion pakai `fieldMapping`, field tambahan `ProductionField` (Edit Production + section Field Tambahan di task drawer), `NotionPage` default untuk wizard. Detail di arsip & `entities.md`.
+* **Putaran 2 belum**: wizard "Struktur Field" + filter board `filterable` (desain https://claude.ai/artifact/8vPphPxA2HkpuGhdomBXpR).
+
+### 2026-10-31 — Audit knowledge graph & dokumentasi drawer bersusun (Claude Code, `🏛️ [Architecture & Knowledge Ops]`)
+* `npm run graphify`: 333 node, 900 link, hanya `generatedAt` berubah. `tools/canva-insights-extension/` di luar cakupan parser (hanya `src/`). `index.md` mencatat Canva Insights Fase 1–3 + sinkron harian dan Master Deck Builder F1–F2 (HOLD).
+* Fitur 2026-10-20 (drawer Edit Brief bersusun, Custom Fields disembunyikan, tombol Acak palet) sudah di `main` via PR #10; kini dibakukan di `form-crud-rules.md` §10 dan `issues-and-fixes.md` #37.
+
+### 2026-11-03 — Ghost text saran browser menimpa section brief (Claude Code, `🎨 [Frontend & UI]`)
+* Saran isi dari browser (teks biru + tombol Tab) di textarea Design Brief tidak terpotong dan menutupi heading section berikutnya. Bukan kode app. `TaskBodyEditor.tsx` kini memberi `autoComplete="off"` + `writingsuggestions="false"` pada input heading & textarea (konstanta `NO_SUGGESTIONS`). Commit `3a60716` (branch `docs/stacked-drawer-knowledge`, belum di-push), dirilis ke VPS 2026-11-03 (healthcheck OK, chunk berisi `writingsuggestions`). Belum dicek langsung di browser setelah login.
+* Catatan: textarea brief masih `font-mono` (melanggar invariant Inter); belum diubah.
+
+### 2026-11-03 — Canva Insights: ingest massal + retry extension (Claude Code, `⚙️ [Backend & Database]`)
+* UICreative 365 hari gagal 502 saat app VPS di-SIGKILL (RAM 961 MB; 9router dipakai dev dec studio, tetap di VPS). Extension 1.1.1 mencoba ulang 5xx/jaringan ±2 menit (`lib/server.js`).
+* Beban ingest: 1,36 jt baris harian / 36 rb batch memicu ±100 query per batch. `ingest.ts` kini menulis harian & template dengan satu `INSERT … ON CONFLICT` per batch, `matchTemplates` hanya pada batch `templates`. Extension 1.1.2: sinkron harian hanya template aktif 90 hari (backfill tetap gabung `known-ids`). Diverifikasi lokal dengan `scratch/canva-insights-test/bulk-reparse-check.ts` (baris identik, nilai Prisma = parse). Commit `3a408e7`, belum dirilis.
+
+### 2026-11-09 — Bersihkan setup Docker yang tidak dipakai (Claude Code, `🛡️ [DevOps & Release]`)
+* Lokasi DB: **lokal** = Postgres 16 Homebrew (`/opt/homebrew/var/postgresql@16`, `localhost:5432/can-freelance`); **VPS** = Postgres 16 paket Ubuntu (systemd `postgresql@16-main`, data `/var/lib/postgresql/16/main`, ±409 MB). Tidak ada Docker di keduanya.
+* Dihapus dari repo (staged, belum di-commit): `docker-compose.yml`, `Dockerfile`, `.dockerignore`, `scripts/setup-vps.sh` (setup Docker + Caddy lama yang tidak mencerminkan VPS: panel + Nginx + pm2). `docs/PRD-Dashboard-Module_2.md` masih menyebut docker-compose (dokumen historis).
+* VPS: dihapus `/www/server/pgsql` (stub panel, hanya file `data_directory` yang menunjuk ke folder tak ada). Service panel `pgsql.service` (LSB) masih terdaftar. App tetap online (pm2, healthcheck 307).

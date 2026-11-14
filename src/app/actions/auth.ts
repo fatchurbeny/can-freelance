@@ -7,7 +7,7 @@ import { tooManyAttempts } from '@/lib/rate-limit';
 import { generatePin, hashPin, validatePinStrength, verifyPin } from '@/lib/pin';
 import { clearViewAs, createSession, destroyAllSessions, destroySession, getCurrentUser, setViewAs } from '@/lib/session';
 import { isPreviewing } from '@/lib/access';
-import { adminSafetyError, nextUserCode } from '@/lib/user-admin';
+import { adminSafetyError, newUserCode } from '@/lib/user-admin';
 import { can, isRoleKey, ROLE_LABELS, ROLE_PERMISSIONS, type RoleKey } from '@/lib/permissions';
 
 const MAX_FAILED = 5;
@@ -97,9 +97,12 @@ function employmentFromContract(contractType: string | null | undefined): 'FULL_
 export async function createDesignerLoginAction({
   designerId,
   productionUnitIds,
+  proCode,
 }: {
   designerId: string;
   productionUnitIds: string[];
+  /** Wajib bila designer Full-time: ID PRO dari roster Portal Impro. */
+  proCode?: string | null;
 }) {
   try {
     if (await isPreviewing()) return { success: false, error: 'Mode pratinjau hanya-baca.' };
@@ -113,7 +116,9 @@ export async function createDesignerLoginAction({
 
     const employmentType = employmentFromContract(designer.contractType);
     const roleKey: RoleKey = employmentType === 'FULL_TIME' ? 'designer_fulltime' : 'designer_freelance';
-    const userCode = await nextUserCode(employmentType === 'FULL_TIME' ? 'FT' : 'FL');
+    const code = await newUserCode(employmentType, proCode);
+    if ('error' in code) return { success: false, error: code.error };
+    const { userCode } = code;
     const pin = generatePin();
 
     await prisma.user.create({

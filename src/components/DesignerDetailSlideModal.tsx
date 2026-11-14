@@ -571,6 +571,7 @@ export default function DesignerDetailSlideModal({ open, designer, initialTab = 
                 designerId={designer.id}
                 account={designer.account}
                 productionUnits={productionUnits}
+                fullTime={/full/i.test(designer.contractType || '')}
               />
             )}
 

@@ -17,7 +17,7 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 
 ## ⏳ Belum Selesai / Menunggu
 
-* Ganti PIN admin `FT-001` (menunggu user).
+* Ganti PIN admin `FT-001` (menunggu user). DB lokal: Postgres 16 Homebrew; VPS: Postgres 16 Ubuntu (lihat arsip 2026-11-09).
 * **Kode VPS**: `feat/canva-insights` `3ec9882` dirilis 2026-10-30 12:40 WIB (termasuk kolom F2 `tasks.dropbox_*`; `migrate diff` kosong). Backup: `~/db-backups/can-freelance-20261030-123858-pre-canva-insights-vps.dump`. 5 brand Canva sudah di-seed. Deploy: `VPS_SSH_PORT=2222 npm run deploy:vps`; env app di `.next/standalone/.env`.
 * **Canva Insights di VPS**: Chital, Antler, UICreative.net, Improstd OK 365 hari (run OK terakhir 2026-11-02); Zahra Art belum dicek. Ingest massal (`3a408e7`) **belum dirilis ke VPS** (deploy ditolak classifier; jalankan `VPS_SSH_PORT=2222 npm run deploy:vps` manual). Setelah rilis: reload extension tiap profil (1.1.2), cocokkan angka tiap brand dengan Canva (`scratch/canva-insights-test/pct-check.ts <brandId> <from> <to>`).
 * Tombol "Download all Statement" di `/billing-statement` mengarah ke `/api/billing/download-all` yang tidak ada (dan `<a>` tanpa basePath) → selalu 404.
@@ -41,21 +41,10 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 
 ## 📝 Sesi Terakhir
 
-### 2026-10-24 → 31 — Field Notion dinamis & Pages & Databases (Claude Code, `⚙️ [Backend & Database]`)
-* `7a92d1c` (di `main` & VPS): push Notion pakai `fieldMapping`, field tambahan `ProductionField` (Edit Production + section Field Tambahan di task drawer), `NotionPage` default untuk wizard. Detail di arsip & `entities.md`.
-* **Putaran 2 belum**: wizard "Struktur Field" + filter board `filterable` (desain https://claude.ai/artifact/8vPphPxA2HkpuGhdomBXpR).
-
-### 2026-10-31 — Audit knowledge graph & dokumentasi drawer bersusun (Claude Code, `🏛️ [Architecture & Knowledge Ops]`)
-* `npm run graphify`: 333 node, 900 link, hanya `generatedAt` berubah. `tools/canva-insights-extension/` di luar cakupan parser (hanya `src/`). `index.md` mencatat Canva Insights Fase 1–3 + sinkron harian dan Master Deck Builder F1–F2 (HOLD).
-* Fitur 2026-10-20 (drawer Edit Brief bersusun, Custom Fields disembunyikan, tombol Acak palet) sudah di `main` via PR #10; kini dibakukan di `form-crud-rules.md` §10 dan `issues-and-fixes.md` #37.
-
-### 2026-11-03 — Ghost text saran browser menimpa section brief (Claude Code, `🎨 [Frontend & UI]`)
-* Saran isi dari browser (teks biru + tombol Tab) di textarea Design Brief tidak terpotong dan menutupi heading section berikutnya. Bukan kode app. `TaskBodyEditor.tsx` kini memberi `autoComplete="off"` + `writingsuggestions="false"` pada input heading & textarea (konstanta `NO_SUGGESTIONS`). Commit `3a60716` (branch `docs/stacked-drawer-knowledge`, belum di-push), dirilis ke VPS 2026-11-03 (healthcheck OK, chunk berisi `writingsuggestions`). Belum dicek langsung di browser setelah login.
-* Catatan: textarea brief masih `font-mono` (melanggar invariant Inter); belum diubah.
-
-### 2026-11-03 — Canva Insights: ingest massal + retry extension (Claude Code, `⚙️ [Backend & Database]`)
-* UICreative 365 hari gagal 502 saat app VPS di-SIGKILL (RAM 961 MB; 9router dipakai dev dec studio, tetap di VPS). Extension 1.1.1 mencoba ulang 5xx/jaringan ±2 menit (`lib/server.js`).
-* Beban ingest: 1,36 jt baris harian / 36 rb batch memicu ±100 query per batch. `ingest.ts` kini menulis harian & template dengan satu `INSERT … ON CONFLICT` per batch, `matchTemplates` hanya pada batch `templates`. Extension 1.1.2: sinkron harian hanya template aktif 90 hari (backfill tetap gabung `known-ids`). Diverifikasi lokal dengan `scratch/canva-insights-test/bulk-reparse-check.ts` (baris identik, nilai Prisma = parse). Commit `3a408e7`, belum dirilis.
+### 2026-11-14 — ID login Full-time = ID PRO + rancangan SSO improstd (Claude Code, `⚙️ [Backend & Database]`)
+* Keputusan pemilik: akun Full-time memakai **ID PRO** (roster Portal Impro, sama dengan login improstd) menggantikan `FT-xxx`; Freelance tetap `FL-xxx`. `newUserCode`/`proCodeError` di `user-admin.ts`; input ID PRO di drawer User & Role (buat + edit, ganti ID tanpa reset PIN/sesi) dan di "Buat Akun Login" drawer designer Full-time. Migrasi: `scripts/migrate-ft-to-pro.ts` (uji kering lokal OK). **Belum dijalankan di VPS, belum di-commit/deploy**; daftar FT di VPS belum dibaca.
+* Rancangan "Kirim brief ke Deck/Doc" disepakati dengan sesi improstd (kontrak I-22 di `improstd/knowledge/DECISIONS.md`): can-freelance menerbitkan tiket HS256 (`SSO_SECRET`, 60 dtk, jti) → `impro…/sso/can-freelance?t=`; improstd memanggil `GET /api/brief/<taskId>` dan `POST /api/brief/<taskId>/outputs` di 127.0.0.1:3002 dengan `BRIEF_API_KEY` + `X-Acting-User`. Sisi can-freelance **belum dibangun**: `doctype.studio`, jenis section `prompt`, `lib/brief-extract.ts`, route tiket, API brief, tabel `task_design_outputs`. Write-back tidak boleh ke `task_canva_links` (ditimpa sync Notion).
+* Catatan: share link publik menampilkan Brand; opsi sembunyikan brand per link belum dibuat.
 
 ---
 

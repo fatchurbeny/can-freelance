@@ -9,7 +9,9 @@ import { can } from '@/lib/permissions';
 import {
   adminSafetyError,
   loadUserRows,
-  nextUserCode,
+  newUserCode,
+  normalizeUserCode,
+  proCodeError,
   validateMembershipInput,
   type MembershipInput,
   type UserRow,
@@ -33,12 +35,14 @@ export async function listUsersAction(): Promise<{ success: boolean; users: User
   }
 }
 
-/** Buat user baru (non-designer maupun designer). ID otomatis; PIN awal dikembalikan SEKALI. */
+/** Buat user baru (non-designer maupun designer). ID: PRO dari Admin (Full-time) / FL otomatis; PIN awal dikembalikan SEKALI. */
 export async function createUserAction(input: {
   name: string;
   employmentType: string;
   memberships: MembershipInput[];
   designerId?: string | null;
+  /** Wajib untuk FULL_TIME: ID PRO dari roster Portal Impro. */
+  proCode?: string | null;
 }) {
   try {
     const auth = await requireManager(true);
@@ -51,7 +55,9 @@ export async function createUserAction(input: {
     const invalid = await validateMembershipInput(input.employmentType, input.memberships, input.designerId);
     if (invalid) return { success: false as const, error: invalid };
 
-    const userCode = await nextUserCode(input.employmentType === 'FULL_TIME' ? 'FT' : 'FL');
+    const code = await newUserCode(input.employmentType, input.proCode);
+    if ('error' in code) return { success: false as const, error: code.error };
+    const { userCode } = code;
     const pin = generatePin();
     const primaryRole = input.memberships[0].roleKey;
     await prisma.user.create({
@@ -75,7 +81,7 @@ export async function createUserAction(input: {
 }
 
 /** Ubah nama + seluruh keanggotaan (role per production). Sesi user dicabut agar hak baru langsung berlaku. */
-export async function updateUserAction(input: { userId: string; name: string; memberships: MembershipInput[] }) {
+export async function updateUserAction(input: { userId: string; name: string; memberships: MembershipInput[]; proCode?: string | null }) {
   try {
     const auth = await requireManager(true);
     if ('error' in auth) return { success: false as const, error: auth.error };
@@ -89,8 +95,19 @@ export async function updateUserAction(input: { userId: string; name: string; me
     const unsafe = await adminSafetyError(auth.me.id, user.id, { isActive: user.isActive, memberships: input.memberships });
     if (unsafe) return { success: false as const, error: unsafe };
 
+    // Full-time: ID login boleh diganti ke ID PRO (migrasi FT-xxx → PRO). Freelance tetap FL-xxx.
+    let userCode = user.userCode;
+    if (user.employmentType === 'FULL_TIME' && input.proCode !== undefined && input.proCode !== null) {
+      const code = normalizeUserCode(input.proCode);
+      if (code !== user.userCode) {
+        const err = await proCodeError(code, user.id);
+        if (err) return { success: false as const, error: err };
+        userCode = code;
+      }
+    }
+
     await prisma.$transaction([
-      prisma.user.update({ where: { id: user.id }, data: { name, role: input.memberships[0].roleKey } }),
+      prisma.user.update({ where: { id: user.id }, data: { name, userCode, role: input.memberships[0].roleKey } }),
       prisma.membership.deleteMany({ where: { userId: user.id } }),
       prisma.membership.createMany({
         data: input.memberships.map((m) => ({ userId: user.id, roleKey: m.roleKey, productionUnitId: m.productionUnitId })),

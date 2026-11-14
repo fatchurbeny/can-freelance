@@ -35,6 +35,8 @@ export default function UserDrawer({ mode, user, units, freeDesigners, meId, onC
   const [name, setName] = useState(user?.name ?? '');
   const [employmentType, setEmploymentType] = useState<string>(user?.employmentType ?? 'FULL_TIME');
   const [designerId, setDesignerId] = useState('');
+  // Full-time: ID login = ID PRO dari roster Portal Impro (sama dengan login improstd).
+  const [proCode, setProCode] = useState(user?.employmentType === 'FULL_TIME' ? user.userCode : '');
   const [rows, setRows] = useState<Row[]>(() =>
     user && user.memberships.length ? user.memberships.map((m) => newRow(m.roleKey, m.productionUnitId ?? '')) : [newRow()],
   );
@@ -77,14 +79,25 @@ export default function UserDrawer({ mode, user, units, freeDesigners, meId, onC
     startTransition(async () => {
       setError(null);
       if (isEdit) {
-        const res = await updateUserAction({ userId: user!.id, name, memberships: memberships() });
+        const res = await updateUserAction({
+          userId: user!.id,
+          name,
+          memberships: memberships(),
+          proCode: user!.employmentType === 'FULL_TIME' ? proCode : null,
+        });
         if (!res.success) { setError(res.error); return; }
         onChanged();
         toast.success('Perubahan disimpan');
         onClose();
         return;
       }
-      const res = await createUserAction({ name, employmentType, memberships: memberships(), designerId: hasDesignerRole ? designerId || null : null });
+      const res = await createUserAction({
+        name,
+        employmentType,
+        memberships: memberships(),
+        designerId: hasDesignerRole ? designerId || null : null,
+        proCode: employmentType === 'FULL_TIME' ? proCode : null,
+      });
       if (!res.success) { setError(res.error); return; }
       onChanged();
       setIssued({ userCode: res.userCode, pin: res.pin });
@@ -138,7 +151,7 @@ export default function UserDrawer({ mode, user, units, freeDesigners, meId, onC
           <div className="space-y-1.5">
             <div className={`${label} flex items-center gap-1.5`}>
               Tipe
-              {isEdit && <InfoTip label="Tipe">Tipe dan ID tidak bisa diubah setelah dibuat.</InfoTip>}
+              {isEdit && <InfoTip label="Tipe">Tipe tidak bisa diubah setelah dibuat. ID Freelance (FL-xxx) tetap; ID Full-time bisa diganti ke ID PRO.</InfoTip>}
             </div>
             <div className="grid h-11 grid-cols-2 border border-[#f0f0f0] dark:border-[#272a34]">
               {([['FULL_TIME', 'Full-time'], ['FREELANCE', 'Freelance']] as const).map(([v, text]) => (
@@ -154,6 +167,27 @@ export default function UserDrawer({ mode, user, units, freeDesigners, meId, onC
               ))}
             </div>
           </div>
+
+          {employmentType === 'FULL_TIME' && (
+            <div className="space-y-1.5">
+              <div className={`${label} flex items-center gap-1.5`}>
+                <label htmlFor="ur-pro">ID PRO</label>
+                <InfoTip label="ID PRO">ID karyawan dari Portal Impro, dipakai sebagai ID login di sini dan di Deck/Doc (impro.fatchurbeny.com).</InfoTip>
+              </div>
+              <input
+                id="ur-pro"
+                value={proCode}
+                onChange={(e) => setProCode(e.target.value.toUpperCase())}
+                className={`${field} font-mono`}
+                placeholder="PRO33"
+                autoComplete="off"
+                spellCheck={false}
+              />
+              {isEdit && /^FT-/i.test(user!.userCode) && (
+                <p className="text-[11px] text-amber-600">ID lama {user!.userCode}. Ganti ke ID PRO; PIN dan sesi login tetap.</p>
+              )}
+            </div>
+          )}
 
           <div className="space-y-2">
             <div className={label}>Akses (role per production)</div>
@@ -225,7 +259,7 @@ export default function UserDrawer({ mode, user, units, freeDesigners, meId, onC
           <button
             type="button"
             onClick={save}
-            disabled={pending || !name.trim() || !!(issued && !isEdit)}
+            disabled={pending || !name.trim() || (employmentType === 'FULL_TIME' && !proCode.trim()) || !!(issued && !isEdit)}
             className="flex h-12 items-center justify-center gap-2 bg-[#ff5e1f] text-xs font-bold uppercase tracking-wider text-white hover:bg-[#ff7038] disabled:opacity-50 cursor-pointer"
           >
             <Save className="h-4 w-4" />
