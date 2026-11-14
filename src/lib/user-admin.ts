@@ -3,7 +3,9 @@ import { DESIGNER_ROLES, isRoleKey, ROLE_LABELS, ROLE_PERMISSIONS, ROLE_SCOPE, t
 
 /**
  * ID login karyawan tetap = ID PRO dari roster Portal Impro (sama dengan login improstd), mis. PRO20.
- * Freelance tetap memakai nomor urut FL-001 dst.
+ * Freelance memakai nomor urut FL-001 dst., KECUALI freelancer yang ada di roster Portal (punya ID PRO,
+ * mis. Putery = PRO61): ia memakai ID PRO agar akunnya di improstd sama (keputusan pemilik 2026-11-14).
+ * Tipe tetap FREELANCE (role & izin tidak berubah).
  */
 export const PRO_CODE_RE = /^PRO\d{2,4}$/;
 
@@ -17,13 +19,13 @@ export async function proCodeError(code: string, exceptUserId?: string): Promise
   return null;
 }
 
-/** ID untuk akun baru: Full-time wajib ID PRO dari Admin, Freelance otomatis FL-xxx. */
+/** ID untuk akun baru: Full-time wajib ID PRO; Freelance pakai ID PRO bila diisi (ada di roster Portal), selain itu FL-xxx otomatis. */
 export async function newUserCode(
   employmentType: 'FULL_TIME' | 'FREELANCE',
   proCode?: string | null,
 ): Promise<{ userCode: string } | { error: string }> {
-  if (employmentType === 'FREELANCE') return { userCode: await nextUserCode('FL') };
   const code = normalizeUserCode(proCode);
+  if (employmentType === 'FREELANCE' && !code) return { userCode: await nextUserCode('FL') };
   if (!code) return { error: 'ID PRO wajib diisi untuk akun Full-time.' };
   const err = await proCodeError(code);
   return err ? { error: err } : { userCode: code };

@@ -95,11 +95,13 @@ export async function updateUserAction(input: { userId: string; name: string; me
     const unsafe = await adminSafetyError(auth.me.id, user.id, { isActive: user.isActive, memberships: input.memberships });
     if (unsafe) return { success: false as const, error: unsafe };
 
-    // Full-time: ID login boleh diganti ke ID PRO (migrasi FT-xxx → PRO). Freelance tetap FL-xxx.
+    // ID login boleh diganti ke ID PRO: Full-time (migrasi FT-xxx → PRO) dan Freelance yang ada di roster Portal.
+    // Freelance dengan isian kosong tetap memakai FL-xxx yang ada.
     let userCode = user.userCode;
-    if (user.employmentType === 'FULL_TIME' && input.proCode !== undefined && input.proCode !== null) {
+    if (input.proCode !== undefined && input.proCode !== null) {
       const code = normalizeUserCode(input.proCode);
-      if (code !== user.userCode) {
+      const keepFl = user.employmentType !== 'FULL_TIME' && !code;
+      if (!keepFl && code !== user.userCode) {
         const err = await proCodeError(code, user.id);
         if (err) return { success: false as const, error: err };
         userCode = code;

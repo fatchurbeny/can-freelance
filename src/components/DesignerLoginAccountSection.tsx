@@ -25,7 +25,7 @@ interface Props {
   designerId: string;
   account: DesignerLoginAccount | null | undefined;
   productionUnits: UnitOption[];
-  /** Designer Full-time: akun baru memakai ID PRO (Portal Impro) yang diketik Admin. */
+  /** Designer Full-time: ID PRO wajib. Freelance: ID PRO opsional (bila ada di roster Portal), kosong = FL otomatis. */
   fullTime?: boolean;
 }
 
@@ -53,7 +53,7 @@ export default function DesignerLoginAccountSection({ designerId, account, produ
 
   const create = () =>
     startTransition(async () => {
-      const res = await createDesignerLoginAction({ designerId, productionUnitIds: selected, proCode: fullTime ? proCode : null });
+      const res = await createDesignerLoginAction({ designerId, productionUnitIds: selected, proCode: proCode.trim() || null });
       if (!res.success || !res.userCode || !res.pin) {
         toast.error(res.error || 'Gagal membuat akun');
         return;
@@ -171,17 +171,16 @@ export default function DesignerLoginAccountSection({ designerId, account, produ
               ))}
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              {fullTime && (
-                <input
-                  aria-label="ID PRO"
-                  value={proCode}
-                  onChange={(e) => setProCode(e.target.value.toUpperCase())}
-                  placeholder="ID PRO, mis. PRO33"
-                  autoComplete="off"
-                  spellCheck={false}
-                  className="h-9 w-44 rounded-none border border-[#f0f0f0] bg-white px-3 font-mono text-xs font-bold text-gray-900 outline-none focus:border-[#ff5e1f] dark:border-[#272a34] dark:bg-[#16181d] dark:text-white"
-                />
-              )}
+              <input
+                aria-label={fullTime ? 'ID PRO' : 'ID PRO (opsional)'}
+                title={fullTime ? 'Wajib: ID dari Portal Impro' : 'Isi hanya bila freelancer ini ada di roster Portal Impro; kosong = ID FL otomatis'}
+                value={proCode}
+                onChange={(e) => setProCode(e.target.value.toUpperCase())}
+                placeholder={fullTime ? 'ID PRO, mis. PRO33' : 'ID PRO (opsional)'}
+                autoComplete="off"
+                spellCheck={false}
+                className="h-9 w-44 rounded-none border border-[#f0f0f0] bg-white px-3 font-mono text-xs font-bold text-gray-900 outline-none focus:border-[#ff5e1f] dark:border-[#272a34] dark:bg-[#16181d] dark:text-white"
+              />
               <button type="button" className={btn} disabled={pending || selected.length === 0 || (fullTime && !proCode.trim())} onClick={create}>
                 {pending ? 'Membuat…' : 'Buat Akun Login'}
               </button>
