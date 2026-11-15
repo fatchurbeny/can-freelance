@@ -42,6 +42,10 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 
 ## 📝 Sesi Terakhir
 
+### 2026-11-15 — Picker 🧩 Elemen dari katalog improstd (Claude Code, `🎨 [Frontend & UI]`)
+* Kontrak I-23 dibangun di lokal (belum di-commit/deploy): tombol **Ambil Elemen** di drawer Edit Design Brief, section `## 🧩 Elemen`, proksi thumbnail, field `elements` di JSON brief. Detail: [`impro-brief-handoff.md`](impro-brief-handoff.md). Diuji dengan server tiruan improstd (picker, centang, tulis section di form task baru tanpa disimpan; proksi thumbnail; `elements` null/terisi).
+* VPS butuh `ELEMENTS_API_KEY` di `.next/standalone/.env` (nilai sama dengan improstd). Tidak ada perubahan skema DB.
+
 ### 2026-11-14 — Fitur Asset Library dihapus (Claude Code, `🏛️ [Architecture & Knowledge Ops]`)
 * Keputusan pemilik ("hapus langsung", dikonfirmasi di sesi ini): `/assets`, `/asset-report`, picker brief, sinkron Notion aset, relation `Assets`, izin `asset.*`, model `Asset`/`AssetCategory`/`AssetProduction`/`TaskAsset` dihapus dari kode. Ekspor VPS dulu: `backups/asset-export-20261114.json` (142 aset, 7 kategori, 7 task_assets + `asset_report`) dan `~/db-backups/can-freelance-20261114-asset-tables.dump` di VPS (skrip `scripts/export-asset-tables.sh`).
 * Urutan rilis: deploy kode → skrip Notion (lepas relation `Assets` di database task SC-Canva, judul database "Asset Library" diberi "(arsip 2026-11-14)", tidak dibuang ke trash) → DROP 4 tabel di VPS & lokal. Section `## 📦 Assets` di brief lama tetap teks (dirender sebagai link).

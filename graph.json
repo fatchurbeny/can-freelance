@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "generatedAt": "2026-11-14T16:01:43.446Z",
+  "generatedAt": "2026-11-15T14:46:35.576Z",
   "nodes": [
     {
       "id": "page:/account-team",
@@ -73,6 +73,14 @@
       "group": "Server Actions & Lib",
       "filepath": "src/app/actions/editor-sessions.ts",
       "details": "Server Actions in src/app/actions/editor-sessions.ts"
+    },
+    {
+      "id": "action:elements",
+      "label": "elements.ts",
+      "type": "action",
+      "group": "Server Actions & Lib",
+      "filepath": "src/app/actions/elements.ts",
+      "details": "Server Actions in src/app/actions/elements.ts"
     },
     {
       "id": "action:email-notification",
@@ -201,6 +209,14 @@
       "group": "Server Actions & Lib",
       "filepath": "src/app/api/dropbox/oauth/start/route.ts",
       "details": "Route Handler (/api/dropbox/oauth/start)"
+    },
+    {
+      "id": "api:/elements/thumb/[mediaId]",
+      "label": "API /api/elements/thumb/[mediaId]",
+      "type": "action",
+      "group": "Server Actions & Lib",
+      "filepath": "src/app/api/elements/thumb/[mediaId]/route.ts",
+      "details": "Route Handler (/api/elements/thumb/[mediaId])"
     },
     {
       "id": "api:/email-sync",
@@ -1515,6 +1531,14 @@
       "details": "React UI Component in src/components/task-detail/DesignOutputsList.tsx"
     },
     {
+      "id": "component:ElementPicker",
+      "label": "ElementPicker",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/task-detail/ElementPicker.tsx",
+      "details": "React UI Component in src/components/task-detail/ElementPicker.tsx"
+    },
+    {
       "id": "component:ReferenceImageUploader",
       "label": "ReferenceImageUploader",
       "type": "component",
@@ -1851,6 +1875,14 @@
       "details": "Server/shared library in src/lib/dropbox.ts"
     },
     {
+      "id": "lib:element-categories",
+      "label": "element-categories.ts",
+      "type": "action",
+      "group": "Server Actions & Lib",
+      "filepath": "src/lib/element-categories.ts",
+      "details": "Server/shared library in src/lib/element-categories.ts"
+    },
+    {
       "id": "lib:encryption",
       "label": "encryption.ts",
       "type": "action",
@@ -1881,6 +1913,14 @@
       "group": "Server Actions & Lib",
       "filepath": "src/lib/imap-client.ts",
       "details": "Server/shared library in src/lib/imap-client.ts"
+    },
+    {
+      "id": "lib:impro-elements",
+      "label": "impro-elements.ts",
+      "type": "action",
+      "group": "Server Actions & Lib",
+      "filepath": "src/lib/impro-elements.ts",
+      "details": "Server/shared library in src/lib/impro-elements.ts"
     },
     {
       "id": "lib:impro-sso",
@@ -2943,6 +2983,36 @@
       "confidence": "EXTRACTED"
     },
     {
+      "source": "action:elements",
+      "target": "lib:prisma",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:elements",
+      "target": "lib:access",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:elements",
+      "target": "lib:impro-elements",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:elements",
+      "target": "lib:element-categories",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:elements",
+      "target": "model:Account",
+      "relation": "queries",
+      "confidence": "EXTRACTED"
+    },
+    {
       "source": "action:email-notification",
       "target": "lib:access",
       "relation": "invokes",
@@ -3635,6 +3705,18 @@
     {
       "source": "api:/dropbox/oauth/start",
       "target": "lib:api-auth",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "api:/elements/thumb/[mediaId]",
+      "target": "lib:api-auth",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "api:/elements/thumb/[mediaId]",
+      "target": "lib:impro-elements",
       "relation": "invokes",
       "confidence": "EXTRACTED"
     },
@@ -5086,6 +5168,12 @@
     },
     {
       "source": "component:CreateTaskSlideModal",
+      "target": "lib:element-categories",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:CreateTaskSlideModal",
       "target": "component:task-form-utils",
       "relation": "renders",
       "confidence": "EXTRACTED"
@@ -6129,6 +6217,12 @@
       "confidence": "EXTRACTED"
     },
     {
+      "source": "component:DesignBriefEditorDrawer",
+      "target": "component:ElementPicker",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
       "source": "component:DesignBriefPreview",
       "target": "component:brief-parser",
       "relation": "renders",
@@ -6159,8 +6253,32 @@
       "confidence": "EXTRACTED"
     },
     {
+      "source": "component:DesignBriefSection",
+      "target": "lib:element-categories",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
       "source": "component:DesignOutputsList",
       "target": "action:design-outputs",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:ElementPicker",
+      "target": "action:elements",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:ElementPicker",
+      "target": "lib:base-path",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:ElementPicker",
+      "target": "lib:element-categories",
       "relation": "invokes",
       "confidence": "EXTRACTED"
     },
@@ -6449,6 +6567,12 @@
     {
       "source": "lib:brief-extract",
       "target": "lib:prisma",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:brief-extract",
+      "target": "lib:element-categories",
       "relation": "invokes",
       "confidence": "EXTRACTED"
     },
@@ -6779,6 +6903,12 @@
     {
       "source": "lib:imap-client",
       "target": "lib:canva-email-parser",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:impro-elements",
+      "target": "lib:element-categories",
       "relation": "invokes",
       "confidence": "EXTRACTED"
     },

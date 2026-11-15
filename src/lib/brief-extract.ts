@@ -4,6 +4,7 @@
  * Brand hanya diisi bila pemanggil boleh melihat brand (`account.view`).
  */
 import prisma from '@/lib/prisma';
+import { parseElementLines, type ElementCategoryKey, type ElementPick } from '@/lib/element-categories';
 import {
   classifyHeading,
   cleanHeading,
@@ -27,6 +28,8 @@ export interface BriefPayload {
   referenceImages: { url: string; external: boolean }[];
   links: { title: string; url: string; kind: 'wireframe' | 'reference' }[];
   brand: { name: string; canvaBrandId: string | null } | null;
+  /** Set elemen katalog improstd dari section 🧩 Elemen (kontrak I-23); id, bukan nama, jadi dikirim juga untuk user tanpa account.view. */
+  elements: { brand: string; picks: Partial<Record<ElementCategoryKey, string[]>> } | null;
   shareUrl: string | null;
 }
 
@@ -51,6 +54,14 @@ function linkTitle(url: string): string {
   } catch {
     return url;
   }
+}
+
+/** Pilihan 🧩 Elemen → `{ brand, picks }`; maks. 4 set per kategori (sudah dibatasi parser). */
+export function toElements(picks: ElementPick[]): BriefPayload['elements'] {
+  if (!picks.length) return null;
+  const grouped: Partial<Record<ElementCategoryKey, string[]>> = {};
+  for (const p of picks) (grouped[p.category] ??= []).push(p.ref);
+  return { brand: picks[0].ref.split('/')[0], picks: grouped };
 }
 
 /**
@@ -84,6 +95,7 @@ export async function buildBriefPayload(
   const palette: { role: string; hex: string }[] = [];
   const images: { url: string; external: boolean }[] = [];
   const links: BriefPayload['links'] = [];
+  const elementPicks: ElementPick[] = [];
 
   for (const sec of splitBriefSections(task.bodyText || '')) {
     const kind = classifyHeading(sec.heading);
@@ -125,6 +137,9 @@ export async function buildBriefPayload(
         }
         break;
       }
+      case 'elements':
+        elementPicks.push(...parseElementLines(body));
+        break;
       case 'assets':
         // Section "📦 Assets" di brief lama (fitur Asset Library dihapus 2026-11-14): baris `- [Judul](url) — hlm 3, 7` → link referensi.
         for (const m of body.matchAll(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)(?:\s*[—–-]\s*(?:hlm\.?|halaman)\s*(.+))?/gi)) {
@@ -170,6 +185,7 @@ export async function buildBriefPayload(
     referenceImages: images,
     links,
     brand: opts.canViewAccount && account ? { name: account.displayName, canvaBrandId: account.canvaBrandId ?? null } : null,
+    elements: toElements(elementPicks),
     shareUrl: token ? `${opts.publicBase}/share/t/${token}` : null,
   };
 }

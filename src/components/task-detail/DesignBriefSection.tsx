@@ -8,6 +8,7 @@ import { useAccess } from '@/context/AccessContext';
 import DesignBriefEditorDrawer, { mergePaletteMarkdown } from './DesignBriefEditorDrawer';
 import { stripChecklistSection } from '@/lib/checklist-qa';
 import { NOTES_HEADING, shufflePaletteMarkdown } from './brief-parser';
+import { mergeElementsMarkdown } from '@/lib/element-categories';
 
 export type BriefTab = 'brief' | 'checklist' | 'comments';
 
@@ -116,6 +117,14 @@ export default function DesignBriefSection({
 
   const handleInsertPalette = (paletteMarkdown: string) => {
     const next = mergePaletteMarkdown(draftBody, paletteMarkdown);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    pendingRef.current = null;
+    setDraftBody(next);
+    onBodyTextChange(next);
+  };
+
+  const handleInsertElements = (sectionMarkdown: string) => {
+    const next = mergeElementsMarkdown(draftBody, sectionMarkdown);
     if (timerRef.current) clearTimeout(timerRef.current);
     pendingRef.current = null;
     setDraftBody(next);
@@ -272,6 +281,7 @@ export default function DesignBriefSection({
           value={draftBody}
           onChange={handleDraftChange}
           onInsertPalette={handleInsertPalette}
+          onInsertElements={handleInsertElements}
           onClose={toggleMode}
           subtitle="Tersimpan otomatis · preview di drawer task"
         />

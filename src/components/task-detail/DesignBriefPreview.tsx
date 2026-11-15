@@ -58,6 +58,11 @@ function buildCards(markdown: string): PreviewCard[] {
       cards.push({ kind: 'links', title: title || 'Assets', content, links });
       continue;
     }
+    if (kind === 'elements') {
+      // Baris `- Kategori: Nama set (EB:brand/set)` → tampilkan tanpa ref teknis
+      cards.push({ kind, title: title || 'Elemen', content: content.replace(/\s*\(EB:[^)]+\)/g, '') });
+      continue;
+    }
     if (kind === 'image') {
       const md = Array.from(content.matchAll(/!\[[^\]]*\]\(([^)\s]+)\)/g), (m) => m[1]);
       const bare = md.length ? [] : Array.from(content.matchAll(/https?:\/\/\S+\.(?:png|jpe?g|webp|gif)/gi), (m) => m[0]);

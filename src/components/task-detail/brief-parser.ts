@@ -1,16 +1,17 @@
-export type BriefKind = 'image' | 'palette' | 'links' | 'assets' | 'keywords' | 'prompt' | 'custom' | 'notes' | 'checklist';
+export type BriefKind = 'image' | 'palette' | 'links' | 'assets' | 'elements' | 'keywords' | 'prompt' | 'custom' | 'notes' | 'checklist';
 
 export const BRIEF_ORDER: Record<BriefKind, number> = {
   image: 1,
   palette: 2,
   links: 3,
   assets: 4,
-  keywords: 5,
-  prompt: 6,
-  custom: 7,
-  notes: 8,
+  elements: 5,
+  keywords: 6,
+  prompt: 7,
+  custom: 8,
+  notes: 9,
   // Checklist QA (lib/checklist-qa.ts) selalu di akhir body
-  checklist: 9,
+  checklist: 10,
 };
 
 export const NOTES_HEADING = 'Catatan untuk Designer';
@@ -26,6 +27,8 @@ export function cleanHeading(heading: string): string {
 export function classifyHeading(heading: string): BriefKind {
   const h = cleanHeading(heading).toLowerCase();
   if (/\bchecklist\s+qa\b/.test(h)) return 'checklist';
+  // Section 🧩 Elemen (katalog improstd, kontrak I-23); cek sebelum kata lain
+  if (/\belemen\b/.test(h)) return 'elements';
   if (h.includes('image') || h.includes('gambar')) return 'image';
   if (h.includes('palette') || h.includes('warna')) return 'palette';
   if (/\bassets?\b/.test(h)) return 'assets';

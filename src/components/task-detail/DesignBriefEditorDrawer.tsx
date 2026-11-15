@@ -2,11 +2,13 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Edit3, Image as ImageIcon, Palette, X } from 'lucide-react';
+import { Edit3, Image as ImageIcon, Palette, Puzzle, X } from 'lucide-react';
 import TaskBodyEditor from '../TaskBodyEditor';
 import ImageColorPalettePicker from '../ImageColorPalettePicker';
 import { addReferenceImages, classifyHeading, referenceImageUrls, removeReferenceImage } from './brief-parser';
 import ReferenceImageUploader from './ReferenceImageUploader';
+import ElementPicker from './ElementPicker';
+import { useAccess } from '@/context/AccessContext';
 
 /**
  * Ganti section palet di markdown brief. Gambar yang dibawa palet baru ditambahkan ke section
@@ -27,6 +29,8 @@ interface Props {
   value: string;
   onChange: (next: string) => void;
   onInsertPalette: (paletteMarkdown: string) => void;
+  /** Section `## 🧩 Elemen` dari katalog improstd (string kosong = hapus section). */
+  onInsertElements?: (sectionMarkdown: string) => void;
   onClose: () => void;
   subtitle?: string;
   /** Harus di atas z-index drawer induk. */
@@ -41,12 +45,18 @@ export default function DesignBriefEditorDrawer({
   value,
   onChange,
   onInsertPalette,
+  onInsertElements,
   onClose,
   subtitle = 'Preview tampil di drawer sebelah kiri',
   zClassName = 'z-[60]',
 }: Props) {
   const [shown, setShown] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const pickerOpenRef = useRef(false);
+  pickerOpenRef.current = pickerOpen;
   const closeRef = useRef(onClose);
+  const access = useAccess();
+  const canPickElements = !!onInsertElements && (!access.enabled || access.permissions.includes('task.edit') || access.permissions.includes('task.edit.own'));
   // Upload berjalan async; pakai body terbaru saat selesai agar ketikan selama upload tidak tertimpa
   const valueRef = useRef(value);
   valueRef.current = value;
@@ -62,7 +72,9 @@ export default function DesignBriefEditorDrawer({
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
       e.stopImmediatePropagation();
-      closeRef.current();
+      // Picker elemen terbuka: Escape menutup picker saja
+      if (pickerOpenRef.current) setPickerOpen(false);
+      else closeRef.current();
     };
     window.addEventListener('keydown', onKey, true);
     return () => {
@@ -115,7 +127,34 @@ export default function DesignBriefEditorDrawer({
         </button>
       </div>
 
+      {canPickElements && (
+        <div className="flex shrink-0 border-b border-[#f0f0f0] dark:border-[#272a34]">
+          <button
+            type="button"
+            onClick={() => setPickerOpen((v) => !v)}
+            aria-expanded={pickerOpen}
+            className={`relative flex min-h-11 flex-1 items-center justify-center gap-2 text-xs font-bold transition-colors cursor-pointer ${
+              pickerOpen ? 'bg-white text-[#ff5e1f] dark:bg-[#0d0e12]' : 'bg-gray-50/50 text-gray-700 hover:text-[#ff5e1f] dark:bg-[#16181d]/50 dark:text-gray-300'
+            }`}
+          >
+            <Puzzle className="w-3.5 h-3.5" />
+            Ambil Elemen
+            {pickerOpen && <span className="absolute inset-x-0 bottom-0 h-[2px] bg-[#ff5e1f]" />}
+          </button>
+        </div>
+      )}
+
       <div className="flex flex-1 flex-col gap-4 overflow-y-auto bg-[#f8f9fb] dark:bg-[#16181d]/60 p-5">
+        {pickerOpen && onInsertElements && (
+          <ElementPicker
+            body={value}
+            onClose={() => setPickerOpen(false)}
+            onInsert={(md) => {
+              onInsertElements(md);
+              setPickerOpen(false);
+            }}
+          />
+        )}
         {!hasPaletteSection && (
           <div className="bg-white dark:bg-[#0d0e12] border border-[#f0f0f0] dark:border-[#272a34]">
             <div className="flex items-center gap-2 px-4 py-3 border-b border-[#f0f0f0] dark:border-[#272a34] text-[13px] font-bold text-gray-900 dark:text-white">
