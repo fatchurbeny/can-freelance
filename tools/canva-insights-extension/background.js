@@ -269,7 +269,7 @@ async function runSync(tabId, { backfill }) {
     status = summary.rejected > 0 ? 'ERROR' : 'OK';
     message = `${summary.templates.toLocaleString('id-ID')} template, ${summary.rows.toLocaleString('id-ID')} baris data dalam ${summary.batches.toLocaleString('id-ID')} halaman${
       summary.rejected ? `; ${summary.rejected} halaman ditolak server` : ''
-    }.`;
+    }${summary.skippedRows ? `; ${summary.skippedRows.toLocaleString('id-ID')} baris tak terbaca dilewati (lihat Log teknis)` : ''}.${summary.firstRejectError ? ` Alasan pertama: ${summary.firstRejectError}` : ''}`;
     if (summary.rejected) hint = 'Sebagian data ditolak dashboard. Data lain tetap tersimpan; kabari admin.';
   } catch (e) {
     ({ status, message, hint } = explainError(e));

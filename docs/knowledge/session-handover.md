@@ -42,6 +42,10 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 
 ## 📝 Sesi Terakhir
 
+### 2026-11-15 — UICreative.net: 173/175 halaman REJECTED (Claude Code, `🔌 [API & Integrations]`)
+* Sinkron 14 hari UICreative (`BAEWutmc71I`): halaman berisi `C`/`D` REJECTED (`parseBatch` gagal, bukan token/DB); `tier_scores` lolos. Alasan persis di `canva_ingest_batches.error` VPS belum terbaca (akses DB ditolak di sesi).
+* Perbaikan (belum di-commit/deploy): parser v2 validasi per baris (baris rusak dilewati + dicatat, `C`/`D` null=0, string angka & negatif diterima; REJECTED hanya bila semua baris rusak), `ingest` mengembalikan `skippedRows`. Extension 1.1.3: alasan REJECTED & baris dilewati tampil di Log teknis/panel. Uji: `scratch/canva-insights-test/parse-tolerance.ts`, extension 16/16. Setelah deploy: reload extension, sinkron ulang UICreative (14 hari ditimpa); bila tetap REJECTED, alasan "semua N baris tidak valid" kini terlihat di panel.
+
 ### 2026-11-15 — Selesai Connect Google mendarat di localhost (Claude Code, `⚙️ [DevOps]`)
 * Gejala di VPS: setelah Connect Gmail, redirect akhir ke `http://localhost:3002/notion-config` karena `request.nextUrl.origin` di Next standalone = host internal. Baru: `src/lib/public-origin.ts` `getPublicOrigin()` (X-Forwarded-Host/Host bukan lokal → `APP_URL` bukan lokal → origin request), dipakai di `api/google/oauth/start|callback` dan URL akhir `api/dropbox/oauth/callback` (redirect URI Dropbox tidak diubah). Typecheck OK; helper dites dengan header tiruan. Commit `1edaef4`, dirilis ke VPS 2026-11-15 (healthcheck OK); uji Connect Gmail di produksi belum dikonfirmasi. `deploy-vps.sh` kini `tar --no-xattrs --no-mac-metadata` (hilangkan ribuan warning `LIBARCHIVE.xattr.com.apple.provenance` di VPS).
 

@@ -44,7 +44,8 @@ export const STAGES = [
 export async function collectBrand({ brand, fetchJson, server, pagination, runId, backfill = false, now = Date.now(), onStage = () => {} }) {
   const brandId = brand.brandId;
   const toDate = startOfUtcDay(now) + DAY_MS; // eksklusif: termasuk hari ini (UTC)
-  const summary = { batches: 0, rejected: 0, rows: 0, templates: 0 };
+  // firstRejectError: alasan penolakan pertama, ditampilkan di panel & laporan run agar tidak perlu buka console.
+  const summary = { batches: 0, rejected: 0, rows: 0, templates: 0, skippedRows: 0, firstRejectError: null };
 
   async function post(endpoint, query, payload) {
     const result = await server.ingest({ brandId, endpoint, query, payload, runId });
@@ -52,7 +53,12 @@ export async function collectBrand({ brand, fetchJson, server, pagination, runId
     summary.rows += payload?.A?.length ?? 0;
     if (result.status === 'REJECTED') {
       summary.rejected++;
-      log('WARN', `${brand.slug} ${endpoint} REJECTED`, { error: result.error, batchId: result.batchId });
+      const reason = result.error ?? 'tanpa alasan dari server';
+      summary.firstRejectError ??= `${endpoint}: ${reason}`;
+      log('WARN', `${brand.slug} ${endpoint} REJECTED: ${reason}`, { batchId: result.batchId });
+    } else if (result.skippedRows) {
+      summary.skippedRows += result.skippedRows;
+      log('WARN', `${brand.slug} ${endpoint} ${result.error}`, { batchId: result.batchId });
     }
   }
 

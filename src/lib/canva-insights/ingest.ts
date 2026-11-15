@@ -29,6 +29,8 @@ export interface IngestResult {
   status: 'PARSED' | 'REJECTED';
   rowCount: number;
   error?: string;
+  /** Baris yang dilewati parser (batch tetap PARSED); alasannya juga di kolom `error` batch. */
+  skippedRows?: number;
 }
 
 type Tx = Prisma.TransactionClient;
@@ -177,18 +179,26 @@ export async function processBatch(batchId: string): Promise<IngestResult & { te
     return { batchId, status: 'REJECTED', rowCount: 0, error, templateIds: [] };
   }
 
+  const { skipped } = parsed;
+  const note = skipped.count > 0 ? `${skipped.count} baris dilewati: ${skipped.reasons.join('; ')}` : null;
   const rowCount = await prisma.$transaction(
     async (tx) => {
       const n = await applyParsed(tx, parsed, batch.canvaBrandId, accountId, batchId, batch.receivedAt);
       await tx.canvaIngestBatch.update({
         where: { id: batchId },
-        data: { status: 'PARSED', error: null, rowCount: n, parserVersion: PARSER_VERSION },
+        data: { status: 'PARSED', error: note, rowCount: n, parserVersion: PARSER_VERSION },
       });
       return n;
     },
     { timeout: 30_000 },
   );
-  return { batchId, status: 'PARSED', rowCount, templateIds: touchedTemplateIds(parsed) };
+  return {
+    batchId,
+    status: 'PARSED',
+    rowCount,
+    ...(note ? { error: note, skippedRows: skipped.count } : {}),
+    templateIds: touchedTemplateIds(parsed),
+  };
 }
 
 export async function ingestBatch(input: IngestInput): Promise<IngestResult> {

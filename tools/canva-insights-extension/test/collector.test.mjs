@@ -164,3 +164,39 @@ test('collectBrand --backfill memecah 365 hari per 90 (harian) dan 45 (breakdown
   const daily = server.batches.filter((b) => b.endpoint === 'content.by_content').flatMap((b) => b.payload.A);
   assert.equal(new Set(daily.map((r) => r.k)).size, 365);
 });
+
+test('collectBrand menyimpan alasan penolakan pertama dari server', async () => {
+  const canva = fakeCanva({ pageParam: 'cursor', templates: 3 });
+  const server = fakeServer();
+  server.ingest = async (batch) =>
+    batch.endpoint === 'content.by_content'
+      ? { status: 'REJECTED', rowCount: 0, error: 'A[0].C harus bilangan bulat ≥ 0, didapat -1', batchId: 'b1' }
+      : { status: 'PARSED', rowCount: batch.payload.A.length };
+  const summary = await collectBrand({
+    brand: { slug: 'x', brandId: 'BAEtJgfxnTk' },
+    fetchJson: canva.fetchJson,
+    server,
+    pagination: { param: 'cursor', detected: false },
+    now: NOW,
+  });
+  assert.ok(summary.rejected > 0);
+  assert.equal(summary.firstRejectError, 'content.by_content: A[0].C harus bilangan bulat ≥ 0, didapat -1');
+});
+
+test('collectBrand menjumlah baris yang dilewati server tanpa menganggapnya ditolak', async () => {
+  const canva = fakeCanva({ pageParam: 'cursor', templates: 3 });
+  const server = fakeServer();
+  server.ingest = async (batch) =>
+    batch.endpoint === 'brand.breakdowns'
+      ? { status: 'PARSED', rowCount: 27, skippedRows: 1, error: '1 baris dilewati: A[0].C harus bilangan bulat' }
+      : { status: 'PARSED', rowCount: batch.payload.A.length };
+  const summary = await collectBrand({
+    brand: { slug: 'x', brandId: 'BAEtJgfxnTk' },
+    fetchJson: canva.fetchJson,
+    server,
+    pagination: { param: 'cursor', detected: false },
+    now: NOW,
+  });
+  assert.equal(summary.rejected, 0);
+  assert.equal(summary.skippedRows, 1);
+});
