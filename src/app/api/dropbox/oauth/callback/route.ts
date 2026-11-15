@@ -2,13 +2,14 @@ import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import { connectWithAuthCode, dropboxRedirectUri } from '@/lib/dropbox';
 import { authorizeApi } from '@/lib/api-auth';
+import { getPublicOrigin } from '@/lib/public-origin';
 
 export async function GET(request: NextRequest) {
   const denied = await authorizeApi('integration.manage');
   if (denied) return denied;
   const origin = request.nextUrl.origin;
-  // basePath dipakai konsisten dengan next.config.ts (route handler tidak selalu mengisi nextUrl.basePath)
-  const doneUrl = new URL('/production/new', origin);
+  // Redirect akhir ke origin publik (di VPS nextUrl.origin = localhost:3002); redirect URI Dropbox tetap seperti sebelumnya.
+  const doneUrl = new URL('/production/new', getPublicOrigin(request));
 
   const cookieStore = await cookies();
   const expectedState = cookieStore.get('dropbox_oauth_state')?.value;

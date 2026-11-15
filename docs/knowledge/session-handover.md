@@ -42,6 +42,9 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 
 ## 📝 Sesi Terakhir
 
+### 2026-11-15 — Selesai Connect Google mendarat di localhost (Claude Code, `⚙️ [DevOps]`)
+* Gejala di VPS: setelah Connect Gmail, redirect akhir ke `http://localhost:3002/notion-config` karena `request.nextUrl.origin` di Next standalone = host internal. Baru: `src/lib/public-origin.ts` `getPublicOrigin()` (X-Forwarded-Host/Host bukan lokal → `APP_URL` bukan lokal → origin request), dipakai di `api/google/oauth/start|callback` dan URL akhir `api/dropbox/oauth/callback` (redirect URI Dropbox tidak diubah). Typecheck OK; helper dites dengan header tiruan. **Belum di-commit/deploy.**
+
 ### 2026-11-15 — Picker 🧩 Elemen dari katalog improstd (Claude Code, `🎨 [Frontend & UI]`)
 * Kontrak I-23 dibangun di lokal (belum di-commit/deploy): tombol **Ambil Elemen** di drawer Edit Design Brief, section `## 🧩 Elemen`, proksi thumbnail, field `elements` di JSON brief. Detail: [`impro-brief-handoff.md`](impro-brief-handoff.md). Diuji dengan server tiruan improstd (picker, centang, tulis section di form task baru tanpa disimpan; proksi thumbnail; `elements` null/terisi).
 * VPS butuh `ELEMENTS_API_KEY` di `.next/standalone/.env` (nilai sama dengan improstd). Tidak ada perubahan skema DB.

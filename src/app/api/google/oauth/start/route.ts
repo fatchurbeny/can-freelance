@@ -3,11 +3,12 @@ import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import { buildGoogleOAuthUrl, getGoogleOAuthConfig } from '@/lib/google-oauth';
 import { authorizeApi } from '@/lib/api-auth';
+import { getPublicOrigin } from '@/lib/public-origin';
 
 export async function GET(request: NextRequest) {
   const denied = await authorizeApi('integration.manage');
   if (denied) return denied;
-  const origin = request.nextUrl.origin;
+  const origin = getPublicOrigin(request);
   const basePath = request.nextUrl.basePath || '';
   const returnUrl = new URL(`${basePath}/notion-config`, origin);
   const email = request.nextUrl.searchParams.get('email')?.trim() || '';

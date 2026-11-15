@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "generatedAt": "2026-11-15T14:46:35.576Z",
+  "generatedAt": "2026-11-15T15:02:31.843Z",
   "nodes": [
     {
       "id": "page:/account-team",
@@ -2051,6 +2051,14 @@
       "details": "Server/shared library in src/lib/production-tab-access.ts"
     },
     {
+      "id": "lib:public-origin",
+      "label": "public-origin.ts",
+      "type": "action",
+      "group": "Server Actions & Lib",
+      "filepath": "src/lib/public-origin.ts",
+      "details": "Server/shared library in src/lib/public-origin.ts"
+    },
+    {
       "id": "action:queries",
       "label": "queries.ts Aggregations",
       "type": "action",
@@ -3697,6 +3705,12 @@
       "confidence": "EXTRACTED"
     },
     {
+      "source": "api:/dropbox/oauth/callback",
+      "target": "lib:public-origin",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
       "source": "api:/dropbox/oauth/start",
       "target": "lib:dropbox",
       "relation": "invokes",
@@ -3746,6 +3760,12 @@
     },
     {
       "source": "api:/google/oauth/callback",
+      "target": "lib:public-origin",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "api:/google/oauth/callback",
       "target": "lib:google-oauth",
       "relation": "invokes",
       "confidence": "EXTRACTED"
@@ -3765,6 +3785,12 @@
     {
       "source": "api:/google/oauth/start",
       "target": "lib:api-auth",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "api:/google/oauth/start",
+      "target": "lib:public-origin",
       "relation": "invokes",
       "confidence": "EXTRACTED"
     },
