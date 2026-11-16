@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
 import { tooManyAttempts } from '@/lib/rate-limit';
 import { generatePin, hashPin, validatePinStrength, verifyPin } from '@/lib/pin';
+import { isAcceptedPinInput, isLegacyPin } from '@/lib/pin-rules';
 import { clearViewAs, createSession, destroyAllSessions, destroySession, getCurrentUser, setViewAs } from '@/lib/session';
 import { isPreviewing } from '@/lib/access';
 import { adminSafetyError, newUserCode } from '@/lib/user-admin';
@@ -33,7 +34,8 @@ export async function loginAction(userCode: string, pin: string) {
       return { success: false, error: `Terlalu banyak percobaan. Coba lagi dalam ${minutes} menit atau hubungi Admin.` };
     }
 
-    const ok = verifyPin(pin, user?.pinHash);
+    // Format tak dikenal tetap melewati scrypt (waktu respons sama) tetapi selalu gagal.
+    const ok = verifyPin(pin, user?.pinHash) && isAcceptedPinInput(pin);
     if (!user || !ok) {
       if (user) {
         const failed = user.failedAttempts + 1;
@@ -47,12 +49,14 @@ export async function loginAction(userCode: string, pin: string) {
     }
     if (!user.isActive) return { success: false, error: 'Akun dinonaktifkan. Hubungi Admin.' };
 
+    // PIN 6 angka lama: wajib diganti ke 4 angka sebelum lanjut.
+    const mustChangePin = user.pinMustChange || isLegacyPin(pin);
     await prisma.user.update({
       where: { id: user.id },
-      data: { failedAttempts: 0, lockedUntil: null, lastLoginAt: new Date() },
+      data: { failedAttempts: 0, lockedUntil: null, lastLoginAt: new Date(), pinMustChange: mustChangePin },
     });
     await createSession(user.id);
-    return { success: true, mustChangePin: user.pinMustChange };
+    return { success: true, mustChangePin };
   } catch (error: any) {
     return { success: false, error: error.message || 'Gagal masuk.' };
   }

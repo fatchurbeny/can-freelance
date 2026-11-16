@@ -3,24 +3,27 @@
 import Link from 'next/link';
 import { useState, useTransition } from 'react';
 import { changePinAction } from '@/app/actions/auth';
-import { validatePinStrength } from '@/lib/pin-rules';
+import { LEGACY_PIN_LENGTH, PIN_LENGTH, validatePinStrength } from '@/lib/pin-rules';
 import PinBoxes from './PinBoxes';
 
 export default function ChangePinForm({ forced = true }: { forced?: boolean }) {
   const [oldPin, setOldPin] = useState('');
+  // PIN lama boleh masih 6 angka (sebelum 2026-11-16).
+  const [legacyOld, setLegacyOld] = useState(false);
+  const oldLength = legacyOld ? LEGACY_PIN_LENGTH : PIN_LENGTH;
   const [newPin, setNewPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  const strengthError = newPin.length === 6 ? validatePinStrength(newPin) : null;
+  const strengthError = newPin.length === PIN_LENGTH ? validatePinStrength(newPin) : null;
   const rules = [
-    { ok: newPin.length === 6, text: 'Tepat 6 angka' },
-    { ok: newPin.length === 6 && !strengthError, text: 'Bukan angka berulang atau berurutan' },
-    { ok: newPin.length === 6 && newPin !== oldPin, text: 'Berbeda dari PIN lama' },
-    { ok: newPin.length === 6 && newPin === confirmPin, text: 'Ulangi PIN sama' },
+    { ok: newPin.length === PIN_LENGTH, text: `Tepat ${PIN_LENGTH} angka` },
+    { ok: newPin.length === PIN_LENGTH && !strengthError, text: 'Bukan angka berulang atau berurutan' },
+    { ok: newPin.length === PIN_LENGTH && newPin !== oldPin, text: 'Berbeda dari PIN lama' },
+    { ok: newPin.length === PIN_LENGTH && newPin === confirmPin, text: 'Ulangi PIN sama' },
   ];
-  const canSubmit = oldPin.length === 6 && rules.every((r) => r.ok);
+  const canSubmit = oldPin.length === oldLength && rules.every((r) => r.ok);
 
   const submit = () => {
     setError(null);
@@ -38,17 +41,24 @@ export default function ChangePinForm({ forced = true }: { forced?: boolean }) {
       className="flex w-full max-w-[460px] flex-col gap-5 rounded-none border border-[#e5e7eb] bg-white p-10 dark:border-[#272a34] dark:bg-[#16181d]"
     >
       <div className="flex flex-col gap-1.5">
-        {forced && <span className="text-xs font-semibold uppercase text-gray-400">Langkah wajib · login pertama</span>}
-        <h1 className="text-2xl font-bold">{forced ? 'Ganti PIN awal' : 'Ganti PIN'}</h1>
+        {forced && <span className="text-xs font-semibold uppercase text-gray-400">Langkah wajib</span>}
+        <h1 className="text-2xl font-bold">{forced ? 'Buat PIN baru' : 'Ganti PIN'}</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400">
           {forced
-            ? 'PIN dari Admin hanya sekali pakai. Buat PIN pribadi sebelum melanjutkan.'
+            ? `PIN awal dari Admin dan PIN 6 angka lama tidak dipakai lagi. Buat PIN pribadi ${PIN_LENGTH} angka sebelum melanjutkan.`
             : 'Masukkan PIN saat ini, lalu buat PIN baru. Sesi di perangkat ini tetap aktif.'}
         </p>
       </div>
       <div className="flex flex-col gap-2">
         <span className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">PIN lama</span>
-        <PinBoxes value={oldPin} onChange={setOldPin} label="PIN lama" size="md" />
+        <PinBoxes key={oldLength} value={oldPin} onChange={setOldPin} label="PIN lama" size="md" length={oldLength} />
+        <button
+          type="button"
+          onClick={() => { setLegacyOld((v) => !v); setOldPin(''); }}
+          className="self-start text-xs text-gray-500 underline-offset-2 hover:text-[#ff5e1f] hover:underline dark:text-gray-400 cursor-pointer"
+        >
+          {legacyOld ? 'PIN lama 4 angka' : 'PIN lama masih 6 angka'}
+        </button>
       </div>
       <div className="flex flex-col gap-2">
         <span className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">PIN baru</span>

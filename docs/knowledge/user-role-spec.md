@@ -65,11 +65,11 @@ Hubungan dengan Account & Team: ya. Baris **Brand** di detail task (`TaskDetailS
 ## Login ID + PIN
 - **ID unik per orang**. Full-time = **ID PRO** dari roster Portal Impro (`PRO20`; sama dengan login improstd/Deck/Doc), diketik Admin saat membuat akun (drawer User & Role atau "Buat Akun Login" di drawer designer), divalidasi `/^PRO\d{2,4}$/` + unik (`src/lib/user-admin.ts`). Freelance = nomor urut otomatis `FL-001`, **kecuali** freelancer yang ada di roster Portal Impro: memakai ID PRO-nya (mis. Putery = `PRO61`, keputusan pemilik 2026-11-14) agar akun improstd sama; tipe tetap `FREELANCE` (izin tidak berubah). Isian ID PRO di drawer opsional untuk Freelance. Disimpan di `User.userCode` (unique) + `User.employmentType` (`FULL_TIME` | `FREELANCE`).
 - Keputusan pemilik 2026-11-14: `FT-xxx` lama diganti ke ID PRO (tidak diterbitkan lagi). Admin bisa mengganti ID akun Full-time di drawer Edit User (PIN & sesi tetap); migrasi massal: `scripts/migrate-ft-to-pro.ts` (uji kering bawaan, `--roster`, `--map FT-001=PRO20`, `--apply`).
-- **PIN 6 digit**, disimpan sebagai hash (argon2/bcrypt), tidak pernah plaintext.
+- **PIN 4 digit** (keputusan pemilik 2026-11-16; sebelumnya 6). PIN 6 angka lama masih diterima saat login (tautan "PIN saya masih 6 angka") lalu akun ditandai `pinMustChange` sehingga wajib ganti ke 4 angka; aturan di `src/lib/pin-rules.ts`. Disimpan sebagai hash (argon2/bcrypt), tidak pernah plaintext.
 - Karena PIN ruang kuncinya kecil, wajib:
   - rate limit per ID dan per IP; kunci sementara setelah 5 gagal beruntun (naik bertahap);
   - PIN awal dibuat Admin, **wajib diganti saat login pertama**; reset PIN hanya oleh Admin;
-  - tolak PIN lemah (`123456`, `000000`, berulang/berurutan);
+  - tolak PIN lemah (`1234`, `0000`, berulang/berurutan);
   - sesi: cookie httpOnly, signed, kedaluwarsa (mis. 7 hari), dicabut saat user dinonaktifkan;
   - tetap di belakang Basic Auth Nginx sampai migrasi selesai (lapisan luar).
 - User nonaktif (`isActive = false`) tidak bisa login; riwayat tetap ada.
@@ -102,7 +102,7 @@ Permission key dikumpulkan di `src/lib/permissions.ts`; `src/lib/production-tab-
 
 ## Akun sendiri (semua user login)
 - Menu akun di top bar: **Profil Saya** (bila akun terhubung ke profil designer), **Ganti PIN**, **Keluar**.
-- **Ganti PIN** = `/change-pin` (sukarela; `forced` hanya untuk PIN awal). Memakai PIN lama, aturan sama (6 angka, bukan berulang/berurutan).
+- **Ganti PIN** = `/change-pin` (sukarela; `forced` hanya untuk PIN awal). Memakai PIN lama, aturan sama (4 angka, bukan berulang/berurutan; PIN lama boleh 6 angka).
 - **Profil Saya** (`MyProfileSlideModal`, hanya-baca) memakai `getMyProfileAction()` — tanpa parameter id (selalu akun efektif), tanpa brand/akun Canva. Isi: statistik (approved/templates/pages), profil (kontrak, status, kontak, rekening), tab **Timeline Karir & Logs** termasuk milestone otomatis (Leaderboard #1, 500/1.000+ pages, promosi, kontrak). Tanpa tambah milestone/promosi; data diubah Admin.
 - Dalam mode "Lihat sebagai", menu ini menampilkan profil akun yang dipratinjau dan Ganti PIN disembunyikan.
 

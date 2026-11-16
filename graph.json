@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "generatedAt": "2026-11-15T15:02:31.843Z",
+  "generatedAt": "2026-11-16T07:22:30.351Z",
   "nodes": [
     {
       "id": "page:/account-team",
@@ -2722,6 +2722,12 @@
     },
     {
       "source": "action:auth",
+      "target": "lib:pin-rules",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "action:auth",
       "target": "lib:session",
       "relation": "invokes",
       "confidence": "EXTRACTED"
@@ -4788,6 +4794,18 @@
       "source": "component:LoginForm",
       "target": "component:PinBoxes",
       "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:LoginForm",
+      "target": "lib:pin-rules",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:PinBoxes",
+      "target": "lib:pin-rules",
+      "relation": "invokes",
       "confidence": "EXTRACTED"
     },
     {

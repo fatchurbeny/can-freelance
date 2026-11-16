@@ -3,10 +3,14 @@
 import { useState, useTransition } from 'react';
 import { loginAction } from '@/app/actions/auth';
 import PinBoxes from './PinBoxes';
+import { LEGACY_PIN_LENGTH, PIN_LENGTH } from '@/lib/pin-rules';
 
 export default function LoginForm() {
   const [userCode, setUserCode] = useState('');
   const [pin, setPin] = useState('');
+  // PIN 6 angka lama (sebelum 2026-11-16): masih bisa dipakai masuk, lalu wajib diganti ke 4 angka.
+  const [legacy, setLegacy] = useState(false);
+  const pinLength = legacy ? LEGACY_PIN_LENGTH : PIN_LENGTH;
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -26,7 +30,7 @@ export default function LoginForm() {
 
   return (
     <form
-      onSubmit={(e) => { e.preventDefault(); if (userCode.trim() && pin.length === 6) submit(); }}
+      onSubmit={(e) => { e.preventDefault(); if (userCode.trim() && pin.length === pinLength) submit(); }}
       className="flex w-full max-w-[420px] flex-col gap-6 rounded-none border border-[#e5e7eb] bg-white p-10 dark:border-[#272a34] dark:bg-[#16181d]"
     >
       <div className="flex items-center gap-3">
@@ -43,16 +47,23 @@ export default function LoginForm() {
           id="userCode"
           value={userCode}
           onChange={(e) => setUserCode(e.target.value)}
-          placeholder="FT-001 atau FL-014"
+          placeholder="PRO20 atau FL-014"
           autoComplete="username"
           autoCapitalize="characters"
           className="h-12 w-full rounded-none border border-[#e5e7eb] bg-white px-3.5 text-base outline-none focus:border-[#ff5e1f] dark:border-[#272a34] dark:bg-[#0d0e12]"
         />
-        <span className="text-xs text-gray-400">FT = Full-time · FL = Freelance</span>
+        <span className="text-xs text-gray-400">PRO = ID Portal Impro · FL = Freelance</span>
       </div>
       <div className="flex flex-col gap-2">
-        <span className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">PIN (6 angka)</span>
-        <PinBoxes value={pin} onChange={setPin} label="PIN" />
+        <span className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">PIN ({pinLength} angka)</span>
+        <PinBoxes key={pinLength} value={pin} onChange={setPin} label="PIN" length={pinLength} />
+        <button
+          type="button"
+          onClick={() => { setLegacy((v) => !v); setPin(''); }}
+          className="self-start text-xs text-gray-500 underline-offset-2 hover:text-[#ff5e1f] hover:underline dark:text-gray-400 cursor-pointer"
+        >
+          {legacy ? 'Pakai PIN 4 angka' : 'PIN saya masih 6 angka'}
+        </button>
       </div>
       {error && (
         <div role="alert" className="rounded-none border border-dashed border-rose-400 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:bg-rose-950/30 dark:text-rose-300">
@@ -61,7 +72,7 @@ export default function LoginForm() {
       )}
       <button
         type="submit"
-        disabled={pending || !userCode.trim() || pin.length !== 6}
+        disabled={pending || !userCode.trim() || pin.length !== pinLength}
         className="h-12 rounded-none bg-[#ff5e1f] text-[15px] font-bold text-white disabled:opacity-50"
       >
         {pending ? 'Memeriksa…' : 'Masuk'}

@@ -1,5 +1,5 @@
 import { randomBytes, randomInt, scryptSync, timingSafeEqual } from 'crypto';
-import { validatePinStrength } from '@/lib/pin-rules';
+import { PIN_LENGTH, validatePinStrength } from '@/lib/pin-rules';
 
 export function hashPin(pin: string): string {
   const salt = randomBytes(16);
@@ -21,7 +21,7 @@ export { validatePinStrength };
 
 export function generatePin(): string {
   for (;;) {
-    const pin = String(randomInt(0, 1_000_000)).padStart(6, '0');
+    const pin = String(randomInt(0, 10 ** PIN_LENGTH)).padStart(PIN_LENGTH, '0');
     if (!validatePinStrength(pin)) return pin;
   }
 }
