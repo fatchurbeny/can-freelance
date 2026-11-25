@@ -1,6 +1,6 @@
 # Rencana Pindah Domain: `portal.fatchurbeny.com` → `portal.meetimpro.site`
 
-Status: **Fase 1–4 selesai** (2026-11-25). App produksi memakai `https://portal.meetimpro.site`; domain lama masih melayani penuh. Pemilik mengonfirmasi upload, Connect Dropbox, dan Kirim brief jalan di domain baru. Google app In production, Gmail tersambung ulang dan sinkron OK. Sisa: extension 1.2.0 di 5 profil, Fase 5–6.
+Status: **Fase 1–4 selesai** (2026-11-25). App produksi memakai `https://portal.meetimpro.site`; domain lama masih melayani penuh. Pemilik mengonfirmasi upload, Connect Dropbox, dan Kirim brief jalan di domain baru. Fase 5 selesai (domain lama → 308, kecuali ingest extension). Sisa: extension 1.2.0 di 5 profil lalu hapus pengecualian ingest, hapus redirect URI lama di Google/Dropbox, Fase 6 (opsional).
 
 Server tetap sama (VPS Biznet GIO `103.89.5.148`, Next standalone :3002, PM2 `can-freelance`, Nginx). Yang berubah hanya nama host publik.
 
@@ -71,6 +71,9 @@ Langkah semula:
 6. Extension 1.2.0: reload di 5 profil Chrome; sinkron 14 hari satu brand, cek batch masuk.
 
 ### Fase 5 — Domain lama jadi redirect
+**Selesai 2026-11-25 22:13 WIB**: `portal.fatchurbeny.com.conf` kini hanya `return 308 https://portal.meetimpro.site$request_uri` (`/can-freelance/...` langsung ke root domain baru, satu kali redirect). **Pengecualian**: `^(/can-freelance)?/api/insights(/.*)?$` tetap di-proxy ke :3002 karena extension Canva Insights masih ≤1.1.3 di profil-profil (terakhir 655 POST ke `/can-freelance/api/insights` pada 2026-11-23); redirect lintas domain membuang header `Authorization` dan 1.1.3 tak punya izin host domain baru. Hapus pengecualian setelah semua profil memakai 1.2.0 (cek `grep -a "POST /.*api/insights" /www/wwwlogs/portal.fatchurbeny.com.log`). Backup: `~/backups/portal.fatchurbeny.com.conf.20261125-221333-pre-redirect`. Uji: `/login`, `/production?x=1`, `/can-freelance/*`, `/api/uploads/*`, callback OAuth lama → 308 ke domain baru; POST ingest lama → 401 dari app (tanpa token); domain baru normal. Sesi login di domain lama hilang (user login ulang di domain baru). Redirect URI lama di Google/Dropbox **belum** dihapus (aman dibiarkan; hapus setelah stabil).
+
+Langkah semula:
 1. Nginx `portal.fatchurbeny.com.conf`: `return 308 https://portal.meetimpro.site$request_uri;` (308 menjaga POST dari extension yang belum di-update; menangani `/can-freelance/*` karena domain baru juga mengalihkannya).
 2. Hapus redirect URI lama di Google/Dropbox **setelah** Connect dari domain baru terbukti jalan.
 3. Umumkan ke user: alamat baru + perlu login ulang.
