@@ -17,7 +17,7 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 
 ## ⏳ Belum Selesai / Menunggu
 
-* **Favicon** = logo improstd (`improstd/core/public/logo-impro.svg`) di ubin putih membulat, dirilis `b3ac3cc` 2026-11-25 (`icon.svg`, `favicon.ico` 16/32/48, `apple-icon.png`, `icon-192/512` di `src/app/` + `public/`). Logo TopBar di app masih monogram "IS" oranye (belum diganti).
+* **Favicon** = logo improstd (`improstd/core/public/logo-impro.svg`) di ubin putih membulat, dirilis `b3ac3cc` 2026-11-25 (`icon.svg`, `favicon.ico` 16/32/48, `apple-icon.png`, `icon-192/512` di `src/app/` + `public/`). TopBar juga memakai logo improstd sejak `014a5f7` (`src/components/ImproLogo.tsx`, cincin `currentColor`: navy terang / putih gelap; teks "impro.std" 18px). Catatan deploy: `deploy-vps.sh` mengekstrak di atas folder lama, jadi chunk build lama menumpuk di `.next/standalone/.next` (±385 file `static/chunks`); tidak dipakai, tapi grep string di sana bisa menyesatkan, cek lewat `*_client-reference-manifest.js`.
 
 * **Extension Canva Insights 1.2.0** bisa diunduh di Notion Config › Extension (rilis `55168be`, 2026-11-25; zip dibuat `scripts/pack-extension.sh` saat build, di balik login). Belum di-reload di 5 profil; setelah semua 1.2.0, hapus pengecualian `/api/insights` di vhost `portal.fatchurbeny.com.conf`.
 
