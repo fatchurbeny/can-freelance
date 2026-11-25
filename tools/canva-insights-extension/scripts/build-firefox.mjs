@@ -1,9 +1,9 @@
 // Bangun versi Firefox dari kode yang sama: salin file extension ke dist/firefox/ dengan manifest.firefox.json
 // sebagai manifest.json, lalu kemas jadi dist/canva-insights-firefox-<versi>.zip (bisa diganti nama ke .xpi).
-// Jalankan: npm run build:firefox
+// Jalankan: npm run build:firefox [-- <path zip keluaran>] (scripts/pack-extension.sh memberi path di public/downloads/).
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
-import { dirname, join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -25,7 +25,8 @@ mkdirSync(out, { recursive: true });
 for (const f of FILES) cpSync(join(root, f), join(out, f), { recursive: true });
 writeFileSync(join(out, 'manifest.json'), `${JSON.stringify(firefox, null, 2)}\n`);
 
-const zip = join(root, 'dist', `canva-insights-firefox-${firefox.version}.zip`);
+const zip = process.argv[2] ? resolve(process.argv[2]) : join(root, 'dist', `canva-insights-firefox-${firefox.version}.zip`);
+mkdirSync(dirname(zip), { recursive: true });
 if (existsSync(zip)) rmSync(zip);
 execFileSync('zip', ['-qr', '-X', zip, '.'], { cwd: out });
 console.log(`Folder: ${out}\nPaket:  ${zip}`);

@@ -26,7 +26,7 @@ URL dashboard lain harus ditambahkan dulu ke `host_permissions` di `manifest.jso
 
 Kode sama dengan versi Chrome; hanya manifest-nya beda (`manifest.firefox.json`: background `scripts` alih-alih service worker, `options_ui`, ID gecko `canva-insights@can-freelance`).
 
-1. Build: `npm run build:firefox` → folder `dist/firefox/` dan paket `dist/canva-insights-firefox-<versi>.zip`.
+1. Unduh dari dashboard: **Notion Config › Extension → Firefox** (file `.xpi`; dikemas `scripts/pack-extension.sh` saat `npm run build`, jadi ikut tiap deploy). Atau build lokal: `npm run build:firefox` → folder `dist/firefox/` dan paket `dist/canva-insights-firefox-<versi>.zip`.
 2. Pasang:
    - **Sementara (uji)**: buka `about:debugging#/runtime/this-firefox` → **Load Temporary Add-on…** → pilih `dist/firefox/manifest.json`. Hilang saat Firefox ditutup.
    - **Permanen**: Firefox rilis hanya menerima add-on bertanda tangan. Tanda tangani sebagai *unlisted* di addons.mozilla.org (Developer Hub → Submit → "On your own", unggah zip) lalu pasang `.xpi` hasilnya. Alternatif tanpa tanda tangan: Firefox Developer Edition/Nightly dengan `xpinstall.signatures.required = false` di `about:config`.
