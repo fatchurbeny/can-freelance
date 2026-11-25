@@ -28,7 +28,10 @@ cp -r .next/static .next/standalone/.next/
 cp -r public .next/standalone/
 
 # Pack standalone release TANPA .env dev lokal dan graph.json (Knowledge Graph hanya untuk lokal)
-tar --no-xattrs --no-mac-metadata -czf "$ARCHIVE_NAME" --exclude='.env' --exclude='./.env' --exclude='./graph.json' -C .next/standalone .
+# --no-mac-metadata (cegah file AppleDouble ._*) hanya ada di bsdtar macOS; GNU tar di Linux menolaknya.
+TAR_MAC_OPTS=()
+if tar --help 2>&1 | grep -q -- '--no-mac-metadata'; then TAR_MAC_OPTS=(--no-mac-metadata); fi
+tar --no-xattrs ${TAR_MAC_OPTS[@]+"${TAR_MAC_OPTS[@]}"} -czf "$ARCHIVE_NAME" --exclude='.env' --exclude='./.env' --exclude='./graph.json' -C .next/standalone .
 echo "✅ Paket rilis siap: $ARCHIVE_NAME ($(du -h "$ARCHIVE_NAME" | cut -f1))"
 
 echo "📤 [3/5] Mengunggah paket rilis ke VPS Biznet GIO ($VPS_HOST)..."
