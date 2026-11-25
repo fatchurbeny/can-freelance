@@ -34,40 +34,61 @@ echo "✅ Paket rilis siap: $ARCHIVE_NAME ($(du -h "$ARCHIVE_NAME" | cut -f1))"
 echo "📤 [3/5] Mengunggah paket rilis ke VPS Biznet GIO ($VPS_HOST)..."
 scp $SSH_OPTS "$ARCHIVE_NAME" "$VPS_USER@$VPS_HOST:$REMOTE_APP_DIR/"
 
-echo "⚙️ [4/5] Mengekstrak rilis, menyinkronkan aset Nginx, dan me-reload PM2 di VPS..."
-ssh $SSH_OPTS "$VPS_USER@$VPS_HOST" bash -c "'
-  set -e
-  cd $REMOTE_APP_DIR
-  
-  # 1. Ekstrak kode baru ke folder standalone (TIDAK menyentuh .env produksi)
-  tar -xzf $ARCHIVE_NAME --exclude=.env --exclude=./.env -C .next/standalone/
-  
-  # 2. Sinkronkan static chunks ke jalur pembacaan Nginx untuk mencegah error Failed to load chunk
-  mkdir -p .next/static
-  cp -rf .next/standalone/.next/static/* .next/static/
-  chmod -R 755 .next/static
-  mkdir -p public
-  cp -rf .next/standalone/public/* public/ 2>/dev/null || true
-  chmod -R 755 public
-  
-  # 2b. Persistent uploads directory di dalam $REMOTE_APP_DIR/storage/uploads
-  mkdir -p storage/uploads
-  chmod -R 777 storage/uploads 2>/dev/null || true
-  mkdir -p public/uploads
-  mkdir -p .next/standalone/public/uploads
-  # Link persistent uploads to public folders
-  cp -rn public/uploads/* storage/uploads/ 2>/dev/null || true
-  rm -rf public/uploads .next/standalone/public/uploads
-  ln -sfn $REMOTE_APP_DIR/storage/uploads public/uploads
-  ln -sfn $REMOTE_APP_DIR/storage/uploads .next/standalone/public/uploads
+echo "⚙️ [4/5] Mengekstrak rilis ke folder baru, menukar folder, menyinkronkan aset Nginx, dan me-reload PM2 di VPS..."
+# Rilis diekstrak ke folder bersih lalu ditukar, jadi file build lama tidak menumpuk
+# (sebelumnya tar -x di atas folder lama: ±5.700 file/68 MB menumpuk, dibersihkan 2026-11-25).
+# Satu rilis sebelumnya disimpan di .next/standalone.prev untuk rollback cepat.
+ssh $SSH_OPTS "$VPS_USER@$VPS_HOST" bash -s -- "$REMOTE_APP_DIR" "$ARCHIVE_NAME" <<'REMOTE'
+set -euo pipefail
+APP=$1
+ARCHIVE=$2
+cd "$APP"
+CUR=.next/standalone
+NEW=.next/standalone.new
+PREV=.next/standalone.prev
 
-  # 3. Hapus archive temporary di server
-  rm -f $ARCHIVE_NAME
-  
-  # 4. Zero-downtime reload via PM2
-  pm2 reload can-freelance --update-env
-  pm2 save
-'"
+# 1. Ekstrak rilis ke folder baru (tanpa .env dev lokal)
+rm -rf "$NEW"
+mkdir -p "$NEW"
+tar -xzf "$ARCHIVE" --exclude=.env --exclude=./.env -C "$NEW"
+
+# 2. Bawa .env produksi (dan cadangan .env.*) dari folder yang sedang jalan
+for f in "$CUR"/.env "$CUR"/.env.*; do
+  [ -f "$f" ] && cp -p "$f" "$NEW"/
+done
+[ -f "$NEW/.env" ] || { echo "❌ .env produksi tidak ada di $APP/$CUR, rilis dibatalkan"; rm -rf "$NEW"; exit 1; }
+
+# 3. Upload persisten di storage/uploads, ditautkan ke public/uploads
+mkdir -p storage/uploads
+chmod -R 777 storage/uploads 2>/dev/null || true
+rm -rf "$NEW/public/uploads"
+ln -sfn "$APP/storage/uploads" "$NEW/public/uploads"
+
+# 4. Tukar folder: rilis lama → standalone.prev, rilis baru → standalone
+rm -rf "$PREV"
+if [ -d "$CUR" ]; then mv "$CUR" "$PREV"; fi
+mv "$NEW" "$CUR"
+
+# 5. Static chunk untuk Nginx (/_next/static/): cermin persis build sekarang
+mkdir -p .next/static
+rsync -a --delete "$CUR/.next/static/" .next/static/
+chmod -R 755 .next/static
+
+# 6. public/ di root app; uploads tetap symlink ke storage
+mkdir -p public
+rsync -a --exclude=uploads "$CUR/public/" public/
+if [ ! -L public/uploads ]; then
+  cp -rn public/uploads/* storage/uploads/ 2>/dev/null || true
+  rm -rf public/uploads
+  ln -sfn "$APP/storage/uploads" public/uploads
+fi
+chmod -R 755 public 2>/dev/null || true
+
+# 7. Hapus arsip sementara, lalu reload PM2 (cwd tetap .next/standalone)
+rm -f "$ARCHIVE"
+pm2 reload can-freelance --update-env
+pm2 save
+REMOTE
 
 echo "🧹 [5/5] Membersihkan arsip lokal dan menjalankan Healthcheck..."
 rm -f "$ARCHIVE_NAME"
@@ -98,5 +119,7 @@ if [ "$PAGE_CODE" = "307" ] && [[ "$PAGE_LOCATION" =~ ^(https?://[^/]+)?/login([
 else
   echo "❌ GERBANG LOGIN TIDAK AKTIF: /production tanpa sesi → HTTP $PAGE_CODE ${PAGE_LOCATION:+(Location: $PAGE_LOCATION)}, API → HTTP $API_STATUS"
   echo "   Harus 307 ke /login dan API 401. Periksa AUTH_MODE/SESSION_SECRET yang terbaca PM2 dan: pm2 logs can-freelance"
+  echo "   Rollback ke rilis sebelumnya (di VPS, $REMOTE_APP_DIR):"
+  echo "     mv .next/standalone .next/standalone.bad && mv .next/standalone.prev .next/standalone && rsync -a --delete .next/standalone/.next/static/ .next/static/ && pm2 reload can-freelance --update-env"
   exit 1
 fi
