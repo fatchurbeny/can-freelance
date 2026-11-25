@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kebijakan Privasi — CAN-Freelance Dashboard</title>
+<meta name="description" content="Kebijakan privasi CAN-Freelance Dashboard (portal.meetimpro.site), termasuk penggunaan akses Gmail.">
+<style>
+  :root { --bg:#fff; --fg:#1f1f1e; --muted:#5f5e5a; --line:#e6e4df; --accent:#2f5bd3; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#151514; --fg:#ecebe7; --muted:#a6a49e; --line:#2c2b29; --accent:#8fa9f0; } }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif; }
+  main { max-width: 720px; margin: 0 auto; padding: 48px 16px 64px; }
+  h1 { font-size: 28px; line-height: 1.25; margin: 0 0 8px; }
+  h2 { font-size: 19px; margin: 32px 0 8px; }
+  p, li { color: var(--fg); }
+  .meta { color: var(--muted); font-size: 14px; margin: 0 0 24px; }
+  ul { padding-left: 20px; }
+  a { color: var(--accent); }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.9em; }
+  hr { border: 0; border-top: 1px solid var(--line); margin: 40px 0; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Kebijakan Privasi CAN-Freelance Dashboard</h1>
+  <p class="meta">Berlaku sejak 25 November 2026 · Aplikasi: <a href="https://portal.meetimpro.site">portal.meetimpro.site</a></p>
+
+  <p>CAN-Freelance Dashboard adalah alat internal tim Improstd untuk mengelola produksi desain, tagihan desainer, dan pemantauan template Canva. Aplikasi ini hanya dipakai oleh anggota tim yang punya akun login, dan tidak tersedia untuk umum.</p>
+
+  <h2>Akses Gmail yang kami minta</h2>
+  <p>Aplikasi meminta izin <code>gmail.readonly</code> (hanya baca) untuk satu kotak surat milik tim. Izin ini dipakai untuk satu tujuan: membaca email notifikasi dari Canva tentang masalah pada template kami, agar tim bisa menindaklanjutinya di dashboard.</p>
+  <ul>
+    <li>Aplikasi hanya mencari email dari <code>no-reply@canva.com</code> atau <code>notifications@canva.com</code> dengan subjek yang sudah ditentukan tim. Email lain tidak dibuka.</li>
+    <li>Aplikasi tidak pernah mengirim, mengubah, menghapus, atau menandai email.</li>
+  </ul>
+
+  <h2>Data yang disimpan</h2>
+  <p>Dari setiap email notifikasi Canva yang cocok, aplikasi menyimpan: ID pesan, subjek, pengirim, penerima, waktu diterima, nama brand, judul dan tautan template, daftar masalah yang disebut Canva, dan isi email tersebut. Data ini disimpan di database aplikasi di server kami sendiri dan hanya bisa dilihat oleh anggota tim yang login.</p>
+  <p>Token akses Google disimpan dalam keadaan terenkripsi dan hanya dipakai server untuk membaca email notifikasi di atas.</p>
+
+  <h2>Berbagi data</h2>
+  <p>Kami tidak menjual, menyewakan, atau membagikan data Gmail kepada pihak lain, dan tidak memakainya untuk iklan. Data Gmail tidak dipakai untuk melatih model AI.</p>
+  <p>Penggunaan informasi yang diterima dari Google API mematuhi <a href="https://developers.google.com/terms/api-services-user-data-policy">Google API Services User Data Policy</a>, termasuk ketentuan Limited Use.</p>
+
+  <h2>Memutus akses dan menghapus data</h2>
+  <ul>
+    <li>Akses bisa dicabut kapan saja di <a href="https://myaccount.google.com/permissions">pengaturan akun Google</a> (Keamanan → Aplikasi pihak ketiga).</li>
+    <li>Untuk meminta penghapusan data notifikasi yang sudah tersimpan, hubungi kontak di bawah.</li>
+  </ul>
+
+  <h2>Data lain di aplikasi</h2>
+  <p>Selain Gmail, aplikasi menyimpan data kerja tim: akun login (ID dan PIN yang di-hash), data task dan desainer, serta data yang disinkronkan dari Notion, Dropbox, dan Canva milik tim. Data ini hanya dipakai untuk operasional tim.</p>
+
+  <h2>Kontak</h2>
+  <p>Pertanyaan tentang kebijakan ini: <a href="mailto:impronsite@gmail.com">impronsite@gmail.com</a>.</p>
+
+  <hr>
+  <p class="meta"><strong>English summary.</strong> CAN-Freelance Dashboard is an internal tool of the Improstd team. It requests read-only Gmail access (<code>gmail.readonly</code>) to one team mailbox solely to read Canva notification emails about our templates (from no-reply@canva.com or notifications@canva.com). It never sends, modifies, or deletes email. Matching notifications are stored in our own database, visible only to signed-in team members; OAuth tokens are stored encrypted. Gmail data is not sold, shared, used for advertising, or used to train AI models. Our use of information received from Google APIs adheres to the Google API Services User Data Policy, including the Limited Use requirements. Revoke access at any time at myaccount.google.com/permissions; contact impronsite@gmail.com for data deletion.</p>
+</main>
+</body>
+</html>
