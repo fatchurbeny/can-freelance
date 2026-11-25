@@ -22,7 +22,9 @@ const $ = (id) => document.getElementById(id);
 
 // ?embed=1: dimuat di panel slide-over halaman Canva (slideover.js), lebar mengikuti panel.
 const EMBED = new URLSearchParams(location.search).has('embed');
-if (EMBED) document.body.classList.add('embed');
+// ?sidebar=1: sidebar Firefox (manifest.firefox.json). Tetap terbuka saat pindah tab, jadi tab Canva dicari ulang tiap refresh.
+const SIDEBAR = new URLSearchParams(location.search).has('sidebar');
+if (EMBED || SIDEBAR) document.body.classList.add('embed');
 const brandName = (id) => BRANDS[id] ?? id;
 
 function duration(ms) {
@@ -96,7 +98,8 @@ function render({ settings = {}, status = {}, lastRuns = {} }) {
   const configured = !!(settings.baseUrl && settings.token);
   // Panel slide-over hanya dipasang di canva.com/creators/*, jadi tidak perlu membaca tab.url (Firefox bisa
   // mengosongkannya). Popup toolbar tetap memeriksa URL tab.
-  const onCanva = EMBED || !!tab?.url?.startsWith('https://www.canva.com/');
+  // Hanya halaman Creator: sinkron memuat ulang dashboard di tab itu, jangan sampai menimpa desain yang sedang dibuka.
+  const onCanva = EMBED || !!tab?.url?.startsWith('https://www.canva.com/creators/');
   const fresh = Date.now() - (status.heartbeatAt ?? status.startedAt ?? 0) < HEARTBEAT_STALE_MS;
   const running = status.state === 'running' && fresh;
   const stalled = status.state === 'running' && !fresh;
@@ -161,6 +164,7 @@ function render({ settings = {}, status = {}, lastRuns = {} }) {
 async function refresh() {
   // Panel lama di tab Canva setelah extension di-reload: konteksnya putus, jangan memanggil API lagi.
   if (!chrome.runtime?.id) return;
+  if (SIDEBAR) tab = await activeTab().catch(() => tab);
   const [stored, status] = await Promise.all([
     chrome.storage.local.get(['settings', 'lastRuns']).catch(() => ({})),
     // Status langsung dari service worker (tidak disimpan di storage; lihat background.js).
@@ -172,7 +176,8 @@ async function refresh() {
 $('open-options').addEventListener('click', () => chrome.runtime.openOptionsPage());
 $('open-options-access').addEventListener('click', () => chrome.runtime.openOptionsPage());
 $('open-dashboard').addEventListener('click', () => {
-  if (tab?.id) chrome.tabs.update(tab.id, { url: DASHBOARD_URL });
+  // Tab Canva dipakai ulang; tab lain (mis. di sidebar Firefox) tidak ditimpa: buka tab baru.
+  if (tab?.id && tab.url?.startsWith('https://www.canva.com/')) chrome.tabs.update(tab.id, { url: DASHBOARD_URL });
   else chrome.tabs.create({ url: DASHBOARD_URL });
   if (!document.body.classList.contains('embed')) window.close();
 });
@@ -192,6 +197,11 @@ setInterval(refresh, 1000);
 
 // Sebagian browser menampilkan popup sebagai jendela sendiri, sehingga "tab aktif jendela ini" bukan tab Canva:
 // cari tab dashboard Creator. Di panel slide-over, tab = tab Canva yang memuat panel.
+/** Sidebar: tab aktif di jendela sidebar ini (bukan tab Creator lain di latar). */
+async function activeTab() {
+  const [active] = await chrome.tabs.query({ active: true, currentWindow: true });
+  return active;
+}
 async function findCanvaTab() {
   const [active] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
   if (active?.url?.startsWith('https://www.canva.com/creators/')) return active;
@@ -201,5 +211,5 @@ async function findCanvaTab() {
 canvaAccess = await chrome.permissions.contains({ origins: ['https://www.canva.com/*'] }).catch(() => true);
 // Di panel: tab = tab Canva yang memuat panel. Bila Firefox tidak memberikannya, `tabId` dibiarkan kosong dan
 // background memakai `sender.tab` dari pesan panel (lihat background.js).
-tab = EMBED ? await chrome.tabs.getCurrent().catch(() => undefined) : await findCanvaTab();
+tab = EMBED ? await chrome.tabs.getCurrent().catch(() => undefined) : SIDEBAR ? await activeTab() : await findCanvaTab();
 await refresh();

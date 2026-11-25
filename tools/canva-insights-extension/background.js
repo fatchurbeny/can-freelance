@@ -49,16 +49,21 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
 );
 
 // ── Ikon toolbar ───────────────────────────────────────────────────────────────
-// Di halaman Creator sudah ada panel slide-over: ikon membuka/menutup panel itu, bukan popup kedua.
+// Chrome: di halaman Creator sudah ada panel slide-over; ikon membuka/menutup panel itu, bukan popup kedua.
+// Firefox: panel ada di sidebar Firefox (manifest.firefox.json `sidebar_action`); ikon membuka/menutup sidebar.
 const CREATOR_PREFIX = 'https://www.canva.com/creators/';
+const sidebar = globalThis.browser?.sidebarAction ?? chrome.sidebarAction;
 function syncActionPopup(tabId, url = '') {
+  if (sidebar) return;
   chrome.action.setPopup({ tabId, popup: url.startsWith(CREATOR_PREFIX) ? '' : 'popup.html' }).catch(() => {});
 }
 chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
   if (info.url || info.status === 'loading') syncActionPopup(tabId, info.url ?? tab.url);
 });
-chrome.tabs.query({ url: `${CREATOR_PREFIX}*` }).then((tabs) => tabs.forEach((t) => syncActionPopup(t.id, t.url)));
+if (!sidebar) chrome.tabs.query({ url: `${CREATOR_PREFIX}*` }).then((tabs) => tabs.forEach((t) => syncActionPopup(t.id, t.url)));
 chrome.action.onClicked.addListener(async (tab) => {
+  // toggle() harus dipanggil langsung di handler klik (tanpa await sebelumnya).
+  if (sidebar) return void sidebar.toggle().catch(() => {});
   try {
     await chrome.tabs.sendMessage(tab.id, { type: 'togglePanel' });
   } catch {

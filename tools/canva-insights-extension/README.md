@@ -34,6 +34,7 @@ Kode sama dengan versi Chrome; hanya manifest-nya beda (`manifest.firefox.json`:
 4. Isi URL, token, nama perangkat, jadwal seperti di Chrome.
 
 Beda perilaku di Firefox:
+- Panel ada di **sidebar Firefox** (`sidebar_action`), bukan panel slide-over di halaman Canva. Ikon toolbar membuka/menutup sidebar; sidebar mengikuti tab aktif (tab dashboard Creator → Sinkronkan sekarang).
 - Background berupa *event page* yang dihentikan setelah ±30 detik tanpa aktivitas; selama sinkron extension memanggil API ringan tiap 20 detik agar tetap hidup.
 - `webRequest` tidak memakai opsi `extraHeaders` (khusus Chromium).
 - Tiap pemasangan punya ID internal acak (`moz-extension://…`); pengaturan tidak terbawa antar profil.
