@@ -9,7 +9,8 @@ export const SERVABLE_UPLOAD_EXTENSIONS = ['webp', 'png', 'jpg', 'jpeg'] as cons
 export function saveUploadedFile(buffer: Buffer, ext: string = 'webp'): string {
   const safeExt = (SERVABLE_UPLOAD_EXTENSIONS as readonly string[]).includes(ext) ? ext : 'webp';
   const filename = `ref-${Date.now()}-${crypto.randomBytes(6).toString('hex')}.${safeExt}`;
-  const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+  // Data runtime: jangan di-trace bundler (lihat api/uploads/[filename]/route.ts).
+  const uploadDir = path.join(/*turbopackIgnore: true*/ process.cwd(), 'public', 'uploads');
   if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
   fs.writeFileSync(path.join(uploadDir, filename), buffer);
   return filename;

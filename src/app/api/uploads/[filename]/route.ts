@@ -30,15 +30,16 @@ export async function GET(
       return new NextResponse('File not found', { status: 404 });
     }
     
-    // Check in storage/uploads or public/uploads
+    // Check in storage/uploads or public/uploads. File upload hanya ada saat runtime:
+    // turbopackIgnore mencegah bundler men-trace seluruh proyek ke build standalone (warning NFT).
     const pathsToTry = [
-      path.join(process.cwd(), 'storage', 'uploads', safeFilename),
-      path.join(process.cwd(), 'public', 'uploads', safeFilename),
+      path.join(/*turbopackIgnore: true*/ process.cwd(), 'storage', 'uploads', safeFilename),
+      path.join(/*turbopackIgnore: true*/ process.cwd(), 'public', 'uploads', safeFilename),
     ];
 
     let targetPath = '';
     for (const p of pathsToTry) {
-      if (fs.existsSync(p)) {
+      if (fs.existsSync(/*turbopackIgnore: true*/ p)) {
         targetPath = p;
         break;
       }
@@ -48,7 +49,7 @@ export async function GET(
       return new NextResponse('File not found', { status: 404 });
     }
 
-    const fileBuffer = fs.readFileSync(targetPath);
+    const fileBuffer = fs.readFileSync(/*turbopackIgnore: true*/ targetPath);
 
     return new NextResponse(new Uint8Array(fileBuffer), {
       headers: {
