@@ -50,7 +50,9 @@ Beda perilaku di Firefox:
 
 ### Membaca status
 
-- **Panel slide-over** di kanan halaman Canva Creator (`canva.com/creators/…`): isinya sama dengan popup dan selalu tampil. Klik tab "Canva Insights" di tepi kanan untuk menciutkan/membuka; titik di tab menunjukkan status (biru berdenyut = berjalan, hijau = berhasil, merah = gagal, oranye = terhenti/perlu login). Pilihan buka/ciut diingat.
+- **Panel samping** (sejak 1.4.0): klik ikon extension → panel Canva Insights terbuka di Side Panel Chrome (Chrome 116+) atau sidebar Firefox, dan mengikuti tab aktif. Di tab `canva.com/creators/…` muncul **Sinkronkan sekarang**. Browser Chromium tanpa Side Panel (mis. Yab) memakai panel slide-over di bawah ini.
+
+- **Panel slide-over** (cadangan untuk Chromium tanpa Side Panel) di kanan halaman Canva Creator (`canva.com/creators/…`): isinya sama dengan popup dan selalu tampil. Klik tab "Canva Insights" di tepi kanan untuk menciutkan/membuka; titik di tab menunjukkan status (biru berdenyut = berjalan, hijau = berhasil, merah = gagal, oranye = terhenti/perlu login). Pilihan buka/ciut diingat.
 - **Popup**: kartu status berwarna — *Siap*, *Sedang sinkron* (persen, halaman & baris yang sudah masuk, lama berjalan, langkah aktif dari 6 langkah, mis. "Angka harian per template · grup 19/25"), *Berhasil* (ringkasan + durasi), *Gagal* / *Perlu login* (alasan + "Yang perlu dilakukan"), *Terhenti* (tidak ada kabar > 2 menit: tab Canva ditutup, Chrome dimuat ulang, atau Mac tidur).
 - **Badge ikon**: `…` berjalan, `OK` berhasil, `!` gagal; arahkan kursor ke ikon untuk keterangan.
 - **Notifikasi Chrome** muncul saat sinkron manual selesai (berhasil atau gagal); untuk sinkron otomatis hanya saat gagal atau pulih dari gagal.

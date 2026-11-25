@@ -14,8 +14,10 @@ const chrome = JSON.parse(readFileSync(join(root, 'manifest.json'), 'utf8'));
 const firefox = JSON.parse(readFileSync(join(root, 'manifest.firefox.json'), 'utf8'));
 // Versi & izin harus sama dengan manifest Chrome agar kedua build tidak bergeser.
 // content_scripts/web_accessible_resources sengaja beda: Firefox memakai sidebar, bukan panel slide-over di halaman.
+// `sidePanel` khusus Chrome (Firefox memakai sidebar_action).
+const comparable = (m, key) => (key === 'permissions' ? m[key].filter((p) => p !== 'sidePanel') : m[key]);
 for (const key of ['version', 'permissions', 'host_permissions']) {
-  if (JSON.stringify(chrome[key]) !== JSON.stringify(firefox[key])) {
+  if (JSON.stringify(comparable(chrome, key)) !== JSON.stringify(comparable(firefox, key))) {
     console.error(`manifest.firefox.json: "${key}" berbeda dari manifest.json; samakan dulu.`);
     process.exit(1);
   }

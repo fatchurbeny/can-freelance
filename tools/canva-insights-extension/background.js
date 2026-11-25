@@ -48,22 +48,41 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
   chrome.webRequest.OnBeforeSendHeadersOptions?.EXTRA_HEADERS ? ['requestHeaders', 'extraHeaders'] : ['requestHeaders'],
 );
 
-// ── Ikon toolbar ───────────────────────────────────────────────────────────────
-// Chrome: di halaman Creator sudah ada panel slide-over; ikon membuka/menutup panel itu, bukan popup kedua.
-// Firefox: panel ada di sidebar Firefox (manifest.firefox.json `sidebar_action`); ikon membuka/menutup sidebar.
+// ── Ikon toolbar & panel ───────────────────────────────────────────────────────
+// Chrome 116+: Side Panel bawaan (manifest `side_panel`), dibuka lewat ikon toolbar dan mengikuti tab aktif.
+// Firefox: sidebar Firefox (manifest.firefox.json `sidebar_action`); ikon membuka/menutup sidebar.
+// Chromium tanpa Side Panel (mis. Yab): cadangan lama = popup di tab lain + panel slide-over di halaman Creator.
 const CREATOR_PREFIX = 'https://www.canva.com/creators/';
 const sidebar = globalThis.browser?.sidebarAction ?? chrome.sidebarAction;
+const sidePanel = sidebar ? null : chrome.sidePanel;
+const fallbackPanel = !sidebar && !sidePanel;
+
+if (sidePanel) sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
+
+if (fallbackPanel) {
+  chrome.action.setPopup({ popup: 'popup.html' }).catch(() => {});
+  // Panel slide-over tidak lagi dideklarasikan di manifest (Chrome & Firefox memakai panel browser): daftarkan di sini.
+  // Lewat Promise agar browser tanpa registerContentScripts tidak menghentikan service worker saat dimuat.
+  Promise.resolve()
+    .then(() => chrome.scripting.getRegisteredContentScripts({ ids: ['slideover'] }))
+    .then((found) =>
+      found.length ? null : chrome.scripting.registerContentScripts([{ id: 'slideover', matches: [`${CREATOR_PREFIX}*`], js: ['slideover.js'], runAt: 'document_idle' }]),
+    )
+    .catch((e) => console.warn('[canva-insights] panel slide-over tidak terdaftar:', e?.message ?? e));
+}
+
 function syncActionPopup(tabId, url = '') {
-  if (sidebar) return;
+  if (!fallbackPanel) return;
   chrome.action.setPopup({ tabId, popup: url.startsWith(CREATOR_PREFIX) ? '' : 'popup.html' }).catch(() => {});
 }
 chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
   if (info.url || info.status === 'loading') syncActionPopup(tabId, info.url ?? tab.url);
 });
-if (!sidebar) chrome.tabs.query({ url: `${CREATOR_PREFIX}*` }).then((tabs) => tabs.forEach((t) => syncActionPopup(t.id, t.url)));
+if (fallbackPanel) chrome.tabs.query({ url: `${CREATOR_PREFIX}*` }).then((tabs) => tabs.forEach((t) => syncActionPopup(t.id, t.url)));
 chrome.action.onClicked.addListener(async (tab) => {
   // toggle() harus dipanggil langsung di handler klik (tanpa await sebelumnya).
   if (sidebar) return void sidebar.toggle().catch(() => {});
+  if (!fallbackPanel) return;
   try {
     await chrome.tabs.sendMessage(tab.id, { type: 'togglePanel' });
   } catch {

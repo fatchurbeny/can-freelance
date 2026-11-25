@@ -24,19 +24,19 @@ const STEPS = [
   {
     title: 'Pasang (sekali per profil Chrome)',
     body: (
-      <>Buka <code className="font-mono">chrome://extensions</code>, aktifkan <strong>Developer mode</strong>, klik <strong>Load unpacked</strong>, pilih folder tadi. Pin ikon extension di toolbar.</>
+      <>Buka <code className="font-mono">chrome://extensions</code>, aktifkan <strong>Developer mode</strong>, klik <strong>Load unpacked</strong>, pilih folder tadi. Pin ikon extension di toolbar; klik ikonnya untuk membuka panel Canva Insights di <strong>Side Panel</strong> Chrome (mengikuti tab aktif).</>
     ),
   },
   {
     title: `Pasang (Firefox ${FIREFOX_MIN}+)`,
     body: (
-      <>Firefox biasa hanya menerima add-on bertanda tangan Mozilla, dan file ini belum ditandatangani. Pakai <strong>Firefox Developer Edition</strong> atau <strong>Nightly</strong>: di <code className="font-mono">about:config</code> ubah <code className="font-mono">xpinstall.signatures.required</code> ke <code className="font-mono">false</code>, lalu <code className="font-mono">about:addons</code> → ikon gerigi → <strong>Install Add-on From File</strong> → pilih file .xpi. Untuk uji sesaat di Firefox biasa: <code className="font-mono">about:debugging</code> → <strong>This Firefox</strong> → <strong>Load Temporary Add-on</strong> (hilang saat Firefox ditutup).</>
+      <>Firefox biasa hanya menerima add-on bertanda tangan Mozilla, dan file ini belum ditandatangani. Pakai <strong>Firefox Developer Edition</strong> atau <strong>Nightly</strong>: di <code className="font-mono">about:config</code> ubah <code className="font-mono">xpinstall.signatures.required</code> ke <code className="font-mono">false</code>, lalu <code className="font-mono">about:addons</code> → ikon gerigi → <strong>Install Add-on From File</strong> → pilih file .xpi. Untuk uji sesaat di Firefox biasa: <code className="font-mono">about:debugging</code> → <strong>This Firefox</strong> → <strong>Load Temporary Add-on</strong> (hilang saat Firefox ditutup). Klik ikon extension untuk membuka panel di <strong>sidebar</strong> Firefox.</>
     ),
   },
   {
     title: 'Isi pengaturan',
     body: (
-      <>Klik ikon extension → <strong>Buka Pengaturan</strong>. Isi URL dashboard (lihat di atas), token ingest dari admin, dan nama perangkat. <strong>Simpan</strong>, lalu <strong>Uji koneksi</strong>. Di Firefox, bila muncul kotak <strong>Izinkan akses situs</strong>, klik dan setujui dulu.</>
+      <>Di panel: <strong>Buka Pengaturan</strong>. Isi URL dashboard (lihat di atas), token ingest dari admin, dan nama perangkat. <strong>Simpan</strong>, lalu <strong>Uji koneksi</strong>. Sinkronkan dari panel saat tab aktif = dashboard Creator. Di Firefox, bila muncul kotak <strong>Izinkan akses situs</strong>, klik dan setujui dulu.</>
     ),
   },
   {
