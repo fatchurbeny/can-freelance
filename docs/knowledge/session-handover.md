@@ -17,6 +17,8 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 
 ## ⏳ Belum Selesai / Menunggu
 
+* **Extension Canva Insights 1.2.0** bisa diunduh di Notion Config › Extension (rilis `55168be`, 2026-11-25; zip dibuat `scripts/pack-extension.sh` saat build, di balik login). Belum di-reload di 5 profil; setelah semua 1.2.0, hapus pengecualian `/api/insights` di vhost `portal.fatchurbeny.com.conf`.
+
 * Freelance boleh ber-ID PRO (Putery `FL-001` → `PRO61`): sudah di-commit (`69859e1`) dan ikut ter-deploy 2026-11-14; tinggal ganti ID di VPS lewat drawer Edit User. Menunggu juga: `SSO_SECRET` + `BRIEF_API_KEY` di VPS untuk Kirim brief ke Deck/Doc (detail `grep "ID login Full-time" archive/`).
 * Ganti PIN admin `FT-001` (menunggu user). DB lokal: Postgres 16 Homebrew; VPS: Postgres 16 Ubuntu (lihat arsip 2026-11-09).
 * **Kode VPS**: `feat/canva-insights` `3ec9882` dirilis 2026-10-30 12:40 WIB (termasuk kolom F2 `tasks.dropbox_*`; `migrate diff` kosong). Backup: `~/db-backups/can-freelance-20261030-123858-pre-canva-insights-vps.dump`. 5 brand Canva sudah di-seed. Deploy: `VPS_SSH_PORT=2222 npm run deploy:vps`; env app di `.next/standalone/.env`. **Sejak 2026-11-25 app di `https://portal.meetimpro.site` (domain lama `portal.fatchurbeny.com` kini redirect 308, lihat [`domain-migration-meetimpro.md`](domain-migration-meetimpro.md)).**

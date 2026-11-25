@@ -8,8 +8,10 @@ Kenapa extension, bukan script terjadwal: Chrome yang dikendalikan Playwright me
 
 ## Pasang (sekali per profil Chrome)
 
+Zip terbaru bisa diunduh dari dashboard: **Notion Config › Extension** (`/notion-config?tab=extension`, perlu login). Zip dibuat ulang oleh `scripts/pack-extension.sh` di setiap `npm run build`, jadi ikut versi yang dideploy.
+
 1. Buka `chrome://extensions`, aktifkan **Developer mode**.
-2. **Load unpacked** → pilih folder `tools/canva-insights-extension/`.
+2. **Load unpacked** → pilih folder `tools/canva-insights-extension/` (atau folder hasil ekstrak zip; untuk update, timpa isi folder yang sama lalu Reload agar ID extension dan pengaturan tidak berubah).
 3. Buka **Details → Extension options** (atau klik ikon extension → Buka Pengaturan):
    - URL dashboard: `https://portal.meetimpro.site` (lokal: `http://127.0.0.1:3002`). Sejak 1.2.0, URL lama `https://portal.fatchurbeny.com` yang tersimpan otomatis diganti saat extension di-reload; domain lama tetap dialihkan 308.
    - Token: nilai `INSIGHTS_INGEST_TOKEN` server (VPS: `.next/standalone/.env`).
