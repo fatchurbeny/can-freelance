@@ -1,6 +1,6 @@
 # Rencana Pindah Domain: `portal.fatchurbeny.com` → `portal.meetimpro.site`
 
-Status: **Fase 3 (kode) selesai di branch `chore/domain-meetimpro`** (2026-11-25, belum di-commit/deploy). Fase 1, 2, 4–6 belum. Kode aman dirilis sebelum DNS siap: selama `APP_URL` VPS masih domain lama, URL yang dihasilkan tetap domain lama.
+Status: **Fase 1 (DNS + Nginx) dan Fase 3 (kode, branch `chore/domain-meetimpro`, belum di-deploy) selesai** (2026-11-25). Fase 2, 4–6 belum. Kode aman dirilis sebelum DNS siap: selama `APP_URL` VPS masih domain lama, URL yang dihasilkan tetap domain lama.
 
 Server tetap sama (VPS Biznet GIO `103.89.5.148`, Next standalone :3002, PM2 `can-freelance`, Nginx). Yang berubah hanya nama host publik.
 
@@ -33,7 +33,7 @@ Server tetap sama (VPS Biznet GIO `103.89.5.148`, Next standalone :3002, PM2 `ca
 ## 2. Fase & langkah
 
 ### Fase 1 — Persiapan infrastruktur (tanpa downtime)
-**Progres 2026-11-25**: ✅ DNS `portal` A → `103.89.5.148` proxied dibuat di Cloudflare. ✅ SSL mode sudah Full (strict). ✅ Origin Certificate `*.meetimpro.site, meetimpro.site` (s.d. 2041-11-21) sudah ada dan terpasang di VPS (dipakai `meetimpro.site`/`tools`), jadi langkah 2 tidak perlu cert baru, cukup pakai path cert yang sama. `https://portal.meetimpro.site/login` kini 404 dari Nginx (belum ada vhost). Sisa: langkah 3–4.
+**Progres 2026-11-25**: ✅ DNS `portal` A → `103.89.5.148` proxied dibuat di Cloudflare. ✅ SSL mode sudah Full (strict). ✅ Origin Certificate `*.meetimpro.site, meetimpro.site` (s.d. 2041-11-21) sudah ada dan terpasang di VPS (dipakai `meetimpro.site`/`tools`), jadi langkah 2 tidak perlu cert baru, cukup pakai path cert yang sama. ✅ Vhost `/www/server/panel/vhost/nginx/portal.meetimpro.site.conf` dibuat (salinan vhost lama + `listen 443 ssl http2` dengan Origin Cert `/www/server/nginx/conf/ssl/meetimpro.site/origin.{pem,key}`, `X-Forwarded-Proto https`); backup `~/backups/nginx-vhosts-20261125-211225-pre-meetimpro.tar.gz`. Uji: `/login` 200, `/production` 307 → `/login`, `/can-freelance/login` 308 → `/login`, static CSS 200, API 401; domain lama tetap 200. **Fase 1 selesai.** Kode di VPS masih versi lama dan `APP_URL` masih domain lama, jadi URL yang dihasilkan app (upload, email) tetap domain lama sampai Fase 4.
 
 1. DNS (Cloudflare): tambah zona `meetimpro.site` bila belum; A record `portal` → `103.89.5.148`, proxied; SSL/TLS mode **Full (strict)**, Always Use HTTPS aktif.
 2. Sertifikat: buat **Cloudflare Origin Certificate** untuk `portal.meetimpro.site` (boleh sekalian `*.meetimpro.site` untuk improstd nanti), simpan cert + key di VPS (mis. `/www/server/nginx/ssl/meetimpro.site/`, key `chmod 600`).
