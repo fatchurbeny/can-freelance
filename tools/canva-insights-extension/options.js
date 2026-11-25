@@ -27,6 +27,24 @@ async function allowed(baseUrl) {
   }
 }
 
+// Firefox (MV3) memperlakukan host_permissions sebagai izin yang bisa dicabut user: minta ulang bila belum ada.
+const HOST_ORIGINS = chrome.runtime.getManifest().host_permissions ?? [];
+async function checkHostAccess() {
+  const ok = await chrome.permissions.contains({ origins: HOST_ORIGINS }).catch(() => true);
+  $('perm-box').hidden = ok;
+}
+$('grant').addEventListener('click', () => {
+  // Harus dipanggil langsung di handler klik (tanpa await sebelumnya) agar Firefox menampilkan dialog izin.
+  chrome.permissions
+    .request({ origins: HOST_ORIGINS })
+    .then((granted) => {
+      show(granted ? 'Akses situs diizinkan.' : 'Akses situs ditolak; sinkron tidak bisa berjalan.', granted);
+      checkHostAccess();
+    })
+    .catch((err) => show(`Izin gagal diminta: ${err.message}`, false));
+});
+checkHostAccess();
+
 function updateTokenInfo() {
   const n = $('token').value.trim().length;
   $('token-len').textContent = `${n} karakter`;

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Can-Freelance Canva Insights",
-  "version": "1.2.0",
+  "version": "1.4.0",
   "description": "Kirim Applies/Usages dashboard Canva Creator ke dashboard can-freelance (satu klik per brand).",
   "minimum_chrome_version": "116",
   "permissions": [
@@ -9,7 +9,8 @@
     "scripting",
     "storage",
     "notifications",
-    "alarms"
+    "alarms",
+    "sidePanel"
   ],
   "host_permissions": [
     "https://www.canva.com/*",
@@ -24,7 +25,6 @@
   },
   "action": {
     "default_title": "Canva Insights",
-    "default_popup": "popup.html",
     "default_icon": {
       "128": "icon-128.png"
     }
@@ -33,17 +33,6 @@
   "icons": {
     "128": "icon-128.png"
   },
-  "content_scripts": [
-    {
-      "matches": [
-        "https://www.canva.com/creators/*"
-      ],
-      "js": [
-        "slideover.js"
-      ],
-      "run_at": "document_idle"
-    }
-  ],
   "web_accessible_resources": [
     {
       "resources": [
@@ -56,5 +45,8 @@
         "https://www.canva.com/*"
       ]
     }
-  ]
+  ],
+  "side_panel": {
+    "default_path": "popup.html?sidebar=1"
+  }
 }

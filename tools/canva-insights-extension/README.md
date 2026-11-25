@@ -1,4 +1,4 @@
-# Extension Chrome: Canva Insights → can-freelance
+# Extension Chrome & Firefox: Canva Insights → can-freelance
 
 Extension Manifest V3 untuk Chrome harian. Saat kamu membuka dashboard Creator Canva dan menekan **Sinkronkan sekarang**, extension mengambil Applies/Usages lewat endpoint internal dashboard (dari dalam tab Canva, memakai sesi login-mu) lalu mengirim tiap respons ke API dashboard can-freelance.
 
@@ -20,7 +20,24 @@ Zip terbaru bisa diunduh dari dashboard: **Notion Config › Extension** (`/noti
    - Klik **Simpan**, lalu **Uji koneksi**.
 4. Pin ikon extension di toolbar.
 
-URL dashboard lain harus ditambahkan dulu ke `host_permissions` di `manifest.json`, lalu extension dimuat ulang.
+URL dashboard lain harus ditambahkan dulu ke `host_permissions` di `manifest.json` (dan `manifest.firefox.json`), lalu extension dimuat ulang.
+
+## Firefox (128+)
+
+Kode sama dengan versi Chrome; hanya manifest-nya beda (`manifest.firefox.json`: background `scripts` alih-alih service worker, `options_ui`, ID gecko `canva-insights@can-freelance`).
+
+1. Unduh dari dashboard: **Notion Config › Extension → Firefox** (file `.xpi`; dikemas `scripts/pack-extension.sh` saat `npm run build`, jadi ikut tiap deploy). Atau build lokal: `npm run build:firefox` → folder `dist/firefox/` dan paket `dist/canva-insights-firefox-<versi>.zip`.
+2. Pasang:
+   - **Sementara (uji)**: buka `about:debugging#/runtime/this-firefox` → **Load Temporary Add-on…** → pilih `dist/firefox/manifest.json`. Hilang saat Firefox ditutup.
+   - **Permanen**: Firefox rilis hanya menerima add-on bertanda tangan. Tanda tangani sebagai *unlisted* di addons.mozilla.org (Developer Hub → Submit → "On your own", unggah zip) lalu pasang `.xpi` hasilnya. Alternatif tanpa tanda tangan: Firefox Developer Edition/Nightly dengan `xpinstall.signatures.required = false` di `about:config`.
+3. Buka Pengaturan extension (`about:addons` → Canva Insights → Preferences). Bila muncul kotak **Izinkan akses situs**, klik dan setujui: Firefox memisahkan izin canva.com & dashboard dari pemasangan.
+4. Isi URL, token, nama perangkat, jadwal seperti di Chrome.
+
+Beda perilaku di Firefox:
+- Panel ada di **sidebar Firefox** (`sidebar_action`), bukan panel slide-over di halaman Canva. Ikon toolbar membuka/menutup sidebar; sidebar mengikuti tab aktif (tab dashboard Creator → Sinkronkan sekarang).
+- Background berupa *event page* yang dihentikan setelah ±30 detik tanpa aktivitas; selama sinkron extension memanggil API ringan tiap 20 detik agar tetap hidup.
+- `webRequest` tidak memakai opsi `extraHeaders` (khusus Chromium).
+- Tiap pemasangan punya ID internal acak (`moz-extension://…`); pengaturan tidak terbawa antar profil.
 
 ## Sinkronkan
 
@@ -33,7 +50,9 @@ URL dashboard lain harus ditambahkan dulu ke `host_permissions` di `manifest.jso
 
 ### Membaca status
 
-- **Panel slide-over** di kanan halaman Canva Creator (`canva.com/creators/…`): isinya sama dengan popup dan selalu tampil. Klik tab "Canva Insights" di tepi kanan untuk menciutkan/membuka; titik di tab menunjukkan status (biru berdenyut = berjalan, hijau = berhasil, merah = gagal, oranye = terhenti/perlu login). Pilihan buka/ciut diingat.
+- **Panel samping** (sejak 1.4.0): klik ikon extension → panel Canva Insights terbuka di Side Panel Chrome (Chrome 116+) atau sidebar Firefox, dan mengikuti tab aktif. Di tab `canva.com/creators/…` muncul **Sinkronkan sekarang**. Browser Chromium tanpa Side Panel (mis. Yab) memakai panel slide-over di bawah ini.
+
+- **Panel slide-over** (cadangan untuk Chromium tanpa Side Panel) di kanan halaman Canva Creator (`canva.com/creators/…`): isinya sama dengan popup dan selalu tampil. Klik tab "Canva Insights" di tepi kanan untuk menciutkan/membuka; titik di tab menunjukkan status (biru berdenyut = berjalan, hijau = berhasil, merah = gagal, oranye = terhenti/perlu login). Pilihan buka/ciut diingat.
 - **Popup**: kartu status berwarna — *Siap*, *Sedang sinkron* (persen, halaman & baris yang sudah masuk, lama berjalan, langkah aktif dari 6 langkah, mis. "Angka harian per template · grup 19/25"), *Berhasil* (ringkasan + durasi), *Gagal* / *Perlu login* (alasan + "Yang perlu dilakukan"), *Terhenti* (tidak ada kabar > 2 menit: tab Canva ditutup, Chrome dimuat ulang, atau Mac tidur).
 - **Badge ikon**: `…` berjalan, `OK` berhasil, `!` gagal; arahkan kursor ke ikon untuk keterangan.
 - **Notifikasi Chrome** muncul saat sinkron manual selesai (berhasil atau gagal); untuk sinkron otomatis hanya saat gagal atau pulih dari gagal.

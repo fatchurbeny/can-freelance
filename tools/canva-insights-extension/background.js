@@ -44,20 +44,45 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
     chrome.storage.session.set({ [`headers:${details.tabId}`]: headers }).catch((e) => console.warn('[canva-insights] header tidak tersimpan:', e?.message ?? e));
   },
   { urls: ['https://www.canva.com/_ajax/creatorinsight/*'] },
-  ['requestHeaders', 'extraHeaders'],
+  // `extraHeaders` hanya ada di Chrome/Chromium; Firefox menolak opsi yang tak dikenal (dan tidak membutuhkannya).
+  chrome.webRequest.OnBeforeSendHeadersOptions?.EXTRA_HEADERS ? ['requestHeaders', 'extraHeaders'] : ['requestHeaders'],
 );
 
-// ── Ikon toolbar ───────────────────────────────────────────────────────────────
-// Di halaman Creator sudah ada panel slide-over: ikon membuka/menutup panel itu, bukan popup kedua.
+// ── Ikon toolbar & panel ───────────────────────────────────────────────────────
+// Chrome 116+: Side Panel bawaan (manifest `side_panel`), dibuka lewat ikon toolbar dan mengikuti tab aktif.
+// Firefox: sidebar Firefox (manifest.firefox.json `sidebar_action`); ikon membuka/menutup sidebar.
+// Chromium tanpa Side Panel (mis. Yab): cadangan lama = popup di tab lain + panel slide-over di halaman Creator.
 const CREATOR_PREFIX = 'https://www.canva.com/creators/';
+const sidebar = globalThis.browser?.sidebarAction ?? chrome.sidebarAction;
+const sidePanel = sidebar ? null : chrome.sidePanel;
+const fallbackPanel = !sidebar && !sidePanel;
+
+if (sidePanel) sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
+
+if (fallbackPanel) {
+  chrome.action.setPopup({ popup: 'popup.html' }).catch(() => {});
+  // Panel slide-over tidak lagi dideklarasikan di manifest (Chrome & Firefox memakai panel browser): daftarkan di sini.
+  // Lewat Promise agar browser tanpa registerContentScripts tidak menghentikan service worker saat dimuat.
+  Promise.resolve()
+    .then(() => chrome.scripting.getRegisteredContentScripts({ ids: ['slideover'] }))
+    .then((found) =>
+      found.length ? null : chrome.scripting.registerContentScripts([{ id: 'slideover', matches: [`${CREATOR_PREFIX}*`], js: ['slideover.js'], runAt: 'document_idle' }]),
+    )
+    .catch((e) => console.warn('[canva-insights] panel slide-over tidak terdaftar:', e?.message ?? e));
+}
+
 function syncActionPopup(tabId, url = '') {
+  if (!fallbackPanel) return;
   chrome.action.setPopup({ tabId, popup: url.startsWith(CREATOR_PREFIX) ? '' : 'popup.html' }).catch(() => {});
 }
 chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
   if (info.url || info.status === 'loading') syncActionPopup(tabId, info.url ?? tab.url);
 });
-chrome.tabs.query({ url: `${CREATOR_PREFIX}*` }).then((tabs) => tabs.forEach((t) => syncActionPopup(t.id, t.url)));
+if (fallbackPanel) chrome.tabs.query({ url: `${CREATOR_PREFIX}*` }).then((tabs) => tabs.forEach((t) => syncActionPopup(t.id, t.url)));
 chrome.action.onClicked.addListener(async (tab) => {
+  // toggle() harus dipanggil langsung di handler klik (tanpa await sebelumnya).
+  if (sidebar) return void sidebar.toggle().catch(() => {});
+  if (!fallbackPanel) return;
   try {
     await chrome.tabs.sendMessage(tab.id, { type: 'togglePanel' });
   } catch {
@@ -302,6 +327,9 @@ function startSync(tabId, { backfill = false, trigger = 'manual' } = {}) {
   badge('…', '#6b7280', 'sinkron berjalan');
   setStatus({ state: 'running', startedAt: Date.now(), heartbeatAt: Date.now(), progress: null, stage: null, brandId: null, result: null });
   if (trigger === 'schedule') log('INFO', 'Sinkron otomatis harian dimulai');
+  // Firefox menjalankan background sebagai event page yang dihentikan setelah ±30 detik tanpa event.
+  // Panggilan API berkala selama sinkron menjaganya tetap hidup (di Chrome tidak berpengaruh).
+  const keepAlive = setInterval(() => chrome.runtime.getPlatformInfo().catch(() => {}), 20_000);
   const done = (async () => {
     let result;
     const startedAt = Date.now();
@@ -325,6 +353,7 @@ function startSync(tabId, { backfill = false, trigger = 'manual' } = {}) {
       notify(ok ? 'Sinkron Canva Insights berhasil' : 'Sinkron Canva Insights gagal', `${result.message}${result.hint ? ` ${result.hint}` : ''}`);
     }
     running = false;
+    clearInterval(keepAlive);
   })();
   return { started: true, done };
 }
