@@ -33,6 +33,8 @@ Server tetap sama (VPS Biznet GIO `103.89.5.148`, Next standalone :3002, PM2 `ca
 ## 2. Fase & langkah
 
 ### Fase 1 — Persiapan infrastruktur (tanpa downtime)
+**Progres 2026-11-25**: ✅ DNS `portal` A → `103.89.5.148` proxied dibuat di Cloudflare. ✅ SSL mode sudah Full (strict). ✅ Origin Certificate `*.meetimpro.site, meetimpro.site` (s.d. 2041-11-21) sudah ada dan terpasang di VPS (dipakai `meetimpro.site`/`tools`), jadi langkah 2 tidak perlu cert baru, cukup pakai path cert yang sama. `https://portal.meetimpro.site/login` kini 404 dari Nginx (belum ada vhost). Sisa: langkah 3–4.
+
 1. DNS (Cloudflare): tambah zona `meetimpro.site` bila belum; A record `portal` → `103.89.5.148`, proxied; SSL/TLS mode **Full (strict)**, Always Use HTTPS aktif.
 2. Sertifikat: buat **Cloudflare Origin Certificate** untuk `portal.meetimpro.site` (boleh sekalian `*.meetimpro.site` untuk improstd nanti), simpan cert + key di VPS (mis. `/www/server/nginx/ssl/meetimpro.site/`, key `chmod 600`).
 3. Nginx: salin `portal.fatchurbeny.com.conf` → `portal.meetimpro.site.conf`, ganti `server_name` & path sertifikat; proxy penuh ke :3002, `/_next/static/` dari filesystem, `absolute_redirect off`, redirect `/can-freelance` tetap ada. `nginx -t` lalu reload. Backup conf dulu (`~/backups/...-pre-meetimpro`).
