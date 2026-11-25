@@ -17,6 +17,8 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 
 ## ⏳ Belum Selesai / Menunggu
 
+* **Favicon** = logo improstd (`improstd/core/public/logo-impro.svg`) di ubin putih membulat, dirilis `b3ac3cc` 2026-11-25 (`icon.svg`, `favicon.ico` 16/32/48, `apple-icon.png`, `icon-192/512` di `src/app/` + `public/`). Logo TopBar di app masih monogram "IS" oranye (belum diganti).
+
 * **Extension Canva Insights 1.2.0** bisa diunduh di Notion Config › Extension (rilis `55168be`, 2026-11-25; zip dibuat `scripts/pack-extension.sh` saat build, di balik login). Belum di-reload di 5 profil; setelah semua 1.2.0, hapus pengecualian `/api/insights` di vhost `portal.fatchurbeny.com.conf`.
 
 * Freelance boleh ber-ID PRO (Putery `FL-001` → `PRO61`): sudah di-commit (`69859e1`) dan ikut ter-deploy 2026-11-14; tinggal ganti ID di VPS lewat drawer Edit User. Menunggu juga: `SSO_SECRET` + `BRIEF_API_KEY` di VPS untuk Kirim brief ke Deck/Doc (detail `grep "ID login Full-time" archive/`).
