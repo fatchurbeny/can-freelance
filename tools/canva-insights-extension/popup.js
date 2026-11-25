@@ -191,5 +191,6 @@ async function findCanvaTab() {
   const creators = await chrome.tabs.query({ url: 'https://www.canva.com/creators/*' });
   return creators.find((t) => t.active) ?? creators[0] ?? active;
 }
-tab = document.body.classList.contains('embed') ? await chrome.tabs.getCurrent() : await findCanvaTab();
+// Firefox bisa mengembalikan undefined untuk getCurrent() di iframe panel: cari tab Canva seperti popup.
+tab = (document.body.classList.contains('embed') ? await chrome.tabs.getCurrent().catch(() => null) : null) ?? (await findCanvaTab());
 await refresh();

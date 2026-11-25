@@ -1,4 +1,4 @@
-# Extension Chrome: Canva Insights → can-freelance
+# Extension Chrome & Firefox: Canva Insights → can-freelance
 
 Extension Manifest V3 untuk Chrome harian. Saat kamu membuka dashboard Creator Canva dan menekan **Sinkronkan sekarang**, extension mengambil Applies/Usages lewat endpoint internal dashboard (dari dalam tab Canva, memakai sesi login-mu) lalu mengirim tiap respons ke API dashboard can-freelance.
 
@@ -20,7 +20,23 @@ Zip terbaru bisa diunduh dari dashboard: **Notion Config › Extension** (`/noti
    - Klik **Simpan**, lalu **Uji koneksi**.
 4. Pin ikon extension di toolbar.
 
-URL dashboard lain harus ditambahkan dulu ke `host_permissions` di `manifest.json`, lalu extension dimuat ulang.
+URL dashboard lain harus ditambahkan dulu ke `host_permissions` di `manifest.json` (dan `manifest.firefox.json`), lalu extension dimuat ulang.
+
+## Firefox (128+)
+
+Kode sama dengan versi Chrome; hanya manifest-nya beda (`manifest.firefox.json`: background `scripts` alih-alih service worker, `options_ui`, ID gecko `canva-insights@can-freelance`).
+
+1. Build: `npm run build:firefox` → folder `dist/firefox/` dan paket `dist/canva-insights-firefox-<versi>.zip`.
+2. Pasang:
+   - **Sementara (uji)**: buka `about:debugging#/runtime/this-firefox` → **Load Temporary Add-on…** → pilih `dist/firefox/manifest.json`. Hilang saat Firefox ditutup.
+   - **Permanen**: Firefox rilis hanya menerima add-on bertanda tangan. Tanda tangani sebagai *unlisted* di addons.mozilla.org (Developer Hub → Submit → "On your own", unggah zip) lalu pasang `.xpi` hasilnya. Alternatif tanpa tanda tangan: Firefox Developer Edition/Nightly dengan `xpinstall.signatures.required = false` di `about:config`.
+3. Buka Pengaturan extension (`about:addons` → Canva Insights → Preferences). Bila muncul kotak **Izinkan akses situs**, klik dan setujui: Firefox memisahkan izin canva.com & dashboard dari pemasangan.
+4. Isi URL, token, nama perangkat, jadwal seperti di Chrome.
+
+Beda perilaku di Firefox:
+- Background berupa *event page* yang dihentikan setelah ±30 detik tanpa aktivitas; selama sinkron extension memanggil API ringan tiap 20 detik agar tetap hidup.
+- `webRequest` tidak memakai opsi `extraHeaders` (khusus Chromium).
+- Tiap pemasangan punya ID internal acak (`moz-extension://…`); pengaturan tidak terbawa antar profil.
 
 ## Sinkronkan
 

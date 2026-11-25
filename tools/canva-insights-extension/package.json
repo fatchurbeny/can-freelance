@@ -2,9 +2,11 @@
   "name": "canva-insights-extension",
   "version": "1.0.0",
   "private": true,
-  "description": "Extension Chrome Canva Insights; package.json hanya untuk menjalankan tes logika dengan Node.",
+  "description": "Extension Canva Insights (Chrome & Firefox); package.json hanya untuk tes logika dan build Firefox.",
   "type": "module",
   "scripts": {
-    "test": "node --test \"test/*.test.mjs\""
+    "test": "node --test \"test/*.test.mjs\"",
+    "build:firefox": "node scripts/build-firefox.mjs",
+    "lint:firefox": "npm run build:firefox && npx --yes web-ext@8 lint --source-dir dist/firefox"
   }
 }

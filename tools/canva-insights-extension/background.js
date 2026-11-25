@@ -44,7 +44,8 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
     chrome.storage.session.set({ [`headers:${details.tabId}`]: headers }).catch((e) => console.warn('[canva-insights] header tidak tersimpan:', e?.message ?? e));
   },
   { urls: ['https://www.canva.com/_ajax/creatorinsight/*'] },
-  ['requestHeaders', 'extraHeaders'],
+  // `extraHeaders` hanya ada di Chrome/Chromium; Firefox menolak opsi yang tak dikenal (dan tidak membutuhkannya).
+  chrome.webRequest.OnBeforeSendHeadersOptions?.EXTRA_HEADERS ? ['requestHeaders', 'extraHeaders'] : ['requestHeaders'],
 );
 
 // ── Ikon toolbar ───────────────────────────────────────────────────────────────
@@ -302,6 +303,9 @@ function startSync(tabId, { backfill = false, trigger = 'manual' } = {}) {
   badge('…', '#6b7280', 'sinkron berjalan');
   setStatus({ state: 'running', startedAt: Date.now(), heartbeatAt: Date.now(), progress: null, stage: null, brandId: null, result: null });
   if (trigger === 'schedule') log('INFO', 'Sinkron otomatis harian dimulai');
+  // Firefox menjalankan background sebagai event page yang dihentikan setelah ±30 detik tanpa event.
+  // Panggilan API berkala selama sinkron menjaganya tetap hidup (di Chrome tidak berpengaruh).
+  const keepAlive = setInterval(() => chrome.runtime.getPlatformInfo().catch(() => {}), 20_000);
   const done = (async () => {
     let result;
     const startedAt = Date.now();
@@ -325,6 +329,7 @@ function startSync(tabId, { backfill = false, trigger = 'manual' } = {}) {
       notify(ok ? 'Sinkron Canva Insights berhasil' : 'Sinkron Canva Insights gagal', `${result.message}${result.hint ? ` ${result.hint}` : ''}`);
     }
     running = false;
+    clearInterval(keepAlive);
   })();
   return { started: true, done };
 }
