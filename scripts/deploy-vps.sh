@@ -93,7 +93,7 @@ IFS='|' read -r PAGE_CODE PAGE_LOCATION API_STATUS <<< "$HEALTH"
 if [ "$PAGE_CODE" = "307" ] && [[ "$PAGE_LOCATION" =~ ^(https?://[^/]+)?/login([?#].*)?$ ]] && [ "$API_STATUS" = "401" ]; then
   echo "=============================================================================="
   echo "🎉 DEPLOYMENT SUKSES! Gerbang login aktif (/production → 307 $PAGE_LOCATION, API → 401) di:"
-  echo "👉 https://portal.fatchurbeny.com"
+  echo "👉 https://portal.meetimpro.site"
   echo "=============================================================================="
 else
   echo "❌ GERBANG LOGIN TIDAK AKTIF: /production tanpa sesi → HTTP $PAGE_CODE ${PAGE_LOCATION:+(Location: $PAGE_LOCATION)}, API → HTTP $API_STATUS"

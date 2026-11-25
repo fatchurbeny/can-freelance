@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { authorizeApi } from '@/lib/api-auth';
 import { saveUploadedFile } from '@/lib/upload-storage';
+import { getAppBaseUrl } from '@/lib/public-origin';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,10 +25,7 @@ export async function POST(request: Request) {
 
     const filename = saveUploadedFile(buffer);
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://portal.fatchurbeny.com';
-    const publicUrl = baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1')
-      ? 'https://portal.fatchurbeny.com'
-      : baseUrl.replace(/\/$/, '');
+    const publicUrl = getAppBaseUrl();
 
     const fileUrl = `${publicUrl}/api/uploads/${filename}`;
 

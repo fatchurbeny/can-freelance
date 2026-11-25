@@ -42,26 +42,12 @@ Dokumen ini hanya memuat **status aktif** dan keputusan yang masih berlaku, agar
 
 ## 📝 Sesi Terakhir
 
+### 2026-11-25 — Rencana pindah domain ke `portal.meetimpro.site` (Claude Code, `🏛️ [Architecture & Knowledge Ops]`)
+* Hanya rencana, tanpa perubahan kode/VPS: [`domain-migration-meetimpro.md`](domain-migration-meetimpro.md). Temuan kunci: `NEXT_PUBLIC_APP_URL` di-inline saat build di Mac, jadi fallback hardcode `portal.fatchurbeny.com` (upload, Notion body, impro-sso) wajib diganti di kode; Google/Dropbox redirect URI perlu ditambah di konsol; extension perlu 1.2.0. Keputusan pemilik: domain lama jadi redirect 308 ≥3 bulan; improstd ikut pindah lewat rencana terpisah; DNS di Cloudflare (Origin Certificate, Full strict). Fase 3 (kode) selesai di branch `chore/domain-meetimpro` (dari `docs/stacked-drawer-knowledge`), belum di-commit/deploy: helper `getAppBaseUrl`/`oauthCallbackUrl` di `public-origin.ts`, Dropbox OAuth kini pakai origin publik, extension 1.2.0 (migrasi URL otomatis). Berikutnya: Fase 1 (DNS/Nginx) + Fase 2 (konsol OAuth); sebelum cutover cek `GOOGLE_OAUTH_REDIRECT_URI` di `.env` VPS.
+
 ### 2026-11-15 — UICreative.net: 173/175 halaman REJECTED (Claude Code, `🔌 [API & Integrations]`)
 * Sinkron 14 hari UICreative (`BAEWutmc71I`): halaman berisi `C`/`D` REJECTED (`parseBatch` gagal, bukan token/DB); `tier_scores` lolos. Alasan persis di `canva_ingest_batches.error` VPS belum terbaca (akses DB ditolak di sesi).
 * Perbaikan (commit `021816e`, dirilis ke VPS 2026-11-15, healthcheck OK; sinkron ulang UICreative belum dicek): parser v2 validasi per baris (baris rusak dilewati + dicatat, `C`/`D` null=0, string angka & negatif diterima; REJECTED hanya bila semua baris rusak), `ingest` mengembalikan `skippedRows`. Extension 1.1.3: alasan REJECTED & baris dilewati tampil di Log teknis/panel. Uji: `scratch/canva-insights-test/parse-tolerance.ts`, extension 16/16. Setelah deploy: reload extension, sinkron ulang UICreative (14 hari ditimpa); bila tetap REJECTED, alasan "semua N baris tidak valid" kini terlihat di panel.
-
-### 2026-11-15 — Selesai Connect Google mendarat di localhost (Claude Code, `⚙️ [DevOps]`)
-* Gejala di VPS: setelah Connect Gmail, redirect akhir ke `http://localhost:3002/notion-config` karena `request.nextUrl.origin` di Next standalone = host internal. Baru: `src/lib/public-origin.ts` `getPublicOrigin()` (X-Forwarded-Host/Host bukan lokal → `APP_URL` bukan lokal → origin request), dipakai di `api/google/oauth/start|callback` dan URL akhir `api/dropbox/oauth/callback` (redirect URI Dropbox tidak diubah). Typecheck OK; helper dites dengan header tiruan. Commit `1edaef4`, dirilis ke VPS 2026-11-15 (healthcheck OK); uji Connect Gmail di produksi belum dikonfirmasi. `deploy-vps.sh` kini `tar --no-xattrs --no-mac-metadata` (hilangkan ribuan warning `LIBARCHIVE.xattr.com.apple.provenance` di VPS).
-
-### 2026-11-15 — Picker 🧩 Elemen dari katalog improstd (Claude Code, `🎨 [Frontend & UI]`)
-* Kontrak I-23 dibangun di lokal (belum di-commit/deploy): tombol **Ambil Elemen** di drawer Edit Design Brief, section `## 🧩 Elemen`, proksi thumbnail, field `elements` di JSON brief. Detail: [`impro-brief-handoff.md`](impro-brief-handoff.md). Diuji dengan server tiruan improstd (picker, centang, tulis section di form task baru tanpa disimpan; proksi thumbnail; `elements` null/terisi).
-* VPS butuh `ELEMENTS_API_KEY` di `.next/standalone/.env` (nilai sama dengan improstd). Tidak ada perubahan skema DB.
-
-### 2026-11-14 — Fitur Asset Library dihapus (Claude Code, `🏛️ [Architecture & Knowledge Ops]`)
-* Keputusan pemilik ("hapus langsung", dikonfirmasi di sesi ini): `/assets`, `/asset-report`, picker brief, sinkron Notion aset, relation `Assets`, izin `asset.*`, model `Asset`/`AssetCategory`/`AssetProduction`/`TaskAsset` dihapus dari kode. Ekspor VPS dulu: `backups/asset-export-20261114.json` (142 aset, 7 kategori, 7 task_assets + `asset_report`) dan `~/db-backups/can-freelance-20261114-asset-tables.dump` di VPS (skrip `scripts/export-asset-tables.sh`).
-* Urutan rilis: deploy kode → skrip Notion (lepas relation `Assets` di database task SC-Canva, judul database "Asset Library" diberi "(arsip 2026-11-14)", tidak dibuang ke trash) → DROP 4 tabel di VPS & lokal. Section `## 📦 Assets` di brief lama tetap teks (dirender sebagai link).
-
-### 2026-11-14 — can-freelance pindah ke root `portal.fatchurbeny.com` (Claude Code, `⚙️ [DevOps]`)
-* `basePath` dihapus (`next.config.ts`; `APP_BASE_PATH = ''`, `LEGACY_BASE_PATH = '/can-freelance'` di `src/lib/base-path.ts`). `/can-freelance/*` → **308** ke root (Next redirect + Nginx), jadi POST extension & tautan/gambar lama tetap jalan. Callback OAuth Google/Dropbox **sengaja** tetap memakai prefix lama (terdaftar di konsol) lalu dialihkan.
-* VPS: vhost `portal.fatchurbeny.com.conf` kini proxy penuh ke :3002 (`/_next/static/` dari filesystem, `absolute_redirect off`). **Dihapus**: landing portal, Icon Composer, Template Icon Builder, Metafora/Metavora v1, folder kosong `/www/wwwroot/can-freelance`, 3 file `.conf.bak*`. Backup: `~/backups/portal-sites-20261114-223243.tar.gz` + `~/backups/portal.fatchurbeny.com.conf.pre-root-20261114`.
-* Ikut diubah di VPS: `NEXT_PUBLIC_APP_URL`/`APP_URL` = `https://portal.fatchurbeny.com` (`.next/standalone/.env`), crontab sync → `127.0.0.1:3002/api/sync/cron`, improstd `.env` `CANFREELANCE_URL=http://127.0.0.1:3002` (backup `.env.bak-20261114-root`). Deploy & healthcheck (`deploy-vps.sh` kini cek `/production`→`/login`) sukses; working tree ikut ter-deploy (termasuk ID PRO freelance & multi Reference Image yang sudah di-commit). Perubahan ini **belum di-commit**.
-* Catatan: improstd `core/lib/brief.mjs:96` hanya mengenali URL upload ber-prefix `/can-freelance/`; URL baru `/api/uploads/` diambil lewat URL publik (Cloudflare). Extension Canva Insights: URL lama tetap jalan via 308; default baru di `options.js`.
 
 ---
 

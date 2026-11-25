@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { buildAuthorizeUrl, dropboxRedirectUri, getDropboxConfig } from '@/lib/dropbox';
 import { authorizeApi } from '@/lib/api-auth';
+import { getPublicOrigin } from '@/lib/public-origin';
 
 export async function GET(request: NextRequest) {
   const denied = await authorizeApi('integration.manage');
@@ -18,5 +19,5 @@ export async function GET(request: NextRequest) {
     path: '/',
     maxAge: 600,
   });
-  return NextResponse.redirect(buildAuthorizeUrl(state, dropboxRedirectUri(request.nextUrl.origin)));
+  return NextResponse.redirect(buildAuthorizeUrl(state, dropboxRedirectUri(getPublicOrigin(request))));
 }

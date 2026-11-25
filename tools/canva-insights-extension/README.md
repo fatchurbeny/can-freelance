@@ -11,7 +11,7 @@ Kenapa extension, bukan script terjadwal: Chrome yang dikendalikan Playwright me
 1. Buka `chrome://extensions`, aktifkan **Developer mode**.
 2. **Load unpacked** → pilih folder `tools/canva-insights-extension/`.
 3. Buka **Details → Extension options** (atau klik ikon extension → Buka Pengaturan):
-   - URL dashboard: `https://portal.fatchurbeny.com` (lokal: `http://127.0.0.1:3002`; URL lama `/can-freelance` tetap dialihkan).
+   - URL dashboard: `https://portal.meetimpro.site` (lokal: `http://127.0.0.1:3002`). Sejak 1.2.0, URL lama `https://portal.fatchurbeny.com` yang tersimpan otomatis diganti saat extension di-reload; domain lama tetap dialihkan 308.
    - Token: nilai `INSIGHTS_INGEST_TOKEN` server (VPS: `.next/standalone/.env`).
    - Nama perangkat: mis. `macbook-beni` (muncul di status sync).
    - Sinkron otomatis harian: aktif, jam `12:00` (profil berikutnya 12:15, 12:30, … agar tidak bersamaan).

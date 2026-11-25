@@ -7,7 +7,22 @@ export class ServerAuthError extends Error {
   }
 }
 
-/** `baseUrl` = URL dashboard termasuk basePath, mis. https://portal.fatchurbeny.com */
+/** Domain dashboard lama (2026-11 pindah ke portal.meetimpro.site; domain lama hanya redirect 308). */
+export const LEGACY_DASHBOARD_ORIGIN = 'https://portal.fatchurbeny.com';
+export const DASHBOARD_ORIGIN = 'https://portal.meetimpro.site';
+
+/** URL dashboard tersimpan yang masih di domain lama (termasuk `/can-freelance`) → domain baru; selain itu tidak diubah. */
+export function migrateBaseUrl(baseUrl) {
+  if (typeof baseUrl !== 'string') return baseUrl;
+  try {
+    if (new URL(baseUrl).origin === LEGACY_DASHBOARD_ORIGIN) return DASHBOARD_ORIGIN;
+  } catch {
+    /* URL rusak: biarkan, Uji koneksi akan menolak */
+  }
+  return baseUrl;
+}
+
+/** `baseUrl` = URL dashboard, mis. https://portal.meetimpro.site */
 /** Server sedang restart (PM2) atau proxy putus: coba lagi dengan jeda, total ±2 menit. */
 const RETRY_STATUS = new Set([502, 503, 504, 520, 521, 522, 523, 524]);
 export const RETRY_DELAYS_MS = [5_000, 10_000, 20_000, 30_000, 45_000];

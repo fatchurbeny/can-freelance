@@ -66,7 +66,7 @@ export function toElements(picks: ElementPick[]): BriefPayload['elements'] {
 
 /**
  * Bangun payload brief. `appOrigin` (mis. http://127.0.0.1:3002) dipakai agar URL gambar unggahan
- * absolut; `publicBase` (mis. https://portal.fatchurbeny.com) untuk shareUrl.
+ * absolut; `publicBase` (mis. https://portal.meetimpro.site) untuk shareUrl.
  */
 export async function buildBriefPayload(
   taskId: string,

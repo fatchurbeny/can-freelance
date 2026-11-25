@@ -1,4 +1,5 @@
 import { orderBriefMarkdown } from '@/components/task-detail/brief-parser';
+import { getAppBaseUrl } from '@/lib/public-origin';
 
 /**
  * Markdown body task → blok Notion (dipakai push body dari server action dan pemindai Dropbox).
@@ -27,7 +28,6 @@ export function markdownToNotionBlocks(bodyText: string): any[] {
   // Notion always receives the canonical Design Brief section order
   const lines = orderBriefMarkdown(bodyText).split('\n');
   const blocks: any[] = [];
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://portal.fatchurbeny.com';
 
   let inColorPalette = false;
   let paletteLines: string[] = [];
@@ -47,9 +47,7 @@ export function markdownToNotionBlocks(bodyText: string): any[] {
     const hexList = Array.from(hexSet);
 
     if (hexList.length > 0) {
-      const publicUrl = baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1')
-        ? 'https://portal.fatchurbeny.com'
-        : baseUrl.replace(/\/$/, '');
+      const publicUrl = getAppBaseUrl();
       const cleanHexCsv = hexList.map((h) => h.replace('#', '')).join(',');
 
       // 1. Native Notion Image Block: Sharp-generated palette strip (100% reliable)

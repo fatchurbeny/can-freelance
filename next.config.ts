@@ -6,7 +6,8 @@ const nextConfig: NextConfig = {
   output: 'standalone',
   // Dev server kedua (preview chat lain) butuh folder build sendiri; Next 16 menolak 2 `next dev` di distDir yang sama.
   distDir: process.env.NEXT_DIST_DIR || '.next',
-  // Sejak 2026-11-14 app dilayani di root portal.fatchurbeny.com (dulu basePath '/can-freelance').
+  // App dilayani di root domain (sejak 2026-11-14; dulu basePath '/can-freelance'). Domain kini portal.meetimpro.site;
+  // portal.fatchurbeny.com dialihkan 308 oleh Nginx (bukan di sini), lihat docs/knowledge/domain-migration-meetimpro.md.
   turbopack: {
     root: path.resolve('.'),
   },

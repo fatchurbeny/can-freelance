@@ -1,6 +1,6 @@
 import { DEFAULT_SCHEDULE_TIME } from './lib/schedule.js';
 
-const DEFAULT_URL = 'https://portal.fatchurbeny.com';
+const DEFAULT_URL = 'https://portal.meetimpro.site';
 const $ = (id) => document.getElementById(id);
 
 function show(text, ok) {

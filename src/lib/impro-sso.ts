@@ -9,6 +9,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { loadAuthUser } from '@/lib/session';
 import { can, type AuthUser } from '@/lib/permissions';
+import { getAppBaseUrl } from '@/lib/public-origin';
 
 export type ImproTarget = 'deck' | 'doc';
 export const isImproTarget = (v: unknown): v is ImproTarget => v === 'deck' || v === 'doc';
@@ -17,10 +18,7 @@ export const IMPRO_URL = () => (process.env.IMPRO_URL || 'https://impro.fatchurb
 
 /** Basis URL publik can-freelance (root domain, tanpa basePath), untuk tautan yang dibuka manusia. */
 export function publicBase(): string {
-  const base = process.env.NEXT_PUBLIC_APP_URL || 'https://portal.fatchurbeny.com';
-  return base.includes('localhost') || base.includes('127.0.0.1')
-    ? 'https://portal.fatchurbeny.com'
-    : base.replace(/\/+$/, '');
+  return getAppBaseUrl();
 }
 
 function secret(name: 'SSO_SECRET' | 'BRIEF_API_KEY'): string | null {

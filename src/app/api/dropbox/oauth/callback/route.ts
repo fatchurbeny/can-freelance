@@ -7,9 +7,9 @@ import { getPublicOrigin } from '@/lib/public-origin';
 export async function GET(request: NextRequest) {
   const denied = await authorizeApi('integration.manage');
   if (denied) return denied;
-  const origin = request.nextUrl.origin;
-  // Redirect akhir ke origin publik (di VPS nextUrl.origin = localhost:3002); redirect URI Dropbox tetap seperti sebelumnya.
-  const doneUrl = new URL('/production/new', getPublicOrigin(request));
+  // Origin publik (di VPS nextUrl.origin = localhost:3002): dipakai untuk redirect URI (harus sama dengan start) dan redirect akhir.
+  const origin = getPublicOrigin(request);
+  const doneUrl = new URL('/production/new', origin);
 
   const cookieStore = await cookies();
   const expectedState = cookieStore.get('dropbox_oauth_state')?.value;

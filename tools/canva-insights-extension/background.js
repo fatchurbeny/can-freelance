@@ -6,7 +6,7 @@
  */
 import { CanvaHttpError, ENDPOINTS, PaginationError, SESSION_HEADERS, buildUrl, parseCanvaJson } from './lib/canva.js';
 import { collectBrand, STAGES } from './lib/collect-brand.js';
-import { createServerClient, ServerAuthError } from './lib/server.js';
+import { createServerClient, migrateBaseUrl, ServerAuthError } from './lib/server.js';
 import { DEFAULT_SCHEDULE_TIME, missedToday, nextSlot } from './lib/schedule.js';
 import { log, politeDelay, setLogSink, sleep } from './lib/util.js';
 
@@ -375,7 +375,21 @@ async function runScheduled() {
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === ALARM) runScheduled();
 });
-chrome.runtime.onInstalled.addListener(() => scheduleAlarm());
+/** 1.2.0: pindahkan URL dashboard tersimpan dari domain lama ke portal.meetimpro.site. */
+async function migrateSettings() {
+  const { settings } = await chrome.storage.local.get('settings').catch(() => ({}));
+  if (!settings?.baseUrl) return;
+  const next = migrateBaseUrl(settings.baseUrl);
+  if (next !== settings.baseUrl) {
+    await chrome.storage.local.set({ settings: { ...settings, baseUrl: next } });
+    log('INFO', `URL dashboard dipindah ke ${next}`);
+  }
+}
+
+chrome.runtime.onInstalled.addListener(async () => {
+  await migrateSettings();
+  await scheduleAlarm();
+});
 chrome.runtime.onStartup.addListener(async () => {
   await scheduleAlarm();
   const { enabled, time, ready } = await scheduleSettings();

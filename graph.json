@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "generatedAt": "2026-11-16T07:22:30.351Z",
+  "generatedAt": "2026-11-25T13:55:43.971Z",
   "nodes": [
     {
       "id": "page:/account-team",
@@ -3729,6 +3729,12 @@
       "confidence": "EXTRACTED"
     },
     {
+      "source": "api:/dropbox/oauth/start",
+      "target": "lib:public-origin",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
       "source": "api:/elements/thumb/[mediaId]",
       "target": "lib:api-auth",
       "relation": "invokes",
@@ -3971,6 +3977,12 @@
     {
       "source": "api:/upload",
       "target": "lib:upload-storage",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "api:/upload",
+      "target": "lib:public-origin",
       "relation": "invokes",
       "confidence": "EXTRACTED"
     },
@@ -6922,7 +6934,7 @@
     },
     {
       "source": "lib:dropbox",
-      "target": "lib:base-path",
+      "target": "lib:public-origin",
       "relation": "invokes",
       "confidence": "EXTRACTED"
     },
@@ -6940,7 +6952,7 @@
     },
     {
       "source": "lib:google-oauth",
-      "target": "lib:base-path",
+      "target": "lib:public-origin",
       "relation": "invokes",
       "confidence": "EXTRACTED"
     },
@@ -6976,6 +6988,12 @@
     },
     {
       "source": "lib:impro-sso",
+      "target": "lib:public-origin",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:impro-sso",
       "target": "model:User",
       "relation": "queries",
       "confidence": "EXTRACTED"
@@ -6990,6 +7008,12 @@
       "source": "lib:notion-body-blocks",
       "target": "component:brief-parser",
       "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:notion-body-blocks",
+      "target": "lib:public-origin",
+      "relation": "invokes",
       "confidence": "EXTRACTED"
     },
     {
@@ -7103,6 +7127,12 @@
     {
       "source": "lib:pin",
       "target": "lib:pin-rules",
+      "relation": "invokes",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "lib:public-origin",
+      "target": "lib:base-path",
       "relation": "invokes",
       "confidence": "EXTRACTED"
     },
