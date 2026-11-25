@@ -41,6 +41,8 @@ Server tetap sama (VPS Biznet GIO `103.89.5.148`, Next standalone :3002, PM2 `ca
 4. Uji: `curl -sI https://portal.meetimpro.site/production` → 307 ke `/login`. Kedua domain kini melayani app yang sama.
 
 ### Fase 2 — Konsol OAuth (tambah, jangan hapus yang lama)
+**Progres 2026-11-25**: ✅ Dropbox app `impro-freelance` (`a2t7qhbgsmauijl`): `https://portal.meetimpro.site/api/dropbox/oauth/callback` ditambahkan; URI domain lama `/can-freelance` sudah terdaftar sebelumnya (begitu juga 127.0.0.1/localhost). ⏳ Google: client ada di project `716061138114`, akun Google yang login di browser Claude tidak punya akses, jadi belum ditambahkan. Catatan VPS: `.next/standalone/.env` berisi `GOOGLE_OAUTH_REDIRECT_URI` = URI domain lama → ganti saat Fase 4.
+
 1. Google Cloud Console: tambah redirect URI `https://portal.meetimpro.site/api/google/oauth/callback` (tanpa prefix lama) + JavaScript origin `https://portal.meetimpro.site`. Bila OAuth consent screen memakai domain terverifikasi, tambahkan `meetimpro.site` di Authorized domains.
 2. Dropbox App Console: tambah `https://portal.meetimpro.site/api/dropbox/oauth/callback`. Pastikan juga `https://portal.fatchurbeny.com/can-freelance/api/dropbox/oauth/callback` terdaftar: sejak Fase 3, Connect Dropbox dari domain lama memakai URI itu (sebelumnya origin internal `localhost:3002`).
 
