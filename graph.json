@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "generatedAt": "2026-11-25T13:55:43.971Z",
+  "generatedAt": "2026-11-25T15:24:38.164Z",
   "nodes": [
     {
       "id": "page:/account-team",
@@ -1097,6 +1097,14 @@
       "group": "React Components",
       "filepath": "src/components/MonthCalendarPicker.tsx",
       "details": "React UI Component in src/components/MonthCalendarPicker.tsx"
+    },
+    {
+      "id": "component:ExtensionTab",
+      "label": "ExtensionTab",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/notion-config/ExtensionTab.tsx",
+      "details": "React UI Component in src/components/notion-config/ExtensionTab.tsx"
     },
     {
       "id": "component:KoneksiTab",
@@ -5571,6 +5579,12 @@
       "confidence": "EXTRACTED"
     },
     {
+      "source": "component:ExtensionTab",
+      "target": "component:styles",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
       "source": "component:KoneksiTab",
       "target": "component:NotionConfigClient",
       "relation": "renders",
@@ -5663,6 +5677,12 @@
     {
       "source": "component:NotionConfigClient",
       "target": "component:SyncTab",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:NotionConfigClient",
+      "target": "component:ExtensionTab",
       "relation": "renders",
       "confidence": "EXTRACTED"
     },

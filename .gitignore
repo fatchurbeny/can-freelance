@@ -51,3 +51,5 @@ next-env.d.ts
 backups/
 /public/uploads/
 
+# zip extension Canva Insights, dibuat ulang oleh scripts/pack-extension.sh saat build
+/public/downloads/

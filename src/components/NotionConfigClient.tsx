@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState, type ComponentType } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { AlertCircle, Database, Eye, EyeOff, Key, Mail, Plug, RefreshCw, Save, X } from 'lucide-react';
+import { AlertCircle, Database, Eye, EyeOff, Key, Mail, Plug, Puzzle, RefreshCw, Save, X } from 'lucide-react';
 import { getNotionConfigAction, saveNotionWorkspaceAction, deleteNotionConfigAction } from '@/app/actions/notion-config';
 import { getEmailConfigAction } from '@/app/actions/email-notification';
 import TopBar from '@/components/TopBar';
@@ -10,15 +10,17 @@ import EmailConfigCard from '@/components/EmailConfigCard';
 import KoneksiTab from '@/components/notion-config/KoneksiTab';
 import PagesDatabasesTab from '@/components/notion-config/PagesDatabasesTab';
 import SyncTab from '@/components/notion-config/SyncTab';
+import ExtensionTab from '@/components/notion-config/ExtensionTab';
 import { DOT } from '@/components/notion-config/styles';
 
-type TabId = 'koneksi' | 'pages' | 'sync' | 'email';
+type TabId = 'koneksi' | 'pages' | 'sync' | 'email' | 'extension';
 
 const TABS: { id: TabId; label: string; icon: ComponentType<{ className?: string }>; needsConfig?: boolean }[] = [
   { id: 'koneksi', label: 'Koneksi', icon: Plug },
   { id: 'pages', label: 'Pages & Databases', icon: Database, needsConfig: true },
   { id: 'sync', label: 'Sinkronisasi', icon: RefreshCw, needsConfig: true },
   { id: 'email', label: 'Email Notifikasi', icon: Mail },
+  { id: 'extension', label: 'Extension', icon: Puzzle },
 ];
 
 const isTabId = (v: string | null): v is TabId => !!v && TABS.some((t) => t.id === v);
@@ -236,6 +238,7 @@ export default function NotionConfigClient({ initialSyncLog }: { initialSyncLog:
                 {activeTab === 'pages' && <PagesDatabasesTab onChanged={loadConfig} />}
                 {activeTab === 'sync' && <SyncTab autoSync={config.autoSync} syncInterval={config.syncInterval} latestSyncLog={latestSyncLog} onSaved={loadConfig} />}
                 {activeTab === 'email' && <EmailConfigCard onStatusChange={(needs) => setEmailNeedsAttention(needs)} />}
+                {activeTab === 'extension' && <ExtensionTab />}
               </div>
             )}
           </div>

@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "NODE_ENV=development next dev --webpack -H 127.0.0.1 -p ${PORT:-3002}",
-    "build": "prisma generate && NODE_ENV=production next build",
+    "build": "bash scripts/pack-extension.sh && prisma generate && NODE_ENV=production next build",
+    "pack:extension": "bash scripts/pack-extension.sh",
     "start": "NODE_ENV=production next start",
     "lint": "eslint",
     "postinstall": "prisma generate",
