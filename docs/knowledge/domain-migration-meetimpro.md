@@ -1,6 +1,6 @@
 # Rencana Pindah Domain: `portal.fatchurbeny.com` → `portal.meetimpro.site`
 
-Status: **Fase 1–4 selesai** (2026-11-25). App produksi memakai `https://portal.meetimpro.site`; domain lama masih melayani penuh. Pemilik mengonfirmasi upload, Connect Dropbox, dan Kirim brief jalan di domain baru. Fase 5 selesai (domain lama → 308, kecuali ingest extension). Sisa: extension 1.2.0 di 5 profil lalu hapus pengecualian ingest, hapus redirect URI lama di Google/Dropbox, Fase 6 (opsional).
+Status: **Fase 1–4 selesai** (2026-11-25). App produksi memakai `https://portal.meetimpro.site`; domain lama masih melayani penuh. Pemilik mengonfirmasi upload, Connect Dropbox, dan Kirim brief jalan di domain baru. Fase 5 selesai (domain lama → 308, kecuali ingest extension). Fase 6 selesai (DB). Sisa: extension 1.2.0 di 5 profil lalu hapus pengecualian ingest, hapus redirect URI lama di Google/Dropbox. Domain lama tetap redirect (URL lama masih ada di body Notion).
 
 Server tetap sama (VPS Biznet GIO `103.89.5.148`, Next standalone :3002, PM2 `can-freelance`, Nginx). Yang berubah hanya nama host publik.
 
@@ -78,7 +78,10 @@ Langkah semula:
 2. Hapus redirect URI lama di Google/Dropbox **setelah** Connect dari domain baru terbukti jalan.
 3. Umumkan ke user: alamat baru + perlu login ulang.
 
-### Fase 6 — Opsional, setelah stabil (≥2 minggu)
+### Fase 6 — Rewrite URL di DB ✅ (2026-11-25 22:19 WIB, dimajukan atas permintaan pemilik)
+Pemindaian semua kolom teks/json/array skema `public`: hanya `tasks.body_text` (Design Brief) yang memuat domain lama, 34 task, semuanya punya halaman Notion; pola `https://portal.fatchurbeny.com/api/uploads/…` (32) dan `…/can-freelance/api/uploads/…` (21). Backup baris: `~/db-backups/tasks-body-text-20261125-221904-pre-domain-rewrite.csv` (kolom `id, body_text`; pulihkan dengan UPDATE dari CSV). Satu transaksi: `/can-freelance/` → root domain baru, lalu domain lama → `https://portal.meetimpro.site`; sisa 0. 53 URL gambar unik di brief semuanya 200. **Notion tidak diubah**: body halaman Notion masih memuat URL lama, dan sync menimpa `body_text` dari Notion saat halaman diedit di Notion / full sync (`src/lib/sync-notion.ts` ±781), jadi sebagian task bisa kembali ke URL lama; tetap jalan lewat redirect 308. Karena itu domain lama **jangan dimatikan** selama body Notion lama masih dipakai.
+
+Langkah semula (opsional, setelah stabil ≥2 minggu):
 * Rewrite URL di DB (`UPDATE ... SET ... = replace(..., 'https://portal.fatchurbeny.com', 'https://portal.meetimpro.site')`) per kolom teks yang memuat URL; hitung dulu dengan `SELECT count(*) ... LIKE`, backup dulu.
 * Body Notion lama dibiarkan (redirect menangani).
 * Hapus `portal.fatchurbeny.com` dari `host_permissions` extension di rilis berikutnya.
