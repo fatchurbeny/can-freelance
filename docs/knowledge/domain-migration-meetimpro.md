@@ -1,6 +1,6 @@
 # Rencana Pindah Domain: `portal.fatchurbeny.com` → `portal.meetimpro.site`
 
-Status: **Fase 1 (DNS + Nginx) dan Fase 3 (kode, branch `chore/domain-meetimpro`, belum di-deploy) selesai** (2026-11-25). Fase 2, 4–6 belum. Kode aman dirilis sebelum DNS siap: selama `APP_URL` VPS masih domain lama, URL yang dihasilkan tetap domain lama.
+Status: **Fase 1, 3, 4 selesai; Fase 2 sebagian (Dropbox ✅, Google ⏸️)** (2026-11-25). App produksi kini memakai `https://portal.meetimpro.site`; domain lama masih melayani penuh. Sisa: Google redirect URI, extension 1.2.0 di 5 profil, Fase 5–6.
 
 Server tetap sama (VPS Biznet GIO `103.89.5.148`, Next standalone :3002, PM2 `can-freelance`, Nginx). Yang berubah hanya nama host publik.
 
@@ -58,7 +58,10 @@ Langkah semula:
 6. `deploy-vps.sh`, komentar `next.config.ts` & `base-path.ts`.
 7. `npx tsc --noEmit`, uji lokal, `npm run graphify`.
 
-### Fase 4 — Cutover
+### Fase 4 — Cutover ✅ (2026-11-25 ±21:40 WIB)
+Hasil: backup DB `~/db-backups/can-freelance-20261125-213915-pre-meetimpro.dump` (84 MB) + env `~/backups/can-freelance.env.20261125-213915-pre-meetimpro`. `.next/standalone/.env`: `APP_URL`/`NEXT_PUBLIC_APP_URL` = domain baru, `GOOGLE_OAUTH_REDIRECT_URI` dikomentari (PM2 tidak meng-override env). Deploy `6d407e6`+docs (`VPS_SSH_PORT=2222 npm run deploy:vps`), healthcheck OK; build VPS sebelumnya (2026-11-16) sudah memuat PIN 4 digit, jadi rilis ini hanya perubahan domain. Uji tanpa login: domain baru `/login` 200, `/production` 307, `/can-freelance/*` 308, API 401, `/api/palette/strip` 200, `/api/uploads/<file>` 200 di kedua domain; domain lama tetap 200. **Belum diuji** (butuh login pemilik): upload gambar brief menghasilkan URL domain baru, Connect Dropbox dari domain baru, Kirim brief ke Deck/Doc, email notifikasi, push Notion. Log PM2 sebelum rilis sudah berisi Gmail `invalid_grant` (token Gmail kedaluwarsa, perlu Reconnect **dari domain lama** selama Google ⏸️) dan `dropbox-sync … fetch failed` (bukan akibat rilis ini). improstd tidak perlu diubah agar jalan; `core/lib/brief.mjs:112` hanya mengenali host upload lama, jadi URL upload domain baru diambil lewat URL publik (opsional: tambah `portal\.meetimpro\.site` ke regex itu).
+
+Langkah semula:
 0. **Cek dulu di VPS** `.next/standalone/.env`: bila ada `GOOGLE_OAUTH_REDIRECT_URI`, hapus atau isi `https://portal.meetimpro.site/api/google/oauth/callback` (override ini menang untuk host selain domain lama; `.env` lokal berisi nilai localhost).
 1. Backup DB VPS (`pg_dump` → `~/db-backups/can-freelance-<ts>-pre-meetimpro.dump`) dan `.next/standalone/.env`.
 2. VPS `.next/standalone/.env`: `APP_URL` & `NEXT_PUBLIC_APP_URL` = `https://portal.meetimpro.site`.
