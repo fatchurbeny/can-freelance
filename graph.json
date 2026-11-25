@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "generatedAt": "2026-11-25T15:25:44.445Z",
+  "generatedAt": "2026-11-25T15:35:38.638Z",
   "nodes": [
     {
       "id": "page:/account-team",
@@ -1041,6 +1041,14 @@
       "group": "React Components",
       "filepath": "src/components/ImageColorPalettePicker.tsx",
       "details": "React UI Component in src/components/ImageColorPalettePicker.tsx"
+    },
+    {
+      "id": "component:ImproLogo",
+      "label": "ImproLogo",
+      "type": "component",
+      "group": "React Components",
+      "filepath": "src/components/ImproLogo.tsx",
+      "details": "React UI Component in src/components/ImproLogo.tsx"
     },
     {
       "id": "component:InfoTip",
@@ -6499,6 +6507,12 @@
     {
       "source": "component:TopBar",
       "target": "component:PeriodPicker",
+      "relation": "renders",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "component:TopBar",
+      "target": "component:ImproLogo",
       "relation": "renders",
       "confidence": "EXTRACTED"
     },

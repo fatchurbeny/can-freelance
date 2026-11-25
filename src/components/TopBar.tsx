@@ -18,6 +18,7 @@ import {
   Menu
 } from 'lucide-react';
 import PeriodPicker from './PeriodPicker';
+import ImproLogo from './ImproLogo';
 import AccountSwitcher from './AccountSwitcher';
 import { useAccess } from '@/context/AccessContext';
 
@@ -94,11 +95,9 @@ export default function TopBar({
           </button>
 
           <Link href="/" className="flex items-center gap-2 group shrink-0">
-            {/* Orange IS Badge Icon */}
-            <div className="w-7 h-7 shrink-0 rounded-lg bg-[#ff5e1f] flex items-center justify-center text-white font-bold text-xs shadow-md shadow-orange-500/20 transition-transform group-hover:scale-105">
-              IS
-            </div>
-            <span className="font-sans text-sm font-bold tracking-tight text-[#262626] dark:text-white hidden sm:inline">
+            {/* Logo improstd (sama dengan favicon) */}
+            <ImproLogo className="w-7 h-7 shrink-0 text-[#032842] dark:text-white transition-transform group-hover:scale-105" />
+            <span className="font-sans text-lg leading-none font-bold tracking-tight text-[#262626] dark:text-white hidden sm:inline">
               impro.std
             </span>
           </Link>
